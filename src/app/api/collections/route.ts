@@ -24,7 +24,10 @@ export async function POST(request: Request) {
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Supabase collection insert error:", JSON.stringify(error));
+      throw new Error(error.message || error.code || "Supabase insert failed");
+    }
     return NextResponse.json({ collection: data });
   } catch (error) {
     console.error("Create collection error:", error);
