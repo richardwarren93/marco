@@ -126,3 +126,65 @@ IMPORTANT: Return ONLY a valid JSON array of these objects. No markdown, no code
     return [];
   }
 }
+
+export interface DiscoveredRecipe {
+  title: string;
+  description: string;
+  ingredients: { name: string; amount: string; unit: string }[];
+  steps: string[];
+  servings: number | null;
+  prep_time_minutes: number | null;
+  cook_time_minutes: number | null;
+  tags: string[];
+  matchingPantryItems: string[];
+  missingIngredients: string[];
+  reasoning: string;
+}
+
+export async function discoverRecipes(
+  pantryItems: PantryItem[]
+): Promise<DiscoveredRecipe[]> {
+  if (pantryItems.length === 0) return [];
+
+  const pantryList = pantryItems.map((p) => p.name).join(", ");
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4000,
+    system: `You are a creative home chef assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Never say "I cannot". Always produce JSON.`,
+    messages: [
+      {
+        role: "user",
+        content: `I have these ingredients in my pantry: ${pantryList}
+
+Suggest 4 creative, delicious recipes I can make using these ingredients. Mix different cuisines and styles. Prioritize recipes where I already have most ingredients, but include 1-2 that might need a quick grocery run for a few items.
+
+For each recipe, return:
+- title (string): A specific, appetizing recipe name
+- description (string): One sentence describing the dish
+- ingredients (array of {name, amount, unit}): Complete ingredient list with quantities
+- steps (array of strings): Clear cooking steps
+- servings (number): How many servings
+- prep_time_minutes (number): Estimated prep time
+- cook_time_minutes (number): Estimated cook time
+- tags (array of strings): Tags like cuisine type, dietary info, difficulty
+- matchingPantryItems (array of strings): Which pantry ingredients this uses
+- missingIngredients (array of strings): Ingredients I'd need to buy
+- reasoning (string): One sentence on why this recipe is a great pick given my pantry
+
+Return a JSON array of these recipe objects. Make the recipes practical, varied, and genuinely delicious — think popular food creator quality, not boring basics.`,
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error("Claude returned non-JSON for recipe discovery:", cleaned.slice(0, 200));
+    return [];
+  }
+}
