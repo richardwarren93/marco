@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -18,8 +19,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "collection_id is required" }, { status: 400 });
     }
 
+    const admin = createAdminClient();
+
     // Fetch current collection to toggle is_public
-    const { data: current } = await supabase
+    const { data: current } = await admin
       .from("collections")
       .select("is_public, share_token")
       .eq("id", body.collection_id)
@@ -30,7 +33,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Collection not found" }, { status: 404 });
     }
 
-    const { error, data } = await supabase
+    const { error, data } = await admin
       .from("collections")
       .update({ is_public: !current.is_public })
       .eq("id", body.collection_id)

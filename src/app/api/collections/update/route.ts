@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function PUT(request: Request) {
   const supabase = await createClient();
@@ -18,12 +19,13 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Collection id is required" }, { status: 400 });
     }
 
+    const admin = createAdminClient();
     const updateData: Record<string, unknown> = {};
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined) updateData.description = body.description;
     if (body.is_public !== undefined) updateData.is_public = body.is_public;
 
-    const { error, data } = await supabase
+    const { error, data } = await admin
       .from("collections")
       .update(updateData)
       .eq("id", body.id)

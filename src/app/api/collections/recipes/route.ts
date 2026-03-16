@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -21,8 +22,10 @@ export async function POST(request: Request) {
       );
     }
 
+    const admin = createAdminClient();
+
     // Verify user owns the collection
-    const { data: collection } = await supabase
+    const { data: collection } = await admin
       .from("collections")
       .select("id")
       .eq("id", body.collection_id)
@@ -33,7 +36,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Collection not found" }, { status: 404 });
     }
 
-    const { error, data } = await supabase
+    const { error, data } = await admin
       .from("collection_recipes")
       .insert({
         collection_id: body.collection_id,
@@ -73,8 +76,10 @@ export async function DELETE(request: Request) {
       );
     }
 
+    const admin = createAdminClient();
+
     // Verify user owns the collection
-    const { data: collection } = await supabase
+    const { data: collection } = await admin
       .from("collections")
       .select("id")
       .eq("id", body.collection_id)
@@ -85,7 +90,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "Collection not found" }, { status: 404 });
     }
 
-    const { error } = await supabase
+    const { error } = await admin
       .from("collection_recipes")
       .delete()
       .eq("collection_id", body.collection_id)
