@@ -42,6 +42,9 @@ export default function Navbar() {
                 <Link href="/recipes" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                   Recipes
                 </Link>
+                <Link href="/collections" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                  Collections
+                </Link>
                 <Link href="/pantry" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                   Pantry
                 </Link>

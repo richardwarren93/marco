@@ -3,29 +3,56 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { Ingredient } from "@/types";
+import type { Ingredient, Recipe } from "@/types";
 
-export default function RecipeForm() {
+export default function RecipeForm({
+  recipe,
+  onCancel,
+  onSaved,
+}: {
+  recipe?: Recipe;
+  onCancel?: () => void;
+  onSaved?: () => void;
+}) {
   const [url, setUrl] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [extracted, setExtracted] = useState(false);
+  const [extracted, setExtracted] = useState(!!recipe);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [steps, setSteps] = useState<string[]>([]);
-  const [servings, setServings] = useState("");
-  const [prepTime, setPrepTime] = useState("");
-  const [cookTime, setCookTime] = useState("");
-  const [tags, setTags] = useState("");
-  const [sourceUrl, setSourceUrl] = useState("");
-  const [sourcePlatform, setSourcePlatform] = useState<string>("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [title, setTitle] = useState(recipe?.title || "");
+  const [description, setDescription] = useState(recipe?.description || "");
+  const [ingredients, setIngredients] = useState<Ingredient[]>(
+    (recipe?.ingredients as Ingredient[]) || []
+  );
+  const [steps, setSteps] = useState<string[]>(
+    (recipe?.steps as string[]) || []
+  );
+  const [servings, setServings] = useState(
+    recipe?.servings?.toString() || ""
+  );
+  const [prepTime, setPrepTime] = useState(
+    recipe?.prep_time_minutes?.toString() || ""
+  );
+  const [cookTime, setCookTime] = useState(
+    recipe?.cook_time_minutes?.toString() || ""
+  );
+  const [tags, setTags] = useState(
+    recipe?.tags?.join(", ") || ""
+  );
+  const [sourceUrl, setSourceUrl] = useState(recipe?.source_url || "");
+  const [sourcePlatform, setSourcePlatform] = useState<string>(
+    recipe?.source_platform || ""
+  );
+  const [imageUrl, setImageUrl] = useState<string | null>(
+    recipe?.image_url || null
+  );
+  const [notes, setNotes] = useState(recipe?.notes || "");
 
   const router = useRouter();
   const supabase = createClient();
+
+  const isEditing = !!recipe?.id;
 
   async function handleExtract(e: React.FormEvent) {
     e.preventDefault();
@@ -67,30 +94,47 @@ export default function RecipeForm() {
     setError("");
 
     try {
-      const resp = await fetch("/api/recipes/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description: description || null,
-          ingredients,
-          steps,
-          servings: servings ? parseInt(servings) : null,
-          prep_time_minutes: prepTime ? parseInt(prepTime) : null,
-          cook_time_minutes: cookTime ? parseInt(cookTime) : null,
-          tags: tags
-            .split(",")
-            .map((t) => t.trim())
-            .filter(Boolean),
-          source_url: sourceUrl || null,
-          source_platform: sourcePlatform || null,
-          image_url: imageUrl || null,
-        }),
-      });
+      const payload = {
+        title,
+        description: description || null,
+        ingredients,
+        steps,
+        servings: servings ? parseInt(servings) : null,
+        prep_time_minutes: prepTime ? parseInt(prepTime) : null,
+        cook_time_minutes: cookTime ? parseInt(cookTime) : null,
+        tags: tags
+          .split(",")
+          .map((t) => t.trim())
+          .filter(Boolean),
+        source_url: sourceUrl || null,
+        source_platform: sourcePlatform || null,
+        image_url: imageUrl || null,
+        notes: notes || null,
+      };
+
+      let resp: Response;
+      if (isEditing) {
+        resp = await fetch("/api/recipes/update", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: recipe!.id, ...payload }),
+        });
+      } else {
+        resp = await fetch("/api/recipes/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+      }
 
       const data = await resp.json();
       if (!resp.ok) throw new Error(data.error);
-      router.push("/recipes");
+
+      if (onSaved) {
+        onSaved();
+      } else {
+        router.push("/recipes");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
       setSaving(false);
@@ -127,6 +171,14 @@ export default function RecipeForm() {
 
   function addStep() {
     setSteps([...steps, ""]);
+  }
+
+  function handleBack() {
+    if (onCancel) {
+      onCancel();
+    } else {
+      setExtracted(false);
+    }
   }
 
   return (
@@ -340,9 +392,22 @@ export default function RecipeForm() {
             />
           </div>
 
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={3}
+              placeholder="Personal notes, tips, modifications..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+            />
+          </div>
+
           <div className="flex gap-3">
             <button
-              onClick={() => setExtracted(false)}
+              onClick={handleBack}
               className="flex-1 py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-100 font-medium text-gray-700"
             >
               Back
@@ -352,7 +417,7 @@ export default function RecipeForm() {
               disabled={saving || !title}
               className="flex-1 py-2 px-4 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 font-medium"
             >
-              {saving ? "Saving..." : "Save Recipe"}
+              {saving ? "Saving..." : isEditing ? "Update Recipe" : "Save Recipe"}
             </button>
           </div>
         </div>

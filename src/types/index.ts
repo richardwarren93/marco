@@ -18,8 +18,44 @@ export interface Recipe {
   cook_time_minutes: number | null;
   tags: string[];
   image_url: string | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface Collection {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  is_public: boolean;
+  share_token: string;
+  created_at: string;
+  updated_at: string;
+  recipe_count?: number;
+}
+
+export interface CollectionRecipe {
+  id: string;
+  collection_id: string;
+  recipe_id: string;
+  added_at: string;
+}
+
+export interface RecipeRating {
+  id: string;
+  user_id: string;
+  source_url: string;
+  rating: number;
+  created_at: string;
+}
+
+export interface CommunityNote {
+  id: string;
+  user_id: string;
+  source_url: string;
+  content: string;
+  created_at: string;
 }
 
 export interface PantryItem {
