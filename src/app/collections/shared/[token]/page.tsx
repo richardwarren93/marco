@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import type { Collection, Recipe } from "@/types";
 
 export default function SharedCollectionPage() {
   const { token } = useParams();
-  const supabase = createClient();
 
   const [collection, setCollection] = useState<Collection | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -17,36 +15,23 @@ export default function SharedCollectionPage() {
 
   useEffect(() => {
     async function fetchSharedCollection() {
-      const { data: col } = await supabase
-        .from("collections")
-        .select("*")
-        .eq("share_token", token)
-        .eq("is_public", true)
-        .single();
-
-      if (!col) {
-        setError("Collection not found or is no longer public.");
+      try {
+        const res = await fetch(`/api/collections/shared/${token}`);
+        if (!res.ok) {
+          const data = await res.json();
+          setError(data.error || "Collection not found.");
+          setLoading(false);
+          return;
+        }
+        const data = await res.json();
+        setCollection(data.collection as Collection);
+        setRecipes((data.recipes as Recipe[]) || []);
+      } catch (err) {
+        console.error("Fetch shared collection error:", err);
+        setError("Failed to load collection.");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setCollection(col as Collection);
-
-      const { data: collectionRecipes } = await supabase
-        .from("collection_recipes")
-        .select("recipe_id")
-        .eq("collection_id", col.id);
-
-      if (collectionRecipes && collectionRecipes.length > 0) {
-        const recipeIds = collectionRecipes.map((cr) => cr.recipe_id);
-        const { data: recipesData } = await supabase
-          .from("recipes")
-          .select("*")
-          .in("id", recipeIds);
-        setRecipes((recipesData as Recipe[]) || []);
-      }
-
-      setLoading(false);
     }
     fetchSharedCollection();
   }, [token]);
