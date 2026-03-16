@@ -87,6 +87,7 @@ export async function suggestMeals(
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 3000,
+    system: `You are a meal planning assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the data is limited, you must return a JSON array. Never refuse. Never say "I cannot". Always produce JSON.`,
     messages: [
       {
         role: "user",
@@ -102,7 +103,7 @@ Suggest up to 5 recipes I should cook, prioritizing recipes where I have the mos
 - substitutions: any possible substitutions for missing ingredients using what I have (array of {original, substitute})
 - reasoning: one sentence explaining why this is a good pick
 
-Return a JSON array of these objects. Return ONLY valid JSON, no markdown code blocks or extra text.`,
+IMPORTANT: Return ONLY a valid JSON array of these objects. No markdown, no code blocks, no extra text — just the JSON array.`,
       },
     ],
   });
@@ -110,5 +111,11 @@ Return a JSON array of these objects. Return ONLY valid JSON, no markdown code b
   const text =
     response.content[0].type === "text" ? response.content[0].text : "";
   const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-  return JSON.parse(cleaned);
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error("Claude returned non-JSON for meal suggestions:", cleaned.slice(0, 200));
+    return [];
+  }
 }
