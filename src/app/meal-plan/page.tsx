@@ -68,7 +68,11 @@ export default function MealPlanPage() {
 
   async function handleAddToPlan(recipeId: string) {
     const today = new Date().toISOString().split("T")[0];
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError("Not authenticated"); return; }
+
     const { error } = await supabase.from("meal_plans").insert({
+      user_id: user.id,
       recipe_id: recipeId,
       planned_date: today,
       meal_type: "dinner",

@@ -33,7 +33,11 @@ export default function AddIngredientForm({
     setLoading(true);
     setError("");
 
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError("Not authenticated"); setLoading(false); return; }
+
     const { error } = await supabase.from("pantry_items").insert({
+      user_id: user.id,
       name: name.trim().toLowerCase(),
       category,
       quantity: quantity || null,

@@ -65,23 +65,28 @@ export default function RecipeForm() {
     setError("");
 
     try {
-      const { error } = await supabase.from("recipes").insert({
-        title,
-        description: description || null,
-        ingredients,
-        steps,
-        servings: servings ? parseInt(servings) : null,
-        prep_time_minutes: prepTime ? parseInt(prepTime) : null,
-        cook_time_minutes: cookTime ? parseInt(cookTime) : null,
-        tags: tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
-        source_url: sourceUrl || null,
-        source_platform: sourcePlatform || null,
+      const resp = await fetch("/api/recipes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description: description || null,
+          ingredients,
+          steps,
+          servings: servings ? parseInt(servings) : null,
+          prep_time_minutes: prepTime ? parseInt(prepTime) : null,
+          cook_time_minutes: cookTime ? parseInt(cookTime) : null,
+          tags: tags
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean),
+          source_url: sourceUrl || null,
+          source_platform: sourcePlatform || null,
+        }),
       });
 
-      if (error) throw error;
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error);
       router.push("/recipes");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
