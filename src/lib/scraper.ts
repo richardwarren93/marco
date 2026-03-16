@@ -1,6 +1,11 @@
 import * as cheerio from "cheerio";
 
-export async function scrapeUrl(url: string): Promise<string> {
+export interface ScrapeResult {
+  content: string;
+  image_url: string | null;
+}
+
+export async function scrapeUrl(url: string): Promise<ScrapeResult> {
   if (url.includes("instagram.com")) {
     return scrapeInstagram(url);
   }
@@ -10,8 +15,9 @@ export async function scrapeUrl(url: string): Promise<string> {
   return scrapeGeneric(url);
 }
 
-async function scrapeInstagram(url: string): Promise<string> {
+async function scrapeInstagram(url: string): Promise<ScrapeResult> {
   const parts: string[] = [];
+  let image_url: string | null = null;
 
   // Try oembed endpoint
   try {
@@ -23,6 +29,7 @@ async function scrapeInstagram(url: string): Promise<string> {
       const oembed = await oembedResp.json();
       if (oembed.title) parts.push(`Caption: ${oembed.title}`);
       if (oembed.author_name) parts.push(`Author: ${oembed.author_name}`);
+      if (oembed.thumbnail_url) image_url = oembed.thumbnail_url;
     }
   } catch {
     // oembed failed, continue with page scrape
@@ -32,6 +39,7 @@ async function scrapeInstagram(url: string): Promise<string> {
   try {
     const pageContent = await fetchPage(url);
     const meta = extractMetaTags(pageContent);
+    if (!image_url && meta.image) image_url = meta.image;
     if (meta.description) parts.push(`Description: ${meta.description}`);
     if (meta.title) parts.push(`Page Title: ${meta.title}`);
     const text = extractVisibleText(pageContent);
@@ -40,11 +48,15 @@ async function scrapeInstagram(url: string): Promise<string> {
     // page scrape failed
   }
 
-  return parts.join("\n\n") || "Could not extract content from Instagram URL";
+  return {
+    content: parts.join("\n\n") || "Could not extract content from Instagram URL",
+    image_url,
+  };
 }
 
-async function scrapeTikTok(url: string): Promise<string> {
+async function scrapeTikTok(url: string): Promise<ScrapeResult> {
   const parts: string[] = [];
+  let image_url: string | null = null;
 
   // TikTok oembed is reliable
   try {
@@ -56,6 +68,7 @@ async function scrapeTikTok(url: string): Promise<string> {
       const oembed = await oembedResp.json();
       if (oembed.title) parts.push(`Title: ${oembed.title}`);
       if (oembed.author_name) parts.push(`Author: ${oembed.author_name}`);
+      if (oembed.thumbnail_url) image_url = oembed.thumbnail_url;
     }
   } catch {
     // oembed failed
@@ -65,6 +78,7 @@ async function scrapeTikTok(url: string): Promise<string> {
   try {
     const pageContent = await fetchPage(url);
     const meta = extractMetaTags(pageContent);
+    if (!image_url && meta.image) image_url = meta.image;
     if (meta.description) parts.push(`Description: ${meta.description}`);
     const text = extractVisibleText(pageContent);
     if (text) parts.push(`Page Content: ${text}`);
@@ -72,10 +86,13 @@ async function scrapeTikTok(url: string): Promise<string> {
     // page scrape failed
   }
 
-  return parts.join("\n\n") || "Could not extract content from TikTok URL";
+  return {
+    content: parts.join("\n\n") || "Could not extract content from TikTok URL",
+    image_url,
+  };
 }
 
-async function scrapeGeneric(url: string): Promise<string> {
+async function scrapeGeneric(url: string): Promise<ScrapeResult> {
   const pageContent = await fetchPage(url);
   const meta = extractMetaTags(pageContent);
   const text = extractVisibleText(pageContent);
@@ -87,7 +104,10 @@ async function scrapeGeneric(url: string): Promise<string> {
   if (jsonLd) parts.push(`Structured Data: ${jsonLd}`);
   if (text) parts.push(`Content: ${text}`);
 
-  return parts.join("\n\n") || "Could not extract content";
+  return {
+    content: parts.join("\n\n") || "Could not extract content",
+    image_url: meta.image || null,
+  };
 }
 
 async function fetchPage(url: string): Promise<string> {
@@ -105,6 +125,7 @@ async function fetchPage(url: string): Promise<string> {
 function extractMetaTags(html: string): {
   title: string;
   description: string;
+  image: string;
 } {
   const $ = cheerio.load(html);
   return {
@@ -115,6 +136,10 @@ function extractMetaTags(html: string): {
     description:
       $('meta[property="og:description"]').attr("content") ||
       $('meta[name="description"]').attr("content") ||
+      "",
+    image:
+      $('meta[property="og:image"]').attr("content") ||
+      $('meta[name="twitter:image"]').attr("content") ||
       "",
   };
 }

@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     }
 
     // Scrape the URL content
-    const scrapedContent = await scrapeUrl(url);
+    const { content: scrapedContent, image_url } = await scrapeUrl(url);
 
     // Extract recipe using Claude
     const recipe = await extractRecipe(scrapedContent, url);
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
         ...recipe,
         source_url: url,
         source_platform: detectPlatform(url),
+        image_url,
       },
     });
   } catch (error) {

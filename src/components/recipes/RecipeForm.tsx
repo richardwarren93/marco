@@ -22,6 +22,7 @@ export default function RecipeForm() {
   const [tags, setTags] = useState("");
   const [sourceUrl, setSourceUrl] = useState("");
   const [sourcePlatform, setSourcePlatform] = useState<string>("");
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
 
   const router = useRouter();
   const supabase = createClient();
@@ -52,6 +53,7 @@ export default function RecipeForm() {
       setTags((r.tags || []).join(", "));
       setSourceUrl(r.source_url || url);
       setSourcePlatform(r.source_platform || "other");
+      setImageUrl(r.image_url || null);
       setExtracted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Extraction failed");
@@ -82,6 +84,7 @@ export default function RecipeForm() {
             .filter(Boolean),
           source_url: sourceUrl || null,
           source_platform: sourcePlatform || null,
+          image_url: imageUrl || null,
         }),
       });
 
@@ -170,6 +173,16 @@ export default function RecipeForm() {
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
+            </div>
+          )}
+
+          {imageUrl && (
+            <div className="rounded-lg overflow-hidden">
+              <img
+                src={imageUrl}
+                alt={title || "Recipe preview"}
+                className="w-full h-48 object-cover rounded-lg"
+              />
             </div>
           )}
 

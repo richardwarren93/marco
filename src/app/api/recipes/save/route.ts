@@ -26,6 +26,7 @@ export async function POST(request: Request) {
       tags: body.tags || [],
       source_url: body.source_url || null,
       source_platform: body.source_platform || null,
+      image_url: body.image_url || null,
     }).select().single();
 
     if (error) throw error;
