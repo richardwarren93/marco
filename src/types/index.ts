@@ -86,3 +86,59 @@ export interface MealSuggestion {
   substitutions: { original: string; substitute: string }[];
   reasoning: string;
 }
+
+// Restaurant Tracker ("Eats")
+export type RestaurantStatus = "wishlist" | "visited" | "favorite" | "avoid";
+export type PriceRange = 1 | 2 | 3 | 4;
+
+export interface Restaurant {
+  id: string;
+  user_id: string;
+  name: string;
+  cuisine: string | null;
+  neighborhood: string | null;
+  address: string | null;
+  city: string | null;
+  google_maps_url: string | null;
+  website_url: string | null;
+  phone: string | null;
+  price_range: PriceRange | null;
+  status: RestaurantStatus;
+  tags: string[];
+  overall_rating: number | null;
+  would_go_back: boolean | null;
+  notes: string | null;
+  image_url: string | null;
+  created_at: string;
+  updated_at: string;
+  // Computed / joined
+  visit_count?: number;
+  last_visited?: string;
+  visits?: RestaurantVisit[];
+}
+
+export interface RestaurantVisit {
+  id: string;
+  restaurant_id: string;
+  user_id: string;
+  visited_at: string;
+  rating: number | null;
+  dishes_ordered: string[];
+  notes: string | null;
+  companions: string | null;
+  occasion: string | null;
+  spent_approx: number | null;
+  created_at: string;
+}
+
+export interface RestaurantList {
+  id: string;
+  user_id: string;
+  name: string;
+  description: string | null;
+  is_public: boolean;
+  share_token: string;
+  created_at: string;
+  updated_at: string;
+  restaurant_count?: number;
+}

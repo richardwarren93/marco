@@ -11,6 +11,13 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Marco - Save & Plan Recipes",
   description: "Save recipes from Instagram and TikTok, manage your pantry, and plan meals with AI.",
+  icons: {
+    icon: [
+      { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/marco-icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/marco-icon-192.png",
+  },
 };
 
 export default function RootLayout({

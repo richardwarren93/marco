@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
@@ -34,7 +35,8 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16 items-center">
           <div className="flex items-center gap-8">
-            <Link href={user ? "/dashboard" : "/"} className="text-2xl font-bold text-orange-600">
+            <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 text-2xl font-bold text-orange-600">
+              <Image src="/marco-icon.svg" alt="Marco" width={32} height={32} className="rounded-full" />
               Marco
             </Link>
             {user && (
@@ -44,6 +46,9 @@ export default function Navbar() {
                 </Link>
                 <Link href="/collections" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                   Collections
+                </Link>
+                <Link href="/eats" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                  Eats
                 </Link>
                 <Link href="/pantry" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                   Pantry
