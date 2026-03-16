@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import CollectionCard from "@/components/collections/CollectionCard";
 import CreateCollectionForm from "@/components/collections/CreateCollectionForm";
 import type { Collection } from "@/types";
@@ -10,29 +9,18 @@ export default function CollectionsPage() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const supabase = createClient();
 
   async function fetchCollections() {
-    const { data: cols } = await supabase
-      .from("collections")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    const collections = (cols as Collection[]) || [];
-
-    // Fetch recipe counts for each collection
-    const withCounts = await Promise.all(
-      collections.map(async (col) => {
-        const { count } = await supabase
-          .from("collection_recipes")
-          .select("*", { count: "exact", head: true })
-          .eq("collection_id", col.id);
-        return { ...col, recipe_count: count || 0 };
-      })
-    );
-
-    setCollections(withCounts);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/collections");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setCollections(data.collections || []);
+    } catch (error) {
+      console.error("Fetch collections error:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

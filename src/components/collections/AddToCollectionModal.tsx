@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { Collection } from "@/types";
 
 interface Props {
@@ -18,7 +17,6 @@ export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Prop
   const [error, setError] = useState("");
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
-  const supabase = createClient();
 
   useEffect(() => {
     if (isOpen) {
@@ -28,12 +26,16 @@ export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Prop
 
   async function fetchCollections() {
     setLoading(true);
-    const { data } = await supabase
-      .from("collections")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setCollections((data as Collection[]) || []);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/collections");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setCollections(data.collections || []);
+    } catch (err) {
+      console.error("Fetch collections error:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleAdd(collectionId: string) {

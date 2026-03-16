@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import ShareCollectionModal from "@/components/collections/ShareCollectionModal";
 import Link from "next/link";
@@ -11,7 +10,6 @@ import type { Collection, Recipe } from "@/types";
 export default function CollectionDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const supabase = createClient();
 
   const [collection, setCollection] = useState<Collection | null>(null);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -26,42 +24,23 @@ export default function CollectionDetailPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      const { data: col } = await supabase
-        .from("collections")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (!col) {
+      try {
+        const res = await fetch(`/api/collections/${id}`);
+        if (!res.ok) {
+          setLoading(false);
+          return;
+        }
+        const data = await res.json();
+        setCollection(data.collection as Collection);
+        setRecipes((data.recipes as Recipe[]) || []);
+        setIsOwner(data.isOwner);
+        setEditName(data.collection.name);
+        setEditDescription(data.collection.description || "");
+      } catch (error) {
+        console.error("Fetch collection error:", error);
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setCollection(col as Collection);
-      setIsOwner(user?.id === col.user_id);
-      setEditName(col.name);
-      setEditDescription(col.description || "");
-
-      // Fetch recipes via collection_recipes join
-      const { data: collectionRecipes } = await supabase
-        .from("collection_recipes")
-        .select("recipe_id")
-        .eq("collection_id", id);
-
-      if (collectionRecipes && collectionRecipes.length > 0) {
-        const recipeIds = collectionRecipes.map((cr) => cr.recipe_id);
-        const { data: recipesData } = await supabase
-          .from("recipes")
-          .select("*")
-          .in("id", recipeIds);
-        setRecipes((recipesData as Recipe[]) || []);
-      }
-
-      setLoading(false);
     }
     fetchData();
   }, [id]);
