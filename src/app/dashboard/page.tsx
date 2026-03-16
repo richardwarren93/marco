@@ -41,10 +41,10 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Dashboard</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-8">The Kitchen</h1>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Link
           href="/recipes/new"
           className="bg-orange-600 text-white rounded-xl p-5 hover:bg-orange-700 transition-colors"
@@ -52,6 +52,15 @@ export default function DashboardPage() {
           <h3 className="font-semibold text-lg">Save a Recipe</h3>
           <p className="text-orange-100 text-sm mt-1">
             Paste an Instagram or TikTok link
+          </p>
+        </Link>
+        <Link
+          href="/collections"
+          className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow"
+        >
+          <h3 className="font-semibold text-gray-900 text-lg">My Collections</h3>
+          <p className="text-gray-500 text-sm mt-1">
+            Organize recipes into folders
           </p>
         </Link>
         <Link
