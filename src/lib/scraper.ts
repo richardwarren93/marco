@@ -140,8 +140,8 @@ function extractInstagramEmbeddedData(html: string): string {
 
   // Look for various patterns Instagram uses to embed data
   const patterns = [
-    /window\._sharedData\s*=\s*({.+?});<\/script>/s,
-    /window\.__additionalDataLoaded\s*\([^,]*,\s*({.+?})\s*\);<\/script>/s,
+    new RegExp('window\\._sharedData\\s*=\\s*({.+?});</script>', 's'),
+    new RegExp('window\\.__additionalDataLoaded\\s*\\([^,]*,\\s*({.+?})\\s*\\);</script>', 's'),
     /"caption"\s*:\s*\{[^}]*"text"\s*:\s*"([^"]+)"/,
     /"edge_media_to_caption"\s*:\s*\{[^}]*"text"\s*:\s*"([^"]+)"/,
     /"accessibility_caption"\s*:\s*"([^"]+)"/,
