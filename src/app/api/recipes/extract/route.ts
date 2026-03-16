@@ -27,6 +27,9 @@ export async function POST(request: Request) {
     // Scrape the URL content
     const { content: scrapedContent, image_url } = await scrapeUrl(url);
 
+    console.log("Scraped content preview:", scrapedContent.slice(0, 500));
+    console.log("Scraped content length:", scrapedContent.length);
+
     // Extract recipe using Claude
     const recipe = await extractRecipe(scrapedContent, url);
 

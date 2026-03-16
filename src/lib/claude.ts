@@ -12,7 +12,14 @@ export async function extractRecipe(
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
-    system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the content is minimal, vague, or incomplete, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.`,
+    system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the content is minimal, vague, or incomplete, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.
+
+CRITICAL: Social media recipe posts (especially Instagram Reels and TikTok) often have very limited scrapeable text. When the content is minimal:
+- Use hashtags, captions, author names, and any clues to identify the dish
+- If you can identify the dish name, provide a reasonable set of common ingredients and basic cooking steps for that dish
+- Extract any mentioned ingredients or techniques, even from hashtags (e.g. #chickenpasta → chicken, pasta)
+- Make your best educated guess about what the recipe is — a reasonable guess is far more useful than empty fields
+- NEVER return generic titles like "Instagram Recipe" or "Social Media Recipe" — always try to identify the actual dish`,
     messages: [
       {
         role: "user",
@@ -24,16 +31,16 @@ Scraped Content:
 ${scrapedContent}
 
 Return a JSON object with these fields:
-- title (string): Recipe name — infer from any available text, hashtags, or description
-- description (string): Brief description of the dish
-- ingredients (array of {name, amount, unit}): All ingredients mentioned. If no quantities are given, use "to taste" for amount and empty string for unit
-- steps (array of strings): Ordered cooking steps — infer reasonable steps if only ingredients are mentioned
+- title (string): The actual recipe/dish name — infer from captions, hashtags, description, or any available clues. NEVER use generic names like "Instagram Recipe".
+- description (string): Brief description of the dish — use context clues to describe what this dish is
+- ingredients (array of {name, amount, unit}): All ingredients mentioned. If you can identify the dish but no specific ingredients are listed, provide the standard/common ingredients for that dish with "to taste" amounts.
+- steps (array of strings): Ordered cooking steps — if you can identify the dish, provide reasonable standard steps for making it
 - servings (number or null): Number of servings if mentioned
-- prep_time_minutes (number or null): Prep time if mentioned
-- cook_time_minutes (number or null): Cook time if mentioned
-- tags (array of strings): Relevant tags like "vegan", "quick", "dessert" — infer from context
+- prep_time_minutes (number or null): Prep time if mentioned, or estimate based on the dish
+- cook_time_minutes (number or null): Cook time if mentioned, or estimate based on the dish
+- tags (array of strings): Relevant tags like "vegan", "quick", "dessert" — infer from context, hashtags, and the dish type
 
-IMPORTANT: Even if the content is very limited (e.g. just a title or caption), still return a complete JSON object with your best guess. Do NOT refuse or explain — just output the JSON.`,
+IMPORTANT: Even if the content is very limited, use your knowledge to fill in reasonable details for the identified dish. A helpful guess is much better than empty fields. Do NOT refuse or explain — just output the JSON.`,
       },
     ],
   });
