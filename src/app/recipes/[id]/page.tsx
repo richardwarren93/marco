@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import type { Recipe, Ingredient } from "@/types";
+import SocialEmbed from "@/components/recipes/SocialEmbed";
 
 export default function RecipeDetailPage() {
   const { id } = useParams();
@@ -139,6 +140,13 @@ export default function RecipeDetailPage() {
           </ol>
         </div>
       </div>
+
+      {recipe.source_url && recipe.source_platform && recipe.source_platform !== "other" && (
+        <SocialEmbed
+          sourceUrl={recipe.source_url}
+          sourcePlatform={recipe.source_platform}
+        />
+      )}
     </div>
   );
 }
