@@ -12,29 +12,28 @@ export async function extractRecipe(
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
     max_tokens: 2000,
+    system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the content is minimal, vague, or incomplete, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.`,
     messages: [
       {
         role: "user",
-        content: `Extract a recipe from this social media post content.
+        content: `Extract a recipe from this social media post content. The content may be limited since it was scraped from a video-based social media post.
 
-The content was scraped from: ${sourceUrl}
+Source URL: ${sourceUrl}
 
-Content:
+Scraped Content:
 ${scrapedContent}
 
 Return a JSON object with these fields:
-- title (string): Recipe name
-- description (string): Brief description
-- ingredients (array of {name, amount, unit}): All ingredients with quantities
-- steps (array of strings): Ordered cooking steps
-- servings (number or null): Number of servings
-- prep_time_minutes (number or null): Prep time
-- cook_time_minutes (number or null): Cook time
-- tags (array of strings): Relevant tags like "vegan", "quick", "dessert"
+- title (string): Recipe name — infer from any available text, hashtags, or description
+- description (string): Brief description of the dish
+- ingredients (array of {name, amount, unit}): All ingredients mentioned. If no quantities are given, use "to taste" for amount and empty string for unit
+- steps (array of strings): Ordered cooking steps — infer reasonable steps if only ingredients are mentioned
+- servings (number or null): Number of servings if mentioned
+- prep_time_minutes (number or null): Prep time if mentioned
+- cook_time_minutes (number or null): Cook time if mentioned
+- tags (array of strings): Relevant tags like "vegan", "quick", "dessert" — infer from context
 
-If the content doesn't contain a clear recipe, do your best to infer from the available information. If ingredients have no quantities, use "to taste" or leave amount empty.
-
-Return ONLY valid JSON, no markdown code blocks or extra text.`,
+IMPORTANT: Even if the content is very limited (e.g. just a title or caption), still return a complete JSON object with your best guess. Do NOT refuse or explain — just output the JSON.`,
       },
     ],
   });
@@ -44,7 +43,23 @@ Return ONLY valid JSON, no markdown code blocks or extra text.`,
 
   // Clean up potential markdown code blocks
   const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
-  return JSON.parse(cleaned);
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    // If Claude returned non-JSON (e.g. refusal text), return a minimal recipe
+    console.error("Claude returned non-JSON:", cleaned.slice(0, 200));
+    return {
+      title: "Untitled Recipe",
+      description: "",
+      ingredients: [],
+      steps: [],
+      servings: null,
+      prep_time_minutes: null,
+      cook_time_minutes: null,
+      tags: [],
+    };
+  }
 }
 
 export async function suggestMeals(
