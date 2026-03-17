@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import RecipePromptInput from "@/components/meal-plan/RecipePromptInput";
 import PromptResultCard from "@/components/meal-plan/PromptResultCard";
 import FriendsCookingSection from "@/components/meal-plan/FriendsCookingSection";
+import WeeklyCalendar from "@/components/meal-plan/WeeklyCalendar";
+import GroceryList from "@/components/grocery/GroceryList";
 import type { MealPlan } from "@/types";
 import type { PromptRecipeResult } from "@/lib/claude";
 import { MealPlanIcon } from "@/components/icons/HandDrawnIcons";
@@ -25,6 +27,15 @@ interface FriendCookingItem {
   };
 }
 
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
 export default function MealPlanPage() {
   const [results, setResults] = useState<PromptRecipeResult[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
@@ -35,23 +46,37 @@ export default function MealPlanPage() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set());
   const [error, setError] = useState("");
+  const [showGrocery, setShowGrocery] = useState(false);
   const supabase = createClient();
+
+  const fetchMealPlans = useCallback(async () => {
+    // Fetch a wide range (4 weeks back, 4 weeks forward) so calendar navigation is smooth
+    const monday = getMonday(new Date());
+    const start = new Date(monday);
+    start.setDate(start.getDate() - 28);
+    const end = new Date(monday);
+    end.setDate(end.getDate() + 35);
+
+    const { data } = await supabase
+      .from("meal_plans")
+      .select("*, recipe:recipes(*)")
+      .order("planned_date", { ascending: true })
+      .gte("planned_date", start.toISOString().split("T")[0])
+      .lte("planned_date", end.toISOString().split("T")[0]);
+
+    setMealPlans((data as MealPlan[]) || []);
+  }, [supabase]);
 
   useEffect(() => {
     async function fetchData() {
-      const [plansRes, pantryRes, friendsRes] = await Promise.all([
-        supabase
-          .from("meal_plans")
-          .select("*, recipe:recipes(*)")
-          .order("planned_date", { ascending: true })
-          .gte("planned_date", new Date().toISOString().split("T")[0]),
+      const [, pantryRes, friendsRes] = await Promise.all([
+        fetchMealPlans(),
         supabase
           .from("pantry_items")
           .select("id", { count: "exact", head: true }),
         fetch("/api/meal-plan/friends-cooking"),
       ]);
 
-      setMealPlans((plansRes.data as MealPlan[]) || []);
       setPantryCount(pantryRes.count || 0);
 
       try {
@@ -64,7 +89,7 @@ export default function MealPlanPage() {
       setLoading(false);
     }
     fetchData();
-  }, [supabase]);
+  }, [supabase, fetchMealPlans]);
 
   async function handlePromptSubmit(prompt: string, context: "all" | "my_kitchen") {
     setSearching(true);
@@ -141,28 +166,49 @@ export default function MealPlanPage() {
       return;
     }
 
-    const { data } = await supabase
-      .from("meal_plans")
-      .select("*, recipe:recipes(*)")
-      .order("planned_date", { ascending: true })
-      .gte("planned_date", new Date().toISOString().split("T")[0]);
-    setMealPlans((data as MealPlan[]) || []);
+    await fetchMealPlans();
+  }
+
+  async function handleCalendarAdd(recipeId: string, date: string, mealType: string) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { error: insertError } = await supabase.from("meal_plans").insert({
+      user_id: user.id,
+      recipe_id: recipeId,
+      planned_date: date,
+      meal_type: mealType,
+    });
+
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+
+    await fetchMealPlans();
+  }
+
+  async function handleCalendarRemove(planId: string) {
+    await supabase.from("meal_plans").delete().eq("id", planId);
+    setMealPlans(mealPlans.filter((p) => p.id !== planId));
   }
 
   if (loading) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded w-40" />
           <div className="h-24 bg-gray-200 rounded-2xl" />
-          <div className="h-40 bg-gray-200 rounded-2xl" />
+          <div className="h-64 bg-gray-200 rounded-2xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 sm:py-8 space-y-6">
+    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
       {/* Header */}
       <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
         <MealPlanIcon className="w-7 h-7 text-orange-600" /> Meal Plan
@@ -212,43 +258,27 @@ export default function MealPlanPage() {
         </div>
       )}
 
-      {/* Upcoming Plans */}
-      {mealPlans.length > 0 && (
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 mb-3">
-            Upcoming Meals
-          </h2>
-          <div className="space-y-2">
-            {mealPlans.map((plan) => (
-              <div
-                key={plan.id}
-                className="flex items-center justify-between bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-sm"
-              >
-                <div>
-                  <span className="font-medium text-gray-900 text-sm">
-                    {plan.recipe?.title || "Untitled"}
-                  </span>
-                  <span className="text-gray-400 text-xs ml-2">
-                    {plan.planned_date} ·{" "}
-                    <span className="capitalize">{plan.meal_type}</span>
-                  </span>
-                </div>
-                <button
-                  onClick={async () => {
-                    await supabase
-                      .from("meal_plans")
-                      .delete()
-                      .eq("id", plan.id);
-                    setMealPlans(mealPlans.filter((p) => p.id !== plan.id));
-                  }}
-                  className="text-gray-400 hover:text-red-500 text-xs"
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
-          </div>
+      {/* Weekly Calendar */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900">Weekly Calendar</h2>
+          <button
+            onClick={() => setShowGrocery(!showGrocery)}
+            className="text-xs font-medium text-orange-600 hover:text-orange-700 px-3 py-1.5 bg-orange-50 rounded-full hover:bg-orange-100 transition-colors"
+          >
+            🛒 Grocery List
+          </button>
         </div>
+        <WeeklyCalendar
+          mealPlans={mealPlans}
+          onAddMeal={handleCalendarAdd}
+          onRemoveMeal={handleCalendarRemove}
+        />
+      </div>
+
+      {/* Grocery List */}
+      {showGrocery && (
+        <GroceryList onClose={() => setShowGrocery(false)} />
       )}
 
       {/* Friends Cooking */}

@@ -11,6 +11,7 @@ import AddToCollectionModal from "@/components/collections/AddToCollectionModal"
 import CommunitySection from "@/components/community/CommunitySection";
 import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
+import MyNotesCard from "@/components/recipes/MyNotesCard";
 
 export default function RecipeDetailPage() {
   const { id } = useParams();
@@ -161,6 +162,11 @@ export default function RecipeDetailPage() {
       {/* I Made This Button */}
       <div className="mb-6">
         <IMadeThisButton recipeId={recipe.id} />
+      </div>
+
+      {/* My Private Notes & Rating */}
+      <div className="mb-6">
+        <MyNotesCard recipeId={recipe.id} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">

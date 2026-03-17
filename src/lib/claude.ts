@@ -69,6 +69,74 @@ IMPORTANT: Even if the content is very limited, use your knowledge to fill in re
   }
 }
 
+export async function extractRecipeFromImage(
+  imageBase64: string,
+  mimeType: string
+): Promise<Partial<Recipe>> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 3000,
+    system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the image is blurry or partially visible, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.
+
+CRITICAL: You are extracting recipes from photos of physical cookbooks or handwritten recipe cards. The image may show:
+- A printed cookbook page with a recipe
+- A handwritten recipe card
+- Multiple pages of the same recipe
+- A recipe with photos alongside it
+
+Extract everything you can see — ingredients with amounts, all steps, timing, servings. If something is partially obscured, make your best educated guess.`,
+    messages: [
+      {
+        role: "user",
+        content: [
+          {
+            type: "image",
+            source: {
+              type: "base64",
+              media_type: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
+              data: imageBase64,
+            },
+          },
+          {
+            type: "text",
+            text: `Extract the recipe from this cookbook/recipe photo. Return a JSON object with:
+- title (string): The recipe name
+- description (string): Brief description of the dish
+- ingredients (array of {name, amount, unit}): All ingredients with quantities
+- steps (array of strings): Ordered cooking steps
+- servings (number or null): Number of servings
+- prep_time_minutes (number or null): Prep time
+- cook_time_minutes (number or null): Cook time
+- tags (array of strings): Relevant tags like cuisine type, dietary info
+
+Return ONLY valid JSON. No markdown, no code blocks.`,
+          },
+        ],
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error("Claude returned non-JSON for image extraction:", cleaned.slice(0, 200));
+    return {
+      title: "Untitled Recipe",
+      description: "",
+      ingredients: [],
+      steps: [],
+      servings: null,
+      prep_time_minutes: null,
+      cook_time_minutes: null,
+      tags: [],
+    };
+  }
+}
+
 export async function suggestMeals(
   pantryItems: PantryItem[],
   recipes: Recipe[]

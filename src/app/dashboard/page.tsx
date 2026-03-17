@@ -19,7 +19,7 @@ import WeeklyGoalCard from "@/components/gamification/WeeklyGoalCard";
 import ActivityFeed from "@/components/social/ActivityFeed";
 
 const quickActions = [
-  { href: "/recipes/new", label: "Save a Recipe", desc: "Paste a link", Icon: SaveRecipeIcon, gradient: "from-orange-500 to-amber-500" },
+  { href: "/recipes/new", label: "Save a Recipe", desc: "URL or photo", Icon: SaveRecipeIcon, gradient: "from-orange-500 to-amber-500" },
   { href: "/collections", label: "Collections", desc: "Organize recipes", Icon: CollectionsIcon, gradient: "from-purple-500 to-violet-500" },
   { href: "/pantry", label: "Pantry", desc: "Track ingredients", Icon: PantryIcon, gradient: "from-emerald-500 to-teal-500" },
   { href: "/eats", label: "Eats", desc: "Restaurant log", Icon: EatsIcon, gradient: "from-rose-500 to-pink-500" },

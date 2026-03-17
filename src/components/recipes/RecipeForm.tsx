@@ -194,9 +194,25 @@ export default function RecipeForm({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               required
-              placeholder="https://www.instagram.com/p/... or https://www.tiktok.com/..."
+              placeholder="Paste a URL from Instagram, TikTok, NYT Cooking, Bon Appétit, or any recipe site..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
+            {/* Platform hints */}
+            <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
+              <span className="font-medium">Works with:</span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {[
+                  { name: "Instagram", color: "text-pink-500" },
+                  { name: "TikTok", color: "text-gray-700" },
+                  { name: "NYT Cooking", color: "text-gray-700" },
+                  { name: "Bon Appétit", color: "text-amber-600" },
+                  { name: "AllRecipes", color: "text-orange-500" },
+                  { name: "& more", color: "text-gray-400" },
+                ].map((p) => (
+                  <span key={p.name} className={`${p.color} font-medium`}>{p.name}</span>
+                ))}
+              </div>
+            </div>
           </div>
 
           {error && (

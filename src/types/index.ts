@@ -167,6 +167,38 @@ export interface ActivityFeedItem {
   userVote?: "up" | "down" | null;
 }
 
+export interface RecipeNote {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  private_note: string;
+  personal_rating: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface GroceryList {
+  id: string;
+  user_id: string;
+  week_start: string;
+  created_at: string;
+  items?: GroceryItem[];
+}
+
+export interface GroceryItem {
+  id: string;
+  list_id: string;
+  name: string;
+  amount: string | null;
+  unit: string | null;
+  category: string | null;
+  recipe_sources: string[];
+  checked: boolean;
+  is_custom: boolean;
+  in_pantry: boolean;
+  created_at: string;
+}
+
 export interface FeedVote {
   id: string;
   user_id: string;
