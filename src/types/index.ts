@@ -157,9 +157,22 @@ export interface ActivityFeedItem {
   activity_type: ActivityType;
   recipe_id: string | null;
   metadata: Record<string, unknown>;
+  image_url: string | null;
+  caption: string | null;
+  upvotes: number;
+  downvotes: number;
   created_at: string;
   profile?: UserProfile;
   recipe?: Recipe;
+  userVote?: "up" | "down" | null;
+}
+
+export interface FeedVote {
+  id: string;
+  user_id: string;
+  activity_id: string;
+  vote_type: "up" | "down";
+  created_at: string;
 }
 
 export type FriendshipStatus = "pending" | "accepted" | "declined";

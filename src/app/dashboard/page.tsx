@@ -91,11 +91,12 @@ export default function DashboardPage() {
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-gray-200 rounded-xl w-48" />
           <div className="h-24 bg-gray-200 rounded-2xl" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-24 bg-gray-200 rounded-2xl" />
+          <div className="grid grid-cols-3 gap-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-20 bg-gray-200 rounded-2xl" />
             ))}
           </div>
+          <div className="h-64 bg-gray-200 rounded-2xl" />
         </div>
       </div>
     );
@@ -111,50 +112,47 @@ export default function DashboardPage() {
         <p className="text-gray-500 text-sm mt-1">What are we cooking today?</p>
       </div>
 
-      {/* Pet Widget */}
-      {pet && (
-        <div className="animate-pop-in">
-          <PetWidget
-            pet={pet}
-            tomatoBalance={tomatoBalance}
-            onFed={(newPet, newBalance) => {
-              setPet(newPet);
-              setTomatoBalance(newBalance);
-            }}
-          />
+      {/* Pet Widget + Weekly Goal — compact side-by-side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {pet && (
+          <div className="animate-pop-in">
+            <PetWidget
+              pet={pet}
+              tomatoBalance={tomatoBalance}
+              onFed={(newPet, newBalance) => {
+                setPet(newPet);
+                setTomatoBalance(newBalance);
+              }}
+            />
+          </div>
+        )}
+        <div className="animate-pop-in" style={{ animationDelay: "50ms", animationFillMode: "both" }}>
+          <WeeklyGoalCard weeklyTarget={weeklyTarget} weekProgress={weekProgress} />
         </div>
-      )}
-
-      {/* Weekly Goal Progress */}
-      <div className="animate-pop-in" style={{ animationDelay: "50ms", animationFillMode: "both" }}>
-        <WeeklyGoalCard weeklyTarget={weeklyTarget} weekProgress={weekProgress} />
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {/* Quick Actions — compact icon row */}
+      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
         {quickActions.map((action, i) => (
           <Link
             key={action.href}
             href={action.href}
             className="animate-pop-in"
-            style={{ animationDelay: `${(i + 2) * 50}ms`, animationFillMode: "both" }}
+            style={{ animationDelay: `${(i + 2) * 40}ms`, animationFillMode: "both" }}
           >
-            <div className={`bg-gradient-to-br ${action.gradient} rounded-2xl p-4 sm:p-5 text-white hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 relative overflow-hidden`}>
-              <div className="absolute top-3 right-3 opacity-30">
-                <action.Icon className="w-8 h-8" />
-              </div>
-              <h3 className="font-semibold text-sm sm:text-base">{action.label}</h3>
-              <p className="text-white/70 text-xs mt-0.5">{action.desc}</p>
+            <div className={`bg-gradient-to-br ${action.gradient} rounded-xl p-3 text-white hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 text-center`}>
+              <action.Icon className="w-5 h-5 mx-auto mb-1 opacity-90" />
+              <p className="font-medium text-[11px] leading-tight">{action.label}</p>
             </div>
           </Link>
         ))}
       </div>
 
-      {/* Friend Activity Feed */}
+      {/* Social Feed — PROMINENT, main visual element */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
           <FriendsIcon className="w-5 h-5 text-orange-600" />
-          Friend Activity
+          Social Feed
         </h2>
         <ActivityFeed initialItems={feedItems} hasMore={feedHasMore} />
       </div>

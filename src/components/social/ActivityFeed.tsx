@@ -34,11 +34,11 @@ export default function ActivityFeed({ initialItems, hasMore: initialHasMore }: 
 
   if (items.length === 0) {
     return (
-      <div className="text-center py-8 bg-white rounded-2xl shadow-sm">
+      <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
         <div className="text-gray-300 flex justify-center mb-3">
-          <FriendsIcon className="w-10 h-10" />
+          <FriendsIcon className="w-12 h-12" />
         </div>
-        <p className="text-gray-500 text-sm">No friend activity yet</p>
+        <p className="text-gray-500 text-sm font-medium">No friend activity yet</p>
         <p className="text-gray-400 text-xs mt-1">
           Add friends to see what they&apos;re cooking!
         </p>
@@ -47,18 +47,16 @@ export default function ActivityFeed({ initialItems, hasMore: initialHasMore }: 
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm px-4">
-      <div className="divide-y divide-gray-50">
-        {items.map((item) => (
-          <ActivityFeedCard key={item.id} item={item} />
-        ))}
-      </div>
+    <div className="space-y-4">
+      {items.map((item) => (
+        <ActivityFeedCard key={item.id} item={item} />
+      ))}
       {hasMore && (
-        <div className="py-3 text-center border-t border-gray-50">
+        <div className="text-center py-3">
           <button
             onClick={loadMore}
             disabled={loadingMore}
-            className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+            className="px-6 py-2 bg-white border border-gray-200 text-orange-600 hover:border-orange-300 hover:bg-orange-50 rounded-full text-sm font-medium transition-colors"
           >
             {loadingMore ? "Loading..." : "Show more"}
           </button>

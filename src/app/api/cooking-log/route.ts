@@ -82,12 +82,16 @@ export async function POST(request: Request) {
       .update({ tomato_balance: currentBalance + TOMATO_REWARDS.COOKED_RECIPE })
       .eq("user_id", user.id);
 
-    // 3. Insert activity feed entry
-    await admin.from("activity_feed").insert({
-      user_id: user.id,
-      activity_type: "cooked_recipe",
-      recipe_id,
-    });
+    // 3. Insert activity feed entry and capture its ID
+    const { data: activityEntry } = await admin
+      .from("activity_feed")
+      .insert({
+        user_id: user.id,
+        activity_type: "cooked_recipe",
+        recipe_id,
+      })
+      .select("id")
+      .single();
 
     // 4. Check weekly goal completion
     const weekStart = getWeekStart().toISOString();
@@ -141,6 +145,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       log,
+      activityId: activityEntry?.id || null,
       tomatoesEarned: TOMATO_REWARDS.COOKED_RECIPE + (goalJustCompleted ? TOMATO_REWARDS.WEEKLY_GOAL_COMPLETE : 0),
       goalJustCompleted,
       weekProgress: weekCount || 0,

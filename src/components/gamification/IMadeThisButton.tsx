@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CookingPotIcon, TomatoIcon } from "@/components/icons/HandDrawnIcons";
+import PhotoUpload from "@/components/social/PhotoUpload";
 
 interface IMadeThisButtonProps {
   recipeId: string;
@@ -18,6 +19,9 @@ export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonP
   const [justCooked, setJustCooked] = useState(false);
   const [tomatoesEarned, setTomatoesEarned] = useState(0);
   const [showFloat, setShowFloat] = useState(false);
+  const [activityId, setActivityId] = useState<string | null>(null);
+  const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+  const [photoPosted, setPhotoPosted] = useState(false);
 
   async function handleClick() {
     if (loading) return;
@@ -36,6 +40,7 @@ export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonP
       setTomatoesEarned(data.tomatoesEarned);
       setJustCooked(true);
       setShowFloat(true);
+      setActivityId(data.activityId || null);
 
       // Hide float animation after 1.5s
       setTimeout(() => setShowFloat(false), 1500);
@@ -48,11 +53,31 @@ export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonP
     }
   }
 
+  async function handlePhotoUploaded(imageUrl: string, caption: string) {
+    if (!activityId) return;
+
+    try {
+      await fetch("/api/activity-feed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          activity_id: activityId,
+          image_url: imageUrl,
+          caption,
+        }),
+      });
+      setPhotoPosted(true);
+      setShowPhotoUpload(false);
+    } catch (error) {
+      console.error("Photo post error:", error);
+    }
+  }
+
   return (
     <div className="relative">
       <button
         onClick={handleClick}
-        disabled={loading}
+        disabled={loading || justCooked}
         className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-semibold text-sm transition-all duration-200 ${
           justCooked
             ? "bg-green-50 text-green-700 border-2 border-green-200"
@@ -83,6 +108,29 @@ export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonP
         <div className="absolute -top-2 left-1/2 -translate-x-1/2 animate-float-up pointer-events-none flex items-center gap-1 text-red-500 font-bold text-lg">
           +{tomatoesEarned} <TomatoIcon className="w-5 h-5" filled />
         </div>
+      )}
+
+      {/* Photo upload prompt — appears after cooking */}
+      {justCooked && activityId && !showPhotoUpload && !photoPosted && (
+        <button
+          onClick={() => setShowPhotoUpload(true)}
+          className="w-full mt-2 py-2 text-sm text-orange-600 hover:text-orange-700 font-medium hover:bg-orange-50 rounded-xl transition-colors"
+        >
+          📸 Add a photo to your feed?
+        </button>
+      )}
+
+      {photoPosted && (
+        <p className="mt-2 text-center text-xs text-green-600 font-medium">
+          Photo posted to your feed!
+        </p>
+      )}
+
+      {showPhotoUpload && (
+        <PhotoUpload
+          onUploaded={handlePhotoUploaded}
+          onCancel={() => setShowPhotoUpload(false)}
+        />
       )}
     </div>
   );
