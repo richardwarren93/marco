@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { TOMATO_REWARDS } from "@/lib/gamification";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -51,6 +52,28 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    // Award tomatoes for leaving a note
+    try {
+      await admin.from("tomato_transactions").insert({
+        user_id: user.id,
+        amount: TOMATO_REWARDS.COMMUNITY_NOTE,
+        reason: "community_note",
+        reference_id: data.id,
+      });
+      const { data: profile } = await admin
+        .from("user_profiles")
+        .select("tomato_balance")
+        .eq("user_id", user.id)
+        .single();
+      await admin
+        .from("user_profiles")
+        .update({ tomato_balance: (profile?.tomato_balance || 0) + TOMATO_REWARDS.COMMUNITY_NOTE })
+        .eq("user_id", user.id);
+    } catch {
+      // Non-critical: don't fail the note creation if tomato award fails
+    }
+
     return NextResponse.json({ note: data });
   } catch (error) {
     console.error("Community note error:", error);

@@ -223,3 +223,50 @@ export function PlateIcon({ className = defaultClass }: IconProps) {
     </svg>
   );
 }
+
+// — Gamification Icons —
+
+export function TomatoIcon({ className = defaultClass, filled }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Tomato body */}
+      <ellipse cx="12" cy="14" rx="8" ry="7.5" stroke="currentColor" strokeWidth="1.8"
+        fill={filled ? "currentColor" : "none"} opacity={filled ? 0.15 : 1}
+      />
+      {/* Stem */}
+      <path d="M12 6.5V4.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      {/* Leaf */}
+      <path d="M12 5.5C13.5 4 16 4 16.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M12 5.5C10.5 4 8 4 7.5 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      {/* Segment lines */}
+      <path d="M8 10C9.5 13 9.5 17 12 20" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.4"/>
+      <path d="M16 10C14.5 13 14.5 17 12 20" stroke="currentColor" strokeWidth="1" strokeLinecap="round" opacity="0.4"/>
+    </svg>
+  );
+}
+
+export function GoalIcon({ className = defaultClass, filled }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Target rings */}
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"
+        fill={filled ? "currentColor" : "none"} opacity={filled ? 0.1 : 1}
+      />
+      <circle cx="12" cy="12" r="5.5" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="12" cy="12" r="2" fill="currentColor"/>
+      {/* Arrow */}
+      <path d="M19 5L14.5 9.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+      <path d="M19 5L16 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+      <path d="M19 5L18.5 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+export function CheckCircleIcon({ className = defaultClass }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
+      <path d="M8 12.5L10.5 15L16 9.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}

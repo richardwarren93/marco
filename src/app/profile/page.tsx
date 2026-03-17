@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import type { UserProfile } from "@/types";
-import { RecipesIcon, CollectionsIcon, FriendsIcon } from "@/components/icons/HandDrawnIcons";
+import type { UserProfile, CookingGoal } from "@/types";
+import { RecipesIcon, CollectionsIcon, FriendsIcon, TomatoIcon } from "@/components/icons/HandDrawnIcons";
+import GoalSetting from "@/components/gamification/GoalSetting";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [stats, setStats] = useState({ recipes: 0, collections: 0, friends: 0 });
+  const [stats, setStats] = useState({ recipes: 0, collections: 0, friends: 0, tomatoes: 0 });
+  const [goal, setGoal] = useState<CookingGoal | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
@@ -20,23 +22,27 @@ export default function ProfilePage() {
 
   useEffect(() => {
     async function load() {
-      const [profileRes, recipesRes, collectionsRes, friendsRes] = await Promise.all([
+      const [profileRes, recipesRes, collectionsRes, friendsRes, goalRes] = await Promise.all([
         fetch("/api/profile"),
         supabase.from("recipes").select("id", { count: "exact", head: true }),
         fetch("/api/collections"),
         fetch("/api/friends"),
+        fetch("/api/cooking-goal"),
       ]);
 
       const profileData = await profileRes.json();
       const collectionsData = await collectionsRes.json();
       const friendsData = await friendsRes.json();
+      const goalData = await goalRes.json();
 
       setProfile(profileData.profile || null);
       setDisplayName(profileData.profile?.display_name || "");
+      setGoal(goalData.goal || null);
       setStats({
         recipes: recipesRes.count || 0,
         collections: (collectionsData.collections || []).length,
         friends: (friendsData.friends || []).length,
+        tomatoes: profileData.profile?.tomato_balance || 0,
       });
       setLoading(false);
     }
@@ -134,11 +140,12 @@ export default function ProfilePage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
           { label: "Recipes", value: stats.recipes, Icon: RecipesIcon },
           { label: "Collections", value: stats.collections, Icon: CollectionsIcon },
           { label: "Friends", value: stats.friends, Icon: FriendsIcon },
+          { label: "Tomatoes", value: stats.tomatoes, Icon: TomatoIcon },
         ].map((stat) => (
           <div key={stat.label} className="bg-white rounded-2xl shadow-sm p-4 text-center">
             <div className="text-orange-500 flex justify-center"><stat.Icon className="w-5 h-5" /></div>
@@ -147,6 +154,12 @@ export default function ProfilePage() {
           </div>
         ))}
       </div>
+
+      {/* Cooking Goal */}
+      <GoalSetting
+        currentTarget={goal?.weekly_target ?? null}
+        onSaved={(target) => setGoal(goal ? { ...goal, weekly_target: target } : null)}
+      />
 
       {/* Friend Code */}
       {profile && (
@@ -187,7 +200,7 @@ export default function ProfilePage() {
           className="flex items-center justify-between bg-white rounded-2xl shadow-sm p-4 hover:shadow transition-all"
         >
           <div className="flex items-center gap-3">
-            <span className="text-lg">👥</span>
+            <FriendsIcon className="w-5 h-5 text-orange-500" />
             <span className="font-medium text-gray-900">My Friends</span>
           </div>
           <span className="text-gray-400 text-sm">{stats.friends} friends →</span>
@@ -197,7 +210,7 @@ export default function ProfilePage() {
           className="flex items-center justify-between bg-white rounded-2xl shadow-sm p-4 hover:shadow transition-all"
         >
           <div className="flex items-center gap-3">
-            <span className="text-lg">🏠</span>
+            <RecipesIcon className="w-5 h-5 text-orange-500" />
             <span className="font-medium text-gray-900">The Kitchen</span>
           </div>
           <span className="text-gray-400 text-sm">→</span>

@@ -24,6 +24,36 @@
   animation: slide-up 0.3s ease-out;
 }
 
+@keyframes float-up {
+  0% { transform: translateY(0) translateX(-50%); opacity: 1; }
+  100% { transform: translateY(-40px) translateX(-50%); opacity: 0; }
+}
+
+@keyframes bounce-pet {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-12px); }
+  50% { transform: translateY(-6px); }
+  70% { transform: translateY(-10px); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+.animate-float-up {
+  animation: float-up 1.5s ease-out forwards;
+}
+
+.animate-bounce-pet {
+  animation: bounce-pet 0.6s ease-in-out;
+}
+
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out;
+}
+
 /* Safe area for bottom tab bar */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {

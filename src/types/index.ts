@@ -94,8 +94,65 @@ export interface UserProfile {
   display_name: string;
   avatar_url: string | null;
   friend_code: string;
+  tomato_balance: number;
   created_at: string;
   updated_at: string;
+}
+
+// Gamification
+export interface CookingLog {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  cooked_at: string;
+  created_at: string;
+  recipe?: Recipe;
+}
+
+export interface CookingGoal {
+  id: string;
+  user_id: string;
+  weekly_target: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type TomatoReason = "cooked_recipe" | "community_note" | "weekly_goal_complete" | "feed_pet";
+
+export interface TomatoTransaction {
+  id: string;
+  user_id: string;
+  amount: number;
+  reason: TomatoReason;
+  reference_id: string | null;
+  created_at: string;
+}
+
+export type PetMood = "happy" | "content" | "hungry" | "sad" | "very_sad";
+
+export interface UserPet {
+  id: string;
+  user_id: string;
+  name: string;
+  hunger_level: number;
+  last_fed_at: string;
+  total_feedings: number;
+  created_at: string;
+  updated_at: string;
+  mood?: PetMood;
+}
+
+export type ActivityType = "cooked_recipe" | "saved_recipe" | "completed_goal";
+
+export interface ActivityFeedItem {
+  id: string;
+  user_id: string;
+  activity_type: ActivityType;
+  recipe_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+  profile?: UserProfile;
+  recipe?: Recipe;
 }
 
 export type FriendshipStatus = "pending" | "accepted" | "declined";

@@ -10,6 +10,7 @@ import RecipeForm from "@/components/recipes/RecipeForm";
 import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
 import CommunitySection from "@/components/community/CommunitySection";
 import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
+import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 
 export default function RecipeDetailPage() {
   const { id } = useParams();
@@ -156,6 +157,11 @@ export default function RecipeDetailPage() {
           <p className="text-gray-700 whitespace-pre-wrap">{recipe.notes}</p>
         </div>
       )}
+
+      {/* I Made This Button */}
+      <div className="mb-6">
+        <IMadeThisButton recipeId={recipe.id} />
+      </div>
 
       <div className="grid md:grid-cols-2 gap-8">
         <div>

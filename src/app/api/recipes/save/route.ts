@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -31,6 +32,19 @@ export async function POST(request: Request) {
     }).select().single();
 
     if (error) throw error;
+
+    // Insert activity feed entry for social feed
+    try {
+      const admin = createAdminClient();
+      await admin.from("activity_feed").insert({
+        user_id: user.id,
+        activity_type: "saved_recipe",
+        recipe_id: data.id,
+      });
+    } catch {
+      // Non-critical: don't fail recipe save if activity insert fails
+    }
+
     return NextResponse.json({ recipe: data });
   } catch (error) {
     console.error("Save recipe error:", error);
