@@ -26,22 +26,30 @@ export default function PantryPage() {
   }, [fetchItems]);
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Pantry</h1>
+    <div className="max-w-lg mx-auto px-4 py-6 sm:py-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-1">🛒 My Pantry</h1>
+      <p className="text-sm text-gray-400 mb-6">
+        {items.length} item{items.length !== 1 ? "s" : ""} tracked
+      </p>
 
-      <div className="mb-8">
+      <div className="bg-white rounded-2xl shadow-sm p-4 mb-6">
         <AddIngredientForm onAdded={fetchItems} />
       </div>
 
       {loading ? (
-        <p className="text-gray-500">Loading pantry...</p>
+        <div className="space-y-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-12 bg-gray-100 rounded-xl animate-pulse" />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
+          <span className="text-4xl block mb-3">🥬</span>
+          <p className="text-gray-500">Your pantry is empty</p>
+          <p className="text-gray-400 text-sm mt-1">Add ingredients above to get started</p>
+        </div>
       ) : (
-        <>
-          <p className="text-sm text-gray-500 mb-4">
-            {items.length} item{items.length !== 1 ? "s" : ""} in your pantry
-          </p>
-          <PantryList items={items} onChanged={fetchItems} />
-        </>
+        <PantryList items={items} onChanged={fetchItems} />
       )}
     </div>
   );

@@ -43,11 +43,12 @@ export default function FriendsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-32" />
-          <div className="h-40 bg-gray-200 rounded-2xl" />
-          <div className="h-20 bg-gray-200 rounded-xl" />
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+        <div className="space-y-4">
+          <div className="h-8 bg-gray-100 rounded-full animate-pulse w-32" />
+          <div className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
+          <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
+          <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
         </div>
       </div>
     );
@@ -56,8 +57,8 @@ export default function FriendsPage() {
   const pendingCount = incoming.length;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-      <h1 className="text-3xl font-bold text-gray-900">Friends</h1>
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+      <h1 className="text-2xl font-bold text-gray-900">👥 Friends</h1>
 
       {/* Your Code */}
       {profile && (
@@ -68,7 +69,7 @@ export default function FriendsPage() {
       )}
 
       {/* Add Friend */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
+      <div className="bg-white rounded-2xl shadow-sm p-5">
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           Add a Friend
         </h2>
@@ -78,10 +79,10 @@ export default function FriendsPage() {
       {/* Pending Requests */}
       {(incoming.length > 0 || outgoing.length > 0) && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
             Pending Requests
             {pendingCount > 0 && (
-              <span className="ml-2 inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold">
+              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold">
                 {pendingCount}
               </span>
             )}
@@ -114,16 +115,17 @@ export default function FriendsPage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
           My Friends
           {friends.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-500">
+            <span className="ml-2 text-sm font-normal text-gray-400">
               ({friends.length})
             </span>
           )}
         </h2>
         {friends.length === 0 ? (
-          <div className="text-center py-8 bg-gray-50 rounded-xl">
-            <p className="text-gray-500 text-sm">
-              No friends yet. Share your code or enter a friend&apos;s code
-              above!
+          <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
+            <span className="text-4xl block mb-3">🤝</span>
+            <p className="text-gray-500">No friends yet</p>
+            <p className="text-gray-400 text-sm mt-1">
+              Share your code or enter a friend&apos;s code above!
             </p>
           </div>
         ) : (

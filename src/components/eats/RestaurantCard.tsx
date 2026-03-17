@@ -1,18 +1,18 @@
 import Link from "next/link";
 import type { Restaurant, RestaurantStatus } from "@/types";
 
-const statusColors: Record<RestaurantStatus, string> = {
-  favorite: "border-l-orange-500",
-  wishlist: "border-l-blue-500",
-  visited: "border-l-gray-300",
-  avoid: "border-l-red-400",
-};
-
 const statusLabels: Record<RestaurantStatus, { text: string; bg: string }> = {
   favorite: { text: "Favorite", bg: "bg-orange-100 text-orange-700" },
   wishlist: { text: "Wishlist", bg: "bg-blue-100 text-blue-700" },
   visited: { text: "Been There", bg: "bg-gray-100 text-gray-600" },
   avoid: { text: "Avoid", bg: "bg-red-100 text-red-600" },
+};
+
+const statusAccent: Record<RestaurantStatus, string> = {
+  favorite: "from-orange-500/10 to-transparent",
+  wishlist: "from-blue-500/10 to-transparent",
+  visited: "from-gray-500/5 to-transparent",
+  avoid: "from-red-500/10 to-transparent",
 };
 
 const cuisineColors = [
@@ -32,15 +32,6 @@ function getCuisineColor(cuisine: string): string {
     hash = cuisine.charCodeAt(i) + ((hash << 5) - hash);
   }
   return cuisineColors[Math.abs(hash) % cuisineColors.length];
-}
-
-function PriceDots({ range }: { range: number }) {
-  return (
-    <span className="text-gray-900 font-medium text-sm">
-      {"$".repeat(range)}
-      <span className="text-gray-300">{"$".repeat(4 - range)}</span>
-    </span>
-  );
 }
 
 function StarRating({ rating }: { rating: number }) {
@@ -70,50 +61,53 @@ export default function RestaurantCard({ restaurant, onToggleGoBack }: Restauran
 
   return (
     <Link href={`/eats/${restaurant.id}`}>
-      <div
-        className={`bg-white rounded-xl border border-gray-200 border-l-4 ${statusColors[restaurant.status]} p-5 hover:shadow-md transition-shadow cursor-pointer`}
-      >
+      <div className={`bg-white rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-5 cursor-pointer relative overflow-hidden`}>
+        {/* Subtle gradient accent */}
+        <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${statusAccent[restaurant.status]}`} />
+
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-gray-900 text-lg leading-tight">
+          <h3 className="font-semibold text-gray-900 leading-tight">
             {restaurant.name}
           </h3>
-          <span className={`text-xs px-2 py-0.5 rounded-full flex-shrink-0 ${status.bg}`}>
+          <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${status.bg}`}>
             {status.text}
           </span>
         </div>
 
-        <div className="flex items-center gap-2 mt-2 flex-wrap">
+        <div className="flex items-center gap-2 mt-2.5 flex-wrap">
           {restaurant.cuisine && (
-            <span className={`text-xs px-2 py-0.5 rounded-full ${getCuisineColor(restaurant.cuisine)}`}>
+            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${getCuisineColor(restaurant.cuisine)}`}>
               {restaurant.cuisine}
             </span>
           )}
-          {restaurant.price_range && <PriceDots range={restaurant.price_range} />}
+          {restaurant.price_range && (
+            <span className="text-gray-900 font-semibold text-xs">
+              {"$".repeat(restaurant.price_range)}
+              <span className="text-gray-200">{"$".repeat(4 - restaurant.price_range)}</span>
+            </span>
+          )}
           {restaurant.overall_rating && <StarRating rating={restaurant.overall_rating} />}
         </div>
 
         {restaurant.neighborhood && (
-          <p className="text-gray-500 text-sm mt-2">{restaurant.neighborhood}{restaurant.city ? `, ${restaurant.city}` : ""}</p>
+          <p className="text-gray-400 text-sm mt-2">📍 {restaurant.neighborhood}{restaurant.city ? `, ${restaurant.city}` : ""}</p>
         )}
 
         {restaurant.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
+          <div className="flex flex-wrap gap-1 mt-2.5">
             {restaurant.tags.slice(0, 4).map((tag) => (
-              <span
-                key={tag}
-                className="bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded-full"
-              >
+              <span key={tag} className="bg-gray-50 text-gray-500 text-[10px] px-2 py-0.5 rounded-full">
                 {tag}
               </span>
             ))}
             {restaurant.tags.length > 4 && (
-              <span className="text-gray-400 text-xs">+{restaurant.tags.length - 4}</span>
+              <span className="text-gray-300 text-[10px]">+{restaurant.tags.length - 4}</span>
             )}
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-3 text-xs text-gray-400">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+          <div className="flex items-center gap-3 text-[11px] text-gray-400">
             {restaurant.visit_count !== undefined && restaurant.visit_count > 0 && (
               <span>{restaurant.visit_count} visit{restaurant.visit_count !== 1 ? "s" : ""}</span>
             )}
@@ -129,7 +123,6 @@ export default function RestaurantCard({ restaurant, onToggleGoBack }: Restauran
                 onToggleGoBack?.(restaurant.id, !restaurant.would_go_back);
               }}
               className={`text-lg ${restaurant.would_go_back ? "text-green-500" : "text-red-400"}`}
-              title={restaurant.would_go_back ? "Would go back" : "Would not go back"}
             >
               {restaurant.would_go_back ? "\u{1F44D}" : "\u{1F44E}"}
             </button>

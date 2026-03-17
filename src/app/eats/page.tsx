@@ -6,6 +6,13 @@ import EatsStatusTabs, { type TabValue } from "@/components/eats/EatsStatusTabs"
 import AddRestaurantForm from "@/components/eats/AddRestaurantForm";
 import type { Restaurant } from "@/types";
 
+const statCards = [
+  { key: "total", label: "Total Places", emoji: "🍽️", gradient: "from-orange-500 to-amber-500" },
+  { key: "visited", label: "Visited This Month", emoji: "📍", gradient: "from-purple-500 to-violet-500" },
+  { key: "cuisines", label: "Cuisines Explored", emoji: "🌎", gradient: "from-emerald-500 to-teal-500" },
+  { key: "wishlist", label: "On Wishlist", emoji: "⭐", gradient: "from-sky-500 to-blue-500" },
+] as const;
+
 export default function EatsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,13 +73,10 @@ export default function EatsPage() {
     return c;
   }, [restaurants]);
 
-  // Stats
   const totalVisitsThisMonth = useMemo(() => {
     const now = new Date();
     const month = now.getMonth();
     const year = now.getFullYear();
-    // We don't have visit data in list view, so we approximate from visit_count
-    // This will be more accurate once we have visits loaded
     return restaurants.filter(
       (r) => r.last_visited && new Date(r.last_visited).getMonth() === month && new Date(r.last_visited).getFullYear() === year
     ).length;
@@ -82,6 +86,13 @@ export default function EatsPage() {
     () => new Set(restaurants.map((r) => r.cuisine).filter(Boolean)).size,
     [restaurants]
   );
+
+  const statValues: Record<string, number> = {
+    total: restaurants.length,
+    visited: totalVisitsThisMonth,
+    cuisines: uniqueCuisines,
+    wishlist: counts.wishlist,
+  };
 
   async function handleToggleGoBack(id: string, value: boolean) {
     const res = await fetch(`/api/restaurants/${id}`, {
@@ -99,72 +110,78 @@ export default function EatsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <p className="text-gray-500">Loading...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Eats</h1>
+        <h1 className="text-2xl font-bold text-gray-900">🍽️ Eats</h1>
         <button
           onClick={() => setShowAdd(true)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700"
+          className="bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm"
         >
           + Add Restaurant
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{restaurants.length}</p>
-          <p className="text-xs text-gray-500 mt-1">Total Restaurants</p>
+      {loading ? (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+          ))}
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{totalVisitsThisMonth}</p>
-          <p className="text-xs text-gray-500 mt-1">Visited This Month</p>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          {statCards.map((stat) => (
+            <div
+              key={stat.key}
+              className={`bg-gradient-to-br ${stat.gradient} rounded-2xl p-4 text-white shadow-sm`}
+            >
+              <span className="text-2xl block mb-1">{stat.emoji}</span>
+              <p className="text-2xl font-bold">{statValues[stat.key]}</p>
+              <p className="text-white/80 text-xs mt-0.5">{stat.label}</p>
+            </div>
+          ))}
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{uniqueCuisines}</p>
-          <p className="text-xs text-gray-500 mt-1">Cuisines Explored</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 text-center">
-          <p className="text-2xl font-bold text-gray-900">{counts.wishlist}</p>
-          <p className="text-xs text-gray-500 mt-1">On Wishlist</p>
-        </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <EatsStatusTabs active={activeTab} onChange={setActiveTab} counts={counts} />
 
       {/* Search + Sort */}
       <div className="flex gap-3 mt-4 mb-6">
-        <input
-          type="text"
-          placeholder="Search restaurants..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="flex-1 border border-gray-200 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
-        />
+        <div className="relative flex-1">
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <input
+            type="text"
+            placeholder="Search restaurants..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-4 py-2.5 bg-white rounded-full shadow-sm border-0 focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+          />
+        </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+          className="bg-white rounded-full shadow-sm px-4 py-2.5 text-sm border-0 focus:ring-2 focus:ring-orange-500 outline-none appearance-none cursor-pointer"
         >
           <option value="updated_at">Recently Updated</option>
-          <option value="name">Name A-Z</option>
+          <option value="name">Name A–Z</option>
           <option value="rating">Highest Rated</option>
         </select>
       </div>
 
       {/* Grid */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-48 bg-white rounded-2xl shadow-sm animate-pulse" />
+          ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+          <span className="text-4xl block mb-3">
+            {restaurants.length === 0 ? "🍕" : "🔍"}
+          </span>
           <p className="text-gray-500 mb-3">
             {restaurants.length === 0
               ? "No restaurants tracked yet"
@@ -173,9 +190,9 @@ export default function EatsPage() {
           {restaurants.length === 0 && (
             <button
               onClick={() => setShowAdd(true)}
-              className="text-orange-600 hover:underline font-medium"
+              className="text-orange-600 hover:text-orange-700 font-medium text-sm"
             >
-              Add your first restaurant
+              Add your first restaurant →
             </button>
           )}
         </div>
