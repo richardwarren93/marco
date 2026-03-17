@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import AddIngredientForm from "@/components/pantry/AddIngredientForm";
 import PantryList from "@/components/pantry/PantryList";
 import type { PantryItem } from "@/types";
+import { PantryIcon, VeggieIcon } from "@/components/icons/HandDrawnIcons";
 
 export default function PantryPage() {
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -27,7 +28,9 @@ export default function PantryPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 sm:py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-1">🛒 My Pantry</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+        <PantryIcon className="w-7 h-7 text-orange-600" /> My Pantry
+      </h1>
       <p className="text-sm text-gray-400 mb-6">
         {items.length} item{items.length !== 1 ? "s" : ""} tracked
       </p>
@@ -44,7 +47,7 @@ export default function PantryPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-          <span className="text-4xl block mb-3">🥬</span>
+          <div className="text-gray-300 flex justify-center mb-3"><VeggieIcon className="w-12 h-12" /></div>
           <p className="text-gray-500">Your pantry is empty</p>
           <p className="text-gray-400 text-sm mt-1">Add ingredients above to get started</p>
         </div>

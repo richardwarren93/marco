@@ -6,6 +6,7 @@ import FriendCodeCard from "@/components/friends/FriendCodeCard";
 import AddFriendForm from "@/components/friends/AddFriendForm";
 import FriendCard from "@/components/friends/FriendCard";
 import PendingRequestCard from "@/components/friends/PendingRequestCard";
+import { FriendsIcon } from "@/components/icons/HandDrawnIcons";
 
 export default function FriendsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -58,7 +59,9 @@ export default function FriendsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">👥 Friends</h1>
+      <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <FriendsIcon className="w-7 h-7 text-orange-600" /> Friends
+      </h1>
 
       {/* Your Code */}
       {profile && (
@@ -122,7 +125,7 @@ export default function FriendsPage() {
         </h2>
         {friends.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-            <span className="text-4xl block mb-3">🤝</span>
+            <div className="text-gray-300 flex justify-center mb-3"><FriendsIcon className="w-12 h-12" /></div>
             <p className="text-gray-500">No friends yet</p>
             <p className="text-gray-400 text-sm mt-1">
               Share your code or enter a friend&apos;s code above!

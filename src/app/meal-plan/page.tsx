@@ -6,6 +6,7 @@ import SuggestionCard from "@/components/meal-plan/SuggestionCard";
 import DiscoveryCard from "@/components/meal-plan/DiscoveryCard";
 import type { Recipe, PantryItem, MealPlan } from "@/types";
 import type { DiscoveredRecipe } from "@/lib/claude";
+import { MealPlanIcon } from "@/components/icons/HandDrawnIcons";
 
 interface Suggestion {
   recipeId: string;
@@ -172,7 +173,9 @@ export default function MealPlanPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Meal Plan</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+        <MealPlanIcon className="w-7 h-7 text-orange-600" /> Meal Plan
+      </h1>
 
       {/* Upcoming Plans */}
       {mealPlans.length > 0 && (

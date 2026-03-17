@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import type { UserProfile } from "@/types";
+import { RecipesIcon, CollectionsIcon, FriendsIcon } from "@/components/icons/HandDrawnIcons";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -135,12 +136,12 @@ export default function ProfilePage() {
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Recipes", value: stats.recipes, emoji: "📖" },
-          { label: "Collections", value: stats.collections, emoji: "📁" },
-          { label: "Friends", value: stats.friends, emoji: "👥" },
+          { label: "Recipes", value: stats.recipes, Icon: RecipesIcon },
+          { label: "Collections", value: stats.collections, Icon: CollectionsIcon },
+          { label: "Friends", value: stats.friends, Icon: FriendsIcon },
         ].map((stat) => (
           <div key={stat.label} className="bg-white rounded-2xl shadow-sm p-4 text-center">
-            <span className="text-lg">{stat.emoji}</span>
+            <div className="text-orange-500 flex justify-center"><stat.Icon className="w-5 h-5" /></div>
             <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
             <p className="text-xs text-gray-500">{stat.label}</p>
           </div>

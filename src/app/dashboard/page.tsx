@@ -5,14 +5,23 @@ import { createClient } from "@/lib/supabase/client";
 import RecipeCard from "@/components/recipes/RecipeCard";
 import Link from "next/link";
 import type { Recipe } from "@/types";
+import {
+  SaveRecipeIcon,
+  RecipesIcon,
+  CollectionsIcon,
+  PantryIcon,
+  EatsIcon,
+  MealPlanIcon,
+  FriendsIcon,
+} from "@/components/icons/HandDrawnIcons";
 
 const quickActions = [
-  { href: "/recipes/new", label: "Save a Recipe", desc: "Paste a link", emoji: "📝", gradient: "from-orange-500 to-amber-500" },
-  { href: "/collections", label: "Collections", desc: "Organize recipes", emoji: "📁", gradient: "from-purple-500 to-violet-500" },
-  { href: "/pantry", label: "Pantry", desc: "Track ingredients", emoji: "🥬", gradient: "from-emerald-500 to-teal-500" },
-  { href: "/eats", label: "Eats", desc: "Restaurant log", emoji: "🍽️", gradient: "from-rose-500 to-pink-500" },
-  { href: "/meal-plan", label: "Meal Plan", desc: "AI suggestions", emoji: "📅", gradient: "from-blue-500 to-indigo-500" },
-  { href: "/friends", label: "Friends", desc: "Connect & share", emoji: "👥", gradient: "from-amber-500 to-yellow-500" },
+  { href: "/recipes/new", label: "Save a Recipe", desc: "Paste a link", Icon: SaveRecipeIcon, gradient: "from-orange-500 to-amber-500" },
+  { href: "/collections", label: "Collections", desc: "Organize recipes", Icon: CollectionsIcon, gradient: "from-purple-500 to-violet-500" },
+  { href: "/pantry", label: "Pantry", desc: "Track ingredients", Icon: PantryIcon, gradient: "from-emerald-500 to-teal-500" },
+  { href: "/eats", label: "Eats", desc: "Restaurant log", Icon: EatsIcon, gradient: "from-rose-500 to-pink-500" },
+  { href: "/meal-plan", label: "Meal Plan", desc: "AI suggestions", Icon: MealPlanIcon, gradient: "from-blue-500 to-indigo-500" },
+  { href: "/friends", label: "Friends", desc: "Connect & share", Icon: FriendsIcon, gradient: "from-amber-500 to-yellow-500" },
 ];
 
 function getGreeting(): string {
@@ -63,7 +72,7 @@ export default function DashboardPage() {
       {/* Greeting */}
       <div className="animate-slide-up">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-          {getGreeting()}{userName ? `, ${userName}` : ""}! 👋
+          {getGreeting()}{userName ? `, ${userName}` : ""}!
         </h1>
         <p className="text-gray-500 text-sm mt-1">What are we cooking today?</p>
       </div>
@@ -78,7 +87,9 @@ export default function DashboardPage() {
             style={{ animationDelay: `${i * 50}ms`, animationFillMode: "both" }}
           >
             <div className={`bg-gradient-to-br ${action.gradient} rounded-2xl p-4 sm:p-5 text-white hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 relative overflow-hidden`}>
-              <span className="absolute top-3 right-3 text-2xl opacity-40">{action.emoji}</span>
+              <div className="absolute top-3 right-3 opacity-30">
+                <action.Icon className="w-8 h-8" />
+              </div>
               <h3 className="font-semibold text-sm sm:text-base">{action.label}</h3>
               <p className="text-white/70 text-xs mt-0.5">{action.desc}</p>
             </div>
@@ -98,7 +109,9 @@ export default function DashboardPage() {
         </div>
         {recipes.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-            <span className="text-4xl block mb-3">🍳</span>
+            <div className="text-gray-300 flex justify-center mb-3">
+              <RecipesIcon className="w-12 h-12" />
+            </div>
             <p className="text-gray-500 mb-3">No recipes saved yet</p>
             <Link href="/recipes/new" className="text-orange-600 hover:text-orange-700 font-medium text-sm">
               Save your first recipe →

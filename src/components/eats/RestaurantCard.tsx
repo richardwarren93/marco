@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Restaurant, RestaurantStatus } from "@/types";
+import { LocationIcon } from "@/components/icons/HandDrawnIcons";
 
 const statusLabels: Record<RestaurantStatus, { text: string; bg: string }> = {
   favorite: { text: "Favorite", bg: "bg-orange-100 text-orange-700" },
@@ -90,7 +91,7 @@ export default function RestaurantCard({ restaurant, onToggleGoBack }: Restauran
         </div>
 
         {restaurant.neighborhood && (
-          <p className="text-gray-400 text-sm mt-2">📍 {restaurant.neighborhood}{restaurant.city ? `, ${restaurant.city}` : ""}</p>
+          <p className="text-gray-400 text-sm mt-2 flex items-center gap-1"><LocationIcon className="w-3.5 h-3.5 inline-block" /> {restaurant.neighborhood}{restaurant.city ? `, ${restaurant.city}` : ""}</p>
         )}
 
         {restaurant.tags.length > 0 && (

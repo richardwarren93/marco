@@ -5,13 +5,15 @@ import RestaurantCard from "@/components/eats/RestaurantCard";
 import EatsStatusTabs, { type TabValue } from "@/components/eats/EatsStatusTabs";
 import AddRestaurantForm from "@/components/eats/AddRestaurantForm";
 import type { Restaurant } from "@/types";
+import { EatsIcon, LocationIcon, GlobeIcon, StarIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
+import type { ComponentType } from "react";
 
-const statCards = [
-  { key: "total", label: "Total Places", emoji: "🍽️", gradient: "from-orange-500 to-amber-500" },
-  { key: "visited", label: "Visited This Month", emoji: "📍", gradient: "from-purple-500 to-violet-500" },
-  { key: "cuisines", label: "Cuisines Explored", emoji: "🌎", gradient: "from-emerald-500 to-teal-500" },
-  { key: "wishlist", label: "On Wishlist", emoji: "⭐", gradient: "from-sky-500 to-blue-500" },
-] as const;
+const statCards: { key: string; label: string; Icon: ComponentType<{className?: string}>; gradient: string }[] = [
+  { key: "total", label: "Total Places", Icon: EatsIcon, gradient: "from-orange-500 to-amber-500" },
+  { key: "visited", label: "Visited This Month", Icon: LocationIcon, gradient: "from-purple-500 to-violet-500" },
+  { key: "cuisines", label: "Cuisines Explored", Icon: GlobeIcon, gradient: "from-emerald-500 to-teal-500" },
+  { key: "wishlist", label: "On Wishlist", Icon: StarIcon, gradient: "from-sky-500 to-blue-500" },
+];
 
 export default function EatsPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -113,7 +115,9 @@ export default function EatsPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">🍽️ Eats</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <EatsIcon className="w-7 h-7 text-orange-600" /> Eats
+          </h1>
         <button
           onClick={() => setShowAdd(true)}
           className="bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm"
@@ -136,7 +140,7 @@ export default function EatsPage() {
               key={stat.key}
               className={`bg-gradient-to-br ${stat.gradient} rounded-2xl p-4 text-white shadow-sm`}
             >
-              <span className="text-2xl block mb-1">{stat.emoji}</span>
+              <stat.Icon className="w-6 h-6 mb-1" />
               <p className="text-2xl font-bold">{statValues[stat.key]}</p>
               <p className="text-white/80 text-xs mt-0.5">{stat.label}</p>
             </div>
@@ -150,7 +154,7 @@ export default function EatsPage() {
       {/* Search + Sort */}
       <div className="flex gap-3 mt-4 mb-6">
         <div className="relative flex-1">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><SearchIcon className="w-4 h-4" /></span>
           <input
             type="text"
             placeholder="Search restaurants..."
@@ -179,9 +183,11 @@ export default function EatsPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-          <span className="text-4xl block mb-3">
-            {restaurants.length === 0 ? "🍕" : "🔍"}
-          </span>
+          <div className="text-gray-300 flex justify-center mb-3">
+            {restaurants.length === 0
+              ? <EatsIcon className="w-12 h-12" />
+              : <SearchIcon className="w-12 h-12" />}
+          </div>
           <p className="text-gray-500 mb-3">
             {restaurants.length === 0
               ? "No restaurants tracked yet"

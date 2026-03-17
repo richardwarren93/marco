@@ -6,6 +6,7 @@ import RecipeCard from "@/components/recipes/RecipeCard";
 import TagFilter from "@/components/recipes/TagFilter";
 import Link from "next/link";
 import type { Recipe } from "@/types";
+import { RecipesIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
 
 const sortOptions = [
   { value: "newest", label: "Newest" },
@@ -74,7 +75,9 @@ export default function RecipesPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">📖 My Recipes</h1>
+        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <RecipesIcon className="w-7 h-7 text-orange-600" /> My Recipes
+          </h1>
         <Link
           href="/recipes/new"
           className="bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm"
@@ -86,7 +89,7 @@ export default function RecipesPage() {
       {/* Search + Sort */}
       <div className="flex gap-3 mb-4">
         <div className="relative flex-1 max-w-md">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><SearchIcon className="w-4 h-4" /></span>
           <input
             type="text"
             placeholder="Search recipes or tags..."
@@ -137,9 +140,11 @@ export default function RecipesPage() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-          <span className="text-4xl block mb-3">
-            {search || selectedTags.length > 0 ? "🔍" : "🍳"}
-          </span>
+          <div className="text-gray-300 flex justify-center mb-3">
+            {search || selectedTags.length > 0
+              ? <SearchIcon className="w-12 h-12" />
+              : <RecipesIcon className="w-12 h-12" />}
+          </div>
           <p className="text-gray-500 mb-3">
             {search || selectedTags.length > 0
               ? "No recipes match your search"

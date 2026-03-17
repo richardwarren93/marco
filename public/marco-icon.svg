@@ -1,50 +1,52 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Circular background -->
-  <circle cx="100" cy="100" r="100" fill="#5B9EAD"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Blue circle background -->
+  <circle cx="256" cy="256" r="256" fill="#7BA7BC"/>
 
-  <!-- Face outline -->
-  <path d="M72 135 Q72 152 100 155 Q128 152 128 135 L128 110 Q128 95 100 92 Q72 95 72 110 Z" fill="#FDEBD0" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Chef hat - puffy white shape -->
+  <path d="M168 205 C155 200, 130 185, 128 155 C126 125, 148 105, 175 108 C185 88, 210 72, 240 74 C255 65, 275 65, 290 74 C320 72, 345 88, 355 108 C382 105, 404 125, 402 155 C400 185, 375 200, 362 205 C360 210, 358 225, 355 230 L175 230 C172 225, 170 210, 168 205Z" fill="white" stroke="#2a2a2a" stroke-width="3" stroke-linejoin="round"/>
 
-  <!-- Chin/jaw -->
-  <path d="M78 138 Q80 150 100 153 Q120 150 122 138" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Hat band / bottom edge -->
+  <path d="M175 228 Q265 238, 355 228" fill="none" stroke="#2a2a2a" stroke-width="2.5" stroke-linecap="round"/>
 
-  <!-- Curly hair -->
-  <path d="M62 98 Q58 90 63 84 Q56 82 60 74 Q55 68 62 64 Q60 56 68 54 Q68 46 78 46 Q82 40 92 42 Q96 36 106 38 Q112 34 120 40 Q128 38 132 46 Q140 48 138 56 Q144 60 140 68 Q146 74 140 80 Q144 86 138 90 Q142 96 136 100"
-        fill="white" stroke="#1A1A1A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- "M" on the hat - sketchy style -->
+  <path d="M237 140 L237 175 L255 155 L273 175 L273 140" fill="none" stroke="#2a2a2a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
 
-  <!-- Curly bangs -->
-  <path d="M68 96 Q64 88 70 84 Q66 78 72 76 Q70 70 76 68" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M80 92 Q78 84 82 80 Q80 74 84 70 Q82 66 86 62" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M92 90 Q90 82 94 78 Q92 72 96 68 Q94 62 98 58" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M104 90 Q106 82 102 78 Q104 72 100 68 Q102 62 98 58" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M116 92 Q118 84 114 80 Q116 74 112 70 Q114 66 110 62" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M128 96 Q132 88 126 84 Q130 78 124 76 Q126 70 122 68" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Curly/messy hair scribbles -->
+  <path d="M178 232 C185 245, 172 255, 180 262 C188 269, 178 278, 185 285" fill="none" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M192 235 C198 248, 188 258, 195 268 C202 278, 192 285, 198 292" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M208 234 C214 250, 204 260, 210 272 C216 284, 206 290, 212 298" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M222 235 C228 252, 218 262, 224 275 C230 288, 222 293, 226 300" fill="none" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M240 234 C244 248, 236 258, 242 270 C248 282, 238 292, 244 300" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M258 234 C262 250, 254 260, 260 272 C266 284, 256 292, 262 300" fill="none" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M275 235 C280 248, 272 258, 278 268 C284 278, 274 288, 280 295" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M292 234 C298 248, 288 258, 295 268 C302 278, 292 285, 298 292" fill="none" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M310 232 C316 245, 308 255, 314 265 C320 275, 310 282, 316 290" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M328 230 C332 242, 325 252, 330 262 C335 272, 328 280, 332 286" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M342 228 C345 238, 340 248, 344 258 C348 268, 340 275, 344 280" fill="none" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
 
-  <!-- Chef hat body -->
-  <path d="M64 72 Q62 44 78 36 Q88 28 100 30 Q112 28 122 36 Q138 44 136 72"
-        fill="white" stroke="#1A1A1A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Face outline - round head -->
+  <ellipse cx="265" cy="348" rx="88" ry="78" fill="#F5DEB3" stroke="#2a2a2a" stroke-width="3"/>
 
-  <!-- Hat band -->
-  <rect x="64" y="68" width="72" height="8" rx="2" fill="white" stroke="#1A1A1A" stroke-width="2" />
+  <!-- Sunglasses - rectangular frames -->
+  <rect x="192" y="318" width="62" height="35" rx="5" fill="#2a2a2a" stroke="#1a1a1a" stroke-width="2"/>
+  <rect x="268" y="318" width="62" height="35" rx="5" fill="#2a2a2a" stroke="#1a1a1a" stroke-width="2"/>
+  <!-- Bridge -->
+  <path d="M254 335 L268 335" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round"/>
+  <!-- Temple arms -->
+  <path d="M192 332 L178 325" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M330 332 L345 325" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
 
-  <!-- M on hat -->
-  <text x="100" y="60" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="#1A1A1A">M</text>
+  <!-- Sunglasses shine -->
+  <path d="M200 325 L210 325" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-linecap="round"/>
+  <path d="M276 325 L286 325" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-linecap="round"/>
 
-  <!-- Sunglasses -->
-  <rect x="70" y="106" width="22" height="14" rx="3" fill="#1A1A1A"/>
-  <rect x="108" y="106" width="22" height="14" rx="3" fill="#1A1A1A"/>
-  <path d="M92 112 L108 112" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M70 112 L64 108" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-  <path d="M130 112 L136 108" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Nose - simple line -->
+  <path d="M262 358 C258 365, 260 372, 266 372" fill="none" stroke="#2a2a2a" stroke-width="2.5" stroke-linecap="round"/>
 
-  <!-- Slight lens shine -->
-  <rect x="74" y="109" width="6" height="2" rx="1" fill="#444" opacity="0.5"/>
-  <rect x="112" y="109" width="6" height="2" rx="1" fill="#444" opacity="0.5"/>
-
-  <!-- Smile -->
-  <path d="M88 136 Q100 144 112 136" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
-
-  <!-- Ears (small) -->
-  <ellipse cx="68" cy="118" rx="5" ry="7" fill="#FDEBD0" stroke="#1A1A1A" stroke-width="2"/>
-  <ellipse cx="132" cy="118" rx="5" ry="7" fill="#FDEBD0" stroke="#1A1A1A" stroke-width="2"/>
+  <!-- Mouth - wide smile with teeth -->
+  <path d="M225 385 C235 405, 265 412, 305 385" fill="white" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
+  <!-- Teeth lines -->
+  <line x1="245" y1="388" x2="245" y2="398" stroke="#2a2a2a" stroke-width="1.5"/>
+  <line x1="265" y1="390" x2="265" y2="402" stroke="#2a2a2a" stroke-width="1.5"/>
+  <line x1="285" y1="388" x2="285" y2="398" stroke="#2a2a2a" stroke-width="1.5"/>
 </svg>
