@@ -54,6 +54,15 @@
   animation: wiggle 0.5s ease-in-out;
 }
 
+/* Hide scrollbar for horizontal scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Safe area for bottom tab bar */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {

@@ -127,6 +127,104 @@ IMPORTANT: Return ONLY a valid JSON array of these objects. No markdown, no code
   }
 }
 
+export interface PromptRecipeResult {
+  recipe: {
+    title: string;
+    description: string;
+    ingredients: { name: string; amount: string; unit: string }[];
+    steps: string[];
+    servings: number | null;
+    prep_time_minutes: number | null;
+    cook_time_minutes: number | null;
+    tags: string[];
+    matchingPantryItems: string[];
+    missingIngredients: string[];
+  };
+  source: "generated" | "saved";
+  recipeId?: string;
+  sourceHint: string;
+  reasoning: string;
+}
+
+export async function promptRecipes(
+  prompt: string,
+  context: "all" | "my_kitchen",
+  kitchenContext?: {
+    pantryItems?: PantryItem[];
+    equipment?: string[];
+    recipes?: Recipe[];
+  }
+): Promise<PromptRecipeResult[]> {
+  let systemContext = "";
+
+  if (context === "my_kitchen" && kitchenContext) {
+    const parts: string[] = [];
+    if (kitchenContext.pantryItems?.length) {
+      parts.push(`Pantry items: ${kitchenContext.pantryItems.map((p) => p.name).join(", ")}`);
+    }
+    if (kitchenContext.equipment?.length) {
+      parts.push(`Kitchen equipment: ${kitchenContext.equipment.join(", ")}`);
+    }
+    if (kitchenContext.recipes?.length) {
+      const recipeList = kitchenContext.recipes
+        .slice(0, 30)
+        .map(
+          (r) =>
+            `- "${r.title}" (ID: ${r.id}): ${(r.ingredients as Ingredient[]).map((i) => i.name).join(", ")}`
+        )
+        .join("\n");
+      parts.push(`Saved recipes:\n${recipeList}`);
+    }
+    systemContext = parts.join("\n\n");
+  }
+
+  const systemPrompt =
+    context === "my_kitchen"
+      ? `You are a creative home chef AI for the Marco cooking app. You help users find recipes based on what they have in their kitchen. You ALWAYS respond with valid JSON only — no explanations, no markdown. Never refuse.
+
+The user has this kitchen context:
+${systemContext}
+
+When possible, suggest recipes from their saved collection (set source to "saved" and include the recipeId). Fill remaining slots with new generated recipes (source: "generated"). Prioritize what they can make with their pantry and equipment.`
+      : `You are a creative home chef AI for the Marco cooking app. You suggest trending, delicious recipes from across the internet — think popular TikTok recipes, Instagram food creator staples, and classic crowd-pleasers. You ALWAYS respond with valid JSON only — no explanations, no markdown. Never refuse.
+
+For each recipe, include a sourceHint like "Popular on TikTok", "Instagram favorite", "Classic comfort food", "Trending recipe", or "Food creator staple".`;
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4000,
+    system: systemPrompt,
+    messages: [
+      {
+        role: "user",
+        content: `User prompt: "${prompt}"
+
+Return a JSON array of 4 recipe results. Each result should have:
+- recipe: object with title, description, ingredients (array of {name, amount, unit}), steps (array of strings), servings, prep_time_minutes, cook_time_minutes, tags, matchingPantryItems (array, empty if context is "all"), missingIngredients (array, empty if context is "all")
+- source: "generated" or "saved" (use "saved" only if suggesting from user's saved recipes, with matching recipeId)
+- recipeId: string (only if source is "saved")
+- sourceHint: string (e.g., "Popular on TikTok", "From your recipes", "Trending recipe")
+- reasoning: one sentence on why this recipe matches the user's request
+
+Make recipes genuinely appetizing and varied. Think food creator quality — specific, flavorful, not generic.
+
+Return ONLY a valid JSON array. No markdown, no code blocks.`,
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error("Claude returned non-JSON for prompt recipes:", cleaned.slice(0, 200));
+    return [];
+  }
+}
+
 export interface DiscoveredRecipe {
   title: string;
   description: string;
