@@ -4,8 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import AddIngredientForm from "@/components/pantry/AddIngredientForm";
 import PantryList from "@/components/pantry/PantryList";
+import KitchenEquipment from "@/components/pantry/KitchenEquipment";
 import type { PantryItem } from "@/types";
-import { PantryIcon, VeggieIcon } from "@/components/icons/HandDrawnIcons";
+import { PantryIcon, VeggieIcon, CookingPotIcon } from "@/components/icons/HandDrawnIcons";
 
 export default function PantryPage() {
   const [items, setItems] = useState<PantryItem[]>([]);
@@ -54,6 +55,17 @@ export default function PantryPage() {
       ) : (
         <PantryList items={items} onChanged={fetchItems} />
       )}
+
+      {/* Kitchen Equipment */}
+      <div className="mt-8">
+        <h2 className="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+          <CookingPotIcon className="w-5 h-5 text-orange-600" /> My Kitchen
+        </h2>
+        <p className="text-sm text-gray-400 mb-4">
+          Select what you have — helps us find recipes for your kitchen
+        </p>
+        <KitchenEquipment />
+      </div>
     </div>
   );
 }

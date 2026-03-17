@@ -68,6 +68,13 @@ export interface PantryItem {
   updated_at: string;
 }
 
+export interface UserEquipment {
+  id: string;
+  user_id: string;
+  equipment_name: string;
+  created_at: string;
+}
+
 export interface MealPlan {
   id: string;
   user_id: string;
