@@ -56,6 +56,9 @@ export default function Navbar() {
                 <Link href="/meal-plan" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                   Meal Plan
                 </Link>
+                <Link href="/friends" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                  Friends
+                </Link>
               </div>
             )}
           </div>

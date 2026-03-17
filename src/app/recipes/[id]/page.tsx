@@ -9,6 +9,7 @@ import SocialEmbed from "@/components/recipes/SocialEmbed";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
 import CommunitySection from "@/components/community/CommunitySection";
+import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
 
 export default function RecipeDetailPage() {
   const { id } = useParams();
@@ -17,6 +18,7 @@ export default function RecipeDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showAddToCollection, setShowAddToCollection] = useState(false);
+  const [showShareWithFriends, setShowShareWithFriends] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -87,6 +89,12 @@ export default function RecipeDetailPage() {
       <div className="flex items-start justify-between mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowShareWithFriends(true)}
+            className="text-gray-600 hover:text-gray-900 text-sm"
+          >
+            Send to Friend
+          </button>
           <button
             onClick={() => setShowAddToCollection(true)}
             className="text-gray-600 hover:text-gray-900 text-sm"
@@ -198,6 +206,14 @@ export default function RecipeDetailPage() {
         recipeId={recipe.id}
         isOpen={showAddToCollection}
         onClose={() => setShowAddToCollection(false)}
+      />
+
+      <ShareWithFriendsModal
+        isOpen={showShareWithFriends}
+        onClose={() => setShowShareWithFriends(false)}
+        itemType="recipe"
+        itemId={recipe.id}
+        itemTitle={recipe.title}
       />
     </div>
   );

@@ -87,6 +87,41 @@ export interface MealSuggestion {
   reasoning: string;
 }
 
+// Friends & Sharing
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  friend_code: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type FriendshipStatus = "pending" | "accepted" | "declined";
+
+export interface Friendship {
+  id: string;
+  user_id: string;
+  friend_id: string;
+  status: FriendshipStatus;
+  created_at: string;
+  updated_at: string;
+  profile?: UserProfile;
+}
+
+export interface RecipeShare {
+  id: string;
+  recipe_id: string;
+  shared_by_user_id: string;
+  shared_with_user_id: string;
+  message: string | null;
+  seen: boolean;
+  created_at: string;
+  recipe?: Recipe;
+  shared_by?: UserProfile;
+}
+
 // Restaurant Tracker ("Eats")
 export type RestaurantStatus = "wishlist" | "visited" | "favorite" | "avoid";
 export type PriceRange = 1 | 2 | 3 | 4;

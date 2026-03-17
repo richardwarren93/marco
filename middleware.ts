@@ -29,15 +29,17 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const protectedPaths = ["/dashboard", "/recipes", "/pantry", "/meal-plan", "/collections", "/eats"];
+  const protectedPaths = ["/dashboard", "/recipes", "/pantry", "/meal-plan", "/collections", "/eats", "/friends"];
   const isProtected = protectedPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p)
   );
 
-  // Allow public access to shared collection pages
-  const isSharedCollection = request.nextUrl.pathname.startsWith("/collections/shared/");
+  // Allow public access to shared collection pages and friend code landing pages
+  const isPublicPath =
+    request.nextUrl.pathname.startsWith("/collections/shared/") ||
+    request.nextUrl.pathname.startsWith("/add/");
 
-  if (!user && isProtected && !isSharedCollection) {
+  if (!user && isProtected && !isPublicPath) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
@@ -56,6 +58,8 @@ export const config = {
     "/meal-plan/:path*",
     "/collections/:path*",
     "/eats/:path*",
+    "/friends/:path*",
+    "/add/:path*",
     "/auth/:path*",
   ],
 };

@@ -6,6 +6,7 @@ import RecipeCard from "@/components/recipes/RecipeCard";
 import ShareCollectionModal from "@/components/collections/ShareCollectionModal";
 import Link from "next/link";
 import type { Collection, Recipe } from "@/types";
+import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
 
 export default function CollectionDetailPage() {
   const { id } = useParams();
@@ -20,6 +21,7 @@ export default function CollectionDetailPage() {
   const [editName, setEditName] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [showShare, setShowShare] = useState(false);
+  const [showShareWithFriends, setShowShareWithFriends] = useState(false);
   const [removingRecipeId, setRemovingRecipeId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -169,10 +171,16 @@ export default function CollectionDetailPage() {
             {isOwner && (
               <div className="flex gap-2">
                 <button
+                  onClick={() => setShowShareWithFriends(true)}
+                  className="text-orange-600 hover:text-orange-700 text-sm font-medium"
+                >
+                  Send to Friend
+                </button>
+                <button
                   onClick={() => setShowShare(true)}
                   className="text-orange-600 hover:text-orange-700 text-sm font-medium"
                 >
-                  Share
+                  Share Link
                 </button>
                 <button
                   onClick={() => setEditing(true)}
@@ -236,6 +244,14 @@ export default function CollectionDetailPage() {
           onClose={() => setShowShare(false)}
         />
       )}
+
+      <ShareWithFriendsModal
+        isOpen={showShareWithFriends}
+        onClose={() => setShowShareWithFriends(false)}
+        itemType="collection"
+        itemId={collection.id}
+        itemTitle={collection.name}
+      />
     </div>
   );
 }

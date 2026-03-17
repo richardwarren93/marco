@@ -44,7 +44,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold text-gray-900 mb-8">The Kitchen</h1>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
         <Link
           href="/recipes/new"
           className="bg-orange-600 text-white rounded-xl p-5 hover:bg-orange-700 transition-colors"
@@ -88,6 +88,15 @@ export default function DashboardPage() {
           <h3 className="font-semibold text-gray-900 text-lg">Meal Plan</h3>
           <p className="text-gray-500 text-sm mt-1">
             Get AI-powered meal suggestions
+          </p>
+        </Link>
+        <Link
+          href="/friends"
+          className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow"
+        >
+          <h3 className="font-semibold text-gray-900 text-lg">Friends</h3>
+          <p className="text-gray-500 text-sm mt-1">
+            Connect &amp; share recipes
           </p>
         </Link>
       </div>
