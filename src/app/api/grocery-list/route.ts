@@ -29,18 +29,80 @@ export async function GET(request: NextRequest) {
     .eq("week_start", weekStart)
     .single();
 
-  if (!list) {
-    return NextResponse.json({ list: null, items: [] });
+  let ownItems: any[] = [];
+  if (list) {
+    const { data: items } = await admin
+      .from("grocery_items")
+      .select("*")
+      .eq("list_id", list.id)
+      .order("category", { ascending: true })
+      .order("name", { ascending: true });
+    ownItems = items || [];
   }
 
-  const { data: items } = await admin
-    .from("grocery_items")
-    .select("*")
-    .eq("list_id", list.id)
-    .order("category", { ascending: true })
-    .order("name", { ascending: true });
+  // Check for household members' lists
+  const { data: membership } = await admin
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", user.id)
+    .single();
 
-  return NextResponse.json({ list, items: items || [] });
+  let householdItems: any[] = [];
+  let householdMembers: any[] = [];
+
+  if (membership) {
+    // Get all household members (excluding self)
+    const { data: members } = await admin
+      .from("household_members")
+      .select("user_id")
+      .eq("household_id", membership.household_id)
+      .neq("user_id", user.id);
+
+    if (members && members.length > 0) {
+      const memberIds = members.map((m: any) => m.user_id);
+
+      // Get profiles for household members
+      const { data: profiles } = await admin
+        .from("user_profiles")
+        .select("user_id, display_name")
+        .in("user_id", memberIds);
+
+      householdMembers = profiles || [];
+
+      // Fetch their grocery lists for the same week
+      const { data: memberLists } = await admin
+        .from("grocery_lists")
+        .select("*")
+        .in("user_id", memberIds)
+        .eq("week_start", weekStart);
+
+      if (memberLists && memberLists.length > 0) {
+        const listIds = memberLists.map((l: any) => l.id);
+        const { data: memberItems } = await admin
+          .from("grocery_items")
+          .select("*")
+          .in("list_id", listIds)
+          .order("category", { ascending: true })
+          .order("name", { ascending: true });
+
+        // Tag each item with the owner's name
+        const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p.display_name]));
+        const listOwnerMap = new Map(memberLists.map((l: any) => [l.id, l.user_id]));
+
+        householdItems = (memberItems || []).map((item: any) => ({
+          ...item,
+          owner_name: profileMap.get(listOwnerMap.get(item.list_id)) || "Housemate",
+        }));
+      }
+    }
+  }
+
+  return NextResponse.json({
+    list,
+    items: ownItems,
+    householdItems,
+    householdMembers,
+  });
 }
 
 export async function POST(request: Request) {

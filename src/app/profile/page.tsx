@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { UserProfile, CookingGoal } from "@/types";
 import { RecipesIcon, CollectionsIcon, FriendsIcon, TomatoIcon } from "@/components/icons/HandDrawnIcons";
 import GoalSetting from "@/components/gamification/GoalSetting";
+import HouseholdCard from "@/components/household/HouseholdCard";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -160,6 +161,9 @@ export default function ProfilePage() {
         currentTarget={goal?.weekly_target ?? null}
         onSaved={(target) => setGoal(goal ? { ...goal, weekly_target: target } : null)}
       />
+
+      {/* Household */}
+      <HouseholdCard />
 
       {/* Friend Code */}
       {profile && (

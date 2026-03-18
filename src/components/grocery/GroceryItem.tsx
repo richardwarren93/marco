@@ -6,10 +6,12 @@ export default function GroceryItem({
   item,
   onToggle,
   onDelete,
+  ownerName,
 }: {
   item: GroceryItemType;
   onToggle: (id: string, checked: boolean) => void;
   onDelete: (id: string) => void;
+  ownerName?: string;
 }) {
   return (
     <div
@@ -54,6 +56,11 @@ export default function GroceryItem({
 
       {/* Badges */}
       <div className="flex items-center gap-1.5 flex-shrink-0">
+        {ownerName && (
+          <span className="text-[9px] px-1.5 py-0.5 bg-purple-50 text-purple-500 rounded-full font-medium">
+            {ownerName}
+          </span>
+        )}
         {item.in_pantry && (
           <span className="text-[9px] px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded-full font-medium">
             in pantry

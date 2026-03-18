@@ -275,6 +275,25 @@ export interface RestaurantVisit {
   created_at: string;
 }
 
+// Household
+export interface Household {
+  id: string;
+  name: string;
+  created_by: string;
+  invite_code: string;
+  created_at: string;
+  members?: HouseholdMember[];
+}
+
+export interface HouseholdMember {
+  id: string;
+  household_id: string;
+  user_id: string;
+  role: "owner" | "member";
+  joined_at: string;
+  profile?: UserProfile;
+}
+
 export interface RestaurantList {
   id: string;
   user_id: string;

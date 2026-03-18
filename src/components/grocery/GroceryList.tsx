@@ -16,6 +16,10 @@ const CATEGORY_LABELS: Record<string, string> = {
   other: "📦 Other",
 };
 
+interface HouseholdGroceryItem extends GroceryItemType {
+  owner_name?: string;
+}
+
 function getMonday(date: Date): string {
   const d = new Date(date);
   const day = d.getDay();
@@ -26,11 +30,13 @@ function getMonday(date: Date): string {
 
 export default function GroceryList({ onClose }: { onClose: () => void }) {
   const [items, setItems] = useState<GroceryItemType[]>([]);
+  const [householdItems, setHouseholdItems] = useState<HouseholdGroceryItem[]>([]);
   const [list, setList] = useState<GroceryListType | null>(null);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
   const [newItemName, setNewItemName] = useState("");
+  const [householdMembers, setHouseholdMembers] = useState<{ user_id: string; display_name: string }[]>([]);
 
   const weekStart = getMonday(new Date());
 
@@ -45,6 +51,8 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
       const data = await res.json();
       setList(data.list);
       setItems(data.items || []);
+      setHouseholdItems(data.householdItems || []);
+      setHouseholdMembers(data.householdMembers || []);
     } catch {
       // No list yet
     }
@@ -73,8 +81,14 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
   }
 
   async function handleToggle(id: string, checked: boolean) {
-    // Optimistic update
-    setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked } : i)));
+    // Check if it's own item or household item
+    const isOwn = items.some((i) => i.id === id);
+
+    if (isOwn) {
+      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked } : i)));
+    } else {
+      setHouseholdItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked } : i)));
+    }
 
     try {
       await fetch("/api/grocery-list/items", {
@@ -84,13 +98,24 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
       });
     } catch {
       // Revert
-      setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: !checked } : i)));
+      if (isOwn) {
+        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: !checked } : i)));
+      } else {
+        setHouseholdItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: !checked } : i)));
+      }
     }
   }
 
   async function handleDelete(id: string) {
-    const prev = items;
-    setItems(items.filter((i) => i.id !== id));
+    const isOwn = items.some((i) => i.id === id);
+    const prevItems = items;
+    const prevHousehold = householdItems;
+
+    if (isOwn) {
+      setItems(items.filter((i) => i.id !== id));
+    } else {
+      setHouseholdItems(householdItems.filter((i) => i.id !== id));
+    }
 
     try {
       await fetch("/api/grocery-list/items", {
@@ -99,7 +124,11 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ id }),
       });
     } catch {
-      setItems(prev);
+      if (isOwn) {
+        setItems(prevItems);
+      } else {
+        setHouseholdItems(prevHousehold);
+      }
     }
   }
 
@@ -113,7 +142,6 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
       if (list) {
         body.list_id = list.id;
       } else {
-        // No list yet — pass week_start so the API auto-creates one
         body.week_start = weekStart;
       }
 
@@ -126,7 +154,6 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
       if (data.item) {
         setItems((prev) => [...prev, data.item]);
         setNewItemName("");
-        // If a new list was auto-created, store it
         if (!list && data.list_id) {
           setList({ id: data.list_id, user_id: "", week_start: weekStart, created_at: "" });
         }
@@ -136,15 +163,23 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
     }
   }
 
-  // Group items by category
-  const grouped = new Map<string, GroceryItemType[]>();
-  for (const item of items) {
+  // Merge own items and household items for display
+  const allItems: HouseholdGroceryItem[] = [
+    ...items,
+    ...householdItems,
+  ];
+
+  // Group all items by category
+  const grouped = new Map<string, HouseholdGroceryItem[]>();
+  for (const item of allItems) {
     const cat = item.category || "other";
     if (!grouped.has(cat)) grouped.set(cat, []);
     grouped.get(cat)!.push(item);
   }
 
-  const checkedCount = items.filter((i) => i.checked).length;
+  const checkedCount = allItems.filter((i) => i.checked).length;
+  const hasHouseholdItems = householdItems.length > 0;
+  const memberNames = householdMembers.map((m) => m.display_name).join(", ");
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -154,9 +189,9 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
           <h2 className="font-bold text-gray-900 flex items-center gap-2">
             🛒 Grocery List
           </h2>
-          {items.length > 0 && (
+          {allItems.length > 0 && (
             <p className="text-xs text-gray-400 mt-0.5">
-              {checkedCount}/{items.length} items checked
+              {checkedCount}/{allItems.length} items checked
             </p>
           )}
         </div>
@@ -177,6 +212,16 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
+      {/* Household sharing indicator */}
+      {hasHouseholdItems && memberNames && (
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+          <p className="text-xs text-blue-600 flex items-center gap-1.5">
+            <span>🏠</span>
+            <span>Shared with {memberNames}</span>
+          </p>
+        </div>
+      )}
+
       {/* Error */}
       {error && (
         <div className="px-4 py-2 bg-red-50 text-red-600 text-sm">{error}</div>
@@ -185,7 +230,7 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
       {/* Content */}
       {loading ? (
         <div className="p-8 text-center text-gray-400 text-sm">Loading...</div>
-      ) : items.length === 0 ? (
+      ) : allItems.length === 0 ? (
         <div className="p-8 text-center">
           <p className="text-gray-400 text-sm mb-2">No grocery list yet</p>
           <p className="text-gray-400 text-xs">
@@ -206,6 +251,7 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
                     item={item}
                     onToggle={handleToggle}
                     onDelete={handleDelete}
+                    ownerName={item.owner_name}
                   />
                 ))}
               </div>

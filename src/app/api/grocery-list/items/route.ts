@@ -2,6 +2,26 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+// Helper: check if two users are in the same household
+async function isInSameHousehold(admin: any, userId1: string, userId2: string): Promise<boolean> {
+  const { data: m1 } = await admin
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", userId1)
+    .single();
+
+  if (!m1) return false;
+
+  const { data: m2 } = await admin
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", userId2)
+    .eq("household_id", m1.household_id)
+    .single();
+
+  return !!m2;
+}
+
 // PATCH: toggle checked state
 export async function PATCH(request: Request) {
   const supabase = await createClient();
@@ -23,14 +43,25 @@ export async function PATCH(request: Request) {
 
     const admin = createAdminClient();
 
-    // Verify the item belongs to user's list
+    // Verify the item belongs to user's list or a household member's list
     const { data: item } = await admin
       .from("grocery_items")
       .select("*, list:grocery_lists!inner(user_id)")
       .eq("id", id)
       .single();
 
-    if (!item || (item as any).list?.user_id !== user.id) {
+    if (!item) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const listOwnerId = (item as any).list?.user_id;
+    let hasAccess = listOwnerId === user.id;
+
+    if (!hasAccess) {
+      hasAccess = await isInSameHousehold(admin, user.id, listOwnerId);
+    }
+
+    if (!hasAccess) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
@@ -161,14 +192,25 @@ export async function DELETE(request: NextRequest) {
 
     const admin = createAdminClient();
 
-    // Verify ownership
+    // Verify ownership or household membership
     const { data: item } = await admin
       .from("grocery_items")
       .select("*, list:grocery_lists!inner(user_id)")
       .eq("id", id)
       .single();
 
-    if (!item || (item as any).list?.user_id !== user.id) {
+    if (!item) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const listOwnerId = (item as any).list?.user_id;
+    let hasAccess = listOwnerId === user.id;
+
+    if (!hasAccess) {
+      hasAccess = await isInSameHousehold(admin, user.id, listOwnerId);
+    }
+
+    if (!hasAccess) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
