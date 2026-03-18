@@ -105,21 +105,31 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
 
   async function handleAddCustom(e: React.FormEvent) {
     e.preventDefault();
-    if (!newItemName.trim() || !list) return;
+    if (!newItemName.trim()) return;
 
     try {
+      const body: Record<string, string> = { name: newItemName.trim() };
+
+      if (list) {
+        body.list_id = list.id;
+      } else {
+        // No list yet — pass week_start so the API auto-creates one
+        body.week_start = weekStart;
+      }
+
       const res = await fetch("/api/grocery-list/items", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          list_id: list.id,
-          name: newItemName.trim(),
-        }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.item) {
         setItems((prev) => [...prev, data.item]);
         setNewItemName("");
+        // If a new list was auto-created, store it
+        if (!list && data.list_id) {
+          setList({ id: data.list_id, user_id: "", week_start: weekStart, created_at: "" });
+        }
       }
     } catch {
       // ignore
@@ -204,12 +214,11 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
         </div>
       )}
 
-      {/* Add custom item */}
-      {list && (
-        <form
-          onSubmit={handleAddCustom}
-          className="flex items-center gap-2 px-4 py-3 border-t border-gray-100"
-        >
+      {/* Add custom item — always visible */}
+      <form
+        onSubmit={handleAddCustom}
+        className="flex items-center gap-2 px-4 py-3 border-t border-gray-100"
+      >
           <input
             type="text"
             value={newItemName}
@@ -225,7 +234,6 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
             Add
           </button>
         </form>
-      )}
     </div>
   );
 }

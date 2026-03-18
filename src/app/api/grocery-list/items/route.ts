@@ -62,18 +62,49 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { list_id, name, amount, unit } = body;
+    const { name, amount, unit } = body;
+    let { list_id, week_start } = body;
 
-    if (!list_id || !name) {
-      return NextResponse.json({ error: "list_id and name required" }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "name is required" }, { status: 400 });
+    }
+
+    if (!list_id && !week_start) {
+      return NextResponse.json({ error: "list_id or week_start required" }, { status: 400 });
     }
 
     const admin = createAdminClient();
 
+    // If no list_id, auto-create the grocery list for this week
+    if (!list_id && week_start) {
+      const { data: existingList } = await admin
+        .from("grocery_lists")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("week_start", week_start)
+        .single();
+
+      if (existingList) {
+        list_id = existingList.id;
+      } else {
+        const { data: newList, error: createError } = await admin
+          .from("grocery_lists")
+          .insert({
+            user_id: user.id,
+            week_start,
+          })
+          .select()
+          .single();
+
+        if (createError || !newList) throw createError || new Error("Failed to create list");
+        list_id = newList.id;
+      }
+    }
+
     // Verify the list belongs to user
     const { data: list } = await admin
       .from("grocery_lists")
-      .select("user_id")
+      .select("id, user_id")
       .eq("id", list_id)
       .single();
 
@@ -98,7 +129,9 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
-    return NextResponse.json({ item });
+
+    // Return the list info too (so the client can store the list_id)
+    return NextResponse.json({ item, list_id: list.id });
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to add item" },

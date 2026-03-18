@@ -191,8 +191,24 @@ export default function MealPlanPage() {
   }
 
   async function handleCalendarRemove(planId: string) {
-    await supabase.from("meal_plans").delete().eq("id", planId);
-    setMealPlans(mealPlans.filter((p) => p.id !== planId));
+    const prev = mealPlans;
+    setMealPlans(mealPlans.filter((p) => p.id !== planId)); // optimistic
+
+    try {
+      const res = await fetch("/api/meal-plan/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan_id: planId }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Delete failed");
+      }
+    } catch (err) {
+      console.error("Remove meal plan error:", err);
+      setMealPlans(prev); // revert optimistic update
+      await fetchMealPlans(); // refetch real state
+    }
   }
 
   if (loading) {

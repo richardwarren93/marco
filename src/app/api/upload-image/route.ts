@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 export async function POST(request: Request) {
+  // Auth check with regular client
   const supabase = await createClient();
   const {
     data: { user },
@@ -41,7 +43,10 @@ export async function POST(request: Request) {
 
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    const { error: uploadError } = await supabase.storage
+    // Use admin client for Storage operations to bypass Storage RLS policies
+    const admin = createAdminClient();
+
+    const { error: uploadError } = await admin.storage
       .from("feed-images")
       .upload(filename, buffer, {
         contentType: file.type,
@@ -58,7 +63,7 @@ export async function POST(request: Request) {
 
     const {
       data: { publicUrl },
-    } = supabase.storage.from("feed-images").getPublicUrl(filename);
+    } = admin.storage.from("feed-images").getPublicUrl(filename);
 
     return NextResponse.json({ url: publicUrl });
   } catch (error) {
