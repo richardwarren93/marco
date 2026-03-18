@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"C:\\\\Users\\\\rdw2t\\\\Marco\" /A)",
+      "Bash(npm -v)",
+      "Bash(npx --version)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(mv Marco marco_temp)",
+      "Bash(mv marco_temp marco)",
+      "Bash(npx create-next-app@latest marco-app --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(npx create-next-app@latest marco-app --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --use-npm --no-turbopack 2)",
+      "Bash(1:*)",
+      "Bash(cp -r /c/Users/rdw2t/marco-app/* /c/Users/rdw2t/Marco/)",
+      "Bash(cp /c/Users/rdw2t/marco-app/.gitignore /c/Users/rdw2t/Marco/)",
+      "Bash(cp /c/Users/rdw2t/marco-app/.eslintrc.json /c/Users/rdw2t/Marco/)",
+      "Bash(cp -r /c/Users/rdw2t/marco-app/.git /c/Users/rdw2t/Marco/)",
+      "Bash(cp -r /c/Users/rdw2t/marco-app/package.json /c/Users/rdw2t/marco-app/package-lock.json /c/Users/rdw2t/marco-app/tsconfig.json /c/Users/rdw2t/marco-app/next.config.ts /c/Users/rdw2t/marco-app/next-env.d.ts /c/Users/rdw2t/marco-app/postcss.config.mjs /c/Users/rdw2t/Marco/)",
+      "Bash(cp -r /c/Users/rdw2t/marco-app/src /c/Users/rdw2t/Marco/)",
+      "Bash(cp -r /c/Users/rdw2t/marco-app/public /c/Users/rdw2t/Marco/)",
+      "Bash(cp -r /c/Users/rdw2t/marco-app/node_modules /c/Users/rdw2t/Marco/)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where npm.cmd)",
+      "Bash(git init:*)",
+      "Bash(gh auth:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx next:*)",
+      "Bash(find /c/Users/rdw2t/Marco -type f -name *.sql -o -name schema.sql)"
+    ]
+  }
+}

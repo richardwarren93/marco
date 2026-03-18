@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Circular background -->
+  <circle cx="100" cy="100" r="100" fill="#5B9EAD"/>
+
+  <!-- Face outline -->
+  <path d="M72 135 Q72 152 100 155 Q128 152 128 135 L128 110 Q128 95 100 92 Q72 95 72 110 Z" fill="#FDEBD0" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Chin/jaw -->
+  <path d="M78 138 Q80 150 100 153 Q120 150 122 138" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Curly hair -->
+  <path d="M62 98 Q58 90 63 84 Q56 82 60 74 Q55 68 62 64 Q60 56 68 54 Q68 46 78 46 Q82 40 92 42 Q96 36 106 38 Q112 34 120 40 Q128 38 132 46 Q140 48 138 56 Q144 60 140 68 Q146 74 140 80 Q144 86 138 90 Q142 96 136 100"
+        fill="white" stroke="#1A1A1A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Curly bangs -->
+  <path d="M68 96 Q64 88 70 84 Q66 78 72 76 Q70 70 76 68" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M80 92 Q78 84 82 80 Q80 74 84 70 Q82 66 86 62" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M92 90 Q90 82 94 78 Q92 72 96 68 Q94 62 98 58" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M104 90 Q106 82 102 78 Q104 72 100 68 Q102 62 98 58" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M116 92 Q118 84 114 80 Q116 74 112 70 Q114 66 110 62" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M128 96 Q132 88 126 84 Q130 78 124 76 Q126 70 122 68" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Chef hat body -->
+  <path d="M64 72 Q62 44 78 36 Q88 28 100 30 Q112 28 122 36 Q138 44 136 72"
+        fill="white" stroke="#1A1A1A" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Hat band -->
+  <rect x="64" y="68" width="72" height="8" rx="2" fill="white" stroke="#1A1A1A" stroke-width="2" />
+
+  <!-- M on hat -->
+  <text x="100" y="60" text-anchor="middle" font-family="Georgia, serif" font-size="22" font-weight="bold" fill="#1A1A1A">M</text>
+
+  <!-- Sunglasses -->
+  <rect x="70" y="106" width="22" height="14" rx="3" fill="#1A1A1A"/>
+  <rect x="108" y="106" width="22" height="14" rx="3" fill="#1A1A1A"/>
+  <path d="M92 112 L108 112" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M70 112 L64 108" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M130 112 L136 108" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Slight lens shine -->
+  <rect x="74" y="109" width="6" height="2" rx="1" fill="#444" opacity="0.5"/>
+  <rect x="112" y="109" width="6" height="2" rx="1" fill="#444" opacity="0.5"/>
+
+  <!-- Smile -->
+  <path d="M88 136 Q100 144 112 136" fill="none" stroke="#1A1A1A" stroke-width="2.5" stroke-linecap="round"/>
+
+  <!-- Ears (small) -->
+  <ellipse cx="68" cy="118" rx="5" ry="7" fill="#FDEBD0" stroke="#1A1A1A" stroke-width="2"/>
+  <ellipse cx="132" cy="118" rx="5" ry="7" fill="#FDEBD0" stroke="#1A1A1A" stroke-width="2"/>
+</svg>
