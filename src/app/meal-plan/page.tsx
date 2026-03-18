@@ -39,6 +39,7 @@ function getMonday(date: Date): Date {
 export default function MealPlanPage() {
   const [results, setResults] = useState<PromptRecipeResult[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [householdPlans, setHouseholdPlans] = useState<MealPlan[]>([]);
   const [friendsCooking, setFriendsCooking] = useState<FriendCookingItem[]>([]);
   const [pantryCount, setPantryCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -57,14 +58,26 @@ export default function MealPlanPage() {
     const end = new Date(monday);
     end.setDate(end.getDate() + 35);
 
+    const startStr = start.toISOString().split("T")[0];
+    const endStr = end.toISOString().split("T")[0];
+
     const { data } = await supabase
       .from("meal_plans")
       .select("*, recipe:recipes(*)")
       .order("planned_date", { ascending: true })
-      .gte("planned_date", start.toISOString().split("T")[0])
-      .lte("planned_date", end.toISOString().split("T")[0]);
+      .gte("planned_date", startStr)
+      .lte("planned_date", endStr);
 
     setMealPlans((data as MealPlan[]) || []);
+
+    // Also fetch household members' plans
+    try {
+      const hhRes = await fetch(`/api/meal-plan/household?start=${startStr}&end=${endStr}`);
+      const hhData = await hhRes.json();
+      setHouseholdPlans((hhData.plans as MealPlan[]) || []);
+    } catch {
+      setHouseholdPlans([]);
+    }
   }, [supabase]);
 
   useEffect(() => {
@@ -287,6 +300,7 @@ export default function MealPlanPage() {
         </div>
         <WeeklyCalendar
           mealPlans={mealPlans}
+          householdPlans={householdPlans}
           onAddMeal={handleCalendarAdd}
           onRemoveMeal={handleCalendarRemove}
         />

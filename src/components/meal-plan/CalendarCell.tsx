@@ -25,28 +25,47 @@ export default function CalendarCell({
 
   return (
     <div className="space-y-1">
-      {plans.map((plan) => (
-        <div
-          key={plan.id}
-          className="group relative bg-orange-50 border border-orange-100 rounded-lg px-1.5 py-1 text-[10px] leading-tight"
-        >
-          <Link
-            href={`/recipes/${plan.recipe_id}`}
-            className="text-gray-700 font-medium hover:text-orange-600 line-clamp-2 block"
+      {plans.map((plan) => {
+        const isHousehold = !!plan.owner_name;
+
+        return (
+          <div
+            key={plan.id}
+            className={`group relative rounded-lg px-1.5 py-1 text-[10px] leading-tight ${
+              isHousehold
+                ? "bg-purple-50 border border-purple-100"
+                : "bg-orange-50 border border-orange-100"
+            }`}
           >
-            {plan.recipe?.title || "Untitled"}
-          </Link>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove(plan.id);
-            }}
-            className="absolute -top-1 -right-1 w-4 h-4 bg-red-400 text-white rounded-full text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
-          >
-            ×
-          </button>
-        </div>
-      ))}
+            <Link
+              href={`/recipes/${plan.recipe_id}`}
+              className={`font-medium line-clamp-2 block ${
+                isHousehold
+                  ? "text-gray-600 hover:text-purple-600"
+                  : "text-gray-700 hover:text-orange-600"
+              }`}
+            >
+              {plan.recipe?.title || "Untitled"}
+            </Link>
+            {isHousehold && (
+              <p className="text-[8px] text-purple-400 truncate mt-0.5">
+                {plan.owner_name}
+              </p>
+            )}
+            {!isHousehold && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemove(plan.id);
+                }}
+                className="absolute -top-1 -right-1 w-4 h-4 bg-red-400 text-white rounded-full text-[8px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
+              >
+                ×
+              </button>
+            )}
+          </div>
+        );
+      })}
       <button
         onClick={onAdd}
         className="w-full text-gray-300 hover:text-orange-400 text-[10px] py-0.5 rounded hover:bg-orange-50 transition-colors"

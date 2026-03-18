@@ -34,10 +34,12 @@ function addDays(date: Date, days: number): Date {
 
 export default function WeeklyCalendar({
   mealPlans,
+  householdPlans = [],
   onAddMeal,
   onRemoveMeal,
 }: {
   mealPlans: MealPlan[];
+  householdPlans?: MealPlan[];
   onAddMeal: (recipeId: string, date: string, mealType: string) => void;
   onRemoveMeal: (planId: string) => void;
 }) {
@@ -51,7 +53,8 @@ export default function WeeklyCalendar({
 
   // Build a lookup: date -> mealType -> MealPlan[]
   const plansByDateMeal: Record<string, Record<string, MealPlan[]>> = {};
-  for (const plan of mealPlans) {
+  const allPlans = [...mealPlans, ...householdPlans];
+  for (const plan of allPlans) {
     if (!plansByDateMeal[plan.planned_date]) {
       plansByDateMeal[plan.planned_date] = {};
     }

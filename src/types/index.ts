@@ -84,6 +84,7 @@ export interface MealPlan {
   notes: string | null;
   created_at: string;
   recipe?: Recipe;
+  owner_name?: string;
 }
 
 export interface MealSuggestion {
