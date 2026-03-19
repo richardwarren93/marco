@@ -142,68 +142,79 @@ export default function WeeklyCalendar({
 
       {/* Calendar grid — horizontally scrollable on mobile */}
       <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-        <div className="min-w-[600px]">
-          {/* Day headers */}
-          <div className="grid grid-cols-[48px_repeat(7,1fr)] gap-1 mb-1">
-            <div /> {/* spacer for meal type column */}
-            {weekDays.map((day) => {
-              const dateKey = formatDateKey(day);
-              const isToday = dateKey === today;
-              return (
-                <div
-                  key={dateKey}
-                  className={`text-center py-1.5 rounded-lg ${isToday ? "bg-orange-100" : ""}`}
-                >
-                  <p className={`text-[10px] font-medium ${isToday ? "text-orange-700" : "text-gray-400"}`}>
-                    {day.toLocaleDateString("en-US", { weekday: "short" })}
-                  </p>
-                  <p className={`text-sm font-bold ${isToday ? "text-orange-700" : "text-gray-700"}`}>
-                    {day.getDate()}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+        <div className="min-w-[560px]">
 
-          {/* Meal rows */}
-          {MEAL_TYPES.map((mealType) => (
-            <div key={mealType} className="grid grid-cols-[48px_repeat(7,1fr)] gap-1 mb-1">
-              {/* Meal type label */}
-              <div className="flex items-center justify-center">
-                <span className="text-sm" title={mealType}>
-                  {MEAL_LABELS[mealType]}
-                </span>
-              </div>
+          {/* Single containing box — one border instead of 28 individual cell boxes */}
+          <div className="rounded-xl border border-gray-100 overflow-hidden">
 
-              {/* Day cells */}
+            {/* Day headers */}
+            <div className="grid grid-cols-[32px_repeat(7,1fr)] border-b border-gray-100 bg-gray-50/40">
+              <div /> {/* spacer for icon column */}
               {weekDays.map((day) => {
                 const dateKey = formatDateKey(day);
-                const plans = plansByDateMeal[dateKey]?.[mealType] || [];
                 const isToday = dateKey === today;
-                const hasNewPlan = plans.some((p) => newlyAddedIds.includes(p.id));
-
                 return (
                   <div
-                    key={`${dateKey}-${mealType}`}
-                    className={`min-h-[48px] p-1 rounded-lg border transition-all duration-500 ${
-                      hasNewPlan
-                        ? "border-orange-300 bg-orange-50/60 ring-1 ring-orange-200 ring-offset-0"
-                        : isToday
-                        ? "border-orange-200 bg-orange-50/30"
-                        : "border-gray-100 bg-white hover:border-gray-200"
-                    }`}
+                    key={dateKey}
+                    className={`text-center py-1.5 ${isToday ? "bg-orange-50" : ""}`}
                   >
-                    <CalendarCell
-                      plans={plans}
-                      onAdd={() => handleAddClick(dateKey, mealType)}
-                      onTapMeal={handleTapMeal}
-                      newlyAddedIds={newlyAddedIds}
-                    />
+                    <p className={`text-[10px] font-medium ${isToday ? "text-orange-500" : "text-gray-400"}`}>
+                      {day.toLocaleDateString("en-US", { weekday: "short" })}
+                    </p>
+                    <p className={`text-sm font-bold ${isToday ? "text-orange-600" : "text-gray-700"}`}>
+                      {day.getDate()}
+                    </p>
                   </div>
                 );
               })}
             </div>
-          ))}
+
+            {/* Meal rows — separated by thin rules, no per-cell borders */}
+            {MEAL_TYPES.map((mealType, rowIndex) => (
+              <div
+                key={mealType}
+                className={`grid grid-cols-[32px_repeat(7,1fr)] ${
+                  rowIndex < MEAL_TYPES.length - 1 ? "border-b border-gray-100/70" : ""
+                }`}
+              >
+                {/* Meal type icon — subtle marker, not a focal element */}
+                <div className="flex justify-center pt-2.5 opacity-40">
+                  <span className="text-sm leading-none" title={mealType}>
+                    {MEAL_LABELS[mealType]}
+                  </span>
+                </div>
+
+                {/* Day cells — open, no individual borders */}
+                {weekDays.map((day) => {
+                  const dateKey = formatDateKey(day);
+                  const plans = plansByDateMeal[dateKey]?.[mealType] || [];
+                  const isToday = dateKey === today;
+                  const hasNewPlan = plans.some((p) => newlyAddedIds.includes(p.id));
+
+                  return (
+                    <div
+                      key={`${dateKey}-${mealType}`}
+                      className={`min-h-[46px] px-0.5 py-1 transition-colors duration-300 ${
+                        hasNewPlan
+                          ? "bg-orange-50/80"
+                          : isToday
+                          ? "bg-orange-50/30"
+                          : ""
+                      }`}
+                    >
+                      <CalendarCell
+                        plans={plans}
+                        onAdd={() => handleAddClick(dateKey, mealType)}
+                        onTapMeal={handleTapMeal}
+                        newlyAddedIds={newlyAddedIds}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
     </div>
