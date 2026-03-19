@@ -37,8 +37,6 @@ export default function WeeklyCalendar({
   mealPlans,
   householdPlans = [],
   onOpenSheet,
-  onRemoveMeal,
-  onSaveDraft,
   weekStart,
   onWeekChange,
   newlyAddedIds = [],
@@ -46,8 +44,6 @@ export default function WeeklyCalendar({
   mealPlans: MealPlan[];
   householdPlans?: MealPlan[];
   onOpenSheet: (config: SheetConfig) => void;
-  onRemoveMeal: (planId: string) => void;
-  onSaveDraft?: (planId: string) => void;
   weekStart: Date;
   onWeekChange: (date: Date) => void;
   newlyAddedIds?: string[];
@@ -76,6 +72,8 @@ export default function WeeklyCalendar({
       defaultMealType: mealType,
       contextDate: dateKey,
       startInSearchMode: true,
+      existingPlanId: null,
+      isDraft: false,
     });
   }
 
@@ -100,6 +98,8 @@ export default function WeeklyCalendar({
       defaultMealType: plan.meal_type,
       contextDate: plan.planned_date,
       startInSearchMode: false,
+      existingPlanId: plan.id,
+      isDraft,
     });
   }
 
@@ -196,8 +196,6 @@ export default function WeeklyCalendar({
                     <CalendarCell
                       plans={plans}
                       onAdd={() => handleAddClick(dateKey, mealType)}
-                      onRemove={onRemoveMeal}
-                      onSaveDraft={onSaveDraft}
                       onTapMeal={handleTapMeal}
                       newlyAddedIds={newlyAddedIds}
                     />

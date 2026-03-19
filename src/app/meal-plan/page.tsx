@@ -145,6 +145,8 @@ export default function MealPlanPage() {
       defaultMealType: suggestion.suggestedMealType,
       contextDate: null,
       startInSearchMode: false,
+      existingPlanId: null,
+      isDraft: false,
     });
     setSheetOpen(true);
   }
@@ -160,8 +162,19 @@ export default function MealPlanPage() {
     slots: { date: string; mealType: string }[],
     replace: boolean,
     recipeId: string | null,
-    draftNotes: string | null
+    draftNotes: string | null,
+    existingPlanId: string | null
   ) {
+    // If moving/reassigning an existing meal, remove the original first
+    if (existingPlanId) {
+      await fetch("/api/meal-plan/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan_id: existingPlanId }),
+      });
+      setMealPlans((prev) => prev.filter((p) => p.id !== existingPlanId));
+    }
+
     const res = await fetch("/api/meal-plan/assign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -206,6 +219,7 @@ export default function MealPlanPage() {
     });
     if (res.ok) {
       await fetchMealPlans();
+      setSheetOpen(false);
     } else {
       const data = await res.json();
       setError(data.error || "Failed to save recipe");
@@ -227,6 +241,11 @@ export default function MealPlanPage() {
       setMealPlans(prev);
       await fetchMealPlans();
     }
+  }
+
+  async function handleSheetDelete(planId: string) {
+    await handleCalendarRemove(planId);
+    setSheetOpen(false);
   }
 
   if (loading) {
@@ -322,8 +341,6 @@ export default function MealPlanPage() {
             mealPlans={mealPlans}
             householdPlans={householdPlans}
             onOpenSheet={handleOpenSheet}
-            onRemoveMeal={handleCalendarRemove}
-            onSaveDraft={handleSaveDraft}
             weekStart={weekStart}
             onWeekChange={setWeekStart}
             newlyAddedIds={newlyAddedIds}
@@ -335,7 +352,7 @@ export default function MealPlanPage() {
       {mealPlans.some((p) => !p.recipe_id && p.notes?.startsWith("{")) && (
         <p className="text-xs text-gray-400 flex items-center gap-1.5 px-1">
           <span className="inline-block w-3 h-3 rounded border border-dashed border-gray-400 bg-gray-50" />
-          Dashed = draft, not yet saved. Hover to ★ save or × remove.
+          Dashed border = idea not yet saved. Tap to save or remove.
         </p>
       )}
 
@@ -352,6 +369,8 @@ export default function MealPlanPage() {
         weekDays={getVisibleWeekDates()}
         mealPlans={[...mealPlans, ...householdPlans]}
         onAssign={handleAssign}
+        onDelete={handleSheetDelete}
+        onSaveDraft={handleSaveDraft}
         onClose={() => setSheetOpen(false)}
       />
     </div>
