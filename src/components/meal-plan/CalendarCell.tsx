@@ -19,15 +19,11 @@ function parseDraft(notes: string | null | undefined): DraftRecipe | null {
 export default function CalendarCell({
   plans,
   onAdd,
-  onRemove,
-  onSaveDraft,
   onTapMeal,
   newlyAddedIds = [],
 }: {
   plans: MealPlan[];
   onAdd: () => void;
-  onRemove: (planId: string) => void;
-  onSaveDraft?: (planId: string) => void;
   onTapMeal?: (plan: MealPlan, isDraft: boolean) => void;
   newlyAddedIds?: string[];
 }) {
@@ -54,7 +50,7 @@ export default function CalendarCell({
         return (
           <div
             key={plan.id}
-            className={`group relative rounded-lg px-1.5 py-1 text-[10px] leading-tight transition-all ${
+            className={`rounded-lg px-1.5 py-1 text-[10px] leading-tight transition-all ${
               isDraft
                 ? isNew
                   ? "bg-blue-50 border border-dashed border-blue-300 animate-[fadeSlideIn_0.4s_ease-out]"
@@ -66,11 +62,10 @@ export default function CalendarCell({
                 : "bg-orange-50 border border-orange-100"
             }`}
           >
-            {/* Title — tappable for draft/saved (not household) */}
             {isDraft ? (
               <button
                 onClick={() => onTapMeal?.(plan, true)}
-                className="font-medium line-clamp-2 block text-gray-500 w-full text-left hover:text-blue-600 transition-colors"
+                className="font-medium line-clamp-2 block text-gray-500 w-full text-left active:opacity-70"
               >
                 {title}
               </button>
@@ -79,7 +74,7 @@ export default function CalendarCell({
             ) : (
               <button
                 onClick={() => onTapMeal?.(plan, false)}
-                className="font-medium line-clamp-2 block text-gray-700 w-full text-left hover:text-orange-600 transition-colors"
+                className="font-medium line-clamp-2 block text-gray-700 w-full text-left active:opacity-70"
               >
                 {title}
               </button>
@@ -90,27 +85,6 @@ export default function CalendarCell({
             )}
             {isDraft && (
               <p className="text-[8px] text-gray-400 mt-0.5">not saved</p>
-            )}
-
-            {/* Save to library — drafts only */}
-            {isDraft && onSaveDraft && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onSaveDraft(plan.id); }}
-                title="Save to my recipes"
-                className="absolute -top-1.5 -left-1.5 w-5 h-5 bg-blue-500 text-white rounded-full text-[9px] flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-blue-600"
-              >
-                ★
-              </button>
-            )}
-
-            {/* Remove — all non-household */}
-            {!isHousehold && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-400 text-white rounded-full text-[9px] flex items-center justify-center opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-red-500"
-              >
-                ×
-              </button>
             )}
           </div>
         );
