@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
 import RecipePromptInput from "@/components/meal-plan/RecipePromptInput";
-import PromptResultCard from "@/components/meal-plan/PromptResultCard";
+import type { PlanSources } from "@/components/meal-plan/RecipePromptInput";
+import SuggestionRow from "@/components/meal-plan/SuggestionRow";
 import FriendsCookingSection from "@/components/meal-plan/FriendsCookingSection";
-import WeeklyCalendar from "@/components/meal-plan/WeeklyCalendar";
+import WeeklyCalendar, { getMonday, formatDateKey, addDays } from "@/components/meal-plan/WeeklyCalendar";
+import RecipeAssignmentSheet from "@/components/meal-plan/RecipeAssignmentSheet";
+import type { SheetConfig } from "@/components/meal-plan/RecipeAssignmentSheet";
 import GroceryList from "@/components/grocery/GroceryList";
 import type { MealPlan } from "@/types";
-import type { PromptRecipeResult } from "@/lib/claude";
-import { MealPlanIcon } from "@/components/icons/HandDrawnIcons";
+import type { SuggestedRecipe } from "@/lib/claude";
 
 interface FriendCookingItem {
   id: string;
@@ -27,37 +29,38 @@ interface FriendCookingItem {
   };
 }
 
-function getMonday(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 export default function MealPlanPage() {
-  const [results, setResults] = useState<PromptRecipeResult[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [householdPlans, setHouseholdPlans] = useState<MealPlan[]>([]);
   const [friendsCooking, setFriendsCooking] = useState<FriendCookingItem[]>([]);
   const [pantryCount, setPantryCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
-  const [savingIndex, setSavingIndex] = useState<number | null>(null);
-  const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set());
   const [error, setError] = useState("");
   const [showGrocery, setShowGrocery] = useState(false);
+
+  // Suggestion state
+  const [suggestions, setSuggestions] = useState<SuggestedRecipe[]>([]);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+
+  // Assignment sheet
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [sheetConfig, setSheetConfig] = useState<SheetConfig | null>(null);
+  const [assignBanner, setAssignBanner] = useState<string | null>(null);
+
+  // Calendar week
+  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+  const [newlyAddedIds, setNewlyAddedIds] = useState<string[]>([]);
+
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bannerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const supabase = createClient();
 
   const fetchMealPlans = useCallback(async () => {
-    // Fetch a wide range (4 weeks back, 4 weeks forward) so calendar navigation is smooth
     const monday = getMonday(new Date());
     const start = new Date(monday);
     start.setDate(start.getDate() - 28);
     const end = new Date(monday);
     end.setDate(end.getDate() + 35);
-
     const startStr = start.toISOString().split("T")[0];
     const endStr = end.toISOString().split("T")[0];
 
@@ -67,10 +70,8 @@ export default function MealPlanPage() {
       .order("planned_date", { ascending: true })
       .gte("planned_date", startStr)
       .lte("planned_date", endStr);
-
     setMealPlans((data as MealPlan[]) || []);
 
-    // Also fetch household members' plans
     try {
       const hhRes = await fetch(`/api/meal-plan/household?start=${startStr}&end=${endStr}`);
       const hhData = await hhRes.json();
@@ -84,235 +85,275 @@ export default function MealPlanPage() {
     async function fetchData() {
       const [, pantryRes, friendsRes] = await Promise.all([
         fetchMealPlans(),
-        supabase
-          .from("pantry_items")
-          .select("id", { count: "exact", head: true }),
+        supabase.from("pantry_items").select("id", { count: "exact", head: true }),
         fetch("/api/meal-plan/friends-cooking"),
       ]);
-
       setPantryCount(pantryRes.count || 0);
-
       try {
         const friendsData = await friendsRes.json();
         setFriendsCooking(friendsData.items || []);
       } catch {
         setFriendsCooking([]);
       }
-
       setLoading(false);
     }
     fetchData();
   }, [supabase, fetchMealPlans]);
 
-  async function handlePromptSubmit(prompt: string, context: "all" | "my_kitchen") {
-    setSearching(true);
-    setError("");
-    setSavedIndices(new Set());
-    setResults([]);
+  function getVisibleWeekDates(): string[] {
+    return Array.from({ length: 7 }, (_, i) => formatDateKey(addDays(weekStart, i)));
+  }
 
+  // ── Prompt → suggestions only, no calendar mutation ──────────────────────
+  async function handleSuggest(prompt: string, sources: PlanSources) {
+    setSuggestLoading(true);
+    setSuggestions([]);
+    setError("");
     try {
-      const res = await fetch("/api/meal-plan/prompt", {
+      const res = await fetch("/api/meal-plan/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, context }),
+        body: JSON.stringify({ prompt, sources }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setResults(data.results || []);
+      if (!res.ok) throw new Error(data.error || "Failed to get suggestions");
+      setSuggestions(data.suggestions || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
-      setSearching(false);
+      setSuggestLoading(false);
     }
   }
 
-  async function handleSaveResult(result: PromptRecipeResult, index: number) {
-    setSavingIndex(index);
-    setError("");
-
-    try {
-      const res = await fetch("/api/recipes/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: result.recipe.title,
-          description: result.recipe.description,
-          ingredients: result.recipe.ingredients,
-          steps: result.recipe.steps,
-          servings: result.recipe.servings,
-          prep_time_minutes: result.recipe.prep_time_minutes,
-          cook_time_minutes: result.recipe.cook_time_minutes,
-          tags: result.recipe.tags,
-          notes: `AI-suggested recipe.\n${result.reasoning}`,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save");
-      }
-
-      setSavedIndices((prev) => new Set(prev).add(index));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save recipe");
-    } finally {
-      setSavingIndex(null);
-    }
-  }
-
-  async function handleAddToPlan(recipeId: string, mealType: string) {
-    const today = new Date().toISOString().split("T")[0];
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.from("meal_plans").insert({
-      user_id: user.id,
-      recipe_id: recipeId,
-      planned_date: today,
-      meal_type: mealType,
+  // ── Tap suggestion → open sheet ──────────────────────────────────────────
+  function handleSuggestionTap(suggestion: SuggestedRecipe) {
+    setSheetConfig({
+      recipeId: null,
+      draftNotes: JSON.stringify({
+        __draft__: true,
+        title: suggestion.title,
+        description: suggestion.description,
+        ingredients: suggestion.ingredients,
+        steps: suggestion.steps,
+        servings: suggestion.servings,
+        prep_time_minutes: suggestion.prep_time_minutes,
+        cook_time_minutes: suggestion.cook_time_minutes,
+        tags: suggestion.tags,
+        reasoning: suggestion.reasoning,
+      }),
+      recipeTitle: suggestion.title,
+      defaultMealType: suggestion.suggestedMealType,
+      contextDate: null,
+      startInSearchMode: false,
     });
-
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    await fetchMealPlans();
+    setSheetOpen(true);
   }
 
-  async function handleCalendarAdd(recipeId: string, date: string, mealType: string) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
+  // ── + button in calendar → open sheet in search mode ─────────────────────
+  function handleOpenSheet(config: SheetConfig) {
+    setSheetConfig(config);
+    setSheetOpen(true);
+  }
 
-    const { error: insertError } = await supabase.from("meal_plans").insert({
-      user_id: user.id,
-      recipe_id: recipeId,
-      planned_date: date,
-      meal_type: mealType,
+  // ── Confirm assignment → write to calendar ───────────────────────────────
+  async function handleAssign(
+    slots: { date: string; mealType: string }[],
+    replace: boolean,
+    recipeId: string | null,
+    draftNotes: string | null
+  ) {
+    const res = await fetch("/api/meal-plan/assign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipeId, draftNotes, slots, replace }),
     });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to assign");
 
-    if (insertError) {
-      setError(insertError.message);
-      return;
-    }
-
+    const ids: string[] = data.planIds || [];
     await fetchMealPlans();
+
+    // Staggered highlight
+    setNewlyAddedIds([]);
+    ids.forEach((id, i) => {
+      setTimeout(() => setNewlyAddedIds((prev) => [...prev, id]), i * 100);
+    });
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = setTimeout(
+      () => setNewlyAddedIds([]),
+      ids.length * 100 + 3000
+    );
+
+    // Confirmation banner
+    const count = ids.length;
+    const mealTypeLabel = slots[0]?.mealType ?? "meal";
+    setAssignBanner(
+      count === 1
+        ? `Added to ${new Date(slots[0].date + "T12:00:00").toLocaleDateString("en-US", { weekday: "long" })}`
+        : `Added to ${count} ${mealTypeLabel}s`
+    );
+    if (bannerTimerRef.current) clearTimeout(bannerTimerRef.current);
+    bannerTimerRef.current = setTimeout(() => setAssignBanner(null), 3500);
+
+    setSheetOpen(false);
+  }
+
+  async function handleSaveDraft(planId: string) {
+    const res = await fetch("/api/meal-plan/save-draft", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan_id: planId }),
+    });
+    if (res.ok) {
+      await fetchMealPlans();
+    } else {
+      const data = await res.json();
+      setError(data.error || "Failed to save recipe");
+    }
   }
 
   async function handleCalendarRemove(planId: string) {
     const prev = mealPlans;
-    setMealPlans(mealPlans.filter((p) => p.id !== planId)); // optimistic
-
+    setMealPlans(mealPlans.filter((p) => p.id !== planId));
     try {
       const res = await fetch("/api/meal-plan/remove", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
       });
-
-      if (!res.ok) {
-        throw new Error("Delete failed");
-      }
+      if (!res.ok) throw new Error("Delete failed");
     } catch (err) {
       console.error("Remove meal plan error:", err);
-      setMealPlans(prev); // revert optimistic update
-      await fetchMealPlans(); // refetch real state
+      setMealPlans(prev);
+      await fetchMealPlans();
     }
   }
 
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-40" />
-          <div className="h-24 bg-gray-200 rounded-2xl" />
-          <div className="h-64 bg-gray-200 rounded-2xl" />
+        <div className="animate-pulse space-y-3">
+          <div className="h-7 bg-gray-200 rounded w-32" />
+          <div className="h-16 bg-gray-200 rounded-xl" />
+          <div className="h-56 bg-gray-200 rounded-2xl" />
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      {/* Header */}
-      <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-        <MealPlanIcon className="w-7 h-7 text-orange-600" /> Meal Plan
-      </h1>
+  const hasSuggestionArea = suggestLoading || suggestions.length > 0;
 
-      {/* AI Prompt Input */}
+  return (
+    <div className="max-w-4xl mx-auto px-4 py-5 sm:py-7 space-y-3">
+      {/* Header */}
+      <h1 className="text-xl font-bold text-gray-900">🗓 Meal Plan</h1>
+
+      {/* Command bar */}
       <RecipePromptInput
-        onSubmit={handlePromptSubmit}
-        loading={searching}
+        onSubmit={handleSuggest}
+        loading={suggestLoading}
         pantryCount={pantryCount}
       />
 
       {/* Error */}
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">
-          {error}
-        </div>
-      )}
-
-      {/* Loading state */}
-      {searching && (
-        <div className="text-center py-8">
-          <div className="inline-flex items-center gap-2 text-gray-400 text-sm">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-            </div>
-            Finding recipes for you...
-          </div>
-        </div>
-      )}
-
-      {/* Results */}
-      {results.length > 0 && !searching && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {results.map((result, i) => (
-            <PromptResultCard
-              key={i}
-              result={result}
-              onSave={(r) => handleSaveResult(r, i)}
-              onAddToPlan={handleAddToPlan}
-              saving={savingIndex === i}
-              saved={savedIndices.has(i)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Weekly Calendar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-gray-900">Weekly Calendar</h2>
+        <div className="bg-red-50 text-red-600 px-3 py-2.5 rounded-xl text-sm flex items-center justify-between">
+          <span>{error}</span>
           <button
-            onClick={() => setShowGrocery(!showGrocery)}
-            className="text-xs font-medium text-orange-600 hover:text-orange-700 px-3 py-1.5 bg-orange-50 rounded-full hover:bg-orange-100 transition-colors"
+            onClick={() => setError("")}
+            className="text-red-400 hover:text-red-600 ml-3 text-lg leading-none"
           >
-            🛒 Grocery List
+            ×
           </button>
         </div>
-        <WeeklyCalendar
-          mealPlans={mealPlans}
-          householdPlans={householdPlans}
-          onAddMeal={handleCalendarAdd}
-          onRemoveMeal={handleCalendarRemove}
-        />
-      </div>
-
-      {/* Grocery List */}
-      {showGrocery && (
-        <GroceryList onClose={() => setShowGrocery(false)} />
       )}
 
-      {/* Friends Cooking */}
+      {/* Assign confirmation */}
+      {assignBanner && (
+        <div className="bg-green-50 border border-green-200 text-green-700 px-3 py-2.5 rounded-xl text-sm flex items-center justify-between">
+          <span>✓ {assignBanner}</span>
+          <button
+            onClick={() => setAssignBanner(null)}
+            className="text-green-400 hover:text-green-600 text-lg leading-none ml-3"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      {/* Calendar + suggestions — one unified surface */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {/* Suggestions / loading header — sits directly above the calendar grid */}
+        {hasSuggestionArea && (
+          <div className="border-b border-gray-100">
+            {suggestLoading ? (
+              <div className="flex items-center gap-3 px-4 py-3.5">
+                <div className="flex gap-1">
+                  <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+                <span className="text-sm text-orange-600 font-medium">Finding ideas for you…</span>
+              </div>
+            ) : (
+              <div className="pt-3">
+                <SuggestionRow
+                  suggestions={suggestions}
+                  onTap={handleSuggestionTap}
+                  onDismiss={() => setSuggestions([])}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Calendar */}
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-gray-700">This week</h2>
+            <button
+              onClick={() => setShowGrocery(!showGrocery)}
+              className="text-xs font-medium text-orange-600 hover:text-orange-700 px-2.5 py-1 bg-orange-50 rounded-full hover:bg-orange-100 transition-colors"
+            >
+              🛒 Grocery
+            </button>
+          </div>
+          <WeeklyCalendar
+            mealPlans={mealPlans}
+            householdPlans={householdPlans}
+            onOpenSheet={handleOpenSheet}
+            onRemoveMeal={handleCalendarRemove}
+            onSaveDraft={handleSaveDraft}
+            weekStart={weekStart}
+            onWeekChange={setWeekStart}
+            newlyAddedIds={newlyAddedIds}
+          />
+        </div>
+      </div>
+
+      {/* Draft legend */}
+      {mealPlans.some((p) => !p.recipe_id && p.notes?.startsWith("{")) && (
+        <p className="text-xs text-gray-400 flex items-center gap-1.5 px-1">
+          <span className="inline-block w-3 h-3 rounded border border-dashed border-gray-400 bg-gray-50" />
+          Dashed = draft, not yet saved. Hover to ★ save or × remove.
+        </p>
+      )}
+
+      {/* Grocery list */}
+      {showGrocery && <GroceryList onClose={() => setShowGrocery(false)} />}
+
+      {/* Friends cooking */}
       <FriendsCookingSection items={friendsCooking} />
+
+      {/* Assignment sheet */}
+      <RecipeAssignmentSheet
+        isOpen={sheetOpen}
+        config={sheetConfig}
+        weekDays={getVisibleWeekDates()}
+        mealPlans={[...mealPlans, ...householdPlans]}
+        onAssign={handleAssign}
+        onClose={() => setSheetOpen(false)}
+      />
     </div>
   );
 }

@@ -54,6 +54,11 @@
   animation: wiggle 0.5s ease-in-out;
 }
 
+@keyframes fadeSlideIn {
+  0% { transform: translateY(-4px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
 /* Hide scrollbar for horizontal scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;

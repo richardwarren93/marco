@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import type { MealPlan } from "@/types";
 import CalendarCell from "./CalendarCell";
-import AddMealModal from "./AddMealModal";
+import type { SheetConfig } from "./RecipeAssignmentSheet";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 const MEAL_LABELS: Record<string, string> = {
@@ -32,22 +31,27 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 
+export { getMonday, formatDateKey, addDays };
+
 export default function WeeklyCalendar({
   mealPlans,
   householdPlans = [],
-  onAddMeal,
+  onOpenSheet,
   onRemoveMeal,
+  onSaveDraft,
+  weekStart,
+  onWeekChange,
+  newlyAddedIds = [],
 }: {
   mealPlans: MealPlan[];
   householdPlans?: MealPlan[];
-  onAddMeal: (recipeId: string, date: string, mealType: string) => void;
+  onOpenSheet: (config: SheetConfig) => void;
   onRemoveMeal: (planId: string) => void;
+  onSaveDraft?: (planId: string) => void;
+  weekStart: Date;
+  onWeekChange: (date: Date) => void;
+  newlyAddedIds?: string[];
 }) {
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalDate, setModalDate] = useState("");
-  const [modalMealType, setModalMealType] = useState("dinner");
-
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = formatDateKey(new Date());
 
@@ -64,23 +68,53 @@ export default function WeeklyCalendar({
     plansByDateMeal[plan.planned_date][plan.meal_type].push(plan);
   }
 
-  function openAddModal(date: string, mealType: string) {
-    setModalDate(date);
-    setModalMealType(mealType);
-    setModalOpen(true);
+  function handleAddClick(dateKey: string, mealType: string) {
+    onOpenSheet({
+      recipeId: null,
+      draftNotes: null,
+      recipeTitle: "",
+      defaultMealType: mealType,
+      contextDate: dateKey,
+      startInSearchMode: true,
+    });
+  }
+
+  function handleTapMeal(plan: MealPlan, isDraft: boolean) {
+    let title = "Untitled";
+    let draftNotes: string | null = null;
+
+    if (isDraft && plan.notes) {
+      try {
+        const parsed = JSON.parse(plan.notes);
+        title = parsed.title || "Untitled";
+        draftNotes = plan.notes;
+      } catch {}
+    } else if (plan.recipe?.title) {
+      title = plan.recipe.title;
+    }
+
+    onOpenSheet({
+      recipeId: plan.recipe_id ?? null,
+      draftNotes,
+      recipeTitle: title,
+      defaultMealType: plan.meal_type,
+      contextDate: plan.planned_date,
+      startInSearchMode: false,
+    });
   }
 
   const weekEnd = addDays(weekStart, 6);
-  const monthLabel = weekStart.getMonth() === weekEnd.getMonth()
-    ? weekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" })
-    : `${weekStart.toLocaleDateString("en-US", { month: "short" })} – ${weekEnd.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+  const monthLabel =
+    weekStart.getMonth() === weekEnd.getMonth()
+      ? weekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" })
+      : `${weekStart.toLocaleDateString("en-US", { month: "short" })} – ${weekEnd.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
 
   return (
     <div>
       {/* Week navigation */}
       <div className="flex items-center justify-between mb-3">
         <button
-          onClick={() => setWeekStart(addDays(weekStart, -7))}
+          onClick={() => onWeekChange(addDays(weekStart, -7))}
           className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -90,14 +124,14 @@ export default function WeeklyCalendar({
         <div className="flex items-center gap-2">
           <span className="text-sm font-semibold text-gray-800">{monthLabel}</span>
           <button
-            onClick={() => setWeekStart(getMonday(new Date()))}
+            onClick={() => onWeekChange(getMonday(new Date()))}
             className="text-[10px] text-orange-600 hover:text-orange-700 font-medium px-2 py-0.5 rounded-full bg-orange-50 hover:bg-orange-100 transition-colors"
           >
             Today
           </button>
         </div>
         <button
-          onClick={() => setWeekStart(addDays(weekStart, 7))}
+          onClick={() => onWeekChange(addDays(weekStart, 7))}
           className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -118,9 +152,7 @@ export default function WeeklyCalendar({
               return (
                 <div
                   key={dateKey}
-                  className={`text-center py-1.5 rounded-lg ${
-                    isToday ? "bg-orange-100" : ""
-                  }`}
+                  className={`text-center py-1.5 rounded-lg ${isToday ? "bg-orange-100" : ""}`}
                 >
                   <p className={`text-[10px] font-medium ${isToday ? "text-orange-700" : "text-gray-400"}`}>
                     {day.toLocaleDateString("en-US", { weekday: "short" })}
@@ -148,20 +180,26 @@ export default function WeeklyCalendar({
                 const dateKey = formatDateKey(day);
                 const plans = plansByDateMeal[dateKey]?.[mealType] || [];
                 const isToday = dateKey === today;
+                const hasNewPlan = plans.some((p) => newlyAddedIds.includes(p.id));
 
                 return (
                   <div
                     key={`${dateKey}-${mealType}`}
-                    className={`min-h-[48px] p-1 rounded-lg border transition-colors ${
-                      isToday
+                    className={`min-h-[48px] p-1 rounded-lg border transition-all duration-500 ${
+                      hasNewPlan
+                        ? "border-orange-300 bg-orange-50/60 ring-1 ring-orange-200 ring-offset-0"
+                        : isToday
                         ? "border-orange-200 bg-orange-50/30"
                         : "border-gray-100 bg-white hover:border-gray-200"
                     }`}
                   >
                     <CalendarCell
                       plans={plans}
-                      onAdd={() => openAddModal(dateKey, mealType)}
+                      onAdd={() => handleAddClick(dateKey, mealType)}
                       onRemove={onRemoveMeal}
+                      onSaveDraft={onSaveDraft}
+                      onTapMeal={handleTapMeal}
+                      newlyAddedIds={newlyAddedIds}
                     />
                   </div>
                 );
@@ -170,17 +208,6 @@ export default function WeeklyCalendar({
           ))}
         </div>
       </div>
-
-      {/* Add Meal Modal */}
-      <AddMealModal
-        isOpen={modalOpen}
-        date={modalDate}
-        mealType={modalMealType}
-        onClose={() => setModalOpen(false)}
-        onAdd={(recipeId, date, mealType) => {
-          onAddMeal(recipeId, date, mealType);
-        }}
-      />
     </div>
   );
 }
