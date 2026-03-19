@@ -265,11 +265,11 @@ export default function RecipeAssignmentSheet({
 
   return (
     <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/40 z-40" onClick={onClose} />
+      {/* Backdrop — z-[60] sits above the bottom tab bar (z-50) */}
+      <div className="fixed inset-0 bg-black/50 z-[60]" onClick={onClose} />
 
-      {/* Sheet */}
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col animate-slide-up">
+      {/* Sheet — z-[70] sits above backdrop */}
+      <div className="fixed inset-x-0 bottom-0 z-[70] bg-white rounded-t-2xl shadow-2xl max-h-[90vh] flex flex-col animate-slide-up">
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2 flex-shrink-0">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
@@ -467,7 +467,7 @@ export default function RecipeAssignmentSheet({
             </div>
 
             {/* Sticky CTA */}
-            <div className="px-5 pb-8 pt-3 border-t border-gray-100 flex-shrink-0">
+            <div className="px-5 pb-sheet-footer pt-3 border-t border-gray-100 flex-shrink-0">
               <button
                 onClick={handleCTA}
                 disabled={!ctaEnabled || submitting}
@@ -497,7 +497,7 @@ export default function RecipeAssignmentSheet({
                 This will replace them.
               </p>
             </div>
-            <div className="px-5 pb-8 pt-3 border-t border-gray-100 flex-shrink-0 flex gap-3">
+            <div className="px-5 pb-sheet-footer pt-3 border-t border-gray-100 flex-shrink-0 flex gap-3">
               <button
                 onClick={() => doAssign(pendingSlots, true)}
                 disabled={submitting}
@@ -524,7 +524,7 @@ export default function RecipeAssignmentSheet({
                 "{effectiveTitle}" will be removed from your plan. You can always add it back.
               </p>
             </div>
-            <div className="px-5 pb-8 pt-3 border-t border-gray-100 flex-shrink-0 flex gap-3">
+            <div className="px-5 pb-sheet-footer pt-3 border-t border-gray-100 flex-shrink-0 flex gap-3">
               <button
                 onClick={handleConfirmDelete}
                 disabled={submitting}
