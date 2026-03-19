@@ -50,16 +50,16 @@ export default function CalendarCell({
         return (
           <div
             key={plan.id}
-            className={`rounded-lg px-1.5 py-1 text-[10px] leading-tight transition-all ${
+            className={`rounded-md px-1.5 py-1 text-[10px] leading-tight transition-all ${
               isDraft
                 ? isNew
-                  ? "bg-blue-50 border border-dashed border-blue-300 animate-[fadeSlideIn_0.4s_ease-out]"
-                  : "bg-gray-50 border border-dashed border-gray-300"
+                  ? "border border-dashed border-blue-200 bg-blue-50/60 animate-[fadeSlideIn_0.4s_ease-out]"
+                  : "border border-dashed border-gray-200 bg-transparent"
                 : isHousehold
-                ? "bg-purple-50 border border-purple-100"
+                ? "bg-purple-50"
                 : isNew
-                ? "bg-orange-100 border border-orange-300 animate-[fadeSlideIn_0.4s_ease-out]"
-                : "bg-orange-50 border border-orange-100"
+                ? "bg-orange-100 animate-[fadeSlideIn_0.4s_ease-out]"
+                : "bg-orange-50/80"
             }`}
           >
             {isDraft ? (
