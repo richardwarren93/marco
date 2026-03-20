@@ -103,6 +103,10 @@ export interface UserProfile {
   avatar_url: string | null;
   friend_code: string;
   tomato_balance: number;
+  onboarding_completed: boolean;
+  cooking_goals: string[];
+  diet_preference: string;
+  referral_source: string | null;
   created_at: string;
   updated_at: string;
 }

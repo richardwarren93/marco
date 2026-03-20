@@ -21,6 +21,11 @@ const tabs = [
 export default function BottomTabBar() {
   const pathname = usePathname();
 
+  // Hide on onboarding and auth pages
+  if (pathname.startsWith("/onboarding") || pathname.startsWith("/auth/")) {
+    return null;
+  }
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 sm:hidden bg-white/90 backdrop-blur-lg border-t border-gray-200" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
       <div className="flex justify-around items-center h-16 px-2">
