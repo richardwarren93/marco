@@ -68,13 +68,6 @@ export interface PantryItem {
   updated_at: string;
 }
 
-export interface UserEquipment {
-  id: string;
-  user_id: string;
-  equipment_name: string;
-  created_at: string;
-}
-
 export interface MealPlan {
   id: string;
   user_id: string;
@@ -84,7 +77,6 @@ export interface MealPlan {
   notes: string | null;
   created_at: string;
   recipe?: Recipe;
-  owner_name?: string;
 }
 
 export interface MealSuggestion {
@@ -93,147 +85,6 @@ export interface MealSuggestion {
   missingIngredients: string[];
   substitutions: { original: string; substitute: string }[];
   reasoning: string;
-}
-
-// Friends & Sharing
-export interface UserProfile {
-  id: string;
-  user_id: string;
-  display_name: string;
-  avatar_url: string | null;
-  friend_code: string;
-  tomato_balance: number;
-  onboarding_completed: boolean;
-  cooking_goals: string[];
-  diet_preference: string;
-  referral_source: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-// Gamification
-export interface CookingLog {
-  id: string;
-  user_id: string;
-  recipe_id: string;
-  cooked_at: string;
-  created_at: string;
-  recipe?: Recipe;
-}
-
-export interface CookingGoal {
-  id: string;
-  user_id: string;
-  weekly_target: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export type TomatoReason = "cooked_recipe" | "community_note" | "weekly_goal_complete" | "feed_pet";
-
-export interface TomatoTransaction {
-  id: string;
-  user_id: string;
-  amount: number;
-  reason: TomatoReason;
-  reference_id: string | null;
-  created_at: string;
-}
-
-export type PetMood = "happy" | "content" | "hungry" | "sad" | "very_sad";
-
-export interface UserPet {
-  id: string;
-  user_id: string;
-  name: string;
-  hunger_level: number;
-  last_fed_at: string;
-  total_feedings: number;
-  created_at: string;
-  updated_at: string;
-  mood?: PetMood;
-}
-
-export type ActivityType = "cooked_recipe" | "saved_recipe" | "completed_goal";
-
-export interface ActivityFeedItem {
-  id: string;
-  user_id: string;
-  activity_type: ActivityType;
-  recipe_id: string | null;
-  metadata: Record<string, unknown>;
-  image_url: string | null;
-  caption: string | null;
-  upvotes: number;
-  downvotes: number;
-  created_at: string;
-  profile?: UserProfile;
-  recipe?: Recipe;
-  userVote?: "up" | "down" | null;
-}
-
-export interface RecipeNote {
-  id: string;
-  user_id: string;
-  recipe_id: string;
-  private_note: string;
-  personal_rating: number | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface GroceryList {
-  id: string;
-  user_id: string;
-  week_start: string;
-  created_at: string;
-  items?: GroceryItem[];
-}
-
-export interface GroceryItem {
-  id: string;
-  list_id: string;
-  name: string;
-  amount: string | null;
-  unit: string | null;
-  category: string | null;
-  recipe_sources: string[];
-  checked: boolean;
-  is_custom: boolean;
-  in_pantry: boolean;
-  created_at: string;
-}
-
-export interface FeedVote {
-  id: string;
-  user_id: string;
-  activity_id: string;
-  vote_type: "up" | "down";
-  created_at: string;
-}
-
-export type FriendshipStatus = "pending" | "accepted" | "declined";
-
-export interface Friendship {
-  id: string;
-  user_id: string;
-  friend_id: string;
-  status: FriendshipStatus;
-  created_at: string;
-  updated_at: string;
-  profile?: UserProfile;
-}
-
-export interface RecipeShare {
-  id: string;
-  recipe_id: string;
-  shared_by_user_id: string;
-  shared_with_user_id: string;
-  message: string | null;
-  seen: boolean;
-  created_at: string;
-  recipe?: Recipe;
-  shared_by?: UserProfile;
 }
 
 // Restaurant Tracker ("Eats")
@@ -280,23 +131,38 @@ export interface RestaurantVisit {
   created_at: string;
 }
 
-// Household
-export interface Household {
+// Social Features
+export interface RecipePhoto {
   id: string;
-  name: string;
-  created_by: string;
-  invite_code: string;
+  recipe_id: string;
+  user_id: string;
+  photo_url: string;
+  storage_path: string;
+  caption: string | null;
   created_at: string;
-  members?: HouseholdMember[];
 }
 
-export interface HouseholdMember {
+export interface Profile {
   id: string;
-  household_id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Follow {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+}
+
+export interface RecipeShare {
+  id: string;
   user_id: string;
-  role: "owner" | "member";
-  joined_at: string;
-  profile?: UserProfile;
+  recipe_id: string;
+  created_at: string;
 }
 
 export interface RestaurantList {

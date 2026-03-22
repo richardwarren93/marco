@@ -12,6 +12,9 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
   if (url.includes("tiktok.com")) {
     return scrapeTikTok(url);
   }
+  if (url.includes("facebook.com") || url.includes("fb.watch")) {
+    return scrapeFacebook(url);
+  }
   return scrapeGeneric(url);
 }
 
@@ -60,10 +63,14 @@ async function scrapeInstagram(url: string): Promise<ScrapeResult> {
       const embedContent = await fetchPage(embedUrl);
       const embedData = extractInstagramEmbedPageData(embedContent);
       if (embedData) parts.push(`Embed Content: ${embedData}`);
-      // Try to get image from embed page if we don't have one
+
+      // Extract image from embed page — multiple approaches
       if (!image_url) {
         const embedMeta = extractMetaTags(embedContent);
         if (embedMeta.image) image_url = embedMeta.image;
+      }
+      if (!image_url) {
+        image_url = extractInstagramEmbedImage(embedContent);
       }
     }
   } catch {
@@ -284,6 +291,33 @@ async function scrapeTikTok(url: string): Promise<ScrapeResult> {
     const meta = extractMetaTags(pageContent);
     if (!image_url && meta.image) image_url = meta.image;
     if (meta.description) parts.push(`Description: ${meta.description}`);
+
+    // Look for video thumbnail in JSON data
+    if (!image_url) {
+      const $ = cheerio.load(pageContent);
+      $('script[type="application/ld+json"]').each((_, el) => {
+        if (image_url) return;
+        const text = $(el).html();
+        if (text) {
+          try {
+            const data = JSON.parse(text);
+            if (data.thumbnailUrl) image_url = Array.isArray(data.thumbnailUrl) ? data.thumbnailUrl[0] : data.thumbnailUrl;
+            if (!image_url && data.thumbnail) image_url = data.thumbnail;
+          } catch { /* ignore */ }
+        }
+      });
+    }
+
+    // Look for thumbnail in NEXT_DATA or similar
+    if (!image_url) {
+      const coverMatch = pageContent.match(/"cover"\s*:\s*"(https?:[^"]+)"/);
+      if (coverMatch) image_url = coverMatch[1].replace(/\\u0026/g, "&").replace(/\\/g, "");
+    }
+    if (!image_url) {
+      const dynamicCover = pageContent.match(/"dynamicCover"\s*:\s*"(https?:[^"]+)"/);
+      if (dynamicCover) image_url = dynamicCover[1].replace(/\\u0026/g, "&").replace(/\\/g, "");
+    }
+
     const text = extractVisibleText(pageContent);
     if (text) parts.push(`Page Content: ${text}`);
   } catch {
@@ -292,6 +326,56 @@ async function scrapeTikTok(url: string): Promise<ScrapeResult> {
 
   return {
     content: parts.join("\n\n") || "Could not extract content from TikTok URL",
+    image_url,
+  };
+}
+
+async function scrapeFacebook(url: string): Promise<ScrapeResult> {
+  const parts: string[] = [];
+  let image_url: string | null = null;
+
+  try {
+    const pageContent = await fetchPage(url);
+    const meta = extractMetaTags(pageContent);
+    if (meta.image) image_url = meta.image;
+    if (meta.title) parts.push(`Title: ${meta.title}`);
+    if (meta.description) parts.push(`Description: ${meta.description}`);
+
+    // Look for video thumbnail in JSON-LD
+    const $ = cheerio.load(pageContent);
+    $('script[type="application/ld+json"]').each((_, el) => {
+      if (image_url) return;
+      const text = $(el).html();
+      if (text) {
+        try {
+          const data = JSON.parse(text);
+          if (data.thumbnailUrl) image_url = Array.isArray(data.thumbnailUrl) ? data.thumbnailUrl[0] : data.thumbnailUrl;
+        } catch { /* ignore */ }
+      }
+    });
+
+    const text = extractVisibleText(pageContent);
+    if (text) parts.push(`Page Content: ${text}`);
+  } catch {
+    // scrape failed
+  }
+
+  // Also try mobile user agent for Facebook
+  if (!image_url) {
+    try {
+      const mobileContent = await fetchPageMobile(url);
+      const mobileMeta = extractMetaTags(mobileContent);
+      if (mobileMeta.image) image_url = mobileMeta.image;
+      if (!parts.length && mobileMeta.description) {
+        parts.push(`Description: ${mobileMeta.description}`);
+      }
+    } catch {
+      // mobile scrape failed
+    }
+  }
+
+  return {
+    content: parts.join("\n\n") || "Could not extract content from Facebook URL",
     image_url,
   };
 }
@@ -362,8 +446,58 @@ function extractMetaTags(html: string): {
     image:
       $('meta[property="og:image"]').attr("content") ||
       $('meta[name="twitter:image"]').attr("content") ||
+      $('meta[property="og:image:secure_url"]').attr("content") ||
+      $('meta[name="twitter:image:src"]').attr("content") ||
       "",
   };
+}
+
+// Extract image from Instagram embed page HTML
+function extractInstagramEmbedImage(html: string): string | null {
+  const $ = cheerio.load(html);
+
+  // Look for img tags with Instagram CDN URLs
+  const imgSelectors = [
+    'img.EmbeddedMediaImage',
+    'img[class*="Media"]',
+    'img[class*="media"]',
+    'img[src*="cdninstagram"]',
+    'img[src*="fbcdn"]',
+    'img[src*="scontent"]',
+    'img[src*="instagram"]',
+  ];
+
+  for (const selector of imgSelectors) {
+    const src = $(selector).first().attr("src");
+    if (src && src.startsWith("http")) return src;
+  }
+
+  // Look for background-image in style attributes
+  const styleMatch = html.match(/background-image:\s*url\(['"]?(https:\/\/[^'")\s]+(?:cdninstagram|fbcdn|scontent)[^'")\s]*)['"]?\)/);
+  if (styleMatch) return styleMatch[1];
+
+  // Look for image URLs in JSON data within script tags
+  const jsonImgMatch = html.match(/"display_url"\s*:\s*"(https?:[^"]+)"/);
+  if (jsonImgMatch) {
+    return jsonImgMatch[1].replace(/\\u0026/g, "&").replace(/\\/g, "");
+  }
+
+  const thumbMatch = html.match(/"thumbnail_src"\s*:\s*"(https?:[^"]+)"/);
+  if (thumbMatch) {
+    return thumbMatch[1].replace(/\\u0026/g, "&").replace(/\\/g, "");
+  }
+
+  // Generic: find any img with a CDN-like URL
+  let fallback: string | null = null;
+  $("img").each((_, el) => {
+    if (fallback) return;
+    const src = $(el).attr("src");
+    if (src && src.startsWith("http") && (src.includes("cdn") || src.includes("scontent") || src.includes("fbcdn"))) {
+      fallback = src;
+    }
+  });
+
+  return fallback;
 }
 
 function extractVisibleText(html: string): string {
@@ -403,8 +537,9 @@ function extractJsonLd(html: string): string {
 
 export function detectPlatform(
   url: string
-): "instagram" | "tiktok" | "other" {
+): "instagram" | "tiktok" | "facebook" | "other" {
   if (url.includes("instagram.com")) return "instagram";
   if (url.includes("tiktok.com")) return "tiktok";
+  if (url.includes("facebook.com") || url.includes("fb.watch")) return "facebook";
   return "other";
 }

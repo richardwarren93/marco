@@ -37,9 +37,6 @@ export default function RecipeForm({
   const [cookTime, setCookTime] = useState(
     recipe?.cook_time_minutes?.toString() || ""
   );
-  const [tags, setTags] = useState(
-    recipe?.tags?.join(", ") || ""
-  );
   const [sourceUrl, setSourceUrl] = useState(recipe?.source_url || "");
   const [sourcePlatform, setSourcePlatform] = useState<string>(
     recipe?.source_platform || ""
@@ -77,7 +74,6 @@ export default function RecipeForm({
       setServings(r.servings?.toString() || "");
       setPrepTime(r.prep_time_minutes?.toString() || "");
       setCookTime(r.cook_time_minutes?.toString() || "");
-      setTags((r.tags || []).join(", "));
       setSourceUrl(r.source_url || url);
       setSourcePlatform(r.source_platform || "other");
       setImageUrl(r.image_url || null);
@@ -102,10 +98,7 @@ export default function RecipeForm({
         servings: servings ? parseInt(servings) : null,
         prep_time_minutes: prepTime ? parseInt(prepTime) : null,
         cook_time_minutes: cookTime ? parseInt(cookTime) : null,
-        tags: tags
-          .split(",")
-          .map((t) => t.trim())
-          .filter(Boolean),
+        tags: [],
         source_url: sourceUrl || null,
         source_platform: sourcePlatform || null,
         image_url: imageUrl || null,
@@ -194,25 +187,9 @@ export default function RecipeForm({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               required
-              placeholder="Paste a URL from Instagram, TikTok, NYT Cooking, Bon Appétit, or any recipe site..."
+              placeholder="https://www.instagram.com/p/... or https://www.tiktok.com/..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
-            {/* Platform hints */}
-            <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
-              <span className="font-medium">Works with:</span>
-              <div className="flex items-center gap-2 flex-wrap">
-                {[
-                  { name: "Instagram", color: "text-pink-500" },
-                  { name: "TikTok", color: "text-gray-700" },
-                  { name: "NYT Cooking", color: "text-gray-700" },
-                  { name: "Bon Appétit", color: "text-amber-600" },
-                  { name: "AllRecipes", color: "text-orange-500" },
-                  { name: "& more", color: "text-gray-400" },
-                ].map((p) => (
-                  <span key={p.name} className={`${p.color} font-medium`}>{p.name}</span>
-                ))}
-              </div>
-            </div>
           </div>
 
           {error && (
@@ -393,19 +370,6 @@ export default function RecipeForm({
                 </div>
               ))}
             </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tags (comma-separated)
-            </label>
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => setTags(e.target.value)}
-              placeholder="e.g. vegan, quick, dessert"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
-            />
           </div>
 
           <div>

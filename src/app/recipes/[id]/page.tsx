@@ -9,9 +9,12 @@ import SocialEmbed from "@/components/recipes/SocialEmbed";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
 import CommunitySection from "@/components/community/CommunitySection";
-import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
-import IMadeThisButton from "@/components/gamification/IMadeThisButton";
-import MyNotesCard from "@/components/recipes/MyNotesCard";
+import PhotoGallery from "@/components/recipes/PhotoGallery";
+import PhotoUpload from "@/components/recipes/PhotoUpload";
+import ShareButton from "@/components/social/ShareButton";
+import ServingScaler from "@/components/recipes/ServingScaler";
+import UnitToggle from "@/components/recipes/UnitToggle";
+import { convertIngredient } from "@/lib/units";
 
 export default function RecipeDetailPage() {
   const { id } = useParams();
@@ -20,7 +23,11 @@ export default function RecipeDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showAddToCollection, setShowAddToCollection] = useState(false);
-  const [showShareWithFriends, setShowShareWithFriends] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>();
+  const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
+  const [unitSystem, setUnitSystem] = useState<"us" | "metric">("us");
+  const [servingMultiplier, setServingMultiplier] = useState(1);
+  const [heroImage, setHeroImage] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -30,13 +37,33 @@ export default function RecipeDetailPage() {
       .select("*")
       .eq("id", id)
       .single();
-    setRecipe(data as Recipe | null);
+    const r = data as Recipe | null;
+    setRecipe(r);
+
+    // If no scraped image, use most recent user-uploaded photo
+    if (r && !r.image_url) {
+      const { data: photos } = await supabase
+        .from("recipe_photos")
+        .select("photo_url")
+        .eq("recipe_id", r.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (photos && photos.length > 0) {
+        setHeroImage(photos[0].photo_url);
+      }
+    } else if (r) {
+      setHeroImage(r.image_url);
+    }
+
     setLoading(false);
   }, [id, supabase]);
 
   useEffect(() => {
     fetchRecipe();
-  }, [fetchRecipe]);
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id);
+    });
+  }, [fetchRecipe, supabase.auth]);
 
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
@@ -88,15 +115,22 @@ export default function RecipeDetailPage() {
         &larr; Back to recipes
       </Link>
 
+      {heroImage && (
+        <div className="rounded-xl overflow-hidden mb-6">
+          <img
+            src={heroImage}
+            alt={recipe.title}
+            className="w-full h-64 object-cover"
+          />
+        </div>
+      )}
+
       <div className="flex items-start justify-between mb-2">
         <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => setShowShareWithFriends(true)}
-            className="text-gray-600 hover:text-gray-900 text-sm"
-          >
-            Send to Friend
-          </button>
+          {currentUserId === recipe.user_id && (
+            <ShareButton recipeId={recipe.id} />
+          )}
           <button
             onClick={() => setShowAddToCollection(true)}
             className="text-gray-600 hover:text-gray-900 text-sm"
@@ -139,19 +173,6 @@ export default function RecipeDetailPage() {
         )}
       </div>
 
-      {recipe.tags.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {recipe.tags.map((tag) => (
-            <span
-              key={tag}
-              className="bg-orange-50 text-orange-700 text-sm px-3 py-1 rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
-
       {recipe.notes && (
         <div className="mb-6">
           <h2 className="text-sm font-medium text-gray-500 mb-1">Notes</h2>
@@ -159,14 +180,16 @@ export default function RecipeDetailPage() {
         </div>
       )}
 
-      {/* I Made This Button */}
-      <div className="mb-6">
-        <IMadeThisButton recipeId={recipe.id} />
-      </div>
-
-      {/* My Private Notes & Rating */}
-      <div className="mb-6">
-        <MyNotesCard recipeId={recipe.id} />
+      {/* Unit Toggle + Serving Scaler */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
+        <UnitToggle system={unitSystem} onChange={setUnitSystem} />
+        <div className="flex-1 max-w-xs">
+          <ServingScaler
+            originalServings={recipe.servings || 2}
+            multiplier={servingMultiplier}
+            onChange={setServingMultiplier}
+          />
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -175,16 +198,19 @@ export default function RecipeDetailPage() {
             Ingredients
           </h2>
           <ul className="space-y-2">
-            {ingredients.map((ing, i) => (
-              <li key={i} className="flex items-baseline gap-2">
-                <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0 mt-1.5" />
-                <span>
-                  {ing.amount && <strong>{ing.amount} </strong>}
-                  {ing.unit && <span>{ing.unit} </span>}
-                  {ing.name}
-                </span>
-              </li>
-            ))}
+            {ingredients.map((ing, i) => {
+              const converted = convertIngredient(ing, unitSystem, servingMultiplier);
+              return (
+                <li key={i} className="flex items-baseline gap-2">
+                  <span className="w-2 h-2 rounded-full bg-orange-400 flex-shrink-0 mt-1.5" />
+                  <span>
+                    {converted.amount && <strong>{converted.amount} </strong>}
+                    {converted.unit && <span>{converted.unit} </span>}
+                    {converted.name}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
 
@@ -203,6 +229,38 @@ export default function RecipeDetailPage() {
         </div>
       </div>
 
+      {/* Photos Section */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-3">Photos</h2>
+        <PhotoGallery
+          recipeId={recipe.id}
+          currentUserId={currentUserId}
+          refreshKey={photoRefreshKey}
+        />
+        {currentUserId === recipe.user_id && (
+          <div className="mt-3">
+            <PhotoUpload
+              recipeId={recipe.id}
+              onUploaded={() => {
+                setPhotoRefreshKey((k) => k + 1);
+                // Update hero image if none exists
+                if (!recipe.image_url) {
+                  supabase
+                    .from("recipe_photos")
+                    .select("photo_url")
+                    .eq("recipe_id", recipe.id)
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .then(({ data }) => {
+                      if (data && data.length > 0) setHeroImage(data[0].photo_url);
+                    });
+                }
+              }}
+            />
+          </div>
+        )}
+      </div>
+
       {recipe.source_url && recipe.source_platform && recipe.source_platform !== "other" && (
         <SocialEmbed
           sourceUrl={recipe.source_url}
@@ -218,14 +276,6 @@ export default function RecipeDetailPage() {
         recipeId={recipe.id}
         isOpen={showAddToCollection}
         onClose={() => setShowAddToCollection(false)}
-      />
-
-      <ShareWithFriendsModal
-        isOpen={showShareWithFriends}
-        onClose={() => setShowShareWithFriends(false)}
-        itemType="recipe"
-        itemId={recipe.id}
-        itemTitle={recipe.title}
       />
     </div>
   );

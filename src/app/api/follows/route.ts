@@ -12,21 +12,28 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { recipe_id } = await request.json();
+    const { following_id } = await request.json();
+
+    if (following_id === user.id) {
+      return NextResponse.json(
+        { error: "Cannot follow yourself" },
+        { status: 400 }
+      );
+    }
 
     const { data, error } = await supabase
-      .from("recipe_shares")
-      .insert({ user_id: user.id, recipe_id })
+      .from("follows")
+      .insert({ follower_id: user.id, following_id })
       .select()
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ share: data });
+    return NextResponse.json({ follow: data });
   } catch (error) {
-    console.error("Share error:", error);
+    console.error("Follow error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to share" },
+      { error: error instanceof Error ? error.message : "Failed to follow" },
       { status: 500 }
     );
   }
@@ -43,21 +50,21 @@ export async function DELETE(request: Request) {
   }
 
   try {
-    const { recipe_id } = await request.json();
+    const { following_id } = await request.json();
 
     const { error } = await supabase
-      .from("recipe_shares")
+      .from("follows")
       .delete()
-      .eq("user_id", user.id)
-      .eq("recipe_id", recipe_id);
+      .eq("follower_id", user.id)
+      .eq("following_id", following_id);
 
     if (error) throw error;
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Unshare error:", error);
+    console.error("Unfollow error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to unshare" },
+      { error: error instanceof Error ? error.message : "Failed to unfollow" },
       { status: 500 }
     );
   }
