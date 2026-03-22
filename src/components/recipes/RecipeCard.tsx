@@ -58,18 +58,6 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
           )}
           {recipe.servings && <span>Serves {recipe.servings}</span>}
         </div>
-        {recipe.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-3">
-            {recipe.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="bg-orange-50 text-orange-700 text-xs px-2 py-0.5 rounded-full"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
         <div className="mt-3 text-xs text-gray-400">
           {recipe.source_platform && (
             <span className="capitalize">{recipe.source_platform}</span>

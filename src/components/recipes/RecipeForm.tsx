@@ -37,10 +37,6 @@ export default function RecipeForm({
   const [cookTime, setCookTime] = useState(
     recipe?.cook_time_minutes?.toString() || ""
   );
-  const [tags, setTags] = useState<string[]>(
-    recipe?.tags || []
-  );
-  const [tagInput, setTagInput] = useState("");
   const [sourceUrl, setSourceUrl] = useState(recipe?.source_url || "");
   const [sourcePlatform, setSourcePlatform] = useState<string>(
     recipe?.source_platform || ""
@@ -78,7 +74,6 @@ export default function RecipeForm({
       setServings(r.servings?.toString() || "");
       setPrepTime(r.prep_time_minutes?.toString() || "");
       setCookTime(r.cook_time_minutes?.toString() || "");
-      setTags(r.tags || []);
       setSourceUrl(r.source_url || url);
       setSourcePlatform(r.source_platform || "other");
       setImageUrl(r.image_url || null);
@@ -103,7 +98,7 @@ export default function RecipeForm({
         servings: servings ? parseInt(servings) : null,
         prep_time_minutes: prepTime ? parseInt(prepTime) : null,
         cook_time_minutes: cookTime ? parseInt(cookTime) : null,
-        tags: tags.filter(Boolean),
+        tags: [],
         source_url: sourceUrl || null,
         source_platform: sourcePlatform || null,
         image_url: imageUrl || null,
@@ -374,46 +369,6 @@ export default function RecipeForm({
                   </button>
                 </div>
               ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tags
-            </label>
-            <div className="flex flex-wrap gap-2 items-center p-2 border border-gray-300 rounded-lg min-h-[42px]">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="bg-orange-50 text-orange-700 text-sm px-3 py-1 rounded-full inline-flex items-center gap-1"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => setTags(tags.filter((t) => t !== tag))}
-                    className="text-orange-400 hover:text-orange-700 ml-0.5"
-                  >
-                    &times;
-                  </button>
-                </span>
-              ))}
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
-                    e.preventDefault();
-                    const trimmed = tagInput.trim().toLowerCase();
-                    if (!tags.some((t) => t.toLowerCase() === trimmed)) {
-                      setTags([...tags, trimmed]);
-                    }
-                    setTagInput("");
-                  }
-                }}
-                placeholder={tags.length === 0 ? "e.g. vegan, quick, dessert" : "Add tag..."}
-                className="flex-1 min-w-[100px] text-sm outline-none px-1 py-1"
-              />
             </div>
           </div>
 

@@ -38,11 +38,7 @@ Return a JSON object with these fields:
 - servings (number or null): Number of servings if mentioned
 - prep_time_minutes (number or null): Prep time if mentioned, or estimate based on the dish
 - cook_time_minutes (number or null): Cook time if mentioned, or estimate based on the dish
-- tags (array of strings): MUST include these in order:
-  1. ONE meal type from: "breakfast", "lunch", "dinner", "snack", "dessert", "appetizer", "drink"
-  2. TWO primary ingredient tags — the 2 most prominent ingredients in lowercase (e.g. "chicken", "pasta", "tofu")
-  3. Then 0-3 additional tags (e.g. "vegan", "quick", "italian")
-  The first 3 tags (1 meal type + 2 ingredients) are required. All lowercase.
+- tags (array of strings): optional descriptive tags like cuisine type, dietary info, etc. All lowercase.
 
 IMPORTANT: Even if the content is very limited, use your knowledge to fill in reasonable details for the identified dish. A helpful guess is much better than empty fields. Do NOT refuse or explain — just output the JSON.`,
       },
@@ -57,16 +53,6 @@ IMPORTANT: Even if the content is very limited, use your knowledge to fill in re
 
   try {
     const result = JSON.parse(cleaned);
-
-    // Ensure meal type tag is first
-    const MEAL_TYPES = new Set(["breakfast", "lunch", "dinner", "snack", "dessert", "appetizer", "drink"]);
-    if (result.tags?.length > 0) {
-      const mealTypeIndex = result.tags.findIndex((t: string) => MEAL_TYPES.has(t.toLowerCase()));
-      if (mealTypeIndex > 0) {
-        const [mealType] = result.tags.splice(mealTypeIndex, 1);
-        result.tags.unshift(mealType);
-      }
-    }
 
     return result;
   } catch {
@@ -183,7 +169,7 @@ For each recipe, return:
 - servings (number): How many servings
 - prep_time_minutes (number): Estimated prep time
 - cook_time_minutes (number): Estimated cook time
-- tags (array of strings): MUST include in order: 1) ONE meal type from "breakfast","lunch","dinner","snack","dessert","appetizer","drink", 2) TWO primary ingredients in lowercase, 3) optional additional tags. All lowercase.
+- tags (array of strings): optional descriptive tags like cuisine type, dietary info, etc. All lowercase.
 - matchingPantryItems (array of strings): Which pantry ingredients this uses
 - missingIngredients (array of strings): Ingredients I'd need to buy
 - reasoning (string): One sentence on why this recipe is a great pick given my pantry

@@ -12,7 +12,6 @@ import CommunitySection from "@/components/community/CommunitySection";
 import PhotoGallery from "@/components/recipes/PhotoGallery";
 import PhotoUpload from "@/components/recipes/PhotoUpload";
 import ShareButton from "@/components/social/ShareButton";
-import InlineTagEditor from "@/components/recipes/InlineTagEditor";
 import ServingScaler from "@/components/recipes/ServingScaler";
 import UnitToggle from "@/components/recipes/UnitToggle";
 import { convertIngredient } from "@/lib/units";
@@ -173,29 +172,6 @@ export default function RecipeDetailPage() {
           </a>
         )}
       </div>
-
-      {currentUserId === recipe.user_id ? (
-        <div className="mb-6">
-          <InlineTagEditor
-            recipeId={recipe.id}
-            tags={recipe.tags}
-            onTagsUpdated={(newTags) =>
-              setRecipe((prev) => (prev ? { ...prev, tags: newTags } : prev))
-            }
-          />
-        </div>
-      ) : recipe.tags.length > 0 ? (
-        <div className="flex flex-wrap gap-2 mb-6">
-          {recipe.tags.map((tag) => (
-            <span
-              key={tag}
-              className="bg-orange-50 text-orange-700 text-sm px-3 py-1 rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      ) : null}
 
       {recipe.notes && (
         <div className="mb-6">
