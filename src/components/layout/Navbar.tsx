@@ -41,6 +41,9 @@ export default function Navbar() {
             </Link>
             {user && (
               <div className="hidden sm:flex items-center gap-6">
+                <Link href="/feed" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                  Feed
+                </Link>
                 <Link href="/recipes" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
                   Recipes
                 </Link>
@@ -68,6 +71,13 @@ export default function Navbar() {
                   className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700"
                 >
                   + Save Recipe
+                </Link>
+                <Link
+                  href="/profile"
+                  className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 font-semibold text-sm hover:bg-orange-200 transition-colors"
+                  title="Your profile"
+                >
+                  {user.email?.[0].toUpperCase() || "?"}
                 </Link>
                 <button
                   onClick={handleLogout}

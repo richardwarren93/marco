@@ -131,6 +131,40 @@ export interface RestaurantVisit {
   created_at: string;
 }
 
+// Social Features
+export interface RecipePhoto {
+  id: string;
+  recipe_id: string;
+  user_id: string;
+  photo_url: string;
+  storage_path: string;
+  caption: string | null;
+  created_at: string;
+}
+
+export interface Profile {
+  id: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Follow {
+  id: string;
+  follower_id: string;
+  following_id: string;
+  created_at: string;
+}
+
+export interface RecipeShare {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  created_at: string;
+}
+
 export interface RestaurantList {
   id: string;
   user_id: string;

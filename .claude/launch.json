@@ -3,9 +3,13 @@
   "configurations": [
     {
       "name": "marco-dev",
-      "runtimeExecutable": "node",
+      "runtimeExecutable": "/usr/local/bin/node",
       "runtimeArgs": ["node_modules/next/dist/bin/next", "dev"],
-      "port": 3000
+      "env": {
+        "PATH": "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+      },
+      "port": 3000,
+      "autoPort": false
     }
   ]
 }
