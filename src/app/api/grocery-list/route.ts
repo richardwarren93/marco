@@ -54,13 +54,32 @@ export async function GET(request: NextRequest) {
 
   const ownItems = list ? await fetchItems(admin, list.id) : [];
 
-  // Detect meal plan changes since last generation
+  // Household membership
+  const { data: membership } = await admin
+    .from("household_members")
+    .select("household_id")
+    .eq("user_id", user.id)
+    .single();
+
+  // Detect meal plan changes since last generation (own + household)
   let meal_plan_changed = false;
   if (list?.generated_at) {
+    const changeCheckIds = [user.id];
+    if (membership) {
+      const { data: allMembers } = await admin
+        .from("household_members")
+        .select("user_id")
+        .eq("household_id", membership.household_id);
+      if (allMembers) {
+        for (const m of allMembers) {
+          if (!changeCheckIds.includes(m.user_id)) changeCheckIds.push(m.user_id);
+        }
+      }
+    }
     const { data: latestPlan } = await admin
       .from("meal_plans")
       .select("created_at")
-      .eq("user_id", user.id)
+      .in("user_id", changeCheckIds)
       .gte("planned_date", dateStart)
       .lte("planned_date", dateEnd)
       .gt("created_at", list.generated_at)
@@ -68,13 +87,6 @@ export async function GET(request: NextRequest) {
       .maybeSingle();
     if (latestPlan) meal_plan_changed = true;
   }
-
-  // Household members' lists
-  const { data: membership } = await admin
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .single();
 
   let householdItems: any[] = [];
   let householdMembers: any[] = [];
@@ -140,11 +152,31 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
 
-    // ── Fetch meal plans ──────────────────────────────────────────────────────
+    // ── Resolve household member IDs (if any) ────────────────────────────────
+    const planUserIds = [user.id];
+    const { data: membership } = await admin
+      .from("household_members")
+      .select("household_id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (membership) {
+      const { data: members } = await admin
+        .from("household_members")
+        .select("user_id")
+        .eq("household_id", membership.household_id);
+      if (members) {
+        for (const m of members) {
+          if (!planUserIds.includes(m.user_id)) planUserIds.push(m.user_id);
+        }
+      }
+    }
+
+    // ── Fetch meal plans (own + household) ─────────────────────────────────
     const { data: plans } = await admin
       .from("meal_plans")
       .select("*, recipe:recipes(*)")
-      .eq("user_id", user.id)
+      .in("user_id", planUserIds)
       .gte("planned_date", dateStart)
       .lte("planned_date", dateEnd)
       .not("recipe_id", "is", null);
