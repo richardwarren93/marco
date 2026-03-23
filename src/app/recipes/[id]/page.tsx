@@ -20,6 +20,111 @@ const MEAL_ICONS: Record<string, string> = {
   snack: "🍎",
 };
 
+/* ── Unit conversion maps ────────────────────────────────────────────── */
+type UnitSystem = "imperial" | "metric";
+
+interface Conversion {
+  unit: string;
+  factor: number;
+}
+
+const toMetric: Record<string, Conversion> = {
+  cup: { unit: "ml", factor: 236.588 },
+  cups: { unit: "ml", factor: 236.588 },
+  tbsp: { unit: "ml", factor: 14.787 },
+  tablespoon: { unit: "ml", factor: 14.787 },
+  tablespoons: { unit: "ml", factor: 14.787 },
+  tsp: { unit: "ml", factor: 4.929 },
+  teaspoon: { unit: "ml", factor: 4.929 },
+  teaspoons: { unit: "ml", factor: 4.929 },
+  oz: { unit: "g", factor: 28.3495 },
+  ounce: { unit: "g", factor: 28.3495 },
+  ounces: { unit: "g", factor: 28.3495 },
+  lb: { unit: "g", factor: 453.592 },
+  lbs: { unit: "g", factor: 453.592 },
+  pound: { unit: "g", factor: 453.592 },
+  pounds: { unit: "g", factor: 453.592 },
+  "fl oz": { unit: "ml", factor: 29.5735 },
+  quart: { unit: "ml", factor: 946.353 },
+  quarts: { unit: "ml", factor: 946.353 },
+  gallon: { unit: "L", factor: 3.78541 },
+  gallons: { unit: "L", factor: 3.78541 },
+  pint: { unit: "ml", factor: 473.176 },
+  pints: { unit: "ml", factor: 473.176 },
+  inch: { unit: "cm", factor: 2.54 },
+  inches: { unit: "cm", factor: 2.54 },
+  "°F": { unit: "°C", factor: 0 }, // special handling
+  "°f": { unit: "°C", factor: 0 },
+};
+
+const toImperial: Record<string, Conversion> = {
+  ml: { unit: "tsp", factor: 0.202884 },
+  milliliter: { unit: "tsp", factor: 0.202884 },
+  milliliters: { unit: "tsp", factor: 0.202884 },
+  l: { unit: "cups", factor: 4.22675 },
+  liter: { unit: "cups", factor: 4.22675 },
+  liters: { unit: "cups", factor: 4.22675 },
+  g: { unit: "oz", factor: 0.035274 },
+  gram: { unit: "oz", factor: 0.035274 },
+  grams: { unit: "oz", factor: 0.035274 },
+  kg: { unit: "lbs", factor: 2.20462 },
+  kilogram: { unit: "lbs", factor: 2.20462 },
+  kilograms: { unit: "lbs", factor: 2.20462 },
+  cm: { unit: "inches", factor: 0.393701 },
+  centimeter: { unit: "inches", factor: 0.393701 },
+  centimeters: { unit: "inches", factor: 0.393701 },
+  "°C": { unit: "°F", factor: 0 }, // special handling
+  "°c": { unit: "°F", factor: 0 },
+};
+
+/** Smart metric display: promote ml→L for large values, g→kg for large values */
+function smartMetricUnit(value: number, unit: string): { value: number; unit: string } {
+  if (unit === "ml" && value >= 1000) return { value: value / 1000, unit: "L" };
+  if (unit === "g" && value >= 1000) return { value: value / 1000, unit: "kg" };
+  return { value, unit };
+}
+
+/** Smart imperial display: promote tsp→tbsp→cup, oz→lbs */
+function smartImperialUnit(value: number, unit: string): { value: number; unit: string } {
+  if (unit === "tsp" && value >= 3) return { value: value / 3, unit: "tbsp" };
+  if (unit === "tbsp" && value >= 16) return { value: value / 16, unit: "cups" };
+  if (unit === "oz" && value >= 16) return { value: value / 16, unit: "lbs" };
+  return { value, unit };
+}
+
+function convertUnit(amount: number, unit: string, targetSystem: UnitSystem): { amount: number; unit: string } | null {
+  const lowerUnit = unit.toLowerCase().trim();
+
+  // Temperature special case
+  if (lowerUnit === "°f" && targetSystem === "metric") {
+    return { amount: (amount - 32) * 5 / 9, unit: "°C" };
+  }
+  if (lowerUnit === "°c" && targetSystem === "imperial") {
+    return { amount: amount * 9 / 5 + 32, unit: "°F" };
+  }
+
+  const map = targetSystem === "metric" ? toMetric : toImperial;
+  const conv = map[lowerUnit] || map[unit];
+  if (!conv) return null;
+
+  let converted = amount * conv.factor;
+  let newUnit = conv.unit;
+
+  // Smart unit promotion
+  if (targetSystem === "metric") {
+    const smart = smartMetricUnit(converted, newUnit);
+    converted = smart.value;
+    newUnit = smart.unit;
+  } else {
+    const smart = smartImperialUnit(converted, newUnit);
+    converted = smart.value;
+    newUnit = smart.unit;
+  }
+
+  return { amount: converted, unit: newUnit };
+}
+
+
 /** Parse a string amount (e.g. "1/2", "1.5", "2") into a number, scale it, and format nicely. */
 function scaleAmount(raw: string | undefined, ratio: number): string {
   if (!raw) return "";
@@ -97,8 +202,22 @@ export default function RecipeDetailPage() {
   const [activeTab, setActiveTab] = useState<"ingredients" | "steps">("ingredients");
   const [adjustedServings, setAdjustedServings] = useState<number | null>(null);
   const [showMealPlanPrompt, setShowMealPlanPrompt] = useState(false);
+  const [recipeCollections, setRecipeCollections] = useState<{ id: string; name: string }[]>([]);
+  const [unitSystem, setUnitSystem] = useState<UnitSystem | null>(null); // null = original
   const router = useRouter();
   const supabase = createClient();
+
+  // Fetch collections this recipe belongs to
+  const fetchRecipeCollections = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/recipes/${id}/collections`);
+      if (!res.ok) return;
+      const { collections } = await res.json();
+      setRecipeCollections(collections || []);
+    } catch {
+      // ignore
+    }
+  }, [id]);
 
   const fetchRecipe = useCallback(async () => {
     // Try direct query first (works for own recipes via RLS)
@@ -129,7 +248,8 @@ export default function RecipeDetailPage() {
 
   useEffect(() => {
     fetchRecipe();
-  }, [fetchRecipe]);
+    fetchRecipeCollections();
+  }, [fetchRecipe, fetchRecipeCollections]);
 
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
@@ -316,6 +436,24 @@ export default function RecipeDetailPage() {
               ))}
             </div>
           )}
+
+          {/* Collections this recipe belongs to */}
+          {recipeCollections.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <svg className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+              </svg>
+              {recipeCollections.map((col) => (
+                <Link
+                  key={col.id}
+                  href={`/collections/${col.id}`}
+                  className="px-2.5 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[11px] font-medium hover:bg-orange-100 transition-colors"
+                >
+                  {col.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ── Action Buttons ──────────────────────────────────────────── */}
@@ -476,20 +614,89 @@ export default function RecipeDetailPage() {
                   </div>
                 )}
 
+                {/* Unit converter toggle */}
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-700">Units</span>
+                  <div className="flex items-center bg-gray-100 rounded-full p-0.5">
+                    <button
+                      onClick={() => setUnitSystem(null)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        unitSystem === null
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Original
+                    </button>
+                    <button
+                      onClick={() => setUnitSystem("imperial")}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        unitSystem === "imperial"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Imperial
+                    </button>
+                    <button
+                      onClick={() => setUnitSystem("metric")}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        unitSystem === "metric"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      Metric
+                    </button>
+                  </div>
+                </div>
+
                 {/* Ingredient list */}
                 <ul className="space-y-3">
                   {ingredients.map((ing, i) => {
                     const scaledAmount = scaleAmount(ing.amount, ratio);
+                    // Parse numeric value from the (possibly scaled) amount
+                    const numericAmount = (() => {
+                      if (!ing.amount) return null;
+                      const raw = ing.amount.trim();
+                      // Mixed fraction: "1 1/2"
+                      const mixedMatch = raw.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+                      if (mixedMatch) return (parseInt(mixedMatch[1]) + parseInt(mixedMatch[2]) / parseInt(mixedMatch[3])) * ratio;
+                      // Simple fraction: "1/2"
+                      const fracMatch = raw.match(/^(\d+)\/(\d+)$/);
+                      if (fracMatch) return (parseInt(fracMatch[1]) / parseInt(fracMatch[2])) * ratio;
+                      // Decimal
+                      const num = parseFloat(raw);
+                      return isNaN(num) ? null : num * ratio;
+                    })();
+
+                    let displayAmount = scaledAmount;
+                    let displayUnit = ing.unit || "";
+                    let wasConverted = false;
+
+                    if (unitSystem && numericAmount && ing.unit) {
+                      const converted = convertUnit(numericAmount, ing.unit, unitSystem);
+                      if (converted) {
+                        displayAmount = formatAmount(converted.amount);
+                        displayUnit = converted.unit;
+                        wasConverted = true;
+                      }
+                    }
+
                     return (
                       <li key={i} className="flex items-baseline gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0 mt-1.5" />
                         <span className="text-sm text-gray-800">
-                          {scaledAmount && (
-                            <span className={`font-semibold ${servingsChanged ? "text-orange-600" : ""}`}>
-                              {scaledAmount}{" "}
+                          {displayAmount && (
+                            <span className={`font-semibold ${servingsChanged || wasConverted ? "text-orange-600" : ""}`}>
+                              {displayAmount}{" "}
                             </span>
                           )}
-                          {ing.unit && <span className="text-gray-500">{ing.unit} </span>}
+                          {displayUnit && (
+                            <span className={`${wasConverted ? "text-orange-500 font-medium" : "text-gray-500"}`}>
+                              {displayUnit}{" "}
+                            </span>
+                          )}
                           {ing.name}
                         </span>
                       </li>
@@ -534,7 +741,10 @@ export default function RecipeDetailPage() {
       <AddToCollectionModal
         recipeId={recipe.id}
         isOpen={showAddToCollection}
-        onClose={() => setShowAddToCollection(false)}
+        onClose={() => {
+          setShowAddToCollection(false);
+          fetchRecipeCollections();
+        }}
       />
 
       <ShareWithFriendsModal
