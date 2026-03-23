@@ -163,20 +163,24 @@ export default function AddMealSheet({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  // Track visual viewport height for keyboard-aware sizing
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  // Track visual viewport for keyboard-aware positioning on iOS
+  const [vpRect, setVpRect] = useState<{ height: number; offsetTop: number } | null>(null);
 
   useEffect(() => {
     if (!isOpen) return;
     const vv = window.visualViewport;
     if (!vv) return;
 
-    function onResize() {
-      setViewportHeight(window.visualViewport!.height);
+    function sync() {
+      setVpRect({ height: vv!.height, offsetTop: vv!.offsetTop });
     }
-    onResize();
-    vv.addEventListener("resize", onResize);
-    return () => vv.removeEventListener("resize", onResize);
+    sync();
+    vv.addEventListener("resize", sync);
+    vv.addEventListener("scroll", sync);
+    return () => {
+      vv.removeEventListener("resize", sync);
+      vv.removeEventListener("scroll", sync);
+    };
   }, [isOpen]);
 
   // Lock main scroll while sheet is open
@@ -356,14 +360,16 @@ export default function AddMealSheet({
 
   // ─── Search mode: full-screen recipe picker ─────────────────────────────────
   if (searchMode) {
-    // Use visual viewport height to size above keyboard
-    const sheetHeight = viewportHeight ? `${viewportHeight}px` : "100dvh";
+    // Position sheet within the visual viewport (above keyboard on iOS)
+    const sheetStyle: React.CSSProperties = vpRect
+      ? { top: `${vpRect.offsetTop}px`, height: `${vpRect.height}px` }
+      : { top: 0, height: "100dvh" };
 
     return (
       <div className="fixed inset-0 bg-black/40 z-[60]" onClick={exitSearchMode}>
         <div
-          className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl flex flex-col shadow-xl overflow-hidden"
-          style={{ height: sheetHeight }}
+          className="fixed left-0 right-0 bg-white flex flex-col shadow-xl overflow-hidden"
+          style={sheetStyle}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header: back + context chips */}
