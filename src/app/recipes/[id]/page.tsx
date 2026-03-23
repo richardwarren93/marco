@@ -101,12 +101,29 @@ export default function RecipeDetailPage() {
   const supabase = createClient();
 
   const fetchRecipe = useCallback(async () => {
+    // Try direct query first (works for own recipes via RLS)
     const { data } = await supabase
       .from("recipes")
       .select("*")
       .eq("id", id)
       .single();
-    setRecipe(data as Recipe | null);
+
+    if (data) {
+      setRecipe(data as Recipe);
+      setLoading(false);
+      return;
+    }
+
+    // Fallback: fetch via API (handles household/shared recipes)
+    try {
+      const res = await fetch(`/api/recipes/${id}`);
+      if (res.ok) {
+        const json = await res.json();
+        setRecipe(json.recipe as Recipe);
+      }
+    } catch {
+      // fetch failed
+    }
     setLoading(false);
   }, [id, supabase]);
 

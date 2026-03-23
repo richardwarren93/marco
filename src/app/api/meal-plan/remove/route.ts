@@ -20,15 +20,38 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
 
-    // Verify ownership before deleting
+    // Verify ownership or household membership before deleting
     const { data: plan } = await admin
       .from("meal_plans")
       .select("id, user_id")
       .eq("id", plan_id)
       .single();
 
-    if (!plan || plan.user_id !== user.id) {
+    if (!plan) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+
+    if (plan.user_id !== user.id) {
+      // Check if both users are in the same household
+      const { data: myMembership } = await admin
+        .from("household_members")
+        .select("household_id")
+        .eq("user_id", user.id)
+        .single();
+
+      const isHousemate = myMembership
+        ? await admin
+            .from("household_members")
+            .select("id")
+            .eq("user_id", plan.user_id)
+            .eq("household_id", myMembership.household_id)
+            .single()
+            .then(({ data }) => !!data)
+        : false;
+
+      if (!isHousemate) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
     }
 
     const { error } = await admin
