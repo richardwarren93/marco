@@ -158,6 +158,18 @@ export default function AddMealSheet({
   const [recipeSearch, setRecipeSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Lock main scroll while sheet is open (prevents iOS from scrolling background on keyboard open/close)
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    if (isOpen) {
+      main.style.overflow = "hidden";
+    } else {
+      main.style.overflow = "";
+    }
+    return () => { main.style.overflow = ""; };
+  }, [isOpen]);
+
   // Reset when sheet opens
   useEffect(() => {
     if (!isOpen) return;
@@ -325,7 +337,7 @@ export default function AddMealSheet({
     <>
       <div className="fixed inset-0 bg-black/40 z-[60] flex items-end" onClick={onClose}>
         <div
-          className="bg-white w-full rounded-t-3xl max-h-[88vh] flex flex-col shadow-xl"
+          className="bg-white w-full rounded-t-3xl max-h-[88dvh] flex flex-col shadow-xl"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Handle */}
@@ -334,7 +346,7 @@ export default function AddMealSheet({
           </div>
 
           {/* Body — scrollable */}
-          <div className="flex-1 overflow-y-auto px-4 pt-2.5 pb-2 space-y-3.5 min-h-0">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 pb-2 space-y-3.5 min-h-0">
 
             {/* Meal type */}
             <div>
