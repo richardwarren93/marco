@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { Recipe, Collection } from "@/types";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
 import AddMealSheet from "@/components/meal-plan/AddMealSheet";
 import CollectionCard from "@/components/collections/CollectionCard";
 import CreateCollectionForm from "@/components/collections/CreateCollectionForm";
+import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
 import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
 
 function getMonday(date: Date): Date {
@@ -25,17 +26,31 @@ function formatDateKey(d: Date): string {
 type ActiveTab = "recipes" | "collections";
 
 export default function RecipesPage() {
+  return (
+    <Suspense>
+      <RecipesInner />
+    </Suspense>
+  );
+}
+
+function RecipesInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<ActiveTab>("recipes");
+  const [activeTab, setActiveTab] = useState<ActiveTab>(
+    searchParams.get("tab") === "collections" ? "collections" : "recipes"
+  );
   const [showCollectionForm, setShowCollectionForm] = useState(false);
 
   // Quick-add sheet state
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [addSheetRecipeId, setAddSheetRecipeId] = useState<string | null>(null);
   const [addSheetMealTypes, setAddSheetMealTypes] = useState<string[]>(["dinner"]);
+
+  // Add to collection modal state
+  const [collectionRecipeId, setCollectionRecipeId] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -54,10 +69,10 @@ export default function RecipesPage() {
     async function fetchData() {
       const [recipesRes, collectionsRes] = await Promise.all([
         supabase.from("recipes").select("*").order("created_at", { ascending: false }),
-        supabase.from("collections").select("*").order("name"),
+        fetch("/api/collections").then((r) => r.json()),
       ]);
       setRecipes((recipesRes.data as Recipe[]) ?? []);
-      setCollections((collectionsRes.data as Collection[]) ?? []);
+      setCollections(collectionsRes.collections ?? []);
       setLoading(false);
     }
     fetchData();
@@ -130,6 +145,7 @@ export default function RecipesPage() {
             setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
             setAddSheetOpen(true);
           }}
+          onAddToCollection={(id) => setCollectionRecipeId(id)}
         />
       )}
 
@@ -201,6 +217,12 @@ export default function RecipesPage() {
           setAddSheetRecipeId(null);
         }}
         onAdd={handleAddToMealPlan}
+      />
+
+      <AddToCollectionModal
+        recipeId={collectionRecipeId ?? ""}
+        isOpen={!!collectionRecipeId}
+        onClose={() => setCollectionRecipeId(null)}
       />
     </>
   );

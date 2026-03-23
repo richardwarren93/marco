@@ -17,6 +17,8 @@ type LibraryMode = {
   loading?: boolean;
   /** Called when user taps "+" on a card — parent opens AddMealSheet */
   onAddToMealPlan?: (recipeId: string) => void;
+  /** Called when user taps bookmark on a card — parent opens AddToCollectionModal */
+  onAddToCollection?: (recipeId: string) => void;
 };
 
 type PickMode = {
@@ -52,12 +54,14 @@ function BrowserCard({
   recipe,
   mode,
   onAdd,
+  onCollection,
   onPick,
   isPicking,
 }: {
   recipe: Recipe;
   mode: "library" | "pick";
   onAdd?: () => void;
+  onCollection?: () => void;
   onPick?: () => void;
   isPicking?: boolean;
 }) {
@@ -99,25 +103,49 @@ function BrowserCard({
           </div>
         )}
 
-        {mode === "library" && onAdd && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAdd();
-            }}
-            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
-            aria-label="Add to meal plan"
-          >
-            <svg
-              className="w-3 h-3 text-gray-700"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
+        {mode === "library" && (
+          <div className="absolute top-1.5 right-1.5 flex gap-1">
+            {onCollection && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCollection();
+                }}
+                className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
+                aria-label="Add to collection"
+              >
+                <svg
+                  className="w-3 h-3 text-gray-700"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </button>
+            )}
+            {onAdd && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAdd();
+                }}
+                className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
+                aria-label="Add to meal plan"
+              >
+                <svg
+                  className="w-3 h-3 text-gray-700"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            )}
+          </div>
         )}
       </div>
 
@@ -426,6 +454,11 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                 onAdd={
                   props.mode === "library" && props.onAddToMealPlan
                     ? () => props.onAddToMealPlan!(recipe.id)
+                    : undefined
+                }
+                onCollection={
+                  props.mode === "library" && props.onAddToCollection
+                    ? () => props.onAddToCollection!(recipe.id)
                     : undefined
                 }
                 onPick={
