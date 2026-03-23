@@ -13,16 +13,20 @@ export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Prop
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState<string | null>(null);
-  const [successId, setSuccessId] = useState<string | null>(null);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const [alreadyInIds, setAlreadyInIds] = useState<Set<string>>(new Set());
   const [error, setError] = useState("");
   const [newName, setNewName] = useState("");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      setAddedIds(new Set());
+      setError("");
       fetchCollections();
+      fetchExistingMembership();
     }
-  }, [isOpen]);
+  }, [isOpen, recipeId]);
 
   async function fetchCollections() {
     setLoading(true);
@@ -38,10 +42,20 @@ export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Prop
     }
   }
 
+  async function fetchExistingMembership() {
+    try {
+      const res = await fetch(`/api/recipes/${recipeId}/collections`);
+      if (!res.ok) return;
+      const { collections: existing } = await res.json();
+      setAlreadyInIds(new Set((existing || []).map((c: { id: string }) => c.id)));
+    } catch {
+      // ignore
+    }
+  }
+
   async function handleAdd(collectionId: string) {
     setAddingId(collectionId);
     setError("");
-    setSuccessId(null);
 
     try {
       const res = await fetch("/api/collections/recipes", {
@@ -55,10 +69,43 @@ export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Prop
         throw new Error(data.error || "Failed to add recipe");
       }
 
-      setSuccessId(collectionId);
-      setTimeout(() => setSuccessId(null), 2000);
+      setAddedIds((prev) => new Set(prev).add(collectionId));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add recipe");
+    } finally {
+      setAddingId(null);
+    }
+  }
+
+  async function handleRemove(collectionId: string) {
+    setAddingId(collectionId);
+    setError("");
+
+    try {
+      const res = await fetch("/api/collections/recipes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ collection_id: collectionId, recipe_id: recipeId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to remove recipe");
+      }
+
+      // Remove from both sets
+      setAddedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(collectionId);
+        return next;
+      });
+      setAlreadyInIds((prev) => {
+        const next = new Set(prev);
+        next.delete(collectionId);
+        return next;
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove recipe");
     } finally {
       setAddingId(null);
     }
@@ -115,34 +162,48 @@ export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Prop
           <p className="text-gray-500 text-sm mb-4">No collections yet. Create one below.</p>
         ) : (
           <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
-            {collections.map((collection) => (
-              <div
-                key={collection.id}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{collection.name}</p>
-                  {collection.description && (
-                    <p className="text-xs text-gray-500 line-clamp-1">{collection.description}</p>
+            {collections.map((collection) => {
+              const isInCollection = addedIds.has(collection.id) || alreadyInIds.has(collection.id);
+              const isProcessing = addingId === collection.id;
+
+              return (
+                <div
+                  key={collection.id}
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+                >
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{collection.name}</p>
+                    {collection.description && (
+                      <p className="text-xs text-gray-500 line-clamp-1">{collection.description}</p>
+                    )}
+                  </div>
+                  {isInCollection ? (
+                    <button
+                      onClick={() => handleRemove(collection.id)}
+                      disabled={isProcessing}
+                      className="text-sm px-3 py-1 rounded-lg font-medium bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600 transition-colors disabled:opacity-50 group"
+                    >
+                      {isProcessing ? (
+                        "..."
+                      ) : (
+                        <>
+                          <span className="group-hover:hidden">Added</span>
+                          <span className="hidden group-hover:inline">Remove</span>
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleAdd(collection.id)}
+                      disabled={isProcessing}
+                      className="text-sm px-3 py-1 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50"
+                    >
+                      {isProcessing ? "Adding..." : "Add"}
+                    </button>
                   )}
                 </div>
-                <button
-                  onClick={() => handleAdd(collection.id)}
-                  disabled={addingId === collection.id}
-                  className={`text-sm px-3 py-1 rounded-lg font-medium ${
-                    successId === collection.id
-                      ? "bg-green-100 text-green-700"
-                      : "bg-orange-100 text-orange-700 hover:bg-orange-200"
-                  } disabled:opacity-50`}
-                >
-                  {addingId === collection.id
-                    ? "Adding..."
-                    : successId === collection.id
-                    ? "Added!"
-                    : "Add"}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
