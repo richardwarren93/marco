@@ -10,8 +10,7 @@ interface ImportRecipeSheetProps {
 
 export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheetProps) {
   const router = useRouter();
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const libraryInputRef = useRef<HTMLInputElement>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
 
@@ -114,9 +113,9 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
               </div>
             </button>
 
-            {/* Take Photo — camera on mobile, file picker on desktop */}
+            {/* Camera or Photo Library — iOS presents its own native picker */}
             <button
-              onClick={() => cameraInputRef.current?.click()}
+              onClick={() => photoInputRef.current?.click()}
               className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
             >
               <span className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
@@ -126,25 +125,8 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
                 </svg>
               </span>
               <div>
-                <p className="font-medium text-gray-900 text-sm">Take Photo</p>
+                <p className="font-medium text-gray-900 text-sm">Camera or Photo Library</p>
                 <p className="text-xs text-gray-400 mt-0.5">Photograph a cookbook or recipe card</p>
-              </div>
-            </button>
-
-            {/* Choose from Library (mobile) / Upload Photo (desktop) */}
-            <button
-              onClick={() => libraryInputRef.current?.click()}
-              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
-            >
-              <span className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </span>
-              <div>
-                <p className="font-medium text-gray-900 text-sm sm:hidden">Choose from Library</p>
-                <p className="font-medium text-gray-900 text-sm hidden sm:block">Upload Photo</p>
-                <p className="text-xs text-gray-400 mt-0.5">Extract a recipe from an image</p>
               </div>
             </button>
 
@@ -155,17 +137,9 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           </div>
         )}
 
-        {/* Hidden file inputs */}
+        {/* Hidden file input — no capture attr so iOS shows its native picker */}
         <input
-          ref={cameraInputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={handleFileSelected}
-        />
-        <input
-          ref={libraryInputRef}
+          ref={photoInputRef}
           type="file"
           accept="image/*"
           className="hidden"

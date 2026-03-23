@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Recipe, Collection } from "@/types";
@@ -51,10 +51,8 @@ const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: "newest", label: "Newest" },
   { value: "oldest", label: "Oldest" },
   { value: "alpha", label: "A–Z" },
-  { value: "cook_time", label: "⏱ Cook time" },
+  { value: "cook_time", label: "Cook time" },
 ];
-
-const TAG_LIMIT = 8;
 
 // ─── Recipe card ──────────────────────────────────────────────────────────────
 
@@ -85,11 +83,11 @@ function BrowserCard({
 
   return (
     <div
-      className="relative bg-white rounded-2xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+      className="relative bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
       onClick={handleCardClick}
     >
       {/* Image */}
-      <div className="relative h-36 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
+      <div className="relative h-28 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
         {recipe.image_url ? (
           <img
             src={recipe.image_url}
@@ -100,28 +98,26 @@ function BrowserCard({
             }}
           />
         ) : (
-          <span className="text-4xl">{emoji}</span>
+          <span className="text-3xl">{emoji}</span>
         )}
 
-        {/* Pick mode: spinner while selecting */}
         {mode === "pick" && isPicking && (
           <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
             <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
           </div>
         )}
 
-        {/* Library mode: + Add button */}
         {mode === "library" && onAdd && (
           <button
             onClick={(e) => {
               e.stopPropagation();
               onAdd();
             }}
-            className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-md hover:bg-white hover:scale-110 transition-all z-10"
+            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors z-10"
             aria-label="Add to meal plan"
           >
             <svg
-              className="w-3.5 h-3.5 text-gray-700"
+              className="w-3 h-3 text-gray-700"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -134,12 +130,12 @@ function BrowserCard({
       </div>
 
       {/* Content */}
-      <div className="p-2.5">
-        <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+      <div className="p-2">
+        <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-snug">
           {recipe.title}
         </p>
         {totalTime > 0 && (
-          <p className="text-xs text-gray-400 mt-0.5">{totalTime} min</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">{totalTime} min</p>
         )}
       </div>
     </div>
@@ -155,17 +151,32 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const [sort, setSort] = useState<SortKey>("newest");
   const [mealTypes, setMealTypes] = useState<Set<MealType>>(new Set());
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [showAllTags, setShowAllTags] = useState(false);
+  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
 
   // Pick mode: which card is mid-selection
   const [selectingId, setSelectingId] = useState<string | null>(null);
+
+  const sortMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close sort menu when clicking outside
+  useEffect(() => {
+    if (!showSortMenu) return;
+    function onDown(e: MouseEvent) {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setShowSortMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showSortMenu]);
 
   // All unique tags from the recipe library
   const allTags = useMemo(
     () => [...new Set(recipes.flatMap((r) => r.tags ?? []))].sort(),
     [recipes]
   );
-  const visibleTags = showAllTags ? allTags : allTags.slice(0, TAG_LIMIT);
+
   const hasFilters = !!(search.trim() || mealTypes.size > 0 || selectedTags.length > 0);
 
   // Filtered + sorted recipe list
@@ -238,15 +249,16 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   }
 
   const isLoading = props.mode === "library" && props.loading;
+  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Newest";
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
 
-        {/* Title row */}
-        <div className="flex items-center gap-2 px-4 pt-4 pb-2">
-          {props.mode === "pick" && (
+        {/* Pick mode: back button + title */}
+        {props.mode === "pick" && (
+          <div className="flex items-center gap-2 px-4 pt-4 pb-2">
             <button
               onClick={props.onBack}
               className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0 -ml-1"
@@ -261,17 +273,12 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-          )}
-
-          <div className="flex-1 flex items-center min-w-0">
-            <h1 className="text-lg font-bold text-gray-900">
-              {props.mode === "library" ? "My Recipes" : "Browse recipes"}
-            </h1>
+            <h1 className="text-lg font-bold text-gray-900">Browse recipes</h1>
           </div>
-        </div>
+        )}
 
         {/* Search */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pt-3 pb-2">
           <div className="relative">
             <svg
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
@@ -317,24 +324,53 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         </div>
 
-        {/* Sort + Meal type row */}
-        <div className="flex gap-1.5 px-4 pb-2 overflow-x-auto scrollbar-hide">
-          {SORT_OPTIONS.map((opt) => (
+        {/* Filter controls row */}
+        <div className="flex items-center gap-1.5 px-4 pb-2.5 overflow-x-auto scrollbar-hide">
+
+          {/* Sort dropdown */}
+          <div className="relative flex-shrink-0" ref={sortMenuRef}>
             <button
-              key={opt.value}
-              onClick={() => setSort(opt.value)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                sort === opt.value
+              onClick={() => setShowSortMenu((v) => !v)}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                sort !== "newest"
                   ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {opt.label}
+              {currentSortLabel}
+              <svg
+                className="w-3 h-3 opacity-60"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-          ))}
+            {showSortMenu && (
+              <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 min-w-[120px]">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      setSort(opt.value);
+                      setShowSortMenu(false);
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${
+                      sort === opt.value ? "text-orange-500" : "text-gray-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
-          <div className="w-px bg-gray-200 flex-shrink-0 self-stretch my-1" />
+          <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
 
+          {/* Meal type pills */}
           {MEAL_TYPES.map((mt) => (
             <button
               key={mt}
@@ -348,42 +384,65 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               {MEAL_TYPE_LABELS[mt]}
             </button>
           ))}
+
+          {/* More filters button — only if there are tags */}
+          {allTags.length > 0 && (
+            <>
+              <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
+              <button
+                onClick={() => setShowFiltersPanel(true)}
+                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  selectedTags.length > 0
+                    ? "bg-orange-100 text-orange-700"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
+                  />
+                </svg>
+                {selectedTags.length > 0 ? `Tags · ${selectedTags.length}` : "More filters"}
+              </button>
+            </>
+          )}
         </div>
 
-        {/* Tags row */}
-        {allTags.length > 0 && (
-          <div className="flex gap-1.5 px-4 pb-3 flex-wrap">
-            {visibleTags.map((tag) => (
+        {/* Active tag chips — only when tags are selected */}
+        {selectedTags.length > 0 && (
+          <div className="flex gap-1.5 px-4 pb-2.5 overflow-x-auto scrollbar-hide">
+            {selectedTags.map((tag) => (
               <button
                 key={tag}
                 onClick={() => toggleTag(tag)}
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-colors ${
-                  selectedTags.includes(tag)
-                    ? "bg-orange-100 text-orange-700 ring-1 ring-orange-200"
-                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                }`}
+                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-orange-100 text-orange-700"
               >
                 {tag}
+                <svg
+                  className="w-2.5 h-2.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             ))}
-            {allTags.length > TAG_LIMIT && (
-              <button
-                onClick={() => setShowAllTags((v) => !v)}
-                className="px-2.5 py-1 rounded-full text-[11px] font-medium text-gray-400 hover:text-orange-500 transition-colors"
-              >
-                {showAllTags
-                  ? "Show less"
-                  : `+${allTags.length - TAG_LIMIT} more`}
-              </button>
-            )}
-            {selectedTags.length > 0 && (
-              <button
-                onClick={() => setSelectedTags([])}
-                className="px-2.5 py-1 rounded-full text-[11px] font-medium text-red-400 hover:text-red-600 transition-colors"
-              >
-                Clear tags
-              </button>
-            )}
+            <button
+              onClick={() => setSelectedTags([])}
+              className="flex-shrink-0 px-2 py-1 text-[11px] text-gray-400 hover:text-gray-600"
+            >
+              Clear
+            </button>
           </div>
         )}
       </div>
@@ -393,7 +452,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
 
         {/* Collections row — library only */}
         {props.mode === "library" && props.collections.length > 0 && (
-          <div className="mb-5">
+          <div className="mb-4">
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
               Collections
             </p>
@@ -422,11 +481,11 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3">
             {[...Array(6)].map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                <div className="h-36 bg-gray-100 animate-pulse" />
-                <div className="p-2.5 space-y-1.5">
-                  <div className="h-3 bg-gray-100 rounded-full animate-pulse w-4/5" />
-                  <div className="h-3 bg-gray-100 rounded-full animate-pulse w-2/5" />
+              <div key={i} className="bg-white rounded-xl overflow-hidden shadow-sm">
+                <div className="h-28 bg-gray-100 animate-pulse" />
+                <div className="p-2 space-y-1.5">
+                  <div className="h-2.5 bg-gray-100 rounded-full animate-pulse w-4/5" />
+                  <div className="h-2.5 bg-gray-100 rounded-full animate-pulse w-2/5" />
                 </div>
               </div>
             ))}
@@ -478,6 +537,58 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         )}
       </div>
+
+      {/* ── Tags filter panel (bottom drawer) ─────────────────────── */}
+      {showFiltersPanel && (
+        <>
+          <div
+            className="fixed inset-0 z-50 bg-black/30"
+            onClick={() => setShowFiltersPanel(false)}
+          />
+          <div
+            className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-xl flex flex-col"
+            style={{
+              maxHeight: "65vh",
+              paddingBottom: "env(safe-area-inset-bottom, 0px)",
+            }}
+          >
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-900 text-sm">Filter by tag</h3>
+              <div className="flex items-center gap-3">
+                {selectedTags.length > 0 && (
+                  <button
+                    onClick={() => setSelectedTags([])}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    Clear all
+                  </button>
+                )}
+                <button
+                  onClick={() => setShowFiltersPanel(false)}
+                  className="text-xs font-semibold text-orange-500 hover:text-orange-600"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 px-5 py-4 overflow-y-auto">
+              {allTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => toggleTag(tag)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                    selectedTags.includes(tag)
+                      ? "bg-orange-100 text-orange-700 ring-1 ring-orange-200"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

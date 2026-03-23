@@ -2,9 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import { useState } from "react";
 import {
   RecipesIcon,
   GroceryIcon,
@@ -20,18 +18,7 @@ const leftTabs = [
 export default function BottomTabBar() {
   const pathname = usePathname();
   const [showImport, setShowImport] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
-  const supabase = createClient();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
-
-  const initials = user?.email?.split("@")[0].slice(0, 2).toUpperCase() ?? "?";
   const isProfileActive = pathname.startsWith("/profile");
   const isGroceryActive = pathname.startsWith("/grocery");
 
@@ -90,13 +77,19 @@ export default function BottomTabBar() {
               isProfileActive ? "text-orange-600" : "text-gray-400"
             }`}
           >
-            <span
-              className={`w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center font-bold text-[10px] transition-all ${
-                isProfileActive ? "ring-2 ring-orange-500 ring-offset-1" : ""
-              }`}
+            <svg
+              className="w-6 h-6"
+              fill={isProfileActive ? "currentColor" : "none"}
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
             >
-              {initials}
-            </span>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"
+              />
+            </svg>
             <span className="text-[10px] font-medium leading-tight">Profile</span>
           </Link>
         </div>
