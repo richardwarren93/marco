@@ -164,29 +164,24 @@ export default function AddMealSheet({
   const [searchFocused, setSearchFocused] = useState(false);
 
   // When search input is focused, scroll the recipe section to the top of the
-  // sheet body AFTER the iOS keyboard finishes opening (fires on visualViewport resize).
+  // sheet body after the iOS keyboard finishes opening.
   useEffect(() => {
     if (!searchFocused) return;
 
     function scrollRecipeToTop() {
-      if (recipeSectionRef.current && scrollBodyRef.current) {
-        const offset =
-          recipeSectionRef.current.offsetTop - scrollBodyRef.current.offsetTop;
-        scrollBodyRef.current.scrollTo({ top: offset, behavior: "smooth" });
-      }
+      if (!recipeSectionRef.current || !scrollBodyRef.current) return;
+      // Use getBoundingClientRect for correct offset relative to the scroll container
+      const rect = recipeSectionRef.current.getBoundingClientRect();
+      const containerRect = scrollBodyRef.current.getBoundingClientRect();
+      const targetScrollTop =
+        scrollBodyRef.current.scrollTop + (rect.top - containerRect.top);
+      scrollBodyRef.current.scrollTo({ top: targetScrollTop, behavior: "smooth" });
     }
 
-    // iOS keyboard takes ~300ms; fire on resize (keyboard done) + fallback timeout
-    const vv = window.visualViewport;
-    if (vv) {
-      vv.addEventListener("resize", scrollRecipeToTop);
-    }
+    // Fire immediately, then again after keyboard animation completes (~350ms)
+    scrollRecipeToTop();
     const t = setTimeout(scrollRecipeToTop, 350);
-
-    return () => {
-      vv?.removeEventListener("resize", scrollRecipeToTop);
-      clearTimeout(t);
-    };
+    return () => clearTimeout(t);
   }, [searchFocused]);
 
   // Lock main scroll while sheet is open; reset scroll position on close
@@ -378,8 +373,12 @@ export default function AddMealSheet({
             <div className="w-10 h-1 bg-gray-200 rounded-full" />
           </div>
 
-          {/* Body — scrollable */}
-          <div ref={scrollBodyRef} className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 pb-2 space-y-3.5 min-h-0">
+          {/* Body — scrollable; extra bottom padding when keyboard open keeps content above iOS accessory bar */}
+          <div
+            ref={scrollBodyRef}
+            className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 space-y-3.5 min-h-0"
+            style={{ paddingBottom: searchFocused ? "56px" : "8px" }}
+          >
 
             {/* Meal type */}
             <div>
