@@ -65,7 +65,7 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="fixed inset-0 z-[60] bg-black/40" onClick={onClose} />
 
       {/* Sheet */}
       <div

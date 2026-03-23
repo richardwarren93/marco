@@ -39,11 +39,25 @@ for (const ing of INGREDIENTS) {
   }
 }
 
+/** Keyword-based fallback when the ingredient isn't in the alias map. */
+function keywordCategorize(lower: string): string | null {
+  if (/chicken|beef|pork|lamb|turkey|duck|venison|steak|mince|ground meat|sausage|bacon|ham|prawn|shrimp|salmon|tuna|cod|tilapia|halibut|mahi|crab|lobster|clam|mussel|oyster|anchovy|sardine|tofu|tempeh|seitan/.test(lower)) return "protein";
+  if (/parmesan|mozzarella|cheddar|gouda|brie|feta|ricotta|goat cheese|cream cheese|cottage cheese|yogurt|sour cream|half.and.half|heavy cream|whipped cream|ghee/.test(lower)) return "dairy";
+  if (/vinegar|soy sauce|fish sauce|hot sauce|sriracha|tabasco|worcestershire|ketchup|mayonnaise|mustard|relish/.test(lower)) return "spice";
+  if (/salt|pepper|paprika|cumin|turmeric|coriander|oregano|chili|chilli|cayenne|cinnamon|nutmeg|cardamom|saffron|sesame|spice|crisp|seasoning/.test(lower)) return "spice";
+  if (/oil|flour|sugar|honey|maple|pasta|noodle|rice|quinoa|oat|lentil|chickpea|bread|cracker|stock|broth|tomato paste|coconut milk|peanut butter|nut butter|almond butter|chocolate|cocoa|baking powder|baking soda|cornstarch|panko|breadcrumb/.test(lower)) return "pantry";
+  if (/potato|onion|garlic|ginger|tomato|carrot|celery|lettuce|spinach|kale|broccoli|cauliflower|asparagus|zucchini|cucumber|rosemary|thyme|sage|mint|parsley|cilantro|basil|dill|chive|lemon|lime|orange|apple|banana|berry|mushroom|corn|peas|vegetable|greens|arugula|leek|avocado|eggplant|squash|beet|radish|yam|scallion|fennel|bok choy|cabbage|artichoke|herb/.test(lower)) return "produce";
+  if (/frozen|ice cream|sorbet/.test(lower)) return "frozen";
+  return null;
+}
+
 function normalizeName(name: string): { canonical: string; category: string | null } {
   const lower = name.toLowerCase().trim();
   const found = aliasMap.get(lower);
   if (found) return found;
-  return { canonical: lower, category: null };
+  // Fallback: keyword-based category guess for unrecognised ingredients
+  const category = keywordCategorize(lower);
+  return { canonical: lower, category };
 }
 
 function parseAmount(amount: string | number | null | undefined): number | null {

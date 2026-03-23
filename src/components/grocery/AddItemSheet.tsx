@@ -97,7 +97,7 @@ export default function AddItemSheet({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[60] bg-black/40"
         onClick={handleClose}
       />
 

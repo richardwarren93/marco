@@ -59,7 +59,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[70] bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-[70] bg-black/40"
         onClick={extracting ? undefined : onClose}
       />
 
@@ -125,7 +125,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
                 </svg>
               </span>
               <div>
-                <p className="font-medium text-gray-900 text-sm">Camera or Photo Library</p>
+                <p className="font-medium text-gray-900 text-sm">Camera</p>
                 <p className="text-xs text-gray-400 mt-0.5">Photograph a cookbook or recipe card</p>
               </div>
             </button>
