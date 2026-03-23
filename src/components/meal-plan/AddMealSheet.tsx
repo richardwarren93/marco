@@ -160,6 +160,34 @@ export default function AddMealSheet({
 
   const scrollBodyRef = useRef<HTMLDivElement>(null);
   const recipeSectionRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  // When search input is focused, scroll the recipe section to the top of the
+  // sheet body AFTER the iOS keyboard finishes opening (fires on visualViewport resize).
+  useEffect(() => {
+    if (!searchFocused) return;
+
+    function scrollRecipeToTop() {
+      if (recipeSectionRef.current && scrollBodyRef.current) {
+        const offset =
+          recipeSectionRef.current.offsetTop - scrollBodyRef.current.offsetTop;
+        scrollBodyRef.current.scrollTo({ top: offset, behavior: "smooth" });
+      }
+    }
+
+    // iOS keyboard takes ~300ms; fire on resize (keyboard done) + fallback timeout
+    const vv = window.visualViewport;
+    if (vv) {
+      vv.addEventListener("resize", scrollRecipeToTop);
+    }
+    const t = setTimeout(scrollRecipeToTop, 350);
+
+    return () => {
+      vv?.removeEventListener("resize", scrollRecipeToTop);
+      clearTimeout(t);
+    };
+  }, [searchFocused]);
 
   // Lock main scroll while sheet is open; reset scroll position on close
   useEffect(() => {
@@ -402,26 +430,23 @@ export default function AddMealSheet({
               </div>
             </div>
 
-            {/* Recipe search + results */}
-            <div ref={recipeSectionRef}>
+            {/* Recipe search + results — sticky when focused so input stays visible above keyboard */}
+            <div
+              ref={recipeSectionRef}
+              className={searchFocused ? "sticky top-0 bg-white z-10 -mx-4 px-4 pt-1 pb-2" : ""}
+            >
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                 Recipe
               </p>
 
               {/* Search input */}
               <input
+                ref={searchInputRef}
                 type="text"
                 value={recipeSearch}
                 onChange={(e) => setRecipeSearch(e.target.value)}
-                onFocus={() => {
-                  // Scroll the recipe section to the top of the body so results have space below
-                  setTimeout(() => {
-                    if (recipeSectionRef.current && scrollBodyRef.current) {
-                      const offset = recipeSectionRef.current.offsetTop - scrollBodyRef.current.offsetTop;
-                      scrollBodyRef.current.scrollTo({ top: offset, behavior: "smooth" });
-                    }
-                  }, 50);
-                }}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
                 placeholder="Search recipes…"
                 className="w-full px-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all"
                 autoComplete="off"
