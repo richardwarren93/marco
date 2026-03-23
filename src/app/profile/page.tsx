@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -18,6 +18,8 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -71,6 +73,34 @@ export default function ProfilePage() {
     router.refresh();
   }
 
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) return;
+
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/upload-image", { method: "POST", body: formData });
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error(uploadData.error);
+
+      const profileRes = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatar_url: uploadData.url }),
+      });
+      const profileData = await profileRes.json();
+      if (profileRes.ok) setProfile(profileData.profile);
+    } catch {
+      // upload failed silently
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = "";
+    }
+  }
+
   async function handleCopyCode() {
     if (profile) {
       await navigator.clipboard.writeText(profile.friend_code);
@@ -102,9 +132,38 @@ export default function ProfilePage() {
     <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
       {/* Avatar & Name */}
       <div className="text-center">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center font-bold text-2xl mx-auto shadow-lg">
-          {initials}
-        </div>
+        <button
+          onClick={() => avatarInputRef.current?.click()}
+          disabled={uploadingAvatar}
+          className="relative w-20 h-20 rounded-full mx-auto shadow-lg group"
+        >
+          {profile?.avatar_url ? (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={profile.avatar_url}
+              alt={profile.display_name}
+              className="w-20 h-20 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center font-bold text-2xl">
+              {initials}
+            </div>
+          )}
+          <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+            {uploadingAvatar ? (
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <span className="text-white opacity-0 group-hover:opacity-100 transition-opacity text-lg">📷</span>
+            )}
+          </div>
+        </button>
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleAvatarChange}
+          className="hidden"
+        />
         {editing ? (
           <div className="mt-3 flex items-center justify-center gap-2">
             <input
@@ -129,7 +188,13 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="mt-3">
-            <h1 className="text-xl font-bold text-gray-900">{profile?.display_name}</h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-xl font-bold text-gray-900">{profile?.display_name}</h1>
+              <div className="flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-full">
+                <TomatoIcon className="w-4 h-4 text-orange-500" />
+                <span className="text-sm font-semibold text-orange-600">{stats.tomatoes}</span>
+              </div>
+            </div>
             <button
               onClick={() => setEditing(true)}
               className="text-xs text-gray-400 hover:text-orange-600 mt-1"
@@ -141,18 +206,17 @@ export default function ProfilePage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Recipes", value: stats.recipes, Icon: RecipesIcon },
-          { label: "Collections", value: stats.collections, Icon: CollectionsIcon },
-          { label: "Friends", value: stats.friends, Icon: FriendsIcon },
-          { label: "Tomatoes", value: stats.tomatoes, Icon: TomatoIcon },
+          { label: "Recipes", value: stats.recipes, Icon: RecipesIcon, href: "/recipes" },
+          { label: "Collections", value: stats.collections, Icon: CollectionsIcon, href: "/recipes?tab=collections" },
+          { label: "Friends", value: stats.friends, Icon: FriendsIcon, href: "/friends" },
         ].map((stat) => (
-          <div key={stat.label} className="bg-white rounded-2xl shadow-sm p-4 text-center">
+          <Link key={stat.label} href={stat.href} className="bg-white rounded-2xl shadow-sm p-3 text-center hover:shadow transition-shadow">
             <div className="text-orange-500 flex justify-center"><stat.Icon className="w-5 h-5" /></div>
             <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
             <p className="text-xs text-gray-500">{stat.label}</p>
-          </div>
+          </Link>
         ))}
       </div>
 
