@@ -400,15 +400,15 @@ export default function GroceryList() {
         </div>
       )}
 
-      {/* ── Regenerate button — only when list exists with items ─────────────── */}
-      {list && !loading && allItems.length > 0 && !mealPlanChanged && (
+      {/* ── Regenerate button — when list exists and no change notice showing ── */}
+      {list && !loading && !mealPlanChanged && (
         <div className="mx-4 mt-3 flex justify-end">
           <button
             onClick={handleGenerate}
             disabled={generating}
             className="text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 active:bg-orange-700 px-4 py-2 rounded-full shadow-sm transition-colors disabled:opacity-50"
           >
-            {generating ? "Regenerating…" : "Regenerate"}
+            {generating ? "Regenerating…" : allItems.length === 0 ? "Generate grocery list" : "Regenerate"}
           </button>
         </div>
       )}
@@ -500,16 +500,30 @@ export default function GroceryList() {
 
       ) : grouped.length === 0 ? (
         /* List exists but nothing to show */
-        <div className="mx-4 mt-6 text-center py-10">
-          <p className="text-gray-400 text-sm">
-            {allItems.length === 0
-              ? "No items yet — add meals and regenerate, or add items manually."
-              : filter === "to_buy"
-              ? "Everything is checked off! 🎉"
-              : filter === "checked"
-              ? "Nothing marked as have yet."
-              : "Your list is empty."}
-          </p>
+        <div className="mx-4 mt-6 text-center">
+          {allItems.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10">
+              <p className="text-4xl mb-4">✨</p>
+              <p className="text-gray-800 font-semibold text-base mb-1">List cleared</p>
+              <p className="text-gray-400 text-sm mb-1">
+                Tap &quot;Generate grocery list&quot; above to rebuild from your meal plan.
+              </p>
+            </div>
+          ) : filter === "to_buy" ? (
+            <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10">
+              <p className="text-4xl mb-3">🎉</p>
+              <p className="text-gray-800 font-semibold text-base mb-1">All done!</p>
+              <p className="text-gray-400 text-sm">Everything is checked off your list.</p>
+            </div>
+          ) : filter === "checked" ? (
+            <div className="py-10">
+              <p className="text-gray-400 text-sm">Nothing marked as have yet.</p>
+            </div>
+          ) : (
+            <div className="py-10">
+              <p className="text-gray-400 text-sm">Your list is empty.</p>
+            </div>
+          )}
         </div>
 
       ) : (
