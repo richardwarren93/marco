@@ -298,7 +298,7 @@ export default function GroceryList() {
     <div className="bg-gray-50 pb-24">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-5 pb-4">
+      <div className="bg-white border-b border-gray-100 px-4 pt-3 pb-3">
         <div className="flex items-center justify-between mb-0.5">
           <h1 className="text-xl font-bold text-gray-900">Grocery</h1>
           {/* Range selector */}
@@ -400,34 +400,16 @@ export default function GroceryList() {
         </div>
       )}
 
-      {/* ── Summary section — only when list has actual generated items ──────── */}
-      {list && !loading && allItems.length > 0 && (
-        <div className="mx-4 mt-3 px-4 py-3 bg-white rounded-2xl border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-800">
-                {generatedFrom > 0
-                  ? `Generated from ${generatedFrom} meal${generatedFrom !== 1 ? "s" : ""}`
-                  : "Generated from your meal plan"}
-              </p>
-              <p className="text-xs text-gray-400 mt-0.5">Based on current servings</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => router.push(`/meal-plan?date=${dateRange.start}`)}
-                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                View meals
-              </button>
-              <button
-                onClick={handleGenerate}
-                disabled={generating}
-                className="text-xs font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-              >
-                {generating ? "…" : "Regenerate"}
-              </button>
-            </div>
-          </div>
+      {/* ── Regenerate button — only when list exists with items ─────────────── */}
+      {list && !loading && allItems.length > 0 && !mealPlanChanged && (
+        <div className="mx-4 mt-3 flex justify-end">
+          <button
+            onClick={handleGenerate}
+            disabled={generating}
+            className="text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 active:bg-orange-700 px-4 py-2 rounded-full shadow-sm transition-colors disabled:opacity-50"
+          >
+            {generating ? "Regenerating…" : "Regenerate"}
+          </button>
         </div>
       )}
 
@@ -438,7 +420,6 @@ export default function GroceryList() {
             {([
               { key: "to_buy",  label: `Buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
               { key: "checked", label: `Have${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
-              { key: "all",     label: "All" },
             ] as { key: FilterMode; label: string }[]).map(({ key, label }) => (
               <button
                 key={key}

@@ -141,6 +141,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
 
   const [search, setSearch] = useState("");
   const [activeMealType, setActiveMealType] = useState<MealType | "all">("all");
+  const [sort, setSort] = useState<"newest" | "prep_time">("newest");
   const [showMealMenu, setShowMealMenu] = useState(false);
   const mealMenuRef = useRef<HTMLDivElement>(null);
 
@@ -174,8 +175,18 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
       );
     }
 
+    if (sort === "prep_time") {
+      return [...result].sort((a, b) => {
+        const aTime = (a.prep_time_minutes ?? 0) + (a.cook_time_minutes ?? 0);
+        const bTime = (b.prep_time_minutes ?? 0) + (b.cook_time_minutes ?? 0);
+        if (aTime === 0 && bTime === 0) return 0;
+        if (aTime === 0) return 1;
+        if (bTime === 0) return -1;
+        return aTime - bTime;
+      });
+    }
     return [...result].sort((a, b) => b.created_at.localeCompare(a.created_at));
-  }, [recipes, search, activeMealType]);
+  }, [recipes, search, activeMealType, sort]);
 
   function clearFilters() {
     setSearch("");
@@ -267,8 +278,31 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         </div>
 
-        {/* Meal type dropdown filter */}
+        {/* Sort + meal type filters */}
         <div className="flex items-center gap-2 px-4 pb-2.5">
+          {/* Sort pills */}
+          <button
+            onClick={() => setSort("newest")}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              sort === "newest"
+                ? "bg-orange-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Newest
+          </button>
+          <button
+            onClick={() => setSort("prep_time")}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              sort === "prep_time"
+                ? "bg-orange-500 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+            }`}
+          >
+            Prep time
+          </button>
+
+          {/* Meal type dropdown */}
           <div className="relative" ref={mealMenuRef}>
             <button
               onClick={() => setShowMealMenu((v) => !v)}
