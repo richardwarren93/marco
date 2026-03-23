@@ -34,6 +34,18 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
     }
   }, [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Lock main scroll while sheet is open
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    if (item) {
+      main.style.overflow = "hidden";
+    } else {
+      main.style.overflow = "";
+    }
+    return () => { main.style.overflow = ""; };
+  }, [!!item]); // eslint-disable-line react-hooks/exhaustive-deps
+
   if (!item) return null;
 
   async function handleSave(e: React.FormEvent) {
@@ -71,7 +83,7 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
       <div
         className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl flex flex-col"
         style={{
-          maxHeight: "85vh",
+          maxHeight: "85dvh",
           paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",
         }}
       >
@@ -97,7 +109,7 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
 
         {/* Scrollable form */}
         <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 pt-4 space-y-4">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pt-4 space-y-4">
             {/* Name */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">

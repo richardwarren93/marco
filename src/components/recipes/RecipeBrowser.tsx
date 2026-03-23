@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Recipe, Collection } from "@/types";
@@ -8,7 +8,6 @@ import { recipeMatchesQuery } from "@/lib/recipeSearch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SortKey = "newest" | "oldest" | "alpha" | "cook_time";
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 type LibraryMode = {
@@ -46,13 +45,6 @@ const MEAL_EMOJIS: Record<MealType, string> = {
   dinner: "🍽️",
   snack: "🍎",
 };
-
-const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: "newest", label: "Newest" },
-  { value: "oldest", label: "Oldest" },
-  { value: "alpha", label: "A–Z" },
-  { value: "cook_time", label: "Cook time" },
-];
 
 // ─── Recipe card ──────────────────────────────────────────────────────────────
 
@@ -148,94 +140,32 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const { recipes } = props;
 
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState<SortKey>("newest");
-  const [mealTypes, setMealTypes] = useState<Set<MealType>>(new Set());
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [showSortMenu, setShowSortMenu] = useState(false);
-  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
+  const [activeMealType, setActiveMealType] = useState<MealType | "all">("all");
 
   // Pick mode: which card is mid-selection
   const [selectingId, setSelectingId] = useState<string | null>(null);
 
-  const sortMenuRef = useRef<HTMLDivElement>(null);
+  const hasFilters = !!(search.trim() || activeMealType !== "all");
 
-  // Close sort menu when clicking outside
-  useEffect(() => {
-    if (!showSortMenu) return;
-    function onDown(e: MouseEvent) {
-      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
-        setShowSortMenu(false);
-      }
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [showSortMenu]);
-
-  // All unique tags from the recipe library
-  const allTags = useMemo(
-    () => [...new Set(recipes.flatMap((r) => r.tags ?? []))].sort(),
-    [recipes]
-  );
-
-  const hasFilters = !!(search.trim() || mealTypes.size > 0 || selectedTags.length > 0);
-
-  // Filtered + sorted recipe list
+  // Filtered recipe list (sorted newest first)
   const filtered = useMemo(() => {
     let result = recipes;
 
     if (search.trim()) {
       result = result.filter((r) => recipeMatchesQuery(r, search));
     }
-    if (mealTypes.size > 0) {
+    if (activeMealType !== "all") {
       result = result.filter((r) =>
-        mealTypes.has((r.meal_type ?? "dinner") as MealType)
-      );
-    }
-    if (selectedTags.length > 0) {
-      result = result.filter((r) =>
-        selectedTags.every((t) => (r.tags ?? []).includes(t))
+        (r.meal_type ?? "dinner") === activeMealType
       );
     }
 
-    const sorted = [...result];
-    switch (sort) {
-      case "newest":
-        sorted.sort((a, b) => b.created_at.localeCompare(a.created_at));
-        break;
-      case "oldest":
-        sorted.sort((a, b) => a.created_at.localeCompare(b.created_at));
-        break;
-      case "alpha":
-        sorted.sort((a, b) => a.title.localeCompare(b.title));
-        break;
-      case "cook_time":
-        sorted.sort(
-          (a, b) =>
-            (a.cook_time_minutes ?? Infinity) - (b.cook_time_minutes ?? Infinity)
-        );
-        break;
-    }
-    return sorted;
-  }, [recipes, search, mealTypes, selectedTags, sort]);
-
-  function toggleMealType(mt: MealType) {
-    setMealTypes((prev) => {
-      const next = new Set(prev);
-      next.has(mt) ? next.delete(mt) : next.add(mt);
-      return next;
-    });
-  }
-
-  function toggleTag(tag: string) {
-    setSelectedTags((prev) =>
-      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
-    );
-  }
+    return [...result].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  }, [recipes, search, activeMealType]);
 
   function clearFilters() {
     setSearch("");
-    setMealTypes(new Set());
-    setSelectedTags([]);
+    setActiveMealType("all");
   }
 
   async function handlePick(recipeId: string) {
@@ -249,10 +179,9 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   }
 
   const isLoading = props.mode === "library" && props.loading;
-  const currentSortLabel = SORT_OPTIONS.find((o) => o.value === sort)?.label ?? "Newest";
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col bg-gray-50">
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
 
@@ -324,59 +253,24 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         </div>
 
-        {/* Filter controls row */}
+        {/* Meal type filter pills */}
         <div className="flex items-center gap-1.5 px-4 pb-2.5 overflow-x-auto scrollbar-hide">
-
-          {/* Sort dropdown */}
-          <div className="relative flex-shrink-0" ref={sortMenuRef}>
-            <button
-              onClick={() => setShowSortMenu((v) => !v)}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                sort !== "newest"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
-            >
-              {currentSortLabel}
-              <svg
-                className="w-3 h-3 opacity-60"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.5}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {showSortMenu && (
-              <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 min-w-[120px]">
-                {SORT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    onClick={() => {
-                      setSort(opt.value);
-                      setShowSortMenu(false);
-                    }}
-                    className={`w-full text-left px-4 py-2 text-xs font-medium hover:bg-gray-50 transition-colors ${
-                      sort === opt.value ? "text-orange-500" : "text-gray-700"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
-
-          {/* Meal type pills */}
+          <button
+            onClick={() => setActiveMealType("all")}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+              activeMealType === "all"
+                ? "bg-orange-500 text-white"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            }`}
+          >
+            All
+          </button>
           {MEAL_TYPES.map((mt) => (
             <button
               key={mt}
-              onClick={() => toggleMealType(mt)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium capitalize transition-colors ${
-                mealTypes.has(mt)
+              onClick={() => setActiveMealType(activeMealType === mt ? "all" : mt)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                activeMealType === mt
                   ? "bg-orange-500 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
@@ -384,67 +278,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               {MEAL_TYPE_LABELS[mt]}
             </button>
           ))}
-
-          {/* More filters button — only if there are tags */}
-          {allTags.length > 0 && (
-            <>
-              <div className="w-px h-4 bg-gray-200 flex-shrink-0" />
-              <button
-                onClick={() => setShowFiltersPanel(true)}
-                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                  selectedTags.length > 0
-                    ? "bg-orange-100 text-orange-700"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
-              >
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
-                  />
-                </svg>
-                {selectedTags.length > 0 ? `Tags · ${selectedTags.length}` : "More filters"}
-              </button>
-            </>
-          )}
         </div>
-
-        {/* Active tag chips — only when tags are selected */}
-        {selectedTags.length > 0 && (
-          <div className="flex gap-1.5 px-4 pb-2.5 overflow-x-auto scrollbar-hide">
-            {selectedTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => toggleTag(tag)}
-                className="flex-shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium bg-orange-100 text-orange-700"
-              >
-                {tag}
-                <svg
-                  className="w-2.5 h-2.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            ))}
-            <button
-              onClick={() => setSelectedTags([])}
-              className="flex-shrink-0 px-2 py-1 text-[11px] text-gray-400 hover:text-gray-600"
-            >
-              Clear
-            </button>
-          </div>
-        )}
       </div>
 
       {/* ── Scrollable body ────────────────────────────────────────── */}
@@ -538,57 +372,6 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         )}
       </div>
 
-      {/* ── Tags filter panel (bottom drawer) ─────────────────────── */}
-      {showFiltersPanel && (
-        <>
-          <div
-            className="fixed inset-0 z-50 bg-black/30"
-            onClick={() => setShowFiltersPanel(false)}
-          />
-          <div
-            className="fixed inset-x-0 bottom-0 z-50 bg-white rounded-t-2xl shadow-xl flex flex-col"
-            style={{
-              maxHeight: "65vh",
-              paddingBottom: "env(safe-area-inset-bottom, 0px)",
-            }}
-          >
-            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-gray-100">
-              <h3 className="font-semibold text-gray-900 text-sm">Filter by tag</h3>
-              <div className="flex items-center gap-3">
-                {selectedTags.length > 0 && (
-                  <button
-                    onClick={() => setSelectedTags([])}
-                    className="text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    Clear all
-                  </button>
-                )}
-                <button
-                  onClick={() => setShowFiltersPanel(false)}
-                  className="text-xs font-semibold text-orange-500 hover:text-orange-600"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2 px-5 py-4 overflow-y-auto">
-              {allTags.map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    selectedTags.includes(tag)
-                      ? "bg-orange-100 text-orange-700 ring-1 ring-orange-200"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

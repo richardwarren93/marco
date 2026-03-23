@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { GroceryItem } from "@/types";
 
 export const CATEGORY_OPTIONS = [
@@ -42,6 +42,17 @@ export default function AddItemSheet({
   const [category, setCategory] = useState("other");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    if (isOpen) {
+      main.style.overflow = "hidden";
+    } else {
+      main.style.overflow = "";
+    }
+    return () => { main.style.overflow = ""; };
+  }, [isOpen]);
 
   function reset() {
     setName("");
@@ -105,7 +116,7 @@ export default function AddItemSheet({
       <div
         className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl flex flex-col"
         style={{
-          maxHeight: "85vh",
+          maxHeight: "85dvh",
           paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",
         }}
       >
@@ -126,7 +137,7 @@ export default function AddItemSheet({
 
         {/* Scrollable form */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto px-5 pt-4 space-y-4">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 pt-4 space-y-4">
             {/* Item name */}
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">

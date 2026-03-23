@@ -12,12 +12,19 @@ const geistSans = Geist({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
   title: "Marco - Save & Plan Recipes",
   description: "Save recipes from Instagram and TikTok, manage your pantry, and plan meals with AI.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Marco",
+  },
   icons: {
     icon: [
       { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
@@ -35,9 +42,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans antialiased bg-gray-50 text-gray-900 overscroll-none`}>
+      <body className={`${geistSans.variable} font-sans antialiased bg-gray-50 text-gray-900 h-full flex flex-col overscroll-none`}>
         <Navbar />
-        <main className="pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">{children}</main>
+        <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">{children}</main>
         <BottomTabBar />
       </body>
     </html>
