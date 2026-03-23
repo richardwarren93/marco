@@ -50,8 +50,7 @@ function NewRecipeInner() {
   // Arrived via ImportRecipeSheet photo flow — show spinner while sessionStorage hydrates
   if (isExtracted && !extractedRecipe) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Import a Recipe</h1>
+      <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="flex flex-col items-center gap-4 py-16 text-gray-400">
           <div className="w-10 h-10 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
           <p className="text-sm">Loading your recipe…</p>
@@ -61,9 +60,7 @@ function NewRecipeInner() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Import a Recipe</h1>
-
+    <div className="max-w-4xl mx-auto px-4 py-6">
       {extractedRecipe ? (
         <RecipeForm
           recipe={{
