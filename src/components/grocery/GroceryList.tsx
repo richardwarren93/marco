@@ -6,6 +6,7 @@ import type { GroceryItem as GroceryItemType, GroceryList as GroceryListType } f
 import GroceryItem from "./GroceryItem";
 import AddItemSheet from "./AddItemSheet";
 import EditItemSheet from "./EditItemSheet";
+import OrderOnlineSheet from "./OrderOnlineSheet";
 
 // ─── Category config ──────────────────────────────────────────────────────────
 const CATEGORY_CONFIG: Record<string, { label: string; emoji: string }> = {
@@ -125,6 +126,7 @@ export default function GroceryList() {
   // Sheets
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [editItem, setEditItem] = useState<GroceryItemType | null>(null);
+  const [orderOnlineOpen, setOrderOnlineOpen] = useState(false);
 
   const dateRange = useMemo(
     () => getPresetRange(rangePreset, customRange),
@@ -460,6 +462,21 @@ export default function GroceryList() {
         </div>
       )}
 
+      {/* ── Order online button ─────────────────────────────────────────────── */}
+      {hasItems && toBuyCount > 0 && !loading && (
+        <div className="mx-4 mt-3">
+          <button
+            onClick={() => setOrderOnlineOpen(true)}
+            className="w-full flex items-center justify-center gap-2.5 py-3 bg-white rounded-2xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors shadow-sm"
+          >
+            <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+            </svg>
+            <span className="text-sm font-semibold text-gray-700">Order online</span>
+          </button>
+        </div>
+      )}
+
       {/* ── Content ─────────────────────────────────────────────────────────── */}
       {loading ? (
         /* Loading skeleton */
@@ -603,6 +620,12 @@ export default function GroceryList() {
         onClose={() => setEditItem(null)}
         onSave={handleSaveEdit}
         onDelete={handleDelete}
+      />
+
+      <OrderOnlineSheet
+        isOpen={orderOnlineOpen}
+        onClose={() => setOrderOnlineOpen(false)}
+        items={allItems}
       />
     </div>
   );
