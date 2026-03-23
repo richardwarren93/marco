@@ -46,14 +46,14 @@ export default function BottomTabBar() {
             );
           })}
 
-          {/* Center + button */}
+          {/* Center + button — raised & prominent */}
           <div className="flex flex-col items-center justify-end flex-1 pb-2">
             <button
               onClick={() => setShowImport(true)}
-              className="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-lg -translate-y-2 hover:bg-orange-600 active:bg-orange-700 transition-colors"
+              className="w-14 h-14 rounded-full bg-orange-500 text-white flex items-center justify-center shadow-[0_4px_20px_rgba(249,115,22,0.45)] -translate-y-5 hover:bg-orange-600 active:scale-95 active:bg-orange-700 transition-all duration-150 ring-4 ring-white"
               aria-label="Import recipe"
             >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             </button>
