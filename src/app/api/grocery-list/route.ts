@@ -229,9 +229,8 @@ export async function POST(request: Request) {
 
     const existing = existingItems || [];
 
-    const softDeletedNames = new Set(
-      existing.filter((i: any) => !i.is_custom && i.soft_deleted).map((i: any) => i.name)
-    );
+    // When user explicitly regenerates, don't carry over soft-deleted state —
+    // they want a fresh list. Only preserve checked state and user overrides.
     const checkedNames = new Set(
       existing.filter((i: any) => !i.is_custom && i.checked && !i.soft_deleted).map((i: any) => i.name)
     );
@@ -264,7 +263,7 @@ export async function POST(request: Request) {
         const ov = overrideMap.get(name);
         return {
           ...base,
-          soft_deleted: softDeletedNames.has(name),
+          soft_deleted: false,
           name_override: ov?.name_override ?? null,
           amount_override: ov?.amount_override ?? null,
           unit_override: ov?.unit_override ?? null,
