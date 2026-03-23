@@ -102,66 +102,102 @@ export default function MealPlanListView({
   const [previewPlan, setPreviewPlan] = useState<MealPlan | null>(null);
 
   // ─── Swipe-to-delete (mobile) ─────────────────────────────────────────────────
+  const DELETE_BTN_WIDTH = 80;
   const touchRef = useRef<{
     id: string;
     startX: number;
     startY: number;
-    movedX: number;
-    didSwipe: boolean;
+    locked: boolean; // true once we commit to horizontal swipe
+    cancelled: boolean;
   } | null>(null);
   const swipedRef = useRef(false);
   const [swipingId, setSwipingId] = useState<string | null>(null);
   const [swipeX, setSwipeX] = useState(0);
+  const [revealedId, setRevealedId] = useState<string | null>(null);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   function handleTouchStart(e: React.TouchEvent, planId: string) {
+    // Close any previously revealed row
+    if (revealedId && revealedId !== planId) {
+      setRevealedId(null);
+    }
     const t = e.touches[0];
     touchRef.current = {
       id: planId,
       startX: t.clientX,
       startY: t.clientY,
-      movedX: 0,
-      didSwipe: false,
+      locked: false,
+      cancelled: false,
     };
     swipedRef.current = false;
+    setSwipingId(planId);
+    setSwipeX(revealedId === planId ? -DELETE_BTN_WIDTH : 0);
   }
 
   function handleTouchMove(e: React.TouchEvent, planId: string) {
     const ref = touchRef.current;
-    if (!ref || ref.id !== planId) return;
+    if (!ref || ref.id !== planId || ref.cancelled) return;
     const t = e.touches[0];
     const dx = t.clientX - ref.startX;
     const dy = t.clientY - ref.startY;
-    // Cancel swipe if primarily vertical
-    if (Math.abs(dy) > Math.abs(dx) && Math.abs(dy) > 8) {
-      touchRef.current = null;
-      setSwipingId(null);
-      setSwipeX(0);
-      return;
+
+    // If we haven't committed yet, decide direction
+    if (!ref.locked) {
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+        ref.cancelled = true;
+        setSwipingId(null);
+        setSwipeX(0);
+        return;
+      }
+      if (Math.abs(dx) > 10) {
+        ref.locked = true;
+      } else {
+        return;
+      }
     }
-    const movedX = Math.min(0, dx);
-    ref.movedX = movedX;
-    if (Math.abs(movedX) > 8) {
-      ref.didSwipe = true;
-      swipedRef.current = true;
-    }
-    setSwipingId(planId);
-    setSwipeX(movedX);
+
+    // Calculate position (start from revealed state if already open)
+    const base = revealedId === planId ? -DELETE_BTN_WIDTH : 0;
+    const raw = base + dx;
+    // Clamp: can't go past delete button width, slight rubber-band past 0
+    const clamped = raw > 0 ? raw * 0.2 : Math.max(raw, -DELETE_BTN_WIDTH * 1.5);
+    swipedRef.current = true;
+    setSwipeX(clamped);
   }
 
-  function handleTouchEnd(e: React.TouchEvent, plan: MealPlan) {
+  function handleTouchEnd(_e: React.TouchEvent, plan: MealPlan) {
     const ref = touchRef.current;
     if (!ref || ref.id !== plan.id) return;
     touchRef.current = null;
-    if (ref.didSwipe && ref.movedX < -60) {
-      e.preventDefault();
-      onRemove(plan.id);
-      setSwipingId(null);
+
+    // Snap decision: if past halfway, reveal; otherwise close
+    if (swipeX < -DELETE_BTN_WIDTH * 0.4) {
+      setRevealedId(plan.id);
+      setSwipeX(-DELETE_BTN_WIDTH);
+    } else {
+      setRevealedId(null);
       setSwipeX(0);
-      return;
     }
     setSwipingId(null);
-    setSwipeX(0);
   }
+
+  function handleDeleteTap(planId: string) {
+    if (confirmingId === planId) {
+      // Second tap — actually delete
+      onRemove(planId);
+      setConfirmingId(null);
+      setRevealedId(null);
+      setSwipeX(0);
+    } else {
+      // First tap — ask to confirm
+      setConfirmingId(planId);
+    }
+  }
+
+  // Reset confirm state when revealed row changes
+  useEffect(() => {
+    if (!revealedId) setConfirmingId(null);
+  }, [revealedId]);
 
   // ─── Derived data ─────────────────────────────────────────────────────────────
   const today = formatDateKey(new Date());
@@ -364,6 +400,11 @@ export default function MealPlanListView({
                       MEAL_COLORS[plan.meal_type] || MEAL_COLORS.dinner;
                     const isSwiping = swipingId === plan.id;
 
+                    const isRevealed = revealedId === plan.id;
+                    const isConfirming = confirmingId === plan.id;
+                    const isActive = isSwiping || isRevealed;
+                    const currentX = isSwiping ? swipeX : isRevealed ? -DELETE_BTN_WIDTH : 0;
+
                     return (
                       <div
                         key={plan.id}
@@ -372,44 +413,45 @@ export default function MealPlanListView({
                         onTouchMove={(e) => handleTouchMove(e, plan.id)}
                         onTouchEnd={(e) => handleTouchEnd(e, plan)}
                       >
-                        {/* Red delete background (mobile swipe) */}
-                        <div className="absolute inset-y-0 right-0 w-20 bg-red-500 flex items-center justify-end pr-4 pointer-events-none">
-                            <svg
-                              className="w-5 h-5 text-white"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
+                        {/* Delete button revealed behind row */}
+                        <button
+                          onClick={() => handleDeleteTap(plan.id)}
+                          className={`sm:hidden absolute inset-y-0 right-0 flex items-center justify-center transition-colors ${
+                            isConfirming ? "bg-red-600" : "bg-red-500"
+                          }`}
+                          style={{ width: `${DELETE_BTN_WIDTH}px` }}
+                        >
+                          <div className="flex flex-col items-center gap-0.5">
+                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
+                            <span className="text-[10px] font-semibold text-white">
+                              {isConfirming ? "Confirm?" : "Delete"}
+                            </span>
                           </div>
+                        </button>
 
                         {/* Row content */}
-                        <button
+                        <div
                           onClick={() => {
                             if (swipedRef.current) {
                               swipedRef.current = false;
                               return;
                             }
+                            if (isRevealed) {
+                              setRevealedId(null);
+                              return;
+                            }
                             setPreviewPlan(plan);
                           }}
                           style={{
-                            transform: isSwiping
-                              ? `translateX(${swipeX}px)`
-                              : undefined,
-                            transition: isSwiping
-                              ? undefined
-                              : "transform 0.2s ease",
+                            transform: `translateX(${currentX}px)`,
+                            transition: isSwiping ? undefined : "transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)",
                           }}
-                          className={`group relative w-full flex items-center gap-3 px-4 py-3 border-l-4 ${colors.border} bg-white text-left ${
+                          className={`group relative w-full flex items-center gap-3 px-4 py-3 border-l-4 ${colors.border} bg-white cursor-pointer text-left ${
                             isHousehold
-                              ? "bg-purple-50/30 hover:bg-purple-50/60 active:bg-purple-100/60 cursor-pointer"
-                              : "hover:bg-gray-50/80 active:bg-gray-100/80 cursor-pointer"
+                              ? "bg-purple-50/30 hover:bg-purple-50/60 active:bg-purple-100/60"
+                              : "hover:bg-gray-50/80 active:bg-gray-100/80"
                           }`}
                         >
                           {/* Recipe thumbnail */}
@@ -431,18 +473,14 @@ export default function MealPlanListView({
                           <div className="flex-1 min-w-0">
                             <p
                               className={`text-sm font-semibold line-clamp-1 ${
-                                isHousehold
-                                  ? "text-purple-800"
-                                  : "text-gray-900"
+                                isHousehold ? "text-purple-800" : "text-gray-900"
                               }`}
                             >
                               {plan.recipe?.title || "Untitled"}
                             </p>
                             <p
                               className={`text-xs capitalize mt-0.5 ${
-                                isHousehold
-                                  ? "text-purple-400"
-                                  : colors.label
+                                isHousehold ? "text-purple-400" : colors.label
                               }`}
                             >
                               {isHousehold
@@ -460,40 +498,28 @@ export default function MealPlanListView({
                             className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity touch-manipulation"
                             aria-label="Remove meal"
                           >
+                            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+
+                          {/* Mobile: chevron hint (hidden when swiped) */}
+                          {!isActive && (
                             <svg
-                              className="w-3.5 h-3.5 text-red-400"
+                              className={`sm:hidden w-4 h-4 flex-shrink-0 transition-colors ${
+                                isHousehold
+                                  ? "text-purple-200 group-hover:text-purple-300"
+                                  : "text-gray-300 group-hover:text-gray-400"
+                              }`}
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
                               strokeWidth={2}
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                             </svg>
-                          </button>
-
-                          {/* Mobile: chevron hint */}
-                          <svg
-                            className={`sm:hidden w-4 h-4 flex-shrink-0 transition-colors ${
-                              isHousehold
-                                ? "text-purple-200 group-hover:text-purple-300"
-                                : "text-gray-300 group-hover:text-gray-400"
-                            }`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 5l7 7-7 7"
-                            />
-                          </svg>
-                        </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
