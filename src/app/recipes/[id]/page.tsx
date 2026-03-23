@@ -20,6 +20,71 @@ const MEAL_ICONS: Record<string, string> = {
   snack: "🍎",
 };
 
+/** Parse a string amount (e.g. "1/2", "1.5", "2") into a number, scale it, and format nicely. */
+function scaleAmount(raw: string | undefined, ratio: number): string {
+  if (!raw) return "";
+  // Try to parse as a fraction like "1/2" or mixed like "1 1/2"
+  const trimmed = raw.trim();
+  if (!trimmed) return "";
+
+  let value: number | null = null;
+
+  // Mixed fraction: "1 1/2"
+  const mixedMatch = trimmed.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixedMatch) {
+    value = parseInt(mixedMatch[1]) + parseInt(mixedMatch[2]) / parseInt(mixedMatch[3]);
+  }
+
+  // Simple fraction: "1/2"
+  if (value === null) {
+    const fracMatch = trimmed.match(/^(\d+)\/(\d+)$/);
+    if (fracMatch) {
+      value = parseInt(fracMatch[1]) / parseInt(fracMatch[2]);
+    }
+  }
+
+  // Decimal or integer
+  if (value === null) {
+    const num = parseFloat(trimmed);
+    if (!isNaN(num)) value = num;
+  }
+
+  // Can't parse — return original
+  if (value === null) return trimmed;
+
+  const scaled = value * ratio;
+
+  // Format: use fractions for common values, otherwise round to 1 decimal
+  return formatAmount(scaled);
+}
+
+function formatAmount(n: number): string {
+  // Round to avoid floating point noise
+  const rounded = Math.round(n * 100) / 100;
+
+  // Common fractions
+  const fractions: [number, string][] = [
+    [0.125, "1/8"], [0.25, "1/4"], [0.333, "1/3"], [0.5, "1/2"],
+    [0.667, "2/3"], [0.75, "3/4"],
+  ];
+
+  const whole = Math.floor(rounded);
+  const frac = rounded - whole;
+
+  // Check if the fractional part matches a common fraction
+  for (const [val, str] of fractions) {
+    if (Math.abs(frac - val) < 0.04) {
+      return whole > 0 ? `${whole} ${str}` : str;
+    }
+  }
+
+  // Whole number
+  if (Math.abs(frac) < 0.04) return `${whole}`;
+
+  // Decimal — one place max
+  return rounded % 1 === 0 ? `${rounded}` : `${Math.round(rounded * 10) / 10}`;
+}
+
 export default function RecipeDetailPage() {
   const { id } = useParams();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
@@ -30,6 +95,8 @@ export default function RecipeDetailPage() {
   const [showShareWithFriends, setShowShareWithFriends] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [activeTab, setActiveTab] = useState<"ingredients" | "steps">("ingredients");
+  const [adjustedServings, setAdjustedServings] = useState<number | null>(null);
+  const [showMealPlanPrompt, setShowMealPlanPrompt] = useState(false);
   const router = useRouter();
   const supabase = createClient();
 
@@ -91,6 +158,25 @@ export default function RecipeDetailPage() {
   const ingredients = recipe.ingredients as Ingredient[];
   const steps = recipe.steps as string[];
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
+  const originalServings = recipe.servings || null;
+  const currentServings = adjustedServings ?? originalServings;
+  const servingsChanged = originalServings && adjustedServings && adjustedServings !== originalServings;
+  const ratio = originalServings && currentServings ? currentServings / originalServings : 1;
+
+  function changeServings(delta: number) {
+    const base = currentServings || 1;
+    const next = Math.max(1, base + delta);
+    setAdjustedServings(next);
+    // Show meal plan prompt when servings change from original
+    if (originalServings && next !== originalServings) {
+      setShowMealPlanPrompt(true);
+    }
+  }
+
+  function resetServings() {
+    setAdjustedServings(null);
+    setShowMealPlanPrompt(false);
+  }
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -314,25 +400,84 @@ export default function RecipeDetailPage() {
           <div className="p-4">
             {activeTab === "ingredients" ? (
               <div>
-                {recipe.servings && (
-                  <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                    </svg>
-                    <span className="text-sm font-medium text-gray-700">{recipe.servings} servings</span>
+                {/* Servings adjuster */}
+                {originalServings && (
+                  <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-700">Servings</span>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        onClick={() => changeServings(-1)}
+                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-orange-300 hover:text-orange-500 active:scale-95 transition-all"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" d="M5 12h14" />
+                        </svg>
+                      </button>
+                      <span className={`text-sm font-bold w-5 text-center tabular-nums ${servingsChanged ? "text-orange-600" : "text-gray-900"}`}>
+                        {currentServings}
+                      </span>
+                      <button
+                        onClick={() => changeServings(1)}
+                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-orange-300 hover:text-orange-500 active:scale-95 transition-all"
+                      >
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" d="M12 5v14m-7-7h14" />
+                        </svg>
+                      </button>
+                      {servingsChanged && (
+                        <button
+                          onClick={resetServings}
+                          className="text-[10px] text-gray-400 hover:text-gray-600 font-medium ml-1 transition-colors"
+                        >
+                          Reset
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
+
+                {/* Meal plan prompt */}
+                {showMealPlanPrompt && servingsChanged && (
+                  <div className="mb-4 p-3 bg-orange-50 rounded-xl border border-orange-100 animate-slide-up">
+                    <p className="text-xs text-orange-700 font-medium mb-2">
+                      Adjusted to {currentServings} servings — add to your meal plan?
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => router.push("/meal-plan")}
+                        className="flex-1 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600 active:scale-[0.98] transition-all"
+                      >
+                        Add to Meal Plan
+                      </button>
+                      <button
+                        onClick={() => setShowMealPlanPrompt(false)}
+                        className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                      >
+                        Skip
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Ingredient list */}
                 <ul className="space-y-3">
-                  {ingredients.map((ing, i) => (
-                    <li key={i} className="flex items-baseline gap-3">
-                      <div className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0 mt-1.5" />
-                      <span className="text-sm text-gray-800">
-                        {ing.amount && <span className="font-semibold">{ing.amount} </span>}
-                        {ing.unit && <span className="text-gray-500">{ing.unit} </span>}
-                        {ing.name}
-                      </span>
-                    </li>
-                  ))}
+                  {ingredients.map((ing, i) => {
+                    const scaledAmount = scaleAmount(ing.amount, ratio);
+                    return (
+                      <li key={i} className="flex items-baseline gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0 mt-1.5" />
+                        <span className="text-sm text-gray-800">
+                          {scaledAmount && (
+                            <span className={`font-semibold ${servingsChanged ? "text-orange-600" : ""}`}>
+                              {scaledAmount}{" "}
+                            </span>
+                          )}
+                          {ing.unit && <span className="text-gray-500">{ing.unit} </span>}
+                          {ing.name}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             ) : (
