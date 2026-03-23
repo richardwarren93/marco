@@ -14,8 +14,9 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
+    const admin = createAdminClient();
 
-    const { error, data } = await supabase.from("recipes").insert({
+    const { error, data } = await admin.from("recipes").insert({
       user_id: user.id,
       title: body.title,
       description: body.description || null,
@@ -36,7 +37,6 @@ export async function POST(request: Request) {
 
     // Insert activity feed entry for social feed
     try {
-      const admin = createAdminClient();
       await admin.from("activity_feed").insert({
         user_id: user.id,
         activity_type: "saved_recipe",
