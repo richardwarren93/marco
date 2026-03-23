@@ -19,6 +19,11 @@ export default function BottomTabBar() {
   const pathname = usePathname();
   const [showImport, setShowImport] = useState(false);
 
+  // Hide on auth and onboarding pages
+  if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding")) {
+    return null;
+  }
+
   const isProfileActive = pathname.startsWith("/profile");
   const isGroceryActive = pathname.startsWith("/grocery");
 

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
@@ -23,7 +23,13 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [showImport, setShowImport] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
   const supabase = createClient();
+
+  // Hide on auth and onboarding pages
+  if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding")) {
+    return null;
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
