@@ -12,6 +12,7 @@ import CommunitySection from "@/components/community/CommunitySection";
 import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
+import NutritionCard from "@/components/recipes/NutritionCard";
 
 const MEAL_ICONS: Record<string, string> = {
   breakfast: "🌅",
@@ -511,6 +512,11 @@ export default function RecipeDetailPage() {
               <span className="text-[10px] font-medium">{action.label}</span>
             </button>
           ))}
+        </div>
+
+        {/* ── Nutrition ──────────────────────────────────────────────── */}
+        <div className="mb-4">
+          <NutritionCard recipeId={recipe.id} ratio={ratio} />
         </div>
 
         {/* ── I Made This + Notes ─────────────────────────────────────── */}

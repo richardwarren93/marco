@@ -219,6 +219,50 @@ export interface FeedVote {
   created_at: string;
 }
 
+// Nutrition
+export interface RecipeNutrition {
+  id: string;
+  recipe_id: string;
+  user_id: string;
+  calories: number | null;
+  protein_g: number | null;
+  carbs_g: number | null;
+  fat_g: number | null;
+  fiber_g: number | null;
+  sugar_g: number | null;
+  sodium_mg: number | null;
+  confidence: "high" | "medium" | "low" | null;
+  notes: string | null;
+  estimated_at: string;
+  model_version: string | null;
+}
+
+// Meal Plan Insights
+export interface MealPlanInsights {
+  overallScore: number;
+  scoreLabel: string;
+  headline: string;
+  nutritionAnalysis: {
+    dailyCalorieAvg: number;
+    calorieAssessment: string;
+    macroBalance: string;
+    fiberAssessment: string;
+    proteinAdequacy: string;
+  };
+  balanceInsights: Array<{
+    icon: string;
+    title: string;
+    detail: string;
+    severity: "positive" | "suggestion" | "warning";
+  }>;
+  recommendations: Array<{
+    emoji: string;
+    text: string;
+  }>;
+  varietyScore: number;
+  varietyNote: string;
+}
+
 export type FriendshipStatus = "pending" | "accepted" | "declined";
 
 export interface Friendship {

@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { Ingredient, Recipe, PantryItem } from "@/types";
+import type { Ingredient, Recipe, PantryItem, MealPlanInsights } from "@/types";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
@@ -356,5 +356,209 @@ Return a JSON array of these recipe objects. Make the recipes practical, varied,
   } catch {
     console.error("Claude returned non-JSON for recipe discovery:", cleaned.slice(0, 200));
     return [];
+  }
+}
+
+// ─── Nutrition Estimation ──────────────────────────────────────────────────
+
+export interface NutritionEstimate {
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fiber_g: number;
+  sugar_g: number;
+  sodium_mg: number;
+  confidence: "high" | "medium" | "low";
+  notes: string;
+}
+
+export async function estimateNutrition(
+  title: string,
+  ingredients: Ingredient[],
+  servings: number | null
+): Promise<NutritionEstimate> {
+  const ingredientList = ingredients
+    .map((i) => `${i.amount || ""} ${i.unit || ""} ${i.name}`.trim())
+    .join("\n");
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1000,
+    system: `You are a nutrition estimation assistant. You ALWAYS respond with valid JSON only — no explanations, no markdown. You estimate nutritional values per serving based on ingredients. Use standard USDA nutritional data as your reference. Be accurate but acknowledge uncertainty.`,
+    messages: [
+      {
+        role: "user",
+        content: `Estimate the nutritional value PER SERVING for this recipe.
+
+Recipe: ${title}
+Servings: ${servings || "1 (assume single serving)"}
+
+Ingredients:
+${ingredientList}
+
+Return a JSON object with:
+- calories (number): kcal per serving
+- protein_g (number): grams of protein per serving
+- carbs_g (number): grams of carbohydrates per serving
+- fat_g (number): grams of fat per serving
+- fiber_g (number): grams of fiber per serving
+- sugar_g (number): grams of sugar per serving
+- sodium_mg (number): milligrams of sodium per serving
+- confidence (string): "high" if all ingredients have clear amounts, "medium" if some are vague like "to taste", "low" if many ingredients lack amounts or are very ambiguous
+- notes (string): Brief 1-2 sentence note about key assumptions (e.g., "Assumed whole milk. Sodium estimate excludes added salt to taste.")
+
+Return ONLY valid JSON. No markdown, no code blocks.`,
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error("Claude returned non-JSON for nutrition:", cleaned.slice(0, 200));
+    return {
+      calories: 0,
+      protein_g: 0,
+      carbs_g: 0,
+      fat_g: 0,
+      fiber_g: 0,
+      sugar_g: 0,
+      sodium_mg: 0,
+      confidence: "low",
+      notes: "Unable to estimate nutrition for this recipe.",
+    };
+  }
+}
+
+// ─── Meal Plan Analysis ────────────────────────────────────────────────────
+
+export interface MealPlanDayData {
+  date: string;
+  dayName: string;
+  meals: Array<{
+    mealType: string;
+    recipeName: string;
+    servings: number;
+    nutrition: {
+      calories: number;
+      protein_g: number;
+      carbs_g: number;
+      fat_g: number;
+      fiber_g: number;
+    } | null;
+    tags: string[];
+  }>;
+}
+
+export async function analyzeMealPlan(weekData: {
+  weekStart: string;
+  days: MealPlanDayData[];
+  totalMeals: number;
+  dailyAverages: {
+    calories: number;
+    protein_g: number;
+    carbs_g: number;
+    fat_g: number;
+    fiber_g: number;
+  };
+}): Promise<MealPlanInsights> {
+  const daysSummary = weekData.days
+    .map((d) => {
+      const meals = d.meals
+        .map((m) => {
+          const nutri = m.nutrition
+            ? `(${m.nutrition.calories} cal, ${m.nutrition.protein_g}g protein, ${m.nutrition.carbs_g}g carbs, ${m.nutrition.fat_g}g fat)`
+            : "(nutrition unknown)";
+          return `  - ${m.mealType}: ${m.recipeName} x${m.servings} ${nutri} [tags: ${m.tags.join(", ") || "none"}]`;
+        })
+        .join("\n");
+      return `${d.dayName} (${d.date}):\n${meals || "  No meals planned"}`;
+    })
+    .join("\n\n");
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 2000,
+    system: `You are a friendly nutritionist and meal planning advisor for the Marco cooking app. You ALWAYS respond with valid JSON only — no explanations, no markdown.
+
+Your tone is encouraging first, constructive second — never preachy or judgmental. This is a home cook, not a bodybuilder. Keep recommendations practical and specific.
+
+Reference ranges (for context, not strict rules):
+- Calories: ~1800-2200/day for most adults
+- Protein: ~50-70g/day
+- Fiber: ~25-30g/day
+- Fat: ~50-80g/day
+- Carbs: ~200-300g/day`,
+    messages: [
+      {
+        role: "user",
+        content: `Analyze this week's meal plan and provide nutritional insights.
+
+Week starting: ${weekData.weekStart}
+Total meals planned: ${weekData.totalMeals}
+Daily averages: ${weekData.dailyAverages.calories} cal, ${weekData.dailyAverages.protein_g}g protein, ${weekData.dailyAverages.carbs_g}g carbs, ${weekData.dailyAverages.fat_g}g fat, ${weekData.dailyAverages.fiber_g}g fiber
+
+Day-by-day breakdown:
+${daysSummary}
+
+Return a JSON object with:
+- overallScore (number 1-100): Overall quality score for the week
+- scoreLabel (string): "Great week!", "Looking good", "Room to grow", or "Needs attention"
+- headline (string): One personalized sentence summarizing the week (be encouraging!)
+- nutritionAnalysis (object):
+  - dailyCalorieAvg (number)
+  - calorieAssessment (string): "On track", "A bit low", "A bit high", or "Well balanced"
+  - macroBalance (string): One sentence about the macro split
+  - fiberAssessment (string): One sentence about fiber intake
+  - proteinAdequacy (string): One sentence about protein intake
+- balanceInsights (array of 3-5 objects):
+  - icon (string): A single emoji
+  - title (string): Short insight title
+  - detail (string): 1-2 sentence explanation
+  - severity (string): "positive", "suggestion", or "warning"
+- recommendations (array of exactly 3 objects):
+  - emoji (string): A single emoji
+  - text (string): Specific, actionable recommendation (e.g., "Add a spinach salad to Wednesday's dinner" not "Eat more vegetables")
+- varietyScore (number 1-10): How varied the meals are
+- varietyNote (string): One sentence about variety
+
+Return ONLY valid JSON. No markdown, no code blocks.`,
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error("Claude returned non-JSON for meal plan analysis:", cleaned.slice(0, 200));
+    return {
+      overallScore: 50,
+      scoreLabel: "Needs attention",
+      headline: "We couldn't fully analyze your meal plan this time.",
+      nutritionAnalysis: {
+        dailyCalorieAvg: weekData.dailyAverages.calories,
+        calorieAssessment: "Unknown",
+        macroBalance: "Unable to assess macro balance.",
+        fiberAssessment: "Unable to assess fiber intake.",
+        proteinAdequacy: "Unable to assess protein intake.",
+      },
+      balanceInsights: [],
+      recommendations: [
+        { emoji: "📝", text: "Try adding more meals to your plan for a better analysis." },
+        { emoji: "🥗", text: "Include a mix of proteins, grains, and vegetables." },
+        { emoji: "🔄", text: "Vary your recipes throughout the week." },
+      ],
+      varietyScore: 5,
+      varietyNote: "Add more meals for a variety assessment.",
+    };
   }
 }

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
 import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
 import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
+import AnalyzeScreen from "@/components/meal-plan/AnalyzeScreen";
 import type { MealPlan, Recipe } from "@/types";
 
 function getMonday(date: Date): Date {
@@ -34,7 +35,7 @@ function MealPlanInner() {
 
   // ─── Step flow ───────────────────────────────────────────────────────────────
   // Default: step 3 (Schedule) — the app's main surface
-  const [step, setStep] = useState<1 | 2 | 3>(3);
+  const [step, setStep] = useState<1 | 2 | 3 | "insights">(3);
 
   // Which week the calendar is currently showing — jump to ?date= param if present
   const [calendarWeek, setCalendarWeek] = useState<Date>(() => {
@@ -235,6 +236,16 @@ function MealPlanInner() {
     );
   }
 
+  // ─── Insights ────────────────────────────────────────────────────────────────
+  if (step === "insights") {
+    return (
+      <AnalyzeScreen
+        onBack={() => setStep(3)}
+        calendarWeek={calendarWeek}
+      />
+    );
+  }
+
   // ─── Step 3: Schedule (default) ───────────────────────────────────────────────
   return (
     <>
@@ -250,6 +261,7 @@ function MealPlanInner() {
         onAddMeal={handleCalendarAdd}
         onRemoveMeal={handleCalendarRemove}
         onPlanThisWeek={handlePlanThisWeek}
+        onShowInsights={() => setStep("insights")}
         calendarWeek={calendarWeek}
         onCalendarWeekChange={setCalendarWeek}
       />
