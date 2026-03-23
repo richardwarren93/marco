@@ -6,6 +6,7 @@ interface RecipePromptInputProps {
   onSubmit: (prompt: string, context: "all" | "my_kitchen") => void;
   loading: boolean;
   pantryCount: number;
+  hideContext?: boolean;
 }
 
 const SUGGESTIONS = [
@@ -19,6 +20,7 @@ export default function RecipePromptInput({
   onSubmit,
   loading,
   pantryCount,
+  hideContext = false,
 }: RecipePromptInputProps) {
   const [prompt, setPrompt] = useState("");
   const [context, setContext] = useState<"all" | "my_kitchen">(
@@ -56,29 +58,31 @@ export default function RecipePromptInput({
     <div className="space-y-3">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4">
         {/* Context toggle */}
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xs text-gray-400 mr-1">Context:</span>
-          <button
-            onClick={() => setContext("all")}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              context === "all"
-                ? "bg-orange-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setContext("my_kitchen")}
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-              context === "my_kitchen"
-                ? "bg-orange-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            My Kitchen{pantryCount > 0 && ` (${pantryCount})`}
-          </button>
-        </div>
+        {!hideContext && (
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-xs text-gray-400 mr-1">Context:</span>
+            <button
+              onClick={() => setContext("all")}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                context === "all"
+                  ? "bg-orange-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setContext("my_kitchen")}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                context === "my_kitchen"
+                  ? "bg-orange-600 text-white"
+                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+              }`}
+            >
+              My Kitchen{pantryCount > 0 && ` (${pantryCount})`}
+            </button>
+          </div>
+        )}
 
         {/* Input row */}
         <div className="flex items-end gap-2">

@@ -17,6 +17,7 @@ export interface Recipe {
   prep_time_minutes: number | null;
   cook_time_minutes: number | null;
   tags: string[];
+  meal_type: "breakfast" | "lunch" | "dinner" | "snack";
   image_url: string | null;
   notes: string | null;
   created_at: string;
@@ -82,6 +83,7 @@ export interface MealPlan {
   planned_date: string;
   meal_type: "breakfast" | "lunch" | "dinner" | "snack";
   notes: string | null;
+  servings: number | null;
   created_at: string;
   recipe?: Recipe;
   owner_name?: string;
@@ -182,6 +184,9 @@ export interface GroceryList {
   id: string;
   user_id: string;
   week_start: string;
+  date_end: string | null;
+  generated_at: string | null;
+  meal_count: number | null;
   created_at: string;
   items?: GroceryItem[];
 }
@@ -197,6 +202,12 @@ export interface GroceryItem {
   checked: boolean;
   is_custom: boolean;
   in_pantry: boolean;
+  // v2 fields
+  soft_deleted: boolean;
+  name_override: string | null;
+  amount_override: string | null;
+  unit_override: string | null;
+  category_override: string | null;
   created_at: string;
 }
 

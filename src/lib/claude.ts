@@ -39,6 +39,7 @@ Return a JSON object with these fields:
 - prep_time_minutes (number or null): Prep time if mentioned, or estimate based on the dish
 - cook_time_minutes (number or null): Cook time if mentioned, or estimate based on the dish
 - tags (array of strings): Relevant tags like "vegan", "quick", "dessert" — infer from context, hashtags, and the dish type
+- meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack". Infer from the dish itself. A pasta is "dinner". Oatmeal is "breakfast". A sandwich is "lunch". Nachos might be "snack" or "dinner". If it fits multiple, pick the most common one. Never leave this null or empty — always choose.
 
 IMPORTANT: Even if the content is very limited, use your knowledge to fill in reasonable details for the identified dish. A helpful guess is much better than empty fields. Do NOT refuse or explain — just output the JSON.`,
       },
@@ -65,6 +66,7 @@ IMPORTANT: Even if the content is very limited, use your knowledge to fill in re
       prep_time_minutes: null,
       cook_time_minutes: null,
       tags: [],
+      meal_type: "dinner",
     };
   }
 }
@@ -108,6 +110,7 @@ Extract everything you can see — ingredients with amounts, all steps, timing, 
 - prep_time_minutes (number or null): Prep time
 - cook_time_minutes (number or null): Cook time
 - tags (array of strings): Relevant tags like cuisine type, dietary info
+- meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack". Infer from the dish. Never leave this null or empty — always choose the most appropriate one.
 
 Return ONLY valid JSON. No markdown, no code blocks.`,
           },
@@ -133,6 +136,7 @@ Return ONLY valid JSON. No markdown, no code blocks.`,
       prep_time_minutes: null,
       cook_time_minutes: null,
       tags: [],
+      meal_type: "dinner",
     };
   }
 }

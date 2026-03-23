@@ -19,12 +19,15 @@ async function scrapeInstagram(url: string): Promise<ScrapeResult> {
   const parts: string[] = [];
   let image_url: string | null = null;
 
-  // Strategy 1: Try oembed endpoint (may require auth now, but worth trying)
+  // Strategy 1: Meta Graph API oembed (requires app token, returns thumbnail_url)
   try {
-    const oembedResp = await fetch(
-      `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`,
-      { signal: AbortSignal.timeout(10000) }
-    );
+    const appId = process.env.META_APP_ID;
+    const appSecret = process.env.META_APP_SECRET;
+    const token = appId && appSecret ? `${appId}|${appSecret}` : null;
+    const oembedUrl = token
+      ? `https://graph.facebook.com/v18.0/instagram_oembed?url=${encodeURIComponent(url)}&access_token=${token}&fields=thumbnail_url,title,author_name`
+      : `https://api.instagram.com/oembed?url=${encodeURIComponent(url)}`;
+    const oembedResp = await fetch(oembedUrl, { signal: AbortSignal.timeout(10000) });
     if (oembedResp.ok) {
       const oembed = await oembedResp.json();
       if (oembed.title) parts.push(`Caption: ${oembed.title}`);

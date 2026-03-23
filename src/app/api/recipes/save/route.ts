@@ -25,6 +25,7 @@ export async function POST(request: Request) {
       prep_time_minutes: body.prep_time_minutes || null,
       cook_time_minutes: body.cook_time_minutes || null,
       tags: body.tags || [],
+      meal_type: body.meal_type || "dinner",
       source_url: body.source_url || null,
       source_platform: body.source_platform || null,
       image_url: body.image_url || null,

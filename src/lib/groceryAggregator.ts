@@ -46,9 +46,11 @@ function normalizeName(name: string): { canonical: string; category: string | nu
   return { canonical: lower, category: null };
 }
 
-function parseAmount(amount: string): number | null {
-  if (!amount) return null;
-  const trimmed = amount.trim();
+function parseAmount(amount: string | number | null | undefined): number | null {
+  if (amount === null || amount === undefined || amount === "") return null;
+  // DB can return numeric values for ingredient amounts
+  if (typeof amount === "number") return isNaN(amount) ? null : amount;
+  const trimmed = String(amount).trim();
 
   // Handle fractions like "1/2", "3/4"
   const fractionMatch = trimmed.match(/^(\d+)\s*\/\s*(\d+)$/);

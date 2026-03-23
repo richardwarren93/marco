@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { promptRecipes } from "@/lib/claude";
+import { checkRateLimit } from "@/lib/rate-limit";
 import type { PantryItem, Recipe } from "@/types";
+
+const DISCOVER_DAILY_LIMIT = 10;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -11,6 +14,14 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { allowed, remaining } = await checkRateLimit(user.id, "discover", DISCOVER_DAILY_LIMIT);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: `Daily Discover limit reached (${DISCOVER_DAILY_LIMIT}/day). Try again tomorrow.` },
+      { status: 429 }
+    );
   }
 
   try {
@@ -59,7 +70,9 @@ export async function POST(request: Request) {
 
     const results = await promptRecipes(prompt, context, kitchenContext);
 
-    return NextResponse.json({ results });
+    return NextResponse.json({ results }, {
+      headers: { "X-RateLimit-Remaining": String(remaining) },
+    });
   } catch (error) {
     console.error("Prompt recipes error:", error);
     return NextResponse.json(

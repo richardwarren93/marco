@@ -4,43 +4,72 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { aggregateIngredients } from "@/lib/groceryAggregator";
 import type { Ingredient, PantryItem, Recipe } from "@/types";
 
+// ─── Helper: fetch items, gracefully handling missing soft_deleted column ─────
+async function fetchItems(admin: ReturnType<typeof createAdminClient>, listId: string) {
+  // Try with soft_deleted filter (v2 schema)
+  const { data, error } = await admin
+    .from("grocery_items")
+    .select("*")
+    .eq("list_id", listId)
+    .eq("soft_deleted", false)
+    .order("category", { ascending: true })
+    .order("name", { ascending: true });
+
+  if (!error) return data || [];
+
+  // Migration not yet run — return all items
+  const { data: fallback } = await admin
+    .from("grocery_items")
+    .select("*")
+    .eq("list_id", listId)
+    .order("category", { ascending: true })
+    .order("name", { ascending: true });
+  return fallback || [];
+}
+
+// ─── GET ─────────────────────────────────────────────────────────────────────
 export async function GET(request: NextRequest) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const params = request.nextUrl.searchParams;
+  const dateStart = params.get("date_start") ?? params.get("week_start");
+  if (!dateStart) return NextResponse.json({ error: "date_start required" }, { status: 400 });
 
-  const weekStart = request.nextUrl.searchParams.get("week_start");
-  if (!weekStart) {
-    return NextResponse.json({ error: "week_start required" }, { status: 400 });
-  }
+  const dateEnd = params.get("date_end") ?? (() => {
+    const d = new Date(dateStart + "T12:00:00");
+    d.setDate(d.getDate() + 6);
+    return d.toISOString().split("T")[0];
+  })();
 
   const admin = createAdminClient();
 
-  // Fetch the grocery list for this week
   const { data: list } = await admin
     .from("grocery_lists")
     .select("*")
     .eq("user_id", user.id)
-    .eq("week_start", weekStart)
+    .eq("week_start", dateStart)
     .single();
 
-  let ownItems: any[] = [];
-  if (list) {
-    const { data: items } = await admin
-      .from("grocery_items")
-      .select("*")
-      .eq("list_id", list.id)
-      .order("category", { ascending: true })
-      .order("name", { ascending: true });
-    ownItems = items || [];
+  const ownItems = list ? await fetchItems(admin, list.id) : [];
+
+  // Detect meal plan changes since last generation
+  let meal_plan_changed = false;
+  if (list?.generated_at) {
+    const { data: latestPlan } = await admin
+      .from("meal_plans")
+      .select("created_at")
+      .eq("user_id", user.id)
+      .gte("planned_date", dateStart)
+      .lte("planned_date", dateEnd)
+      .gt("created_at", list.generated_at)
+      .limit(1)
+      .maybeSingle();
+    if (latestPlan) meal_plan_changed = true;
   }
 
-  // Check for household members' lists
+  // Household members' lists
   const { data: membership } = await admin
     .from("household_members")
     .select("household_id")
@@ -51,7 +80,6 @@ export async function GET(request: NextRequest) {
   let householdMembers: any[] = [];
 
   if (membership) {
-    // Get all household members (excluding self)
     const { data: members } = await admin
       .from("household_members")
       .select("user_id")
@@ -60,97 +88,78 @@ export async function GET(request: NextRequest) {
 
     if (members && members.length > 0) {
       const memberIds = members.map((m: any) => m.user_id);
-
-      // Get profiles for household members
       const { data: profiles } = await admin
         .from("user_profiles")
         .select("user_id, display_name")
         .in("user_id", memberIds);
-
       householdMembers = profiles || [];
 
-      // Fetch their grocery lists for the same week
       const { data: memberLists } = await admin
         .from("grocery_lists")
         .select("*")
         .in("user_id", memberIds)
-        .eq("week_start", weekStart);
+        .eq("week_start", dateStart);
 
       if (memberLists && memberLists.length > 0) {
-        const listIds = memberLists.map((l: any) => l.id);
-        const { data: memberItems } = await admin
-          .from("grocery_items")
-          .select("*")
-          .in("list_id", listIds)
-          .order("category", { ascending: true })
-          .order("name", { ascending: true });
-
-        // Tag each item with the owner's name
         const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p.display_name]));
         const listOwnerMap = new Map(memberLists.map((l: any) => [l.id, l.user_id]));
-
-        householdItems = (memberItems || []).map((item: any) => ({
-          ...item,
-          owner_name: profileMap.get(listOwnerMap.get(item.list_id)) || "Housemate",
-        }));
+        const allMemberItems: any[] = [];
+        for (const ml of memberLists) {
+          const mlItems = await fetchItems(admin, ml.id);
+          for (const item of mlItems) {
+            allMemberItems.push({
+              ...item,
+              owner_name: profileMap.get(listOwnerMap.get(item.list_id)) || "Housemate",
+            });
+          }
+        }
+        householdItems = allMemberItems;
       }
     }
   }
 
-  return NextResponse.json({
-    list,
-    items: ownItems,
-    householdItems,
-    householdMembers,
-  });
+  return NextResponse.json({ list, items: ownItems, householdItems, householdMembers, meal_plan_changed });
 }
 
+// ─── POST (generate / regenerate) ────────────────────────────────────────────
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
     const body = await request.json();
-    const { week_start } = body;
+    const dateStart: string = body.date_start ?? body.week_start;
+    if (!dateStart) return NextResponse.json({ error: "date_start required" }, { status: 400 });
 
-    if (!week_start) {
-      return NextResponse.json({ error: "week_start required" }, { status: 400 });
-    }
+    const dateEnd: string = body.date_end ?? (() => {
+      const d = new Date(dateStart + "T12:00:00");
+      d.setDate(d.getDate() + 6);
+      return d.toISOString().split("T")[0];
+    })();
 
     const admin = createAdminClient();
 
-    // Calculate week end (7 days after start)
-    const startDate = new Date(week_start + "T00:00:00");
-    const endDate = new Date(startDate);
-    endDate.setDate(endDate.getDate() + 6);
-    const weekEnd = endDate.toISOString().split("T")[0];
-
-    // Fetch all meal plans for this week with recipes
+    // ── Fetch meal plans ──────────────────────────────────────────────────────
     const { data: plans } = await admin
       .from("meal_plans")
       .select("*, recipe:recipes(*)")
       .eq("user_id", user.id)
-      .gte("planned_date", week_start)
-      .lte("planned_date", weekEnd)
+      .gte("planned_date", dateStart)
+      .lte("planned_date", dateEnd)
       .not("recipe_id", "is", null);
 
     if (!plans || plans.length === 0) {
-      return NextResponse.json({ error: "No meals planned for this week" }, { status: 400 });
+      return NextResponse.json({ error: "No meals planned for this range" }, { status: 400 });
     }
 
-    // Fetch pantry items
+    // ── Fetch pantry items ────────────────────────────────────────────────────
     const { data: pantryItems } = await admin
       .from("pantry_items")
       .select("*")
       .eq("user_id", user.id);
 
-    // Aggregate ingredients across all planned recipes
+    // ── Aggregate ingredients ─────────────────────────────────────────────────
     const recipeIngredients = plans
       .filter((p) => p.recipe)
       .map((p) => ({
@@ -158,59 +167,98 @@ export async function POST(request: Request) {
         ingredients: (p.recipe as Recipe).ingredients as Ingredient[],
       }));
 
-    const aggregated = aggregateIngredients(
-      recipeIngredients,
-      (pantryItems as PantryItem[]) || []
-    );
+    const aggregated = aggregateIngredients(recipeIngredients, (pantryItems as PantryItem[]) || []);
 
-    // Upsert grocery list
+    // ── Step 1: Upsert grocery list with ORIGINAL columns only ────────────────
+    // (safe even if v2 migration hasn't been run)
     const { data: list, error: listError } = await admin
       .from("grocery_lists")
       .upsert(
-        {
-          user_id: user.id,
-          week_start,
-          updated_at: new Date().toISOString(),
-        },
+        { user_id: user.id, week_start: dateStart, updated_at: new Date().toISOString() },
         { onConflict: "user_id,week_start" }
       )
       .select()
       .single();
 
-    if (listError || !list) {
-      throw listError || new Error("Failed to create grocery list");
-    }
+    if (listError || !list) throw listError || new Error("Failed to create grocery list");
 
-    // Delete old items for this list (regenerate)
-    await admin.from("grocery_items").delete().eq("list_id", list.id);
+    // ── Step 2: Update v2 tracking columns (silently skip if not migrated) ────
+    await admin
+      .from("grocery_lists")
+      .update({ date_end: dateEnd, generated_at: new Date().toISOString(), meal_count: plans.length })
+      .eq("id", list.id)
+      .then(() => {}, () => {}); // swallow error if columns don't exist
 
-    // Insert new aggregated items
+    // ── Step 3: Load existing items to preserve user state ────────────────────
+    const { data: existingItems } = await admin
+      .from("grocery_items")
+      .select("*")
+      .eq("list_id", list.id);
+
+    const existing = existingItems || [];
+
+    const softDeletedNames = new Set(
+      existing.filter((i: any) => !i.is_custom && i.soft_deleted).map((i: any) => i.name)
+    );
+    const checkedNames = new Set(
+      existing.filter((i: any) => !i.is_custom && i.checked && !i.soft_deleted).map((i: any) => i.name)
+    );
+    type Override = { name_override: string | null; amount_override: string | null; unit_override: string | null; category_override: string | null };
+    const overrideMap = new Map<string, Override>(
+      existing
+        .filter((i: any) => !i.is_custom && (i.name_override || i.amount_override || i.unit_override || i.category_override))
+        .map((i: any) => [i.name, { name_override: i.name_override, amount_override: i.amount_override, unit_override: i.unit_override, category_override: i.category_override }])
+    );
+
+    // ── Step 4: Delete existing generated items ───────────────────────────────
+    await admin.from("grocery_items").delete().eq("list_id", list.id).eq("is_custom", false);
+
+    // ── Step 5: Insert new items (v2 columns with fallback to base schema) ────
     if (aggregated.length > 0) {
-      const items = aggregated.map((item) => ({
+      const baseItems = aggregated.map((item) => ({
         list_id: list.id,
         name: item.name,
         amount: item.amount,
         unit: item.unit,
         category: item.category,
         recipe_sources: item.recipeSources,
-        checked: false,
+        checked: checkedNames.has(item.name),
         is_custom: false,
         in_pantry: item.inPantry,
       }));
 
-      const { error: insertError } = await admin.from("grocery_items").insert(items);
-      if (insertError) throw insertError;
+      const v2Items = baseItems.map((base, idx) => {
+        const name = aggregated[idx].name;
+        const ov = overrideMap.get(name);
+        return {
+          ...base,
+          soft_deleted: softDeletedNames.has(name),
+          name_override: ov?.name_override ?? null,
+          amount_override: ov?.amount_override ?? null,
+          unit_override: ov?.unit_override ?? null,
+          category_override: ov?.category_override ?? null,
+        };
+      });
+
+      // Try v2 insert first; if v2 columns don't exist, fall back to base
+      const { error: v2Err } = await admin.from("grocery_items").insert(v2Items);
+      if (v2Err) {
+        const { error: baseErr } = await admin.from("grocery_items").insert(baseItems);
+        if (baseErr) throw baseErr;
+      }
     }
 
-    // Fetch the complete list
-    const { data: finalItems } = await admin
-      .from("grocery_items")
-      .select("*")
-      .eq("list_id", list.id)
-      .order("category", { ascending: true })
-      .order("name", { ascending: true });
+    // ── Step 6: Fetch final items ─────────────────────────────────────────────
+    const finalItems = await fetchItems(admin, list.id);
 
-    return NextResponse.json({ list, items: finalItems || [] });
+    // Re-fetch list to get updated v2 fields (meal_count, generated_at)
+    const { data: updatedList } = await admin
+      .from("grocery_lists")
+      .select("*")
+      .eq("id", list.id)
+      .single();
+
+    return NextResponse.json({ list: updatedList ?? list, items: finalItems });
   } catch (error) {
     console.error("Grocery list error:", error);
     return NextResponse.json(

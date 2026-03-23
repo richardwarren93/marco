@@ -1,17 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { MealPlan } from "@/types";
-import CalendarCell from "./CalendarCell";
+import type { MealPlan, Recipe } from "@/types";
+import DayColumn from "./CalendarCell";
 import AddMealModal from "./AddMealModal";
-
-const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
-const MEAL_LABELS: Record<string, string> = {
-  breakfast: "🌅",
-  lunch: "☀️",
-  dinner: "🌙",
-  snack: "🍎",
-};
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -37,11 +29,13 @@ export default function WeeklyCalendar({
   householdPlans = [],
   onAddMeal,
   onRemoveMeal,
+  recipePool,
 }: {
   mealPlans: MealPlan[];
   householdPlans?: MealPlan[];
-  onAddMeal: (recipeId: string, date: string, mealType: string) => void;
+  onAddMeal: (recipeId: string, dates: string[], mealType: string, servings?: number) => void;
   onRemoveMeal: (planId: string) => void;
+  recipePool?: Recipe[];
 }) {
   const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
   const [modalOpen, setModalOpen] = useState(false);
@@ -51,29 +45,32 @@ export default function WeeklyCalendar({
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const today = formatDateKey(new Date());
 
-  // Build a lookup: date -> mealType -> MealPlan[]
-  const plansByDateMeal: Record<string, Record<string, MealPlan[]>> = {};
+  // Build lookup: date -> MealPlan[]
+  const plansByDate: Record<string, MealPlan[]> = {};
   const allPlans = [...mealPlans, ...householdPlans];
   for (const plan of allPlans) {
-    if (!plansByDateMeal[plan.planned_date]) {
-      plansByDateMeal[plan.planned_date] = {};
-    }
-    if (!plansByDateMeal[plan.planned_date][plan.meal_type]) {
-      plansByDateMeal[plan.planned_date][plan.meal_type] = [];
-    }
-    plansByDateMeal[plan.planned_date][plan.meal_type].push(plan);
+    if (!plansByDate[plan.planned_date]) plansByDate[plan.planned_date] = [];
+    plansByDate[plan.planned_date].push(plan);
   }
 
-  function openAddModal(date: string, mealType: string) {
+  function openAddModal(date: string, mealType = "dinner") {
     setModalDate(date);
     setModalMealType(mealType);
     setModalOpen(true);
   }
 
   const weekEnd = addDays(weekStart, 6);
-  const monthLabel = weekStart.getMonth() === weekEnd.getMonth()
-    ? weekStart.toLocaleDateString("en-US", { month: "long", year: "numeric" })
-    : `${weekStart.toLocaleDateString("en-US", { month: "short" })} – ${weekEnd.toLocaleDateString("en-US", { month: "short", year: "numeric" })}`;
+  const monthLabel = (() => {
+    const startDay = weekStart.getDate();
+    const endDay = weekEnd.getDate();
+    const startMonth = weekStart.toLocaleDateString("en-US", { month: "long" });
+    const endMonth = weekEnd.toLocaleDateString("en-US", { month: "long" });
+    const year = weekEnd.getFullYear();
+    if (weekStart.getMonth() === weekEnd.getMonth()) {
+      return `${startMonth} ${startDay} – ${endDay}, ${year}`;
+    }
+    return `${startMonth} ${startDay} – ${endMonth} ${endDay}, ${year}`;
+  })();
 
   return (
     <div>
@@ -81,7 +78,7 @@ export default function WeeklyCalendar({
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={() => setWeekStart(addDays(weekStart, -7))}
-          className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+          className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors touch-manipulation"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -98,7 +95,7 @@ export default function WeeklyCalendar({
         </div>
         <button
           onClick={() => setWeekStart(addDays(weekStart, 7))}
-          className="text-gray-500 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100 transition-colors"
+          className="text-gray-500 hover:text-gray-700 p-2 rounded-xl hover:bg-gray-100 transition-colors touch-manipulation"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -106,68 +103,36 @@ export default function WeeklyCalendar({
         </button>
       </div>
 
-      {/* Calendar grid — horizontally scrollable on mobile */}
-      <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-        <div className="min-w-[600px]">
-          {/* Day headers */}
-          <div className="grid grid-cols-[48px_repeat(7,1fr)] gap-1 mb-1">
-            <div /> {/* spacer for meal type column */}
-            {weekDays.map((day) => {
-              const dateKey = formatDateKey(day);
-              const isToday = dateKey === today;
-              return (
-                <div
-                  key={dateKey}
-                  className={`text-center py-1.5 rounded-lg ${
-                    isToday ? "bg-orange-100" : ""
-                  }`}
-                >
-                  <p className={`text-[10px] font-medium ${isToday ? "text-orange-700" : "text-gray-400"}`}>
+      {/* 7-column stacked day grid */}
+      <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
+        <div className="grid grid-cols-7 gap-1 min-w-[420px]">
+          {weekDays.map((day) => {
+            const dateKey = formatDateKey(day);
+            const isToday = dateKey === today;
+            const plans = plansByDate[dateKey] || [];
+
+            return (
+              <div key={dateKey} className="flex flex-col">
+                {/* Day header */}
+                <div className={`text-center py-1.5 rounded-xl mb-1 ${isToday ? "bg-orange-100" : ""}`}>
+                  <p className={`text-[9px] font-bold uppercase tracking-wider ${isToday ? "text-orange-500" : "text-gray-400"}`}>
                     {day.toLocaleDateString("en-US", { weekday: "short" })}
                   </p>
-                  <p className={`text-sm font-bold ${isToday ? "text-orange-700" : "text-gray-700"}`}>
+                  <p className={`text-sm font-bold leading-tight ${isToday ? "text-orange-600" : "text-gray-700"}`}>
                     {day.getDate()}
                   </p>
                 </div>
-              );
-            })}
-          </div>
 
-          {/* Meal rows */}
-          {MEAL_TYPES.map((mealType) => (
-            <div key={mealType} className="grid grid-cols-[48px_repeat(7,1fr)] gap-1 mb-1">
-              {/* Meal type label */}
-              <div className="flex items-center justify-center">
-                <span className="text-sm" title={mealType}>
-                  {MEAL_LABELS[mealType]}
-                </span>
+                {/* Stacked meals for this day */}
+                <DayColumn
+                  plans={plans}
+                  isToday={isToday}
+                  onAdd={(mealType) => openAddModal(dateKey, mealType)}
+                  onRemove={onRemoveMeal}
+                />
               </div>
-
-              {/* Day cells */}
-              {weekDays.map((day) => {
-                const dateKey = formatDateKey(day);
-                const plans = plansByDateMeal[dateKey]?.[mealType] || [];
-                const isToday = dateKey === today;
-
-                return (
-                  <div
-                    key={`${dateKey}-${mealType}`}
-                    className={`min-h-[48px] p-1 rounded-lg border transition-colors ${
-                      isToday
-                        ? "border-orange-200 bg-orange-50/30"
-                        : "border-gray-100 bg-white hover:border-gray-200"
-                    }`}
-                  >
-                    <CalendarCell
-                      plans={plans}
-                      onAdd={() => openAddModal(dateKey, mealType)}
-                      onRemove={onRemoveMeal}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -177,9 +142,10 @@ export default function WeeklyCalendar({
         date={modalDate}
         mealType={modalMealType}
         onClose={() => setModalOpen(false)}
-        onAdd={(recipeId, date, mealType) => {
-          onAddMeal(recipeId, date, mealType);
+        onAdd={(recipeId, dates, mealType, servings) => {
+          onAddMeal(recipeId, dates, mealType, servings);
         }}
+        recipePool={recipePool && recipePool.length > 0 ? recipePool : undefined}
       />
     </div>
   );

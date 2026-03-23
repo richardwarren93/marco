@@ -112,6 +112,25 @@ export function MealPlanIcon({ className = defaultClass, filled }: IconProps) {
   );
 }
 
+export function GroceryIcon({ className = defaultClass, filled }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Cart body */}
+      <path
+        d="M2.5 3.5H4.8L7.5 15H17.8L20 7.5H7.5"
+        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        fill={filled ? "currentColor" : "none"} opacity={filled ? 0.15 : 1}
+      />
+      {/* Wheels */}
+      <circle cx="9.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="16" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+      {/* Items sketched inside */}
+      <path d="M10.5 10.5V13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <path d="M14 10.5V13" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
 // — Feature / Quick Action Icons —
 
 export function SaveRecipeIcon({ className = defaultClass }: IconProps) {
@@ -267,6 +286,23 @@ export function CheckCircleIcon({ className = defaultClass }: IconProps) {
     <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8"/>
       <path d="M8 12.5L10.5 15L16 9.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+export function ProfileIcon({ className = defaultClass, filled }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Head */}
+      <circle cx="12" cy="8" r="3.8" stroke="currentColor" strokeWidth="1.8"
+        fill={filled ? "currentColor" : "none"} opacity={filled ? 0.2 : 1}
+      />
+      {/* Shoulders */}
+      <path
+        d="M4.5 20.5C4.5 16 7.8 13.5 12 13.5C16.2 13.5 19.5 16 19.5 20.5"
+        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+        fill={filled ? "currentColor" : "none"} opacity={filled ? 0.2 : 1}
+      />
     </svg>
   );
 }

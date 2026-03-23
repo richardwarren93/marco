@@ -1,78 +1,175 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { GroceryItem as GroceryItemType, GroceryList as GroceryListType } from "@/types";
 import GroceryItem from "./GroceryItem";
+import AddItemSheet from "./AddItemSheet";
+import EditItemSheet from "./EditItemSheet";
 
-const CATEGORY_LABELS: Record<string, string> = {
-  produce: "🥬 Produce",
-  protein: "🥩 Protein",
-  dairy: "🧀 Dairy",
-  grain: "🌾 Grains & Bread",
-  canned: "🥫 Canned Goods",
-  frozen: "🧊 Frozen",
-  spice: "🧂 Spices",
-  condiment: "🫙 Condiments",
-  other: "📦 Other",
+// ─── Category config ──────────────────────────────────────────────────────────
+const CATEGORY_CONFIG: Record<string, { label: string; emoji: string }> = {
+  produce:   { label: "Produce",              emoji: "🥬" },
+  protein:   { label: "Protein",              emoji: "🥩" },
+  dairy:     { label: "Dairy & Eggs",         emoji: "🥛" },
+  pantry:    { label: "Pantry",               emoji: "🥫" },
+  canned:    { label: "Pantry",               emoji: "🥫" },  // legacy alias
+  spices:    { label: "Spices & Condiments",  emoji: "🧂" },
+  spice:     { label: "Spices & Condiments",  emoji: "🧂" },  // legacy alias
+  condiment: { label: "Spices & Condiments",  emoji: "🧂" },  // legacy alias
+  frozen:    { label: "Frozen",               emoji: "🧊" },
+  bakery:    { label: "Bakery",               emoji: "🍞" },
+  grain:     { label: "Bakery",               emoji: "🍞" },  // legacy alias
+  other:     { label: "Other",               emoji: "📦" },
 };
 
-interface HouseholdGroceryItem extends GroceryItemType {
-  owner_name?: string;
+const CATEGORY_SORT_ORDER = [
+  "produce", "protein", "dairy",
+  "pantry", "canned",
+  "spices", "spice", "condiment",
+  "frozen", "bakery", "grain",
+  "other",
+];
+
+function categoryLabel(cat: string | null): string {
+  const c = cat || "other";
+  const cfg = CATEGORY_CONFIG[c];
+  return cfg ? `${cfg.emoji} ${cfg.label}` : c;
+}
+
+function categorySort(cat: string | null): number {
+  const idx = CATEGORY_SORT_ORDER.indexOf(cat || "other");
+  return idx === -1 ? 999 : idx;
+}
+
+// ─── Date range helpers ───────────────────────────────────────────────────────
+type RangePreset = "this_week" | "next_week" | "custom";
+
+/** Format a Date as YYYY-MM-DD in local time (avoids UTC shift). */
+function localDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
 }
 
 function getMonday(date: Date): string {
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  d.setDate(diff);
-  return d.toISOString().split("T")[0];
+  const day = d.getDay(); // 0 = Sunday
+  d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+  return localDateStr(d);
 }
 
-export default function GroceryList({ onClose }: { onClose: () => void }) {
+function addDays(dateStr: string, days: number): string {
+  const d = new Date(dateStr + "T12:00:00"); // noon avoids DST edge cases
+  d.setDate(d.getDate() + days);
+  return localDateStr(d);
+}
+
+function getPresetRange(preset: RangePreset, customRange: { start: string; end: string }) {
+  if (preset === "this_week") {
+    const start = getMonday(new Date());
+    return { start, end: addDays(start, 6) };
+  }
+  if (preset === "next_week") {
+    const now = new Date();
+    now.setDate(now.getDate() + 7);
+    const start = getMonday(now);
+    return { start, end: addDays(start, 6) };
+  }
+  return customRange;
+}
+
+function formatRangeLabel(start: string, end: string): string {
+  const s = new Date(start + "T12:00:00");
+  const e = new Date(end + "T12:00:00");
+  const monthFmt = (d: Date) => d.toLocaleString("en-US", { month: "short" });
+  const dayFmt = (d: Date) => d.getDate();
+  if (s.getMonth() === e.getMonth()) {
+    return `${monthFmt(s)} ${dayFmt(s)}–${dayFmt(e)}`;
+  }
+  return `${monthFmt(s)} ${dayFmt(s)} – ${monthFmt(e)} ${dayFmt(e)}`;
+}
+
+// ─── HouseholdGroceryItem ─────────────────────────────────────────────────────
+interface HouseholdGroceryItem extends GroceryItemType {
+  owner_name?: string;
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+type FilterMode = "to_buy" | "checked" | "all";
+
+export default function GroceryList() {
+  const router = useRouter();
+
+  // Range
+  const [rangePreset, setRangePreset] = useState<RangePreset>("this_week");
+  const [customRange, setCustomRange] = useState(() => {
+    const start = getMonday(new Date());
+    return { start, end: addDays(start, 6) };
+  });
+  const [rangePickerOpen, setRangePickerOpen] = useState(false);
+
+  // Filter
+  const [filter, setFilter] = useState<FilterMode>("to_buy");
+
+  // Data
   const [items, setItems] = useState<GroceryItemType[]>([]);
   const [householdItems, setHouseholdItems] = useState<HouseholdGroceryItem[]>([]);
   const [list, setList] = useState<GroceryListType | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [mealPlanChanged, setMealPlanChanged] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
-  const [newItemName, setNewItemName] = useState("");
-  const [householdMembers, setHouseholdMembers] = useState<{ user_id: string; display_name: string }[]>([]);
 
-  const weekStart = getMonday(new Date());
+  // Sheets
+  const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [editItem, setEditItem] = useState<GroceryItemType | null>(null);
+
+  const dateRange = useMemo(
+    () => getPresetRange(rangePreset, customRange),
+    [rangePreset, customRange]
+  );
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  const fetchList = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(
+        `/api/grocery-list?date_start=${dateRange.start}&date_end=${dateRange.end}`
+      );
+      const data = await res.json();
+      setList(data.list ?? null);
+      setItems(data.items ?? []);
+      setHouseholdItems(data.householdItems ?? []);
+      setMealPlanChanged(data.meal_plan_changed ?? false);
+    } catch {
+      setError("Failed to load grocery list");
+    } finally {
+      setLoading(false);
+    }
+  }, [dateRange.start, dateRange.end]);
 
   useEffect(() => {
     fetchList();
-  }, []);
+  }, [fetchList]);
 
-  async function fetchList() {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/grocery-list?week_start=${weekStart}`);
-      const data = await res.json();
-      setList(data.list);
-      setItems(data.items || []);
-      setHouseholdItems(data.householdItems || []);
-      setHouseholdMembers(data.householdMembers || []);
-    } catch {
-      // No list yet
-    }
-    setLoading(false);
-  }
-
+  // ── Generate / regenerate ──────────────────────────────────────────────────
   async function handleGenerate() {
     setGenerating(true);
     setError("");
-
     try {
       const res = await fetch("/api/grocery-list", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ week_start: weekStart }),
+        body: JSON.stringify({ date_start: dateRange.start, date_end: dateRange.end }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setList(data.list);
-      setItems(data.items || []);
+      setItems(data.items ?? []);
+      setMealPlanChanged(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to generate");
     } finally {
@@ -80,16 +177,16 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
     }
   }
 
+  // ── Toggle checked ─────────────────────────────────────────────────────────
   async function handleToggle(id: string, checked: boolean) {
-    // Check if it's own item or household item
     const isOwn = items.some((i) => i.id === id);
+    const snapshot = isOwn ? [...items] : [...householdItems];
 
     if (isOwn) {
       setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked } : i)));
     } else {
       setHouseholdItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked } : i)));
     }
-
     try {
       await fetch("/api/grocery-list/items", {
         method: "PATCH",
@@ -97,26 +194,33 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ id, checked }),
       });
     } catch {
-      // Revert
-      if (isOwn) {
-        setItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: !checked } : i)));
-      } else {
-        setHouseholdItems((prev) => prev.map((i) => (i.id === id ? { ...i, checked: !checked } : i)));
-      }
+      if (isOwn) setItems(snapshot);
+      else setHouseholdItems(snapshot as HouseholdGroceryItem[]);
     }
   }
 
-  async function handleDelete(id: string) {
-    const isOwn = items.some((i) => i.id === id);
-    const prevItems = items;
-    const prevHousehold = householdItems;
-
-    if (isOwn) {
-      setItems(items.filter((i) => i.id !== id));
-    } else {
-      setHouseholdItems(householdItems.filter((i) => i.id !== id));
+  // ── Save edit ──────────────────────────────────────────────────────────────
+  async function handleSaveEdit(
+    id: string,
+    changes: { name?: string; amount?: string | null; unit?: string | null; category?: string | null }
+  ) {
+    try {
+      await fetch("/api/grocery-list/items", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...changes }),
+      });
+      // Refresh list to get updated overrides
+      await fetchList();
+    } catch {
+      // ignore – let user retry
     }
+  }
 
+  // ── Delete item ────────────────────────────────────────────────────────────
+  async function handleDelete(id: string) {
+    setItems((prev) => prev.filter((i) => i.id !== id));
+    setHouseholdItems((prev) => prev.filter((i) => i.id !== id));
     try {
       await fetch("/api/grocery-list/items", {
         method: "DELETE",
@@ -124,162 +228,386 @@ export default function GroceryList({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ id }),
       });
     } catch {
-      if (isOwn) {
-        setItems(prevItems);
-      } else {
-        setHouseholdItems(prevHousehold);
-      }
+      await fetchList(); // revert on error
     }
   }
 
-  async function handleAddCustom(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newItemName.trim()) return;
+  // ── Clear all items ────────────────────────────────────────────────────────
+  const [clearConfirm, setClearConfirm] = useState(false);
 
+  async function handleClearAll() {
+    if (!list) return;
+    setItems([]);
+    setHouseholdItems([]);
+    setClearConfirm(false);
     try {
-      const body: Record<string, string> = { name: newItemName.trim() };
-
-      if (list) {
-        body.list_id = list.id;
-      } else {
-        body.week_start = weekStart;
-      }
-
-      const res = await fetch("/api/grocery-list/items", {
-        method: "POST",
+      await fetch("/api/grocery-list/items", {
+        method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ list_id: list.id }),
       });
-      const data = await res.json();
-      if (data.item) {
-        setItems((prev) => [...prev, data.item]);
-        setNewItemName("");
-        if (!list && data.list_id) {
-          setList({ id: data.list_id, user_id: "", week_start: weekStart, created_at: "" });
-        }
-      }
     } catch {
-      // ignore
+      await fetchList(); // revert on error
     }
   }
 
-  // Merge own items and household items for display
-  const allItems: HouseholdGroceryItem[] = [
-    ...items,
-    ...householdItems,
-  ];
-
-  // Group all items by category
-  const grouped = new Map<string, HouseholdGroceryItem[]>();
-  for (const item of allItems) {
-    const cat = item.category || "other";
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(item);
+  // ── Add custom item ────────────────────────────────────────────────────────
+  function handleItemAdded(item: GroceryItemType) {
+    setItems((prev) => [...prev, item]);
+    if (!list) {
+      // List was just auto-created — refetch to get list metadata
+      fetchList();
+    }
   }
 
+  // ── Derived display data ───────────────────────────────────────────────────
+  const allItems: HouseholdGroceryItem[] = [...items, ...householdItems];
+
+  const filteredItems = useMemo(() => {
+    return allItems.filter((item) => {
+      if (filter === "to_buy") return !item.checked;
+      if (filter === "checked") return item.checked;
+      return true;
+    });
+  }, [allItems, filter]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Group by effective category (apply override), preserving category grouping
+  const grouped = useMemo(() => {
+    const map = new Map<string, HouseholdGroceryItem[]>();
+    for (const item of filteredItems) {
+      const cat = item.category_override ?? item.category ?? "other";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(item);
+    }
+    // Sort categories
+    return [...map.entries()].sort(([a], [b]) => categorySort(a) - categorySort(b));
+  }, [filteredItems]);
+
+  const toBuyCount = allItems.filter((i) => !i.checked).length;
   const checkedCount = allItems.filter((i) => i.checked).length;
-  const hasHouseholdItems = householdItems.length > 0;
-  const memberNames = householdMembers.map((m) => m.display_name).join(", ");
+  const hasItems = allItems.length > 0;
+  const generatedFrom = list?.meal_count ?? 0;
+
+  const rangeLabel = (() => {
+    if (rangePreset === "this_week") return "This week";
+    if (rangePreset === "next_week") return "Next week";
+    return formatRangeLabel(dateRange.start, dateRange.end);
+  })();
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-        <div>
-          <h2 className="font-bold text-gray-900 flex items-center gap-2">
-            🛒 Grocery List
-          </h2>
-          {allItems.length > 0 && (
-            <p className="text-xs text-gray-400 mt-0.5">
-              {checkedCount}/{allItems.length} items checked
-            </p>
-          )}
+    <div className="min-h-screen bg-gray-50 pb-24">
+
+      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-100 px-4 pt-5 pb-4">
+        <div className="flex items-center justify-between mb-0.5">
+          <h1 className="text-xl font-bold text-gray-900">Grocery</h1>
+          {/* Range selector */}
+          <div className="relative">
+            <button
+              onClick={() => setRangePickerOpen((v) => !v)}
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
+            >
+              {rangeLabel}
+              <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${rangePickerOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {rangePickerOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setRangePickerOpen(false)} />
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
+                  {(["this_week", "next_week", "custom"] as RangePreset[]).map((preset) => (
+                    <button
+                      key={preset}
+                      onClick={() => {
+                        setRangePreset(preset);
+                        if (preset !== "custom") setRangePickerOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                        rangePreset === preset
+                          ? "text-orange-600 bg-orange-50 font-medium"
+                          : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                    >
+                      {preset === "this_week" ? "This week" : preset === "next_week" ? "Next week" : "Custom range"}
+                    </button>
+                  ))}
+
+                  {/* Custom range date inputs */}
+                  {rangePreset === "custom" && (
+                    <div className="px-4 pb-3 pt-1 border-t border-gray-100 space-y-2">
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">From</label>
+                        <input
+                          type="date"
+                          value={customRange.start}
+                          onChange={(e) => {
+                            const start = e.target.value;
+                            setCustomRange((r) => ({ start, end: r.end < start ? addDays(start, 6) : r.end }));
+                          }}
+                          className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-gray-400 mb-1">To</label>
+                        <input
+                          type="date"
+                          value={customRange.end}
+                          min={customRange.start}
+                          onChange={(e) => setCustomRange((r) => ({ ...r, end: e.target.value }))}
+                          className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setRangePickerOpen(false)}
+                        className="w-full text-xs font-medium text-white bg-orange-500 rounded-lg py-1.5"
+                      >
+                        Apply
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <p className="text-xs text-gray-400">
+          {formatRangeLabel(dateRange.start, dateRange.end)}
+        </p>
+      </div>
+
+      {error && (
+        <div className="mx-4 mt-3 px-4 py-2.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+          {error}
+        </div>
+      )}
+
+      {/* ── Meal plan changed notice ────────────────────────────────────────── */}
+      {mealPlanChanged && !generating && (
+        <div className="mx-4 mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium text-amber-800">Meal plan changed</p>
+            <p className="text-xs text-amber-600 mt-0.5">Regenerate to reflect latest meals</p>
+          </div>
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="text-xs font-medium text-orange-600 hover:text-orange-700 px-3 py-1.5 bg-orange-50 rounded-full hover:bg-orange-100 transition-colors disabled:opacity-50"
+            className="text-xs font-semibold text-orange-600 bg-white border border-orange-200 px-3 py-1.5 rounded-full hover:bg-orange-50 transition-colors whitespace-nowrap disabled:opacity-50"
           >
-            {generating ? "Generating..." : items.length > 0 ? "Regenerate" : "Generate from Plan"}
+            Regenerate
           </button>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-lg"
-          >
-            ×
-          </button>
-        </div>
-      </div>
-
-      {/* Household sharing indicator */}
-      {hasHouseholdItems && memberNames && (
-        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
-          <p className="text-xs text-blue-600 flex items-center gap-1.5">
-            <span>🏠</span>
-            <span>Shared with {memberNames}</span>
-          </p>
         </div>
       )}
 
-      {/* Error */}
-      {error && (
-        <div className="px-4 py-2 bg-red-50 text-red-600 text-sm">{error}</div>
+      {/* ── Summary section — only when list has actual generated items ──────── */}
+      {list && !loading && allItems.length > 0 && (
+        <div className="mx-4 mt-3 px-4 py-3 bg-white rounded-2xl border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-800">
+                {generatedFrom > 0
+                  ? `Generated from ${generatedFrom} meal${generatedFrom !== 1 ? "s" : ""}`
+                  : "Generated from your meal plan"}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">Based on current servings</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push(`/meal-plan?date=${dateRange.start}`)}
+                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                View meals
+              </button>
+              <button
+                onClick={handleGenerate}
+                disabled={generating}
+                className="text-xs font-semibold text-orange-600 bg-orange-50 hover:bg-orange-100 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
+              >
+                {generating ? "…" : "Regenerate"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
-      {/* Content */}
+      {/* ── Filter segmented control + clear all ────────────────────────────── */}
+      {hasItems && (
+        <div className="mx-4 mt-3 flex items-center gap-2">
+          <div className="flex flex-1 bg-gray-100 rounded-xl p-1 gap-1">
+            {([
+              { key: "to_buy",  label: `To buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
+              { key: "checked", label: `Checked${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
+              { key: "all",     label: "All" },
+            ] as { key: FilterMode; label: string }[]).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  filter === key
+                    ? "bg-white text-gray-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {!clearConfirm ? (
+            <button
+              onClick={() => setClearConfirm(true)}
+              className="text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
+            >
+              Clear all
+            </button>
+          ) : (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleClearAll}
+                className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setClearConfirm(false)}
+                className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Content ─────────────────────────────────────────────────────────── */}
       {loading ? (
-        <div className="p-8 text-center text-gray-400 text-sm">Loading...</div>
-      ) : allItems.length === 0 ? (
-        <div className="p-8 text-center">
-          <p className="text-gray-400 text-sm mb-2">No grocery list yet</p>
-          <p className="text-gray-400 text-xs">
-            Add meals to your weekly calendar, then generate a grocery list
+        /* Loading skeleton */
+        <div className="mx-4 mt-3 space-y-3">
+          {[1, 2, 3].map((n) => (
+            <div key={n} className="bg-white rounded-2xl border border-gray-100 p-4">
+              <div className="h-3 w-24 bg-gray-100 rounded animate-pulse mb-3" />
+              <div className="space-y-2.5">
+                {[1, 2].map((m) => (
+                  <div key={m} className="flex items-center gap-3">
+                    <div className="w-5 h-5 rounded-md bg-gray-100 animate-pulse flex-shrink-0" />
+                    <div className="h-3 flex-1 bg-gray-100 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+      ) : !list ? (
+        /* No list yet — empty state */
+        <div className="mx-4 mt-6 text-center">
+          <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10">
+            <p className="text-4xl mb-4">🛒</p>
+            <p className="text-gray-800 font-semibold text-base mb-1">No grocery list yet</p>
+            <p className="text-gray-400 text-sm mb-6">
+              Add meals to your {rangeLabel.toLowerCase()} calendar, then generate your list.
+            </p>
+            <button
+              onClick={handleGenerate}
+              disabled={generating}
+              className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+            >
+              {generating ? "Generating…" : "Generate grocery list"}
+            </button>
+          </div>
+        </div>
+
+      ) : grouped.length === 0 ? (
+        /* List exists but nothing to show */
+        <div className="mx-4 mt-6 text-center py-10">
+          <p className="text-gray-400 text-sm">
+            {allItems.length === 0
+              ? "No items yet — add meals and regenerate, or add items manually."
+              : filter === "to_buy"
+              ? "Everything is checked off! 🎉"
+              : filter === "checked"
+              ? "Nothing checked yet."
+              : "Your list is empty."}
           </p>
         </div>
+
       ) : (
-        <div className="divide-y divide-gray-50">
-          {[...grouped.entries()].map(([category, categoryItems]) => (
-            <div key={category} className="px-4 py-3">
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                {CATEGORY_LABELS[category] || category}
-              </h3>
-              <div className="space-y-0.5">
-                {categoryItems.map((item) => (
+        /* Grouped list */
+        <div className="mx-4 mt-3 space-y-3">
+          {grouped.map(([cat, catItems]) => (
+            <div key={cat} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              {/* Category header */}
+              <div className="px-4 pt-3 pb-1.5">
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                  {categoryLabel(cat)}
+                </h3>
+              </div>
+              {/* Items */}
+              <div className="px-3 pb-2 space-y-0.5">
+                {catItems.map((item) => (
                   <GroceryItem
                     key={item.id}
                     item={item}
                     onToggle={handleToggle}
-                    onDelete={handleDelete}
+                    onEdit={setEditItem}
                     ownerName={item.owner_name}
                   />
                 ))}
               </div>
             </div>
           ))}
+
+          {/* + Add item row — always at the bottom inside the list area */}
+          <button
+            onClick={() => setAddSheetOpen(true)}
+            className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-white rounded-2xl border border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors text-left"
+          >
+            <span className="w-5 h-5 rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-300 flex-shrink-0 text-sm">+</span>
+            <span className="text-sm text-gray-400">Add item</span>
+          </button>
         </div>
       )}
 
-      {/* Add custom item — always visible */}
-      <form
-        onSubmit={handleAddCustom}
-        className="flex items-center gap-2 px-4 py-3 border-t border-gray-100"
-      >
-          <input
-            type="text"
-            value={newItemName}
-            onChange={(e) => setNewItemName(e.target.value)}
-            placeholder="Add an item..."
-            className="flex-1 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
-          />
-          <button
-            type="submit"
-            disabled={!newItemName.trim()}
-            className="text-sm font-medium text-orange-600 hover:text-orange-700 disabled:opacity-30 px-3 py-1.5"
-          >
-            Add
-          </button>
-        </form>
+      {/* + Add item button when list is empty state with items */}
+      {!loading && list && (
+        <div className="mx-4 mt-3">
+          {grouped.length === 0 && (
+            <button
+              onClick={() => setAddSheetOpen(true)}
+              className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-white rounded-2xl border border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors"
+            >
+              <span className="text-sm text-gray-400">+ Add item</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Generating overlay */}
+      {generating && (
+        <div className="fixed inset-0 z-50 bg-white/60 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-medium text-gray-700">Generating your list…</p>
+          </div>
+        </div>
+      )}
+
+      {/* Sheets */}
+      <AddItemSheet
+        isOpen={addSheetOpen}
+        listId={list?.id ?? null}
+        dateStart={dateRange.start}
+        dateEnd={dateRange.end}
+        onClose={() => setAddSheetOpen(false)}
+        onAdd={handleItemAdded}
+      />
+
+      <EditItemSheet
+        item={editItem}
+        onClose={() => setEditItem(null)}
+        onSave={handleSaveEdit}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }

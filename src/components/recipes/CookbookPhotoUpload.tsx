@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import type { Ingredient } from "@/types";
 
 interface ExtractedRecipe {
@@ -16,14 +16,26 @@ interface ExtractedRecipe {
 
 export default function CookbookPhotoUpload({
   onExtracted,
+  preloadedFile,
 }: {
   onExtracted: (recipe: ExtractedRecipe) => void;
+  preloadedFile?: File;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-load a file that was passed in from ImportRecipeSheet
+  useEffect(() => {
+    if (!preloadedFile) return;
+    setError("");
+    setFile(preloadedFile);
+    const reader = new FileReader();
+    reader.onload = (ev) => setPreview(ev.target?.result as string);
+    reader.readAsDataURL(preloadedFile);
+  }, [preloadedFile]);
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const selected = e.target.files?.[0];

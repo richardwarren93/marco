@@ -29,6 +29,7 @@ export async function PUT(request: Request) {
         prep_time_minutes: body.prep_time_minutes || null,
         cook_time_minutes: body.cook_time_minutes || null,
         tags: body.tags || [],
+        meal_type: body.meal_type || "dinner",
         notes: body.notes || null,
         image_url: body.image_url || null,
       })

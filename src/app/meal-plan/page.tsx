@@ -1,31 +1,12 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import RecipePromptInput from "@/components/meal-plan/RecipePromptInput";
-import PromptResultCard from "@/components/meal-plan/PromptResultCard";
-import FriendsCookingSection from "@/components/meal-plan/FriendsCookingSection";
-import WeeklyCalendar from "@/components/meal-plan/WeeklyCalendar";
-import GroceryList from "@/components/grocery/GroceryList";
-import type { MealPlan } from "@/types";
-import type { PromptRecipeResult } from "@/lib/claude";
-import { MealPlanIcon } from "@/components/icons/HandDrawnIcons";
-
-interface FriendCookingItem {
-  id: string;
-  friendName: string;
-  cookedAt: string;
-  recipe: {
-    id: string;
-    title: string;
-    description: string | null;
-    tags: string[];
-    image_url: string | null;
-    prep_time_minutes: number | null;
-    cook_time_minutes: number | null;
-    servings: number | null;
-  };
-}
+import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
+import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
+import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
+import type { MealPlan, Recipe } from "@/types";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -36,28 +17,66 @@ function getMonday(date: Date): Date {
   return d;
 }
 
+function formatDateKey(d: Date): string {
+  return d.toISOString().split("T")[0];
+}
+
 export default function MealPlanPage() {
-  const [results, setResults] = useState<PromptRecipeResult[]>([]);
+  const searchParams = useSearchParams();
+
+  // ─── Step flow ───────────────────────────────────────────────────────────────
+  // Default: step 3 (Schedule) — the app's main surface
+  const [step, setStep] = useState<1 | 2 | 3>(3);
+
+  // Which week the calendar is currently showing — jump to ?date= param if present
+  const [calendarWeek, setCalendarWeek] = useState<Date>(() => {
+    const dateParam = searchParams.get("date");
+    if (dateParam) {
+      const d = new Date(dateParam + "T12:00:00");
+      if (!isNaN(d.getTime())) return getMonday(d);
+    }
+    return getMonday(new Date());
+  });
+
+  // The week we're currently planning meals for
+  const [planningWeek, setPlanningWeek] = useState<string>(() =>
+    formatDateKey(getMonday(new Date()))
+  );
+
+  // Per-week recipe picks: weekKey → recipe IDs selected in the Build flow
+  const [weekPicks, setWeekPicks] = useState<Record<string, string[]>>({});
+
+  // Recipes selected during the current Build flow pass
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // ─── Data ─────────────────────────────────────────────────────────────────────
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
   const [householdPlans, setHouseholdPlans] = useState<MealPlan[]>([]);
-  const [friendsCooking, setFriendsCooking] = useState<FriendCookingItem[]>([]);
-  const [pantryCount, setPantryCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [searching, setSearching] = useState(false);
-  const [savingIndex, setSavingIndex] = useState<number | null>(null);
-  const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set());
   const [error, setError] = useState("");
-  const [showGrocery, setShowGrocery] = useState(false);
+
+  // ─── Scroll to specific day after loading (from ?date= param) ────────────────
+  const scrollTargetDate = searchParams.get("date");
+  useEffect(() => {
+    if (!scrollTargetDate || loading) return;
+    // Wait one frame for the DOM to paint the day elements
+    const rafId = requestAnimationFrame(() => {
+      document.getElementById(`day-${scrollTargetDate}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [loading, scrollTargetDate]);
+
   const supabase = createClient();
 
+  // ─── Data fetching ────────────────────────────────────────────────────────────
   const fetchMealPlans = useCallback(async () => {
-    // Fetch a wide range (4 weeks back, 4 weeks forward) so calendar navigation is smooth
     const monday = getMonday(new Date());
     const start = new Date(monday);
     start.setDate(start.getDate() - 28);
     const end = new Date(monday);
     end.setDate(end.getDate() + 35);
-
     const startStr = start.toISOString().split("T")[0];
     const endStr = end.toISOString().split("T")[0];
 
@@ -70,7 +89,6 @@ export default function MealPlanPage() {
 
     setMealPlans((data as MealPlan[]) || []);
 
-    // Also fetch household members' plans
     try {
       const hhRes = await fetch(`/api/meal-plan/household?start=${startStr}&end=${endStr}`);
       const hhData = await hhRes.json();
@@ -82,148 +100,88 @@ export default function MealPlanPage() {
 
   useEffect(() => {
     async function fetchData() {
-      const [, pantryRes, friendsRes] = await Promise.all([
+      await Promise.all([
         fetchMealPlans(),
         supabase
-          .from("pantry_items")
-          .select("id", { count: "exact", head: true }),
-        fetch("/api/meal-plan/friends-cooking"),
+          .from("recipes")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(100)
+          .then(({ data }) => setRecipes((data as Recipe[]) || [])),
       ]);
-
-      setPantryCount(pantryRes.count || 0);
-
-      try {
-        const friendsData = await friendsRes.json();
-        setFriendsCooking(friendsData.items || []);
-      } catch {
-        setFriendsCooking([]);
-      }
-
       setLoading(false);
     }
     fetchData();
   }, [supabase, fetchMealPlans]);
 
-  async function handlePromptSubmit(prompt: string, context: "all" | "my_kitchen") {
-    setSearching(true);
-    setError("");
-    setSavedIndices(new Set());
-    setResults([]);
+  // ─── Derived ─────────────────────────────────────────────────────────────────
+  const currentWeekPickIds: string[] = weekPicks[formatDateKey(calendarWeek)] || [];
+  const selectedRecipes = recipes.filter((r) => selectedIds.has(r.id));
 
-    try {
-      const res = await fetch("/api/meal-plan/prompt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, context }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setResults(data.results || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
-    } finally {
-      setSearching(false);
-    }
+  // ─── Handlers ────────────────────────────────────────────────────────────────
+  function handleToggleRecipe(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
-  async function handleSaveResult(result: PromptRecipeResult, index: number) {
-    setSavingIndex(index);
-    setError("");
-
-    try {
-      const res = await fetch("/api/recipes/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: result.recipe.title,
-          description: result.recipe.description,
-          ingredients: result.recipe.ingredients,
-          steps: result.recipe.steps,
-          servings: result.recipe.servings,
-          prep_time_minutes: result.recipe.prep_time_minutes,
-          cook_time_minutes: result.recipe.cook_time_minutes,
-          tags: result.recipe.tags,
-          notes: `AI-suggested recipe.\n${result.reasoning}`,
-        }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to save");
-      }
-
-      setSavedIndices((prev) => new Set(prev).add(index));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save recipe");
-    } finally {
-      setSavingIndex(null);
-    }
+  function handlePlanThisWeek() {
+    const weekKey = formatDateKey(calendarWeek);
+    setPlanningWeek(weekKey);
+    setSelectedIds(new Set(weekPicks[weekKey] || []));
+    setStep(1);
   }
 
-  async function handleAddToPlan(recipeId: string, mealType: string) {
-    const today = new Date().toISOString().split("T")[0];
+  function handleBuildSchedule() {
+    setWeekPicks((prev) => ({ ...prev, [planningWeek]: [...selectedIds] }));
+    setStep(3);
+  }
+
+  async function handleCalendarAdd(
+    recipeId: string,
+    dates: string[],
+    mealType: string,
+    servings?: number
+  ) {
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("meal_plans").insert({
+    const rows = dates.map((planned_date) => ({
       user_id: user.id,
       recipe_id: recipeId,
-      planned_date: today,
+      planned_date,
       meal_type: mealType,
-    });
+      ...(servings ? { servings } : {}),
+    }));
 
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    await fetchMealPlans();
-  }
-
-  async function handleCalendarAdd(recipeId: string, date: string, mealType: string) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error: insertError } = await supabase.from("meal_plans").insert({
-      user_id: user.id,
-      recipe_id: recipeId,
-      planned_date: date,
-      meal_type: mealType,
-    });
-
-    if (insertError) {
-      setError(insertError.message);
-      return;
-    }
-
+    const { error: insertError } = await supabase.from("meal_plans").insert(rows);
+    if (insertError) { setError(insertError.message); return; }
     await fetchMealPlans();
   }
 
   async function handleCalendarRemove(planId: string) {
     const prev = mealPlans;
-    setMealPlans(mealPlans.filter((p) => p.id !== planId)); // optimistic
-
+    setMealPlans(mealPlans.filter((p) => p.id !== planId));
     try {
       const res = await fetch("/api/meal-plan/remove", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
       });
-
-      if (!res.ok) {
-        throw new Error("Delete failed");
-      }
+      if (!res.ok) throw new Error("Delete failed");
     } catch (err) {
       console.error("Remove meal plan error:", err);
-      setMealPlans(prev); // revert optimistic update
-      await fetchMealPlans(); // refetch real state
+      setMealPlans(prev);
+      await fetchMealPlans();
     }
   }
 
+  // ─── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -236,83 +194,57 @@ export default function MealPlanPage() {
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      {/* Header */}
-      <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-        <MealPlanIcon className="w-7 h-7 text-orange-600" /> Meal Plan
-      </h1>
-
-      {/* AI Prompt Input */}
-      <RecipePromptInput
-        onSubmit={handlePromptSubmit}
-        loading={searching}
-        pantryCount={pantryCount}
+  // ─── Step 1: Select meals ─────────────────────────────────────────────────────
+  if (step === 1) {
+    return (
+      <ChooseMealsScreen
+        mode="build"
+        recipes={recipes}
+        selectedIds={selectedIds}
+        onToggle={handleToggleRecipe}
+        onViewMeals={() => setStep(2)}
+        planningWeek={planningWeek}
+        onBack={() => setStep(3)}
       />
+    );
+  }
 
-      {/* Error */}
+  // ─── Step 2: Review selection ─────────────────────────────────────────────────
+  if (step === 2) {
+    return (
+      <ReviewMealsScreen
+        selectedRecipes={selectedRecipes}
+        onRemove={(id) =>
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          })
+        }
+        onBack={() => setStep(1)}
+        onBuild={handleBuildSchedule}
+      />
+    );
+  }
+
+  // ─── Step 3: Schedule (default) ───────────────────────────────────────────────
+  return (
+    <>
       {error && (
-        <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">
-          {error}
-        </div>
+        <div className="bg-red-50 text-red-600 px-4 py-2 text-sm">{error}</div>
       )}
-
-      {/* Loading state */}
-      {searching && (
-        <div className="text-center py-8">
-          <div className="inline-flex items-center gap-2 text-gray-400 text-sm">
-            <div className="flex gap-1">
-              <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-            </div>
-            Finding recipes for you...
-          </div>
-        </div>
-      )}
-
-      {/* Results */}
-      {results.length > 0 && !searching && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {results.map((result, i) => (
-            <PromptResultCard
-              key={i}
-              result={result}
-              onSave={(r) => handleSaveResult(r, i)}
-              onAddToPlan={handleAddToPlan}
-              saving={savingIndex === i}
-              saved={savedIndices.has(i)}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Weekly Calendar */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-gray-900">Weekly Calendar</h2>
-          <button
-            onClick={() => setShowGrocery(!showGrocery)}
-            className="text-xs font-medium text-orange-600 hover:text-orange-700 px-3 py-1.5 bg-orange-50 rounded-full hover:bg-orange-100 transition-colors"
-          >
-            🛒 Grocery List
-          </button>
-        </div>
-        <WeeklyCalendar
-          mealPlans={mealPlans}
-          householdPlans={householdPlans}
-          onAddMeal={handleCalendarAdd}
-          onRemoveMeal={handleCalendarRemove}
-        />
-      </div>
-
-      {/* Grocery List */}
-      {showGrocery && (
-        <GroceryList onClose={() => setShowGrocery(false)} />
-      )}
-
-      {/* Friends Cooking */}
-      <FriendsCookingSection items={friendsCooking} />
-    </div>
+      <ScheduleScreen
+        mealPlans={mealPlans}
+        householdPlans={householdPlans}
+        selectedPool={selectedRecipes}
+        allRecipes={recipes}
+        currentWeekPickIds={currentWeekPickIds}
+        onAddMeal={handleCalendarAdd}
+        onRemoveMeal={handleCalendarRemove}
+        onPlanThisWeek={handlePlanThisWeek}
+        calendarWeek={calendarWeek}
+        onCalendarWeekChange={setCalendarWeek}
+      />
+    </>
   );
 }

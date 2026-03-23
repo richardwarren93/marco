@@ -210,7 +210,7 @@ export default function ProfilePage() {
           <span className="text-gray-400 text-sm">{stats.friends} friends →</span>
         </Link>
         <Link
-          href="/dashboard"
+          href="/recipes"
           className="flex items-center justify-between bg-white rounded-2xl shadow-sm p-4 hover:shadow transition-all"
         >
           <div className="flex items-center gap-3">

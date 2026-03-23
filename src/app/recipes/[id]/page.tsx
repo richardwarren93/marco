@@ -84,55 +84,71 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <Link href="/recipes" className="text-gray-500 hover:text-gray-700 text-sm mb-4 inline-block">
-        &larr; Back to recipes
-      </Link>
+      <button
+        onClick={() => router.back()}
+        className="text-gray-500 hover:text-gray-700 text-sm mb-4 inline-flex items-center gap-1"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
 
-      <div className="flex items-start justify-between mb-2">
-        <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
-        <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between mb-2 gap-3">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 leading-tight">{recipe.title}</h1>
+        <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
           <button
             onClick={() => setShowShareWithFriends(true)}
-            className="text-gray-600 hover:text-gray-900 text-sm"
+            className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
           >
-            Send to Friend
+            Share
           </button>
           <button
             onClick={() => setShowAddToCollection(true)}
-            className="text-gray-600 hover:text-gray-900 text-sm"
+            className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm px-2 py-1 rounded-lg hover:bg-gray-100 transition-colors touch-manipulation"
           >
-            + Collection
+            + List
           </button>
           <button
             onClick={() => setEditing(true)}
-            className="text-orange-600 hover:text-orange-700 text-sm"
+            className="text-orange-600 hover:text-orange-700 text-xs sm:text-sm font-medium px-2 py-1 rounded-lg hover:bg-orange-50 transition-colors touch-manipulation"
           >
             Edit
           </button>
           <button
             onClick={handleDelete}
             disabled={deleting}
-            className="text-red-500 hover:text-red-700 text-sm"
+            className="text-red-400 hover:text-red-600 text-xs sm:text-sm px-2 py-1 rounded-lg hover:bg-red-50 transition-colors touch-manipulation"
           >
-            {deleting ? "Deleting..." : "Delete"}
+            {deleting ? "…" : "Delete"}
           </button>
         </div>
       </div>
 
       {recipe.description && (
-        <p className="text-gray-600 mb-4">{recipe.description}</p>
+        <p className="text-gray-600 mb-3 text-sm sm:text-base">{recipe.description}</p>
       )}
 
-      <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
-        {recipe.prep_time_minutes && <span>Prep: {recipe.prep_time_minutes} min</span>}
-        {recipe.cook_time_minutes && <span>Cook: {recipe.cook_time_minutes} min</span>}
-        {recipe.servings && <span>Serves {recipe.servings}</span>}
+      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500 mb-5">
+        {recipe.meal_type && (
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${
+            recipe.meal_type === "breakfast" ? "bg-yellow-50 text-yellow-700" :
+            recipe.meal_type === "lunch" ? "bg-sky-50 text-sky-700" :
+            recipe.meal_type === "dinner" ? "bg-indigo-50 text-indigo-700" :
+            "bg-green-50 text-green-700"
+          }`}>
+            {{ breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍎" }[recipe.meal_type]} {recipe.meal_type}
+          </span>
+        )}
+        {recipe.prep_time_minutes && <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">⏱ {recipe.prep_time_minutes}m prep</span>}
+        {recipe.cook_time_minutes && <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">🔥 {recipe.cook_time_minutes}m cook</span>}
+        {recipe.servings && <span className="text-xs bg-gray-100 px-2 py-1 rounded-full">👤 {recipe.servings}</span>}
         {recipe.source_platform && (
           <a
             href={recipe.source_url || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-orange-600 hover:underline capitalize"
+            className="text-xs text-orange-600 hover:underline capitalize bg-orange-50 px-2 py-1 rounded-full"
           >
             View on {recipe.source_platform}
           </a>

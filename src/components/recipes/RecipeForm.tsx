@@ -47,6 +47,9 @@ export default function RecipeForm({
   const [imageUrl, setImageUrl] = useState<string | null>(
     recipe?.image_url || null
   );
+  const [mealType, setMealType] = useState<"breakfast" | "lunch" | "dinner" | "snack">(
+    recipe?.meal_type || "dinner"
+  );
   const [notes, setNotes] = useState(recipe?.notes || "");
 
   const router = useRouter();
@@ -81,6 +84,7 @@ export default function RecipeForm({
       setSourceUrl(r.source_url || url);
       setSourcePlatform(r.source_platform || "other");
       setImageUrl(r.image_url || null);
+      if (r.meal_type) setMealType(r.meal_type);
       setExtracted(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Extraction failed");
@@ -106,6 +110,7 @@ export default function RecipeForm({
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
+        meal_type: mealType,
         source_url: sourceUrl || null,
         source_platform: sourcePlatform || null,
         image_url: imageUrl || null,
@@ -264,6 +269,32 @@ export default function RecipeForm({
               onChange={(e) => setTitle(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
             />
+          </div>
+
+          {/* Meal type selector */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Meal Type <span className="text-red-500">*</span>
+            </label>
+            <div className="flex gap-2 flex-wrap">
+              {(["breakfast", "lunch", "dinner", "snack"] as const).map((mt) => {
+                const labels = { breakfast: "🌅 Breakfast", lunch: "☀️ Lunch", dinner: "🌙 Dinner", snack: "🍎 Snack" };
+                return (
+                  <button
+                    key={mt}
+                    type="button"
+                    onClick={() => setMealType(mt)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                      mealType === mt
+                        ? "bg-orange-500 text-white shadow-sm"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {labels[mt]}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>
