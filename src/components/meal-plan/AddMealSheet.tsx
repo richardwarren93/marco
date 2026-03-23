@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
@@ -157,6 +157,9 @@ export default function AddMealSheet({
   const [servings, setServings] = useState(defaultServings);
   const [recipeSearch, setRecipeSearch] = useState("");
   const [saving, setSaving] = useState(false);
+
+  const scrollBodyRef = useRef<HTMLDivElement>(null);
+  const recipeSectionRef = useRef<HTMLDivElement>(null);
 
   // Lock main scroll while sheet is open; reset scroll position on close
   useEffect(() => {
@@ -348,7 +351,7 @@ export default function AddMealSheet({
           </div>
 
           {/* Body — scrollable */}
-          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 pb-2 space-y-3.5 min-h-0">
+          <div ref={scrollBodyRef} className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 pb-2 space-y-3.5 min-h-0">
 
             {/* Meal type */}
             <div>
@@ -400,7 +403,7 @@ export default function AddMealSheet({
             </div>
 
             {/* Recipe search + results */}
-            <div>
+            <div ref={recipeSectionRef}>
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
                 Recipe
               </p>
@@ -410,6 +413,15 @@ export default function AddMealSheet({
                 type="text"
                 value={recipeSearch}
                 onChange={(e) => setRecipeSearch(e.target.value)}
+                onFocus={() => {
+                  // Scroll the recipe section to the top of the body so results have space below
+                  setTimeout(() => {
+                    if (recipeSectionRef.current && scrollBodyRef.current) {
+                      const offset = recipeSectionRef.current.offsetTop - scrollBodyRef.current.offsetTop;
+                      scrollBodyRef.current.scrollTo({ top: offset, behavior: "smooth" });
+                    }
+                  }, 50);
+                }}
                 placeholder="Search recipes…"
                 className="w-full px-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all"
                 autoComplete="off"
