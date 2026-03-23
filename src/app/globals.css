@@ -87,3 +87,12 @@ body {
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* Prevent iOS from auto-zooming into inputs on focus.
+   iOS zooms whenever an input's font-size is below 16px.
+   This overrides Tailwind's text-sm (14px) globally on mobile. */
+@media screen and (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}

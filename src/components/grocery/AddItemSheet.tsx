@@ -44,12 +44,14 @@ export default function AddItemSheet({
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const main = document.querySelector("main");
+    const main = document.querySelector("main") as HTMLElement | null;
     if (!main) return;
     if (isOpen) {
       main.style.overflow = "hidden";
     } else {
       main.style.overflow = "";
+      main.scrollTop = 0;
+      window.scrollTo(0, 0);
     }
     return () => { main.style.overflow = ""; };
   }, [isOpen]);
