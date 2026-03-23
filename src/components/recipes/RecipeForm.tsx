@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { Ingredient, Recipe } from "@/types";
 
@@ -18,6 +19,7 @@ export default function RecipeForm({
   const [extracting, setExtracting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [duplicateRecipeId, setDuplicateRecipeId] = useState<string | null>(null);
   const [extracted, setExtracted] = useState(!!recipe);
 
   const [title, setTitle] = useState(recipe?.title || "");
@@ -133,7 +135,12 @@ export default function RecipeForm({
       }
 
       const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error);
+      if (!resp.ok) {
+        if (data.duplicate && data.recipeId) {
+          setDuplicateRecipeId(data.recipeId);
+        }
+        throw new Error(data.error);
+      }
 
       if (onSaved) {
         onSaved();
@@ -223,6 +230,11 @@ export default function RecipeForm({
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
+              {duplicateRecipeId && (
+                <Link href={`/recipes/${duplicateRecipeId}`} className="block mt-1 text-orange-600 font-medium hover:underline">
+                  View saved recipe →
+                </Link>
+              )}
             </div>
           )}
 
@@ -246,6 +258,11 @@ export default function RecipeForm({
           {error && (
             <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm">
               {error}
+              {duplicateRecipeId && (
+                <Link href={`/recipes/${duplicateRecipeId}`} className="block mt-1 text-orange-600 font-medium hover:underline">
+                  View saved recipe →
+                </Link>
+              )}
             </div>
           )}
 

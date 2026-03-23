@@ -16,6 +16,23 @@ export async function POST(request: Request) {
     const body = await request.json();
     const admin = createAdminClient();
 
+    // Check for duplicate URL (same user + same source_url)
+    if (body.source_url) {
+      const { data: existing } = await admin
+        .from("recipes")
+        .select("id, title")
+        .eq("user_id", user.id)
+        .eq("source_url", body.source_url)
+        .maybeSingle();
+
+      if (existing) {
+        return NextResponse.json(
+          { error: `You've already saved this recipe: "${existing.title}"`, duplicate: true, recipeId: existing.id },
+          { status: 409 }
+        );
+      }
+    }
+
     const { error, data } = await admin.from("recipes").insert({
       user_id: user.id,
       title: body.title,
