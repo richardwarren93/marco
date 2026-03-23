@@ -76,7 +76,6 @@ const ITEM_EMOJIS: Record<string, string> = {
 function getItemEmoji(name: string): string | null {
   const lower = name.toLowerCase();
   if (ITEM_EMOJIS[lower]) return ITEM_EMOJIS[lower];
-  // Partial match
   for (const [key, emoji] of Object.entries(ITEM_EMOJIS)) {
     if (lower.includes(key)) return emoji;
   }
@@ -87,41 +86,32 @@ function getItemEmoji(name: string): string | null {
 interface Store {
   id: string;
   name: string;
-  logo: string; // emoji or URL
   available: boolean;
-  buildUrl: (items: { name: string; amount: string | null; unit: string | null }[]) => string;
+  url: string;
+  brandColor: string;
 }
 
 const STORES: Store[] = [
   {
     id: "instacart",
     name: "Instacart",
-    logo: "🛒",
     available: true,
-    buildUrl: (items) => {
-      // Instacart recipe list URL format
-      const title = encodeURIComponent("Marco Grocery List");
-      const ingredientLines = items.map((i) => {
-        const parts = [i.amount, i.unit, i.name].filter(Boolean);
-        return parts.join(" ");
-      });
-      const ingredients = ingredientLines.map((l) => encodeURIComponent(l)).join("&ingredients=");
-      return `https://www.instacart.com/store/partner_recipes?title=${title}&ingredients=${ingredients}`;
-    },
+    url: "https://www.instacart.com",
+    brandColor: "#43B02A",
   },
   {
     id: "walmart",
     name: "Walmart",
-    logo: "⭐",
     available: false,
-    buildUrl: () => "",
+    url: "https://www.walmart.com/grocery",
+    brandColor: "#0071CE",
   },
   {
     id: "amazon",
     name: "Amazon Fresh",
-    logo: "📦",
     available: false,
-    buildUrl: () => "",
+    url: "https://www.amazon.com/fresh",
+    brandColor: "#FF9900",
   },
 ];
 
@@ -138,11 +128,10 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
   const [step, setStep] = useState<Step>("select");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState<string>("instacart");
+  const [copied, setCopied] = useState(false);
 
-  // Initialize all unchecked items as selected when sheet opens
   const toBuyItems = useMemo(() => items.filter((i) => !i.checked && !i.soft_deleted), [items]);
 
-  // Group items by category
   const grouped = useMemo(() => {
     const selected = toBuyItems.filter((i) => step === "select" ? true : selectedIds.has(i.id));
     const map = new Map<string, GroceryItemType[]>();
@@ -155,15 +144,14 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
   }, [toBuyItems, selectedIds, step]);
 
   // Reset state when opening
-  const handleOpen = () => {
-    setStep("select");
-    setSelectedIds(new Set(toBuyItems.map((i) => i.id)));
-    setSelectedStore("instacart");
-  };
-
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useMemo(() => {
-    if (isOpen) handleOpen();
+    if (isOpen) {
+      setStep("select");
+      setSelectedIds(new Set(toBuyItems.map((i) => i.id)));
+      setSelectedStore("instacart");
+      setCopied(false);
+    }
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -188,62 +176,94 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
     }
   }
 
-  function handleContinueToStore() {
+  /** Build a plain-text grocery list for clipboard */
+  function buildListText(): string {
+    const selectedItems = toBuyItems.filter((i) => selectedIds.has(i.id));
+    // Group by category
+    const catMap = new Map<string, typeof selectedItems>();
+    for (const item of selectedItems) {
+      const cat = item.category_override ?? item.category ?? "other";
+      if (!catMap.has(cat)) catMap.set(cat, []);
+      catMap.get(cat)!.push(item);
+    }
+    const sorted = [...catMap.entries()].sort(([a], [b]) => catSort(a) - catSort(b));
+
+    const lines: string[] = [];
+    for (const [cat, catItems] of sorted) {
+      lines.push(`\n${catLabel(cat).toUpperCase()}`);
+      for (const item of catItems) {
+        const name = item.name_override || item.name;
+        const amount = item.amount_override || item.amount;
+        const unit = item.unit_override || item.unit;
+        const qty = [amount, unit].filter(Boolean).join(" ");
+        lines.push(qty ? `- ${name} (${qty})` : `- ${name}`);
+      }
+    }
+    return `Marco Grocery List\n${"─".repeat(20)}${lines.join("\n")}`;
+  }
+
+  async function handleContinueToStore() {
     const store = STORES.find((s) => s.id === selectedStore);
     if (!store || !store.available) return;
 
-    const selectedItems = toBuyItems
-      .filter((i) => selectedIds.has(i.id))
-      .map((i) => ({
-        name: i.name_override || i.name,
-        amount: i.amount_override || i.amount,
-        unit: i.unit_override || i.unit,
-      }));
+    // Copy list to clipboard
+    const text = buildListText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+    } catch {
+      // fallback — still open the store
+    }
 
-    const url = store.buildUrl(selectedItems);
-    window.open(url, "_blank");
-    onClose();
+    // Small delay so user sees the "copied" feedback, then open store
+    setTimeout(() => {
+      window.open(store.url, "_blank");
+      onClose();
+    }, 600);
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col">
+    // z-[60] to overlay above bottom tab bar (z-50)
+    <div className="fixed inset-0 z-[60] flex flex-col">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
-      {/* Sheet */}
-      <div className="relative mt-auto bg-white rounded-t-3xl max-h-[90vh] flex flex-col animate-slide-up" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
+      {/* Sheet — full height on mobile for proper scrolling */}
+      <div
+        className="relative mt-auto bg-white rounded-t-3xl flex flex-col animate-slide-up"
+        style={{
+          maxHeight: "92vh",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+        }}
+      >
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
-          {step === "store" ? (
-            <button
-              onClick={() => setStep("select")}
-              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-            >
-              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
-            >
-              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
+          <button
+            onClick={step === "store" ? () => setStep("select") : onClose}
+            className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+          >
+            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
           <h2 className="text-base font-bold text-gray-900">
             {step === "select" ? "Select items" : "Choose store"}
           </h2>
-          <div className="w-9" /> {/* spacer */}
+          <button
+            onClick={onClose}
+            className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+          >
+            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
 
         {/* ── Step: Select Items ──────────────────────────────────────────── */}
         {step === "select" && (
           <>
-            <div className="overflow-y-auto flex-1 px-5 py-3">
+            <div className="overflow-y-auto flex-1 min-h-0 px-5 py-3">
               {/* Select all */}
               <button
                 onClick={toggleAll}
@@ -284,11 +304,9 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
                               isSelected ? "bg-gray-50" : "bg-white opacity-50"
                             }`}
                           >
-                            {/* Emoji */}
                             <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
                               {emoji || "🛒"}
                             </div>
-                            {/* Name & amount */}
                             <div className="flex-1 text-left">
                               <p className="text-sm font-medium text-gray-900">{displayName}</p>
                               {(displayAmount || displayUnit) && (
@@ -297,7 +315,6 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
                                 </p>
                               )}
                             </div>
-                            {/* Checkbox */}
                             <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                               isSelected ? "bg-orange-500 border-orange-500" : "border-gray-300"
                             }`}>
@@ -316,8 +333,8 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
               </div>
             </div>
 
-            {/* Next button */}
-            <div className="px-5 py-4 border-t border-gray-100">
+            {/* Next button — sticky at bottom */}
+            <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
               <button
                 onClick={() => setStep("store")}
                 disabled={selectedCount === 0}
@@ -332,7 +349,7 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
         {/* ── Step: Choose Store ──────────────────────────────────────────── */}
         {step === "store" && (
           <>
-            <div className="overflow-y-auto flex-1 px-5 py-5">
+            <div className="overflow-y-auto flex-1 min-h-0 px-5 py-5">
               <div className="space-y-3">
                 {STORES.map((store) => {
                   const isSelected = selectedStore === store.id;
@@ -349,21 +366,20 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
                           : "border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed"
                       }`}
                     >
-                      {/* Logo */}
                       {store.id === "instacart" ? (
                         <div className="flex items-center">
                           <span className="text-2xl">🥕</span>
-                          <span className="ml-2 text-lg font-bold" style={{ color: "#43B02A" }}>instacart</span>
+                          <span className="ml-2 text-lg font-bold" style={{ color: store.brandColor }}>instacart</span>
                         </div>
                       ) : store.id === "walmart" ? (
                         <div className="flex items-center">
                           <span className="text-2xl">⭐</span>
-                          <span className="ml-2 text-lg font-bold" style={{ color: "#0071CE" }}>Walmart</span>
+                          <span className="ml-2 text-lg font-bold" style={{ color: store.brandColor }}>Walmart</span>
                         </div>
                       ) : (
                         <div className="flex items-center">
-                          <span className="text-2xl">{store.logo}</span>
-                          <span className="ml-2 text-lg font-bold text-gray-700">{store.name}</span>
+                          <span className="text-2xl">📦</span>
+                          <span className="ml-2 text-lg font-bold" style={{ color: store.brandColor }}>{store.name}</span>
                         </div>
                       )}
 
@@ -387,8 +403,14 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
                 })}
               </div>
 
-              {/* Request store */}
-              <p className="text-center text-sm text-gray-400 mt-6">
+              {/* Info note */}
+              <div className="mt-5 px-4 py-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-500 text-center">
+                  Your grocery list will be copied to clipboard so you can easily paste it in the store app.
+                </p>
+              </div>
+
+              <p className="text-center text-sm text-gray-400 mt-4">
                 Don&apos;t see your store?{" "}
                 <a href="mailto:support@marco-app.com" className="text-orange-500 font-medium hover:underline">
                   Tell us here.
@@ -397,13 +419,26 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
             </div>
 
             {/* Continue button */}
-            <div className="px-5 py-4 border-t border-gray-100">
+            <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
               <button
                 onClick={handleContinueToStore}
                 disabled={!STORES.find((s) => s.id === selectedStore)?.available}
-                className="w-full py-3.5 bg-orange-500 text-white font-bold text-sm rounded-2xl hover:bg-orange-600 active:scale-[0.98] transition-all disabled:opacity-40 shadow-sm"
+                className={`w-full py-3.5 font-bold text-sm rounded-2xl active:scale-[0.98] transition-all shadow-sm ${
+                  copied
+                    ? "bg-green-500 text-white"
+                    : "bg-orange-500 text-white hover:bg-orange-600"
+                } disabled:opacity-40`}
               >
-                Continue to store
+                {copied ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    List copied! Opening store...
+                  </span>
+                ) : (
+                  "Continue to store"
+                )}
               </button>
             </div>
           </>
