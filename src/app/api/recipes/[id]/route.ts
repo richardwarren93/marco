@@ -71,5 +71,20 @@ export async function GET(
     return NextResponse.json({ recipe });
   }
 
+  // Check if recipe owner is a friend
+  const { data: friendship } = await admin
+    .from("friendships")
+    .select("id")
+    .eq("status", "accepted")
+    .or(
+      `and(user_id.eq.${user.id},friend_id.eq.${recipe.user_id}),and(user_id.eq.${recipe.user_id},friend_id.eq.${user.id})`
+    )
+    .limit(1)
+    .maybeSingle();
+
+  if (friendship) {
+    return NextResponse.json({ recipe });
+  }
+
   return NextResponse.json({ error: "Not found" }, { status: 404 });
 }

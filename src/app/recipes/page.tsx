@@ -10,6 +10,7 @@ import CollectionCard from "@/components/collections/CollectionCard";
 import CreateCollectionForm from "@/components/collections/CreateCollectionForm";
 import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
 import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
+import FriendsRecipeTable from "@/components/recipes/FriendsRecipeTable";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -23,7 +24,7 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-type ActiveTab = "recipes" | "collections";
+type ActiveTab = "recipes" | "collections" | "table";
 
 export default function RecipesPage() {
   return (
@@ -40,7 +41,11 @@ function RecipesInner() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<ActiveTab>(
-    searchParams.get("tab") === "collections" ? "collections" : "recipes"
+    searchParams.get("tab") === "collections"
+      ? "collections"
+      : searchParams.get("tab") === "table"
+      ? "table"
+      : "recipes"
   );
   const [showCollectionForm, setShowCollectionForm] = useState(false);
 
@@ -107,8 +112,8 @@ function RecipesInner() {
   return (
     <>
       <div className="max-w-5xl mx-auto px-4 pt-4 sm:pt-6">
-        {/* Segmented control: Recipes | Collections */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[220px] mb-4 sm:mb-6">
+        {/* Segmented control: Recipes | Collections | Table */}
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[340px] mb-4 sm:mb-6">
           <button
             onClick={() => setActiveTab("recipes")}
             className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
@@ -128,6 +133,16 @@ function RecipesInner() {
             }`}
           >
             Collections
+          </button>
+          <button
+            onClick={() => setActiveTab("table")}
+            className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
+              activeTab === "table"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            Table
           </button>
         </div>
       </div>
@@ -202,6 +217,21 @@ function RecipesInner() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Table tab — friends' recipes */}
+      {activeTab === "table" && (
+        <div className="max-w-5xl mx-auto">
+          <FriendsRecipeTable
+            onAddToMealPlan={(id) => {
+              const recipe = recipes.find((r) => r.id === id);
+              setAddSheetRecipeId(id);
+              setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
+              setAddSheetOpen(true);
+            }}
+            onAddToCollection={(id) => setCollectionRecipeId(id)}
+          />
         </div>
       )}
 
