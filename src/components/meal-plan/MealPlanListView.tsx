@@ -406,7 +406,6 @@ export default function MealPlanListView({
                         {/* Row content */}
                         <button
                           onClick={() => {
-                            if (isHousehold) return;
                             if (swipedRef.current) {
                               swipedRef.current = false;
                               return;
@@ -423,7 +422,7 @@ export default function MealPlanListView({
                           }}
                           className={`group relative w-full flex items-center gap-3 px-4 py-3 border-l-4 ${colors.border} bg-white text-left ${
                             isHousehold
-                              ? "bg-purple-50/30 cursor-default"
+                              ? "bg-purple-50/30 hover:bg-purple-50/60 active:bg-purple-100/60 cursor-pointer"
                               : "hover:bg-gray-50/80 active:bg-gray-100/80 cursor-pointer"
                           }`}
                         >
@@ -493,21 +492,23 @@ export default function MealPlanListView({
                           )}
 
                           {/* Mobile: chevron hint */}
-                          {!isHousehold && (
-                            <svg
-                              className="sm:hidden w-4 h-4 text-gray-300 flex-shrink-0 group-hover:text-gray-400 transition-colors"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
-                              strokeWidth={2}
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 5l7 7-7 7"
-                              />
-                            </svg>
-                          )}
+                          <svg
+                            className={`sm:hidden w-4 h-4 flex-shrink-0 transition-colors ${
+                              isHousehold
+                                ? "text-purple-200 group-hover:text-purple-300"
+                                : "text-gray-300 group-hover:text-gray-400"
+                            }`}
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
                         </button>
                       </div>
                     );
