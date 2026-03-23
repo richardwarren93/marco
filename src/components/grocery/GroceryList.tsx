@@ -295,7 +295,7 @@ export default function GroceryList() {
   })();
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="bg-gray-50 pb-24">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 px-4 pt-5 pb-4">
@@ -436,8 +436,8 @@ export default function GroceryList() {
         <div className="mx-4 mt-3 flex items-center gap-2">
           <div className="flex flex-1 bg-gray-100 rounded-xl p-1 gap-1">
             {([
-              { key: "to_buy",  label: `To buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
-              { key: "checked", label: `Checked${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
+              { key: "to_buy",  label: `Buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
+              { key: "checked", label: `Have${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
               { key: "all",     label: "All" },
             ] as { key: FilterMode; label: string }[]).map(({ key, label }) => (
               <button
@@ -526,7 +526,7 @@ export default function GroceryList() {
               : filter === "to_buy"
               ? "Everything is checked off! 🎉"
               : filter === "checked"
-              ? "Nothing checked yet."
+              ? "Nothing marked as have yet."
               : "Your list is empty."}
           </p>
         </div>
@@ -550,6 +550,7 @@ export default function GroceryList() {
                     item={item}
                     onToggle={handleToggle}
                     onEdit={setEditItem}
+                    onDelete={handleDelete}
                     ownerName={item.owner_name}
                   />
                 ))}

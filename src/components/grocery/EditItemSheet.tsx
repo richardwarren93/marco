@@ -12,7 +12,6 @@ interface EditItemSheetProps {
 }
 
 export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditItemSheetProps) {
-  // Display values: prefer overrides for generated items
   const displayName = item?.name_override ?? item?.name ?? "";
   const displayAmount = item?.amount_override ?? item?.amount ?? "";
   const displayUnit = item?.unit_override ?? item?.unit ?? "";
@@ -25,7 +24,6 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  // Sync fields when item changes
   useEffect(() => {
     if (item) {
       setName(item.name_override ?? item.name);
@@ -57,10 +55,7 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
 
   function handleDelete() {
     if (!item) return;
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
+    if (!confirmDelete) { setConfirmDelete(true); return; }
     onDelete(item.id);
     onClose();
   }
@@ -74,16 +69,19 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
 
       {/* Sheet */}
       <div
-        className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl"
-        style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))" }}
+        className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl flex flex-col"
+        style={{
+          maxHeight: "85vh",
+          paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",
+        }}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-1">
+        {/* Drag handle */}
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-2 pb-4 border-b border-gray-100">
+        <div className="flex items-center justify-between px-5 pt-2 pb-3 border-b border-gray-100 flex-shrink-0">
           <div>
             <h3 className="font-semibold text-gray-900 text-base">Edit item</h3>
             {isGenerated && (
@@ -97,73 +95,74 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSave} className="px-5 pt-4 space-y-4">
-          {/* Name */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
-              Item name <span className="text-orange-500">*</span>
-            </label>
-            <input
-              autoFocus
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
-            />
-          </div>
-
-          {/* Quantity + Unit */}
-          <div className="flex gap-3">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">Quantity</label>
+        {/* Scrollable form */}
+        <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 overflow-y-auto px-5 pt-4 space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                Item name <span className="text-orange-500">*</span>
+              </label>
               <input
                 type="text"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="e.g. 2"
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
               />
             </div>
-            <div className="w-32">
-              <label className="block text-xs font-medium text-gray-500 mb-1.5">Unit</label>
-              <select
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent appearance-none"
-              >
-                <option value="">— none —</option>
-                {UNIT_OPTIONS.map((u) => (
-                  <option key={u} value={u}>{u}</option>
-                ))}
-              </select>
-            </div>
-          </div>
 
-          {/* Category */}
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Category</label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORY_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setCategory(opt.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                    category === opt.value
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                  }`}
+            {/* Quantity + Unit */}
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Quantity</label>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="e.g. 2"
+                  className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent"
+                />
+              </div>
+              <div className="w-32">
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Unit</label>
+                <select
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-900 outline-none focus:ring-2 focus:ring-orange-300 focus:border-transparent appearance-none"
                 >
-                  {opt.label}
-                </button>
-              ))}
+                  <option value="">— none —</option>
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Category</label>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORY_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCategory(opt.value)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      category === opt.value
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex gap-3 pt-1">
+          {/* Action buttons — always visible at bottom */}
+          <div className="flex gap-3 px-5 pt-3 pb-1 border-t border-gray-100 flex-shrink-0">
             <button
               type="button"
               onClick={handleDelete}
