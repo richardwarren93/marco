@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Recipe, Collection } from "@/types";
@@ -141,9 +141,23 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
 
   const [search, setSearch] = useState("");
   const [activeMealType, setActiveMealType] = useState<MealType | "all">("all");
+  const [showMealMenu, setShowMealMenu] = useState(false);
+  const mealMenuRef = useRef<HTMLDivElement>(null);
 
   // Pick mode: which card is mid-selection
   const [selectingId, setSelectingId] = useState<string | null>(null);
+
+  // Close meal menu on outside click
+  useEffect(() => {
+    if (!showMealMenu) return;
+    function onDown(e: MouseEvent) {
+      if (mealMenuRef.current && !mealMenuRef.current.contains(e.target as Node)) {
+        setShowMealMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [showMealMenu]);
 
   const hasFilters = !!(search.trim() || activeMealType !== "all");
 
@@ -253,31 +267,49 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         </div>
 
-        {/* Meal type filter pills */}
-        <div className="flex items-center gap-1.5 px-4 pb-2.5 overflow-x-auto scrollbar-hide">
-          <button
-            onClick={() => setActiveMealType("all")}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              activeMealType === "all"
-                ? "bg-orange-500 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            All
-          </button>
-          {MEAL_TYPES.map((mt) => (
+        {/* Meal type dropdown filter */}
+        <div className="flex items-center gap-2 px-4 pb-2.5">
+          <div className="relative" ref={mealMenuRef}>
             <button
-              key={mt}
-              onClick={() => setActiveMealType(activeMealType === mt ? "all" : mt)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                activeMealType === mt
+              onClick={() => setShowMealMenu((v) => !v)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                activeMealType !== "all"
                   ? "bg-orange-500 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
               }`}
             >
-              {MEAL_TYPE_LABELS[mt]}
+              {activeMealType !== "all" ? MEAL_TYPE_LABELS[activeMealType] : "Meal type"}
+              <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-          ))}
+            {showMealMenu && (
+              <div className="absolute top-full left-0 mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-20 py-1 min-w-[140px]">
+                {([["all", "All"], ...MEAL_TYPES.map((mt) => [mt, MEAL_TYPE_LABELS[mt]])] as [string, string][]).map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => { setActiveMealType(value as MealType | "all"); setShowMealMenu(false); }}
+                    className="w-full flex items-center justify-between px-4 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    <span>{label}</span>
+                    {activeMealType === value && (
+                      <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {activeMealType !== "all" && (
+            <button
+              onClick={() => setActiveMealType("all")}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Clear
+            </button>
+          )}
         </div>
       </div>
 

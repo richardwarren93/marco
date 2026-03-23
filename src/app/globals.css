@@ -8,10 +8,12 @@ html {
 }
 
 body {
+  /* position:fixed is the most reliable way to lock the iOS viewport.
+     It prevents rubber-band scrolling AND stops iOS PWA from ever
+     shifting fixed-position elements (URL bar, keyboard, etc.) */
+  position: fixed;
+  width: 100%;
   height: 100%;
-  /* Shell layout: only inner containers scroll, body never scrolls.
-     This prevents iOS Safari from showing/hiding the URL bar which would
-     resize the viewport and shift fixed-position elements. */
   overflow: hidden;
   overscroll-behavior: none;
 }
