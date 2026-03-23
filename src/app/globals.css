@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+html {
+  /* Prevent iOS rubber-band bounce from shifting fixed-position elements */
+  overscroll-behavior: none;
+  /* Use the full screen including notch/home-indicator areas */
+  height: 100%;
+}
+
+body {
+  min-height: 100%;
+  overscroll-behavior: none;
+}
+
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);

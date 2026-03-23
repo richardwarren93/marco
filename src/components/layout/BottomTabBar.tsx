@@ -39,7 +39,7 @@ export default function BottomTabBar() {
     <>
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 sm:hidden bg-white/90 backdrop-blur-lg border-t border-gray-200"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)", willChange: "transform" }}
       >
         <div className="flex justify-around items-end h-16 px-1">
           {/* Left tabs */}

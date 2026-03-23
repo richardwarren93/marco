@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
@@ -8,6 +8,12 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "Marco - Save & Plan Recipes",
@@ -29,9 +35,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans antialiased bg-gray-50 text-gray-900`}>
+      <body className={`${geistSans.variable} font-sans antialiased bg-gray-50 text-gray-900 overscroll-none`}>
         <Navbar />
-        <main className="pb-20 sm:pb-0">{children}</main>
+        <main className="pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">{children}</main>
         <BottomTabBar />
       </body>
     </html>
