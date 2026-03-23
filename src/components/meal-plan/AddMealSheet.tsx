@@ -158,14 +158,16 @@ export default function AddMealSheet({
   const [recipeSearch, setRecipeSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Lock main scroll while sheet is open (prevents iOS from scrolling background on keyboard open/close)
+  // Lock main scroll while sheet is open; reset scroll position on close
   useEffect(() => {
-    const main = document.querySelector("main");
+    const main = document.querySelector("main") as HTMLElement | null;
     if (!main) return;
     if (isOpen) {
       main.style.overflow = "hidden";
     } else {
       main.style.overflow = "";
+      main.scrollTop = 0;
+      window.scrollTo(0, 0);
     }
     return () => { main.style.overflow = ""; };
   }, [isOpen]);

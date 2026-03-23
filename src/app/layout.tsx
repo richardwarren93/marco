@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import BottomTabBar from "@/components/layout/BottomTabBar";
@@ -43,6 +44,18 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} font-sans antialiased bg-gray-50 text-gray-900 h-full flex flex-col overscroll-none`}>
+        {/* Prevent pinch-to-zoom and visual-viewport scroll on iOS PWA */}
+        <Script id="prevent-zoom" strategy="afterInteractive">{`
+          document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+          document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+          // When iOS keyboard opens it scrolls the visual viewport offset — lock it back to 0
+          if (window.visualViewport) {
+            window.visualViewport.addEventListener('scroll', function() {
+              window.scrollTo(0, 0);
+            });
+          }
+        `}</Script>
         <Navbar />
         <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">{children}</main>
         <BottomTabBar />

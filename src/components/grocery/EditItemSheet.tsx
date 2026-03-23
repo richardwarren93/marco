@@ -34,14 +34,16 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
     }
   }, [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Lock main scroll while sheet is open
+  // Lock main scroll while sheet is open; reset scroll position on close
   useEffect(() => {
-    const main = document.querySelector("main");
+    const main = document.querySelector("main") as HTMLElement | null;
     if (!main) return;
     if (item) {
       main.style.overflow = "hidden";
     } else {
       main.style.overflow = "";
+      main.scrollTop = 0;
+      window.scrollTo(0, 0);
     }
     return () => { main.style.overflow = ""; };
   }, [!!item]); // eslint-disable-line react-hooks/exhaustive-deps
