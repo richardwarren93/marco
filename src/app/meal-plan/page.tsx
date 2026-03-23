@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
@@ -22,6 +22,14 @@ function formatDateKey(d: Date): string {
 }
 
 export default function MealPlanPage() {
+  return (
+    <Suspense>
+      <MealPlanInner />
+    </Suspense>
+  );
+}
+
+function MealPlanInner() {
   const searchParams = useSearchParams();
 
   // ─── Step flow ───────────────────────────────────────────────────────────────

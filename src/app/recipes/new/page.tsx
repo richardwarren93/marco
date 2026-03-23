@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import type { Ingredient } from "@/types";
@@ -19,6 +19,14 @@ interface ExtractedRecipe {
 }
 
 export default function NewRecipePage() {
+  return (
+    <Suspense>
+      <NewRecipeInner />
+    </Suspense>
+  );
+}
+
+function NewRecipeInner() {
   const searchParams = useSearchParams();
   const isExtracted = searchParams.get("mode") === "extracted";
   const [extractedRecipe, setExtractedRecipe] = useState<ExtractedRecipe | null>(null);
