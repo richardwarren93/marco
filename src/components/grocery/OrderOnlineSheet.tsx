@@ -211,7 +211,7 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Sheet */}
-      <div className="relative mt-auto bg-white rounded-t-3xl max-h-[90vh] flex flex-col animate-slide-up" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="relative mt-auto bg-white rounded-t-3xl max-h-[90vh] flex flex-col animate-slide-up" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}>
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100">
