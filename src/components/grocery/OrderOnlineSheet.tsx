@@ -224,18 +224,9 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
 
   return (
     // z-[60] to overlay above bottom tab bar (z-50)
-    <div className="fixed inset-0 z-[60] flex flex-col">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {/* Sheet — full height on mobile for proper scrolling */}
-      <div
-        className="relative mt-auto bg-white rounded-t-3xl flex flex-col animate-slide-up"
-        style={{
-          maxHeight: "92vh",
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
-        }}
-      >
+    // Full-screen takeover on mobile to avoid iOS Safari bottom bar clipping
+    <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+      {/* No backdrop — full screen page */}
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
         <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
@@ -333,8 +324,8 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
               </div>
             </div>
 
-            {/* Next button — sticky at bottom */}
-            <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
+            {/* Next button — sticky at bottom with generous padding for iOS */}
+            <div className="px-5 pt-4 pb-8 border-t border-gray-100 flex-shrink-0 bg-white">
               <button
                 onClick={() => setStep("store")}
                 disabled={selectedCount === 0}
@@ -418,8 +409,8 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
               </p>
             </div>
 
-            {/* Continue button */}
-            <div className="px-5 py-4 border-t border-gray-100 flex-shrink-0 bg-white">
+            {/* Continue button — generous padding for iOS */}
+            <div className="px-5 pt-4 pb-8 border-t border-gray-100 flex-shrink-0 bg-white">
               <button
                 onClick={handleContinueToStore}
                 disabled={!STORES.find((s) => s.id === selectedStore)?.available}
@@ -443,7 +434,6 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
             </div>
           </>
         )}
-      </div>
     </div>
   );
 }
