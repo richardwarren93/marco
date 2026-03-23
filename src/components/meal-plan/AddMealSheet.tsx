@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
@@ -44,7 +44,7 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-// ─── Recipe row — two sizes ───────────────────────────────────────────────────
+// ─── Recipe row ──────────────────────────────────────────────────────────────
 function RecipeRow({
   recipe,
   isSelected,
@@ -157,34 +157,29 @@ export default function AddMealSheet({
   const [servings, setServings] = useState(defaultServings);
   const [recipeSearch, setRecipeSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [searchMode, setSearchMode] = useState(false);
 
   const scrollBodyRef = useRef<HTMLDivElement>(null);
-  const recipeSectionRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  // When search input is focused, scroll the recipe section to the top of the
-  // sheet body after the iOS keyboard finishes opening.
+  // Track visual viewport height for keyboard-aware sizing
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
   useEffect(() => {
-    if (!searchFocused) return;
+    if (!isOpen) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
 
-    function scrollRecipeToTop() {
-      if (!recipeSectionRef.current || !scrollBodyRef.current) return;
-      // Use getBoundingClientRect for correct offset relative to the scroll container
-      const rect = recipeSectionRef.current.getBoundingClientRect();
-      const containerRect = scrollBodyRef.current.getBoundingClientRect();
-      const targetScrollTop =
-        scrollBodyRef.current.scrollTop + (rect.top - containerRect.top);
-      scrollBodyRef.current.scrollTo({ top: targetScrollTop, behavior: "smooth" });
+    function onResize() {
+      setViewportHeight(window.visualViewport!.height);
     }
+    onResize();
+    vv.addEventListener("resize", onResize);
+    return () => vv.removeEventListener("resize", onResize);
+  }, [isOpen]);
 
-    // Fire immediately, then again after keyboard animation completes (~350ms)
-    scrollRecipeToTop();
-    const t = setTimeout(scrollRecipeToTop, 350);
-    return () => clearTimeout(t);
-  }, [searchFocused]);
-
-  // Lock main scroll while sheet is open; reset scroll position on close
+  // Lock main scroll while sheet is open
   useEffect(() => {
     const main = document.querySelector("main") as HTMLElement | null;
     if (!main) return;
@@ -206,9 +201,10 @@ export default function AddMealSheet({
     ) as MealType[];
     setSelectedMealTypes(new Set(validTypes));
     setSelectedDates(new Set([defaultDate]));
-    setSelectedRecipeId(defaultRecipeId ?? null); // pre-select if coming from recipe card
+    setSelectedRecipeId(defaultRecipeId ?? null);
     setServings(defaultServings ?? 1);
     setRecipeSearch("");
+    setSearchMode(false);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Mon–Sun grid
@@ -225,13 +221,11 @@ export default function AddMealSheet({
     [weekStart]
   );
 
-  // IDs of all recipes already in any weekPlan (for "not scheduled" check)
   const anyScheduledIds = useMemo(
     () => new Set(weekPlans.filter((p) => p.recipe_id).map((p) => p.recipe_id as string)),
     [weekPlans]
   );
 
-  // IDs of recipes scheduled for the selected meal type(s)
   const scheduledByTypeIds = useMemo(
     () =>
       new Set(
@@ -242,13 +236,11 @@ export default function AddMealSheet({
     [weekPlans, selectedMealTypes]
   );
 
-  // "Picked but not scheduled" — in weekPickIds but not in any weekPlan at all
   const notScheduledPicks = useMemo(
     () => allRecipes.filter((r) => weekPickIds.includes(r.id) && !anyScheduledIds.has(r.id)),
     [allRecipes, weekPickIds, anyScheduledIds]
   );
 
-  // "Scheduled" — unique recipes in weekPlans for selected meal types, max 2
   const scheduledRecipes = useMemo(() => {
     const seen = new Set<string>();
     return weekPlans
@@ -258,11 +250,20 @@ export default function AddMealSheet({
       .slice(0, 2);
   }, [weekPlans, selectedMealTypes, allRecipes]);
 
-  // Search results — title + tags + ingredients + description, with fuzzy matching
+  // All recipes for browsing (sorted: meal-type match first, then alphabetical)
+  const browseRecipes = useMemo(() => {
+    return [...allRecipes].sort((a, b) => {
+      const aMatch = selectedMealTypes.has(a.meal_type as MealType) ? 0 : 1;
+      const bMatch = selectedMealTypes.has(b.meal_type as MealType) ? 0 : 1;
+      if (aMatch !== bMatch) return aMatch - bMatch;
+      return a.title.localeCompare(b.title);
+    });
+  }, [allRecipes, selectedMealTypes]);
+
   const searchResults = useMemo(() => {
     const q = recipeSearch.trim();
     if (!q) return [];
-    return allRecipes.filter((r) => recipeMatchesQuery(r, q)).slice(0, 12);
+    return allRecipes.filter((r) => recipeMatchesQuery(r, q)).slice(0, 20);
   }, [recipeSearch, allRecipes]);
 
   function toggleMealType(mt: MealType) {
@@ -289,8 +290,23 @@ export default function AddMealSheet({
     });
   }
 
-  function selectRecipe(id: string) {
+  const selectRecipe = useCallback((id: string) => {
     setSelectedRecipeId((prev) => (prev === id ? null : id));
+    // Exit search mode after selecting, so user sees the full form
+    setSearchMode(false);
+    setRecipeSearch("");
+  }, []);
+
+  function enterSearchMode() {
+    setSearchMode(true);
+    // Focus the input after state update
+    requestAnimationFrame(() => searchInputRef.current?.focus());
+  }
+
+  function exitSearchMode() {
+    setSearchMode(false);
+    setRecipeSearch("");
+    searchInputRef.current?.blur();
   }
 
   async function handleAdd() {
@@ -313,269 +329,322 @@ export default function AddMealSheet({
   const isReplacing = !!replacePlanId;
   const query = recipeSearch.trim();
   const hitCount = searchResults.length;
-
-  // Secondary suggestions shown below a single result or on zero results
   const hasNotScheduled = notScheduledPicks.length > 0;
   const hasScheduled = scheduledRecipes.length > 0;
 
-  function renderSecondaryPicks() {
-    if (!hasNotScheduled) return null;
-    return (
-      <div className="mt-3">
-        <SectionLabel>Picked but not scheduled</SectionLabel>
-        <div className="space-y-1">
-          {notScheduledPicks.slice(0, 2).map((r) => (
-            <RecipeRow
-              key={r.id}
-              recipe={r}
-              isSelected={selectedRecipeId === r.id}
-              badge="Pick"
-              compact
-              onClick={() => selectRecipe(r.id)}
-            />
-          ))}
-        </div>
-      </div>
-    );
+  // Selected recipe info for the compact display
+  const selectedRecipe = selectedRecipeId
+    ? allRecipes.find((r) => r.id === selectedRecipeId)
+    : null;
+
+  // Summary chips for meal type + date when in search mode
+  const mealTypeLabel = [...selectedMealTypes].map((mt) => mt.charAt(0).toUpperCase() + mt.slice(1)).join(", ");
+  const selectedDateLabel = (() => {
+    const dates = [...selectedDates].sort();
+    if (dates.length === 1) {
+      const wd = weekDates.find((d) => d.key === dates[0]);
+      return wd ? `${wd.dayAbbr} ${wd.dayNum}` : dates[0];
+    }
+    return `${dates.length} days`;
+  })();
+
+  function getBadge(r: Recipe) {
+    if (weekPickIds.includes(r.id) && !anyScheduledIds.has(r.id)) return "Pick";
+    if (scheduledByTypeIds.has(r.id)) return "Scheduled";
+    return undefined;
   }
 
-  function renderSecondaryScheduled() {
-    if (!hasScheduled) return null;
-    return (
-      <div className="mt-3">
-        <SectionLabel>Scheduled</SectionLabel>
-        <div className="space-y-1">
-          {scheduledRecipes.map((r) => (
-            <RecipeRow
-              key={r.id}
-              recipe={r}
-              isSelected={selectedRecipeId === r.id}
-              badge="Scheduled"
-              dimmed
-              compact
-              onClick={() => selectRecipe(r.id)}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
+  // ─── Search mode: full-screen recipe picker ─────────────────────────────────
+  if (searchMode) {
+    // Use visual viewport height to size above keyboard
+    const sheetHeight = viewportHeight ? `${viewportHeight}px` : "100dvh";
 
-  return (
-    <>
-      <div className="fixed inset-0 bg-black/40 z-[60] flex items-end" onClick={onClose}>
+    return (
+      <div className="fixed inset-0 bg-black/40 z-[60]" onClick={exitSearchMode}>
         <div
-          className="bg-white w-full rounded-t-3xl max-h-[88dvh] flex flex-col shadow-xl"
+          className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl flex flex-col shadow-xl overflow-hidden"
+          style={{ height: sheetHeight }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Handle */}
-          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-            <div className="w-10 h-1 bg-gray-200 rounded-full" />
+          {/* Header: back + context chips */}
+          <div className="flex items-center gap-2 px-4 pt-4 pb-2 flex-shrink-0">
+            <button
+              onClick={exitSearchMode}
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+            >
+              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <div className="flex gap-1.5 flex-1 min-w-0">
+              <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600 truncate">
+                {mealTypeLabel}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-1 bg-gray-100 rounded-full text-xs font-medium text-gray-600">
+                {selectedDateLabel}
+              </span>
+            </div>
           </div>
 
-          {/* Body — scrollable; extra bottom padding when keyboard open keeps content above iOS accessory bar */}
-          <div
-            ref={scrollBodyRef}
-            className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 space-y-3.5 min-h-0"
-            style={{ paddingBottom: searchFocused ? "56px" : "8px" }}
-          >
-
-            {/* Meal type */}
-            <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                Meal type
-              </p>
-              <div className="flex gap-1.5">
-                {MEAL_TYPES.map((mt) => {
-                  const colors = MEAL_TYPE_COLORS[mt];
-                  return (
-                    <button
-                      key={mt}
-                      onClick={() => toggleMealType(mt)}
-                      className={`flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border ${
-                        selectedMealTypes.has(mt) ? colors.active : colors.inactive
-                      }`}
-                    >
-                      {mt}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* When */}
-            <div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                When
-              </p>
-              <div className="flex gap-1">
-                {weekDates.map(({ key, dayAbbr, dayNum }) => {
-                  const isSelected = selectedDates.has(key);
-                  return (
-                    <button
-                      key={key}
-                      onClick={() => toggleDate(key)}
-                      className={`flex-1 flex flex-col items-center py-1.5 rounded-xl transition-colors ${
-                        isSelected
-                          ? "bg-orange-500 text-white"
-                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                      }`}
-                    >
-                      <span className="text-[10px] font-medium">{dayAbbr}</span>
-                      <span className="text-sm font-bold mt-0.5">{dayNum}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Recipe search + results — sticky when focused so input stays visible above keyboard */}
-            <div
-              ref={recipeSectionRef}
-              className={searchFocused ? "sticky top-0 bg-white z-10 -mx-4 px-4 pt-1 pb-2" : ""}
-            >
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
-                Recipe
-              </p>
-
-              {/* Search input */}
+          {/* Search input — always visible */}
+          <div className="px-4 pb-2 flex-shrink-0">
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
               <input
                 ref={searchInputRef}
                 type="text"
                 value={recipeSearch}
                 onChange={(e) => setRecipeSearch(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder="Search recipes…"
-                className="w-full px-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all"
+                placeholder="Search your recipes…"
+                className="w-full pl-9 pr-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 focus:bg-white transition-all"
                 autoComplete="off"
+                autoFocus
               />
+              {recipeSearch && (
+                <button
+                  onClick={() => setRecipeSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 transition-colors"
+                >
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
 
-              {/* Results area */}
-              {!query ? (
-                /* ── Initial state ─────────────────────────────────────── */
-                <div className="mt-2 space-y-1.5">
-                  {/* Show selected recipe from Browse as a preview card */}
-                  {selectedRecipeId && (() => {
-                    const picked = allRecipes.find((r) => r.id === selectedRecipeId);
-                    return picked ? (
-                      <RecipeRow
-                        recipe={picked}
-                        isSelected
-                        badge={
-                          weekPickIds.includes(picked.id) && !anyScheduledIds.has(picked.id)
-                            ? "Pick"
-                            : scheduledByTypeIds.has(picked.id)
-                            ? "Scheduled"
-                            : undefined
-                        }
-                        onClick={() => setSelectedRecipeId(null)}
-                      />
-                    ) : null;
-                  })()}
-                  <button
-                    onClick={() => { onClose(); router.push("/recipes"); }}
-                    className="w-full flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-400 hover:text-orange-500 transition-colors"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    {selectedRecipeId ? "Change recipe" : "Browse saved recipes"}
-                  </button>
-                </div>
-              ) : hitCount >= 2 ? (
-                /* ── Case A: 2+ results — show only results ────────────── */
-                <div className="mt-2 space-y-1">
+          {/* Results — scrollable */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-4 min-h-0">
+            {query ? (
+              hitCount > 0 ? (
+                <div className="space-y-1">
                   {searchResults.map((r) => (
                     <RecipeRow
                       key={r.id}
                       recipe={r}
                       isSelected={selectedRecipeId === r.id}
-                      badge={
-                        weekPickIds.includes(r.id) && !anyScheduledIds.has(r.id)
-                          ? "Pick"
-                          : scheduledByTypeIds.has(r.id)
-                          ? "Scheduled"
-                          : undefined
-                      }
+                      badge={getBadge(r)}
                       dimmed={scheduledByTypeIds.has(r.id)}
                       onClick={() => selectRecipe(r.id)}
                     />
                   ))}
                 </div>
-              ) : hitCount === 1 ? (
-                /* ── Case B: exactly 1 result + one secondary section ──── */
-                <div className="mt-2 space-y-1">
-                  <RecipeRow
-                    recipe={searchResults[0]}
-                    isSelected={selectedRecipeId === searchResults[0].id}
-                    badge={
-                      weekPickIds.includes(searchResults[0].id) && !anyScheduledIds.has(searchResults[0].id)
-                        ? "Pick"
-                        : scheduledByTypeIds.has(searchResults[0].id)
-                        ? "Scheduled"
-                        : undefined
-                    }
-                    onClick={() => selectRecipe(searchResults[0].id)}
-                  />
-                  {hasNotScheduled
-                    ? renderSecondaryPicks()
-                    : renderSecondaryScheduled()}
-                </div>
               ) : (
-                /* ── Case C: 0 results ─────────────────────────────────── */
-                <div className="mt-2">
-                  <p className="text-xs text-gray-400 text-center py-3">
-                    No results for &ldquo;{query}&rdquo;
-                  </p>
-                  {renderSecondaryPicks()}
-                  {renderSecondaryScheduled()}
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-400">No recipes match &ldquo;{query}&rdquo;</p>
+                  <button
+                    onClick={() => { onClose(); router.push("/recipes"); }}
+                    className="mt-3 text-sm font-medium text-orange-500 hover:text-orange-600"
+                  >
+                    Browse all recipes
+                  </button>
                 </div>
-              )}
-            </div>
-
-            {/* Servings */}
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                Servings
-              </p>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setServings((s) => Math.max(1, s - 1))}
-                  className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
-                >
-                  −
-                </button>
-                <span className="text-sm font-semibold text-gray-900 w-4 text-center">
-                  {servings}
-                </span>
-                <button
-                  onClick={() => setServings((s) => s + 1)}
-                  className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
-                >
-                  +
-                </button>
+              )
+            ) : (
+              /* No query — show suggestions then all recipes */
+              <div className="space-y-3">
+                {hasNotScheduled && (
+                  <div>
+                    <SectionLabel>Picked but not scheduled</SectionLabel>
+                    <div className="space-y-1">
+                      {notScheduledPicks.slice(0, 3).map((r) => (
+                        <RecipeRow
+                          key={r.id}
+                          recipe={r}
+                          isSelected={selectedRecipeId === r.id}
+                          badge="Pick"
+                          onClick={() => selectRecipe(r.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {hasScheduled && (
+                  <div>
+                    <SectionLabel>Already scheduled</SectionLabel>
+                    <div className="space-y-1">
+                      {scheduledRecipes.map((r) => (
+                        <RecipeRow
+                          key={r.id}
+                          recipe={r}
+                          isSelected={selectedRecipeId === r.id}
+                          badge="Scheduled"
+                          dimmed
+                          onClick={() => selectRecipe(r.id)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <SectionLabel>All recipes</SectionLabel>
+                  <div className="space-y-1">
+                    {browseRecipes.map((r) => (
+                      <RecipeRow
+                        key={r.id}
+                        recipe={r}
+                        isSelected={selectedRecipeId === r.id}
+                        badge={getBadge(r)}
+                        dimmed={scheduledByTypeIds.has(r.id)}
+                        onClick={() => selectRecipe(r.id)}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-
-          </div>
-
-          {/* CTA — always pinned above nav bar */}
-          <div
-            className="px-4 pt-3 pb-3 border-t border-gray-100 flex-shrink-0"
-            style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
-          >
-            <button
-              onClick={handleAdd}
-              disabled={saving || !selectedRecipeId}
-              className="w-full py-3.5 bg-orange-500 text-white rounded-xl font-semibold text-sm hover:bg-orange-600 active:scale-[0.98] transition-all disabled:opacity-40"
-            >
-              {saving ? "Adding…" : isReplacing ? "Replace meal" : "Add to plan"}
-            </button>
+            )}
           </div>
         </div>
       </div>
+    );
+  }
 
-    </>
+  // ─── Normal mode: compact form ──────────────────────────────────────────────
+  return (
+    <div className="fixed inset-0 bg-black/40 z-[60] flex items-end" onClick={onClose}>
+      <div
+        ref={sheetRef}
+        className="bg-white w-full rounded-t-3xl max-h-[88dvh] flex flex-col shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Handle */}
+        <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+        </div>
+
+        {/* Body */}
+        <div
+          ref={scrollBodyRef}
+          className="flex-1 overflow-y-auto overscroll-contain px-4 pt-2.5 pb-2 space-y-4 min-h-0"
+        >
+          {/* Meal type */}
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+              Meal type
+            </p>
+            <div className="flex gap-1.5">
+              {MEAL_TYPES.map((mt) => {
+                const colors = MEAL_TYPE_COLORS[mt];
+                return (
+                  <button
+                    key={mt}
+                    onClick={() => toggleMealType(mt)}
+                    className={`flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border ${
+                      selectedMealTypes.has(mt) ? colors.active : colors.inactive
+                    }`}
+                  >
+                    {mt}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* When */}
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+              When
+            </p>
+            <div className="flex gap-1">
+              {weekDates.map(({ key, dayAbbr, dayNum }) => {
+                const isSelected = selectedDates.has(key);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => toggleDate(key)}
+                    className={`flex-1 flex flex-col items-center py-1.5 rounded-xl transition-colors ${
+                      isSelected
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                    }`}
+                  >
+                    <span className="text-[10px] font-medium">{dayAbbr}</span>
+                    <span className="text-sm font-bold mt-0.5">{dayNum}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Recipe selector — tap to enter search mode */}
+          <div>
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">
+              Recipe
+            </p>
+            {selectedRecipe ? (
+              <div className="space-y-1.5">
+                <RecipeRow
+                  recipe={selectedRecipe}
+                  isSelected
+                  badge={getBadge(selectedRecipe)}
+                  onClick={() => setSelectedRecipeId(null)}
+                />
+                <button
+                  onClick={enterSearchMode}
+                  className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-gray-400 hover:text-orange-500 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  Change recipe
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={enterSearchMode}
+                className="w-full flex items-center gap-3 px-3 py-3 bg-gray-50 rounded-xl border border-gray-200 border-dashed hover:bg-gray-100 hover:border-gray-300 transition-colors"
+              >
+                <div className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <span className="text-sm text-gray-400 font-medium">Search your recipes…</span>
+              </button>
+            )}
+          </div>
+
+          {/* Servings */}
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+              Servings
+            </p>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setServings((s) => Math.max(1, s - 1))}
+                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
+              >
+                −
+              </button>
+              <span className="text-sm font-semibold text-gray-900 w-4 text-center">
+                {servings}
+              </span>
+              <button
+                onClick={() => setServings((s) => s + 1)}
+                className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div
+          className="px-4 pt-3 pb-3 border-t border-gray-100 flex-shrink-0"
+          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
+        >
+          <button
+            onClick={handleAdd}
+            disabled={saving || !selectedRecipeId}
+            className="w-full py-3.5 bg-orange-500 text-white rounded-xl font-semibold text-sm hover:bg-orange-600 active:scale-[0.98] transition-all disabled:opacity-40"
+          >
+            {saving ? "Adding…" : isReplacing ? "Replace meal" : "Add to plan"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

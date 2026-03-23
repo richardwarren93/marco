@@ -105,7 +105,7 @@ function BrowserCard({
               e.stopPropagation();
               onAdd();
             }}
-            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors z-10"
+            className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
             aria-label="Add to meal plan"
           >
             <svg
