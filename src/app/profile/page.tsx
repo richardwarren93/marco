@@ -7,6 +7,7 @@ import Link from "next/link";
 import type { UserProfile, CookingGoal } from "@/types";
 import { RecipesIcon, CollectionsIcon, FriendsIcon, TomatoIcon } from "@/components/icons/HandDrawnIcons";
 import GoalSetting from "@/components/gamification/GoalSetting";
+import BadgesCard from "@/components/gamification/BadgesCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
 
 export default function ProfilePage() {
@@ -219,6 +220,9 @@ export default function ProfilePage() {
           </Link>
         ))}
       </div>
+
+      {/* Badges — Pokédex */}
+      <BadgesCard />
 
       {/* Cooking Goal */}
       <GoalSetting
