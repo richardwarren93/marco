@@ -12,6 +12,7 @@ import AddToCollectionModal from "@/components/collections/AddToCollectionModal"
 import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
 import FriendsRecipeTable from "@/components/recipes/FriendsRecipeTable";
 import ExploreTab from "@/components/recipes/ExploreTab";
+import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -59,6 +60,7 @@ function RecipesInner() {
 
   // Add to collection modal state
   const [collectionRecipeId, setCollectionRecipeId] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
 
   const supabase = createClient();
 
@@ -122,8 +124,9 @@ function RecipesInner() {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 pt-3 sm:pt-4">
-        {/* Segmented control */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[440px] mb-4 sm:mb-5">
+        {/* Segmented control + Import button */}
+        <div className="flex items-center gap-3 mb-4 sm:mb-5">
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[440px]">
           <button
             onClick={() => setActiveTab("recipes")}
             className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
@@ -163,6 +166,17 @@ function RecipesInner() {
             }`}
           >
             Explore
+          </button>
+        </div>
+          {/* Import Recipe — inline, desktop only (mobile uses center + in BottomTabBar) */}
+          <button
+            onClick={() => setShowImport(true)}
+            className="hidden sm:flex items-center gap-1.5 bg-orange-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm flex-shrink-0"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Import
           </button>
         </div>
       </div>
@@ -277,6 +291,8 @@ function RecipesInner() {
         isOpen={!!collectionRecipeId}
         onClose={() => setCollectionRecipeId(null)}
       />
+
+      <ImportRecipeSheet isOpen={showImport} onClose={() => setShowImport(false)} />
     </>
   );
 }

@@ -12,7 +12,6 @@ import {
   MealPlanIcon,
   FriendsIcon,
 } from "@/components/icons/HandDrawnIcons";
-import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
 
 const navLinks = [
   { href: "/recipes", label: "Recipes", Icon: RecipesIcon },
@@ -39,7 +38,6 @@ const menuItems: { href: string; label: string; icon: React.ReactNode }[] = [
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
-  const [showImport, setShowImport] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -121,17 +119,6 @@ export default function Navbar() {
             <div className="flex items-center gap-2 sm:gap-3">
               {user ? (
                 <>
-                  {/* Import Recipe button — desktop only */}
-                  <button
-                    onClick={() => setShowImport(true)}
-                    className="hidden sm:flex bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm items-center gap-1.5"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Import Recipe
-                  </button>
-
                   {/* Profile avatar — desktop only */}
                   <Link
                     href="/profile"
@@ -242,7 +229,6 @@ export default function Navbar() {
         </div>
       </nav>
 
-      <ImportRecipeSheet isOpen={showImport} onClose={() => setShowImport(false)} />
     </>
   );
 }
