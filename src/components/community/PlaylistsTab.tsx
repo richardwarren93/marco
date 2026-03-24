@@ -316,9 +316,9 @@ export default function PlaylistsTab() {
 
       {/* Add Playlist Sheet */}
       {showAdd && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center sm:justify-center" onClick={() => setShowAdd(false)}>
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4 overflow-y-auto" onClick={() => setShowAdd(false)}>
           <div
-            className="w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl p-5 animate-slide-up"
+            className="w-full max-w-lg bg-white rounded-2xl p-5 animate-slide-up my-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
