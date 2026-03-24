@@ -57,16 +57,17 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop + centered container */}
       <div
-        className="fixed inset-0 z-[70] bg-black/40"
+        className="fixed inset-0 z-[70] bg-black/40 flex items-end sm:items-center sm:justify-center"
         onClick={extracting ? undefined : onClose}
-      />
+      >
 
       {/* Sheet */}
       <div
-        className="fixed inset-x-0 bottom-0 z-[70] bg-white rounded-t-2xl shadow-2xl sm:max-w-lg sm:mx-auto sm:rounded-2xl sm:bottom-4"
+        className="bg-white rounded-t-2xl shadow-2xl w-full sm:max-w-lg sm:rounded-2xl"
         style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))" }}
+        onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
@@ -145,6 +146,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           className="hidden"
           onChange={handleFileSelected}
         />
+      </div>
       </div>
     </>
   );
