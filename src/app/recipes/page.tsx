@@ -116,68 +116,52 @@ function RecipesInner() {
 
   return (
     <>
-      {/* ── Sticky page header ─────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 px-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between h-14">
-          <h1 className="text-xl font-bold text-gray-900">Recipes</h1>
-        </div>
-      </div>
+      {/* ── Header ───────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-10 px-4 pt-4 pb-0" style={{ background: "#faf9f7" }}>
+        <div className="max-w-5xl mx-auto">
+          {/* Title row */}
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>
+                Recipes
+              </h1>
+              {!loading && recipes.length > 0 && (
+                <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>
+                  {recipes.length} saved
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-1.5 text-white px-4 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform shadow-sm"
+              style={{ background: "#1a1410" }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              Import
+            </button>
+          </div>
 
-      <div className="max-w-5xl mx-auto px-4 pt-3 sm:pt-4">
-        {/* Segmented control + Import button */}
-        <div className="flex items-center justify-between mb-4 sm:mb-5">
-        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[440px]">
-          <button
-            onClick={() => setActiveTab("recipes")}
-            className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
-              activeTab === "recipes"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Recipes
-          </button>
-          <button
-            onClick={() => setActiveTab("collections")}
-            className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
-              activeTab === "collections"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Collections
-          </button>
-          <button
-            onClick={() => setActiveTab("table")}
-            className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
-              activeTab === "table"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Table
-          </button>
-          <button
-            onClick={() => setActiveTab("explore")}
-            className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
-              activeTab === "explore"
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            Explore
-          </button>
-        </div>
-          {/* Import Recipe — inline, desktop only (mobile uses center + in BottomTabBar) */}
-          <button
-            onClick={() => setShowImport(true)}
-            className="hidden sm:flex items-center gap-1.5 bg-orange-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm flex-shrink-0"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Import
-          </button>
+          {/* Tab bar */}
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0">
+            {(["recipes", "collections", "table", "explore"] as ActiveTab[]).map((tab) => {
+              const labels: Record<ActiveTab, string> = { recipes: "My Recipes", collections: "Collections", table: "Friends", explore: "Explore" };
+              const active = activeTab === tab;
+              return (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className="flex-shrink-0 px-4 py-2.5 text-sm font-bold rounded-t-2xl transition-all relative"
+                  style={active
+                    ? { background: "#fff", color: "#f97316", borderTop: "2px solid #f97316" }
+                    : { background: "transparent", color: "#a09890", borderTop: "2px solid transparent" }}
+                >
+                  {labels[tab]}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -200,54 +184,52 @@ function RecipesInner() {
 
       {/* Collections tab */}
       {activeTab === "collections" && (
-        <div className="max-w-5xl mx-auto px-4 pb-8">
+        <div className="max-w-5xl mx-auto px-4 pb-8 pt-5 animate-fade-slide-up" style={{ background: "#faf9f7" }}>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-              <CollectionsIcon className="w-6 h-6 text-orange-600" />
-              Collections
-            </h2>
+            <div>
+              <h2 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>Collections</h2>
+              {collections.length > 0 && (
+                <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>{collections.length} collection{collections.length !== 1 ? "s" : ""}</p>
+              )}
+            </div>
             <button
               onClick={() => setShowCollectionForm(!showCollectionForm)}
-              className="bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm"
+              className="text-white px-4 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
+              style={{ background: showCollectionForm ? "#6b6560" : "#1a1410" }}
             >
               {showCollectionForm ? "Cancel" : "+ New"}
             </button>
           </div>
 
           {showCollectionForm && (
-            <div className="mb-5">
-              <CreateCollectionForm
-                onCreated={() => {
-                  setShowCollectionForm(false);
-                  fetchCollections();
-                }}
-              />
+            <div className="mb-5 animate-card-pop">
+              <CreateCollectionForm onCreated={() => { setShowCollectionForm(false); fetchCollections(); }} />
             </div>
           )}
 
           {loading ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-28 bg-gray-100 rounded-2xl animate-pulse" />
+                <div key={i} className="h-28 skeleton-warm rounded-3xl" />
               ))}
             </div>
           ) : collections.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-              <div className="text-gray-300 flex justify-center mb-3">
-                <CollectionsIcon className="w-12 h-12" />
+            <div className="text-center py-20 rounded-3xl bg-white" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+              <div className="flex justify-center mb-4 opacity-30">
+                <CollectionsIcon className="w-14 h-14" />
               </div>
-              <p className="text-gray-500 mb-3">No collections yet</p>
-              <button
-                onClick={() => setShowCollectionForm(true)}
-                className="text-orange-600 hover:text-orange-700 font-medium text-sm"
-              >
-                Create your first collection →
+              <p className="font-black text-gray-700 text-base mb-1">No collections yet</p>
+              <p className="text-gray-400 text-sm mb-5">Group your recipes into curated collections</p>
+              <button onClick={() => setShowCollectionForm(true)} className="px-5 py-2.5 rounded-2xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors">
+                Create first collection
               </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {collections.map((collection) => (
-                <CollectionCard key={collection.id} collection={collection} />
+              {collections.map((collection, i) => (
+                <div key={collection.id} style={{ animation: `cardPop 0.4s ease ${i * 60}ms both` }}>
+                  <CollectionCard collection={collection} />
+                </div>
               ))}
             </div>
           )}
@@ -255,7 +237,11 @@ function RecipesInner() {
       )}
 
       {/* Explore tab — AI recipe discovery */}
-      {activeTab === "explore" && <ExploreTab />}
+      {activeTab === "explore" && (
+        <div style={{ background: "#faf9f7", minHeight: "100%" }}>
+          <ExploreTab />
+        </div>
+      )}
 
       {/* Table tab — friends' recipes */}
       {activeTab === "table" && (
