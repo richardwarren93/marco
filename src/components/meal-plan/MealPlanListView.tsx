@@ -270,42 +270,29 @@ export default function MealPlanListView({
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={() => changeWeek(addDays(weekStart, -7))}
-          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-2xl transition-colors"
+          style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" }}
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-gray-800">{weekLabel}</span>
+          <span className="text-sm font-bold" style={{ color: "#1a1410" }}>{weekLabel}</span>
           <button
             onClick={() => changeWeek(getMonday(new Date()))}
-            className="text-[10px] text-orange-600 hover:text-orange-700 font-medium px-2 py-0.5 rounded-full bg-orange-50 hover:bg-orange-100 transition-colors"
+            className="text-[10px] font-bold px-2 py-0.5 rounded-full transition-colors"
+            style={{ background: "#fff7ed", color: "#f97316" }}
           >
             Today
           </button>
         </div>
         <button
           onClick={() => changeWeek(addDays(weekStart, 7))}
-          className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-100 transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-2xl transition-colors"
+          style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" }}
         >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2.5}
-          >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
@@ -313,18 +300,19 @@ export default function MealPlanListView({
 
       {/* ── Empty state ──────────────────────────────────────────────────────── */}
       {totalVisibleMeals === 0 && (
-        <div className="text-center py-14 space-y-3">
+        <div className="text-center py-14 space-y-3 rounded-3xl bg-white mb-3" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
           <p className="text-3xl">🍽️</p>
-          <p className="text-sm font-semibold text-gray-500">
+          <p className="text-sm font-bold" style={{ color: "#1a1410" }}>
             No meals planned for this week
           </p>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs" style={{ color: "#a09890" }}>
             Tap + on any day or plan your whole week at once
           </p>
           {onPlanThisWeek && (
             <button
               onClick={onPlanThisWeek}
-              className="mt-2 px-5 py-2.5 bg-orange-500 text-white text-sm font-semibold rounded-full hover:bg-orange-600 active:scale-[0.97] transition-all"
+              className="mt-2 px-5 py-2.5 text-white text-sm font-bold rounded-full active:scale-[0.97] transition-all"
+              style={{ background: "#1a1410" }}
             >
               Plan your week
             </button>
@@ -334,7 +322,7 @@ export default function MealPlanListView({
 
       {/* ── Day cards ────────────────────────────────────────────────────────── */}
       <div className="space-y-3">
-        {sortedDates.map((dateKey) => {
+        {sortedDates.map((dateKey, di) => {
           const isToday = dateKey === today;
           const date = new Date(dateKey + "T12:00:00");
           const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
@@ -345,55 +333,48 @@ export default function MealPlanListView({
             <div
               key={dateKey}
               id={`day-${dateKey}`}
-              className={`rounded-2xl overflow-hidden border ${
-                isToday ? "border-orange-200" : "border-gray-100"
-              } bg-white`}
+              className="rounded-3xl overflow-hidden bg-white"
+              style={{
+                boxShadow: isToday ? "0 2px 16px rgba(249,115,22,0.12)" : "0 2px 12px rgba(0,0,0,0.05)",
+                border: isToday ? "1.5px solid #fed7aa" : "1.5px solid transparent",
+                animation: `cardPop 0.4s ease ${di * 35}ms both`,
+              }}
             >
               {/* Day header */}
               <div
-                className={`flex items-center justify-between px-4 py-3 border-b ${
-                  isToday
-                    ? "border-orange-100 bg-orange-50/40"
-                    : "border-gray-50"
-                }`}
+                className="flex items-center justify-between px-4 py-3"
+                style={isToday
+                  ? { background: "linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)", borderBottom: "1px solid #fed7aa" }
+                  : { background: "white", borderBottom: "1px solid #f5f0eb" }}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-gray-900">
+                  <span className="text-base font-black" style={{ color: "#1a1410" }}>
                     {weekday} {dayNum}
                   </span>
                   {isToday && (
-                    <span className="text-[10px] font-semibold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fed7aa", color: "#c2410c" }}>
                       Today
                     </span>
                   )}
                 </div>
                 <button
                   onClick={() => openAddSheet(dateKey)}
-                  className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:border-orange-300 hover:text-orange-500 transition-colors touch-manipulation"
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-colors touch-manipulation"
+                  style={{ background: "#f5f0eb", color: "#a09890" }}
                 >
-                  <svg
-                    className="w-3.5 h-3.5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M12 4v16m8-8H4"
-                    />
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </button>
               </div>
 
               {/* Meal rows */}
               {plans.length === 0 ? (
-                <p className="text-xs text-gray-300 text-center py-3 italic">
+                <p className="text-xs text-center py-3 italic" style={{ color: "#c4bdb8" }}>
                   Nothing planned
                 </p>
               ) : (
-                <div className="divide-y divide-gray-50">
+                <div style={{ background: "white" }}>
                   {plans.map((plan) => {
                     const isHousehold = !!plan.owner_name;
                     const colors =
@@ -409,6 +390,7 @@ export default function MealPlanListView({
                       <div
                         key={plan.id}
                         className="relative overflow-hidden"
+                        style={{ borderTop: "1px solid #f5f0eb" }}
                         onTouchStart={(e) => handleTouchStart(e, plan.id)}
                         onTouchMove={(e) => handleTouchMove(e, plan.id)}
                         onTouchEnd={(e) => handleTouchEnd(e, plan)}
@@ -447,15 +429,12 @@ export default function MealPlanListView({
                           style={{
                             transform: `translateX(${currentX}px)`,
                             transition: isSwiping ? undefined : "transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)",
+                            background: isHousehold ? "rgba(245, 243, 255, 0.5)" : "white",
                           }}
-                          className={`group relative w-full flex items-center gap-3 px-4 py-3 border-l-4 ${colors.border} bg-white cursor-pointer text-left ${
-                            isHousehold
-                              ? "bg-purple-50/30 hover:bg-purple-50/60 active:bg-purple-100/60"
-                              : "hover:bg-gray-50/80 active:bg-gray-100/80"
-                          }`}
+                          className={`group relative w-full flex items-center gap-3 px-4 py-3 border-l-4 ${colors.border} cursor-pointer text-left`}
                         >
                           {/* Recipe thumbnail */}
-                          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-gray-100 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#f5f0eb" }}>
                             {plan.recipe?.image_url ? (
                               <img
                                 src={plan.recipe.image_url}
@@ -472,16 +451,13 @@ export default function MealPlanListView({
                           {/* Name + type */}
                           <div className="flex-1 min-w-0">
                             <p
-                              className={`text-sm font-semibold line-clamp-1 ${
-                                isHousehold ? "text-purple-800" : "text-gray-900"
-                              }`}
+                              className="text-sm font-bold line-clamp-1"
+                              style={{ color: isHousehold ? "#6d28d9" : "#1a1410" }}
                             >
                               {plan.recipe?.title || "Untitled"}
                             </p>
                             <p
-                              className={`text-xs capitalize mt-0.5 ${
-                                isHousehold ? "text-purple-400" : colors.label
-                              }`}
+                              className={`text-xs capitalize mt-0.5 ${isHousehold ? "text-purple-400" : colors.label}`}
                             >
                               {isHousehold
                                 ? `${plan.meal_type} · ${plan.owner_name}`
@@ -506,11 +482,8 @@ export default function MealPlanListView({
                           {/* Mobile: chevron hint (hidden when swiped) */}
                           {!isActive && (
                             <svg
-                              className={`sm:hidden w-4 h-4 flex-shrink-0 transition-colors ${
-                                isHousehold
-                                  ? "text-purple-200 group-hover:text-purple-300"
-                                  : "text-gray-300 group-hover:text-gray-400"
-                              }`}
+                              className="sm:hidden w-4 h-4 flex-shrink-0 transition-colors"
+                              style={{ color: isHousehold ? "#ddd6fe" : "#e8e0d8" }}
                               fill="none"
                               viewBox="0 0 24 24"
                               stroke="currentColor"
