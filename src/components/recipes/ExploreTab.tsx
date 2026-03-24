@@ -101,7 +101,10 @@ export default function ExploreTab() {
             : result.recipe.tags?.includes("snack")
             ? "snack"
             : "dinner",
-          notes: `Discovered with AI.\n${result.reasoning}`,
+          image_url: result.image_url || null,
+          source_url: result.source_url || null,
+          source_platform: result.source_url ? "other" : null,
+          notes: `Discovered via Explore.\n${result.reasoning}`,
         }),
       });
       if (!res.ok) {
@@ -269,18 +272,60 @@ function ExploreResultCard({
   const { recipe } = result;
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
+  const sourceHost = result.source_url
+    ? (() => { try { return new URL(result.source_url).hostname.replace("www.", ""); } catch { return null; } })()
+    : null;
+
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      {/* Card header */}
-      <div className="p-4 pb-3">
-        <div className="flex items-start justify-between gap-2 mb-1.5">
-          <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2">
-            {recipe.title}
-          </h3>
-          <span className="text-[10px] font-medium px-2 py-0.5 rounded-full flex-shrink-0 bg-purple-50 text-purple-600 whitespace-nowrap">
-            {result.sourceHint || "AI Generated"}
-          </span>
+      {/* Image */}
+      {result.image_url ? (
+        <div className="relative h-36 sm:h-40 bg-gray-100 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={result.image_url}
+            alt={recipe.title}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          <div className="absolute top-2 right-2">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm text-white whitespace-nowrap">
+              {result.sourceHint || "Explore"}
+            </span>
+          </div>
+          {sourceHost && (
+            <div className="absolute bottom-2 left-2">
+              <a
+                href={result.source_url!}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm text-gray-600 hover:text-orange-600 transition-colors flex items-center gap-1"
+              >
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                {sourceHost}
+              </a>
+            </div>
+          )}
         </div>
+      ) : (
+        <div className="relative h-24 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+          <span className="text-3xl">🍽️</span>
+          <div className="absolute top-2 right-2">
+            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-white/80 text-gray-500 whitespace-nowrap">
+              {result.sourceHint || "Explore"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Card content */}
+      <div className="p-4 pb-3">
+        <h3 className="font-semibold text-gray-900 text-sm leading-tight line-clamp-2 mb-1">
+          {recipe.title}
+        </h3>
         <p className="text-xs text-gray-400 line-clamp-2 mb-2">{recipe.description}</p>
 
         {/* Meta */}
@@ -298,6 +343,21 @@ function ExploreResultCard({
             <span>{recipe.ingredients.length} ingredients</span>
           )}
         </div>
+
+        {/* Source link */}
+        {result.source_url && sourceHost && (
+          <a
+            href={result.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 mt-2 text-[11px] text-orange-500 hover:text-orange-600 font-medium transition-colors"
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+            View original on {sourceHost}
+          </a>
+        )}
 
         {/* Tags */}
         {recipe.tags?.length > 0 && (

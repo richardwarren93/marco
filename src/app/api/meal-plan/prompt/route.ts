@@ -6,6 +6,49 @@ import type { PantryItem, Recipe } from "@/types";
 
 const DISCOVER_DAILY_LIMIT = 10;
 
+/** Fetch the og:image from a URL by doing a lightweight HEAD-style fetch */
+async function fetchOgImage(url: string): Promise<string | null> {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; Marco/1.0)",
+        Accept: "text/html",
+      },
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+    // Only read first 50KB to find og:image quickly
+    const reader = res.body?.getReader();
+    if (!reader) return null;
+
+    let html = "";
+    const decoder = new TextDecoder();
+    while (html.length < 50000) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      html += decoder.decode(value, { stream: true });
+      // Check if we have enough to find og:image
+      const match = html.match(
+        /<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']+)["']/i
+      ) || html.match(
+        /<meta[^>]*content=["']([^"']+)["'][^>]*property=["']og:image["']/i
+      );
+      if (match) {
+        reader.cancel();
+        return match[1];
+      }
+    }
+    reader.cancel();
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -70,7 +113,22 @@ export async function POST(request: Request) {
 
     const results = await promptRecipes(prompt, context, kitchenContext);
 
-    return NextResponse.json({ results }, {
+    // Enrich results with images by fetching OG images from source URLs
+    const enriched = await Promise.all(
+      results.map(async (result) => {
+        if (result.source_url && !result.image_url) {
+          try {
+            const imgUrl = await fetchOgImage(result.source_url);
+            if (imgUrl) return { ...result, image_url: imgUrl };
+          } catch {
+            // ignore — no image is fine
+          }
+        }
+        return result;
+      })
+    );
+
+    return NextResponse.json({ results: enriched }, {
       headers: { "X-RateLimit-Remaining": String(remaining) },
     });
   } catch (error) {

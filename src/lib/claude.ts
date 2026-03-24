@@ -216,6 +216,8 @@ export interface PromptRecipeResult {
   recipeId?: string;
   sourceHint: string;
   reasoning: string;
+  source_url?: string;
+  image_url?: string;
 }
 
 export async function promptRecipes(
@@ -260,7 +262,9 @@ ${systemContext}
 When possible, suggest recipes from their saved collection (set source to "saved" and include the recipeId). Fill remaining slots with new generated recipes (source: "generated"). Prioritize what they can make with their pantry and equipment.`
       : `You are a creative home chef AI for the Marco cooking app. You suggest trending, delicious recipes from across the internet — think popular TikTok recipes, Instagram food creator staples, and classic crowd-pleasers. You ALWAYS respond with valid JSON only — no explanations, no markdown. Never refuse.
 
-For each recipe, include a sourceHint like "Popular on TikTok", "Instagram favorite", "Classic comfort food", "Trending recipe", or "Food creator staple".`;
+For each recipe, include a sourceHint like "Popular on TikTok", "Instagram favorite", "Classic comfort food", "Trending recipe", or "Food creator staple".
+
+IMPORTANT: When suggesting real, well-known recipes, include the source_url — the actual URL of the original recipe page (e.g. from allrecipes.com, budgetbytes.com, seriouseats.com, bonappetit.com, halfbakedharvest.com, etc.). Only include real URLs you are confident exist. If you are not sure of the exact URL, omit it.`;
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
@@ -277,8 +281,9 @@ Return a JSON array of 4 recipe results. Each result should have:
 - recipeId: string (only if source is "saved")
 - sourceHint: string (e.g., "Popular on TikTok", "From your recipes", "Trending recipe")
 - reasoning: one sentence on why this recipe matches the user's request
+- source_url: string or null — the real URL of the original recipe page if this is based on a well-known published recipe (e.g. from allrecipes.com, budgetbytes.com, seriouseats.com, bonappetit.com, halfbakedharvest.com, etc.). Only include URLs you are confident actually exist. Omit or set null if unsure.
 
-Make recipes genuinely appetizing and varied. Think food creator quality — specific, flavorful, not generic.
+Make recipes genuinely appetizing and varied. Think food creator quality — specific, flavorful, not generic. Prefer suggesting recipes that are based on real, popular published recipes with known source URLs.
 
 Return ONLY a valid JSON array. No markdown, no code blocks.`,
       },
