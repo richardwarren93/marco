@@ -163,6 +163,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Sticky header */}
       <div className="bg-white px-4 pt-6 pb-3 space-y-3 sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+        <div className="max-w-3xl mx-auto space-y-3">
         <div className="flex items-center gap-3">
           {(props.mode === "browse" || (props.mode === "build" && props.onBack)) && (
             <button
@@ -286,10 +287,11 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
             ))}
           </div>
         )}
+        </div>{/* close max-w-3xl */}
       </div>
 
       {/* Recipe grid */}
-      <div className="flex-1 px-4 py-4 pb-28 overflow-y-auto">
+      <div className="flex-1 px-4 py-4 pb-28 overflow-y-auto max-w-5xl mx-auto w-full">
         {/* AI search label (build mode) */}
         {props.mode === "build" && aiResults !== null && (
           <div className="flex items-center gap-2 mb-3">
@@ -346,7 +348,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
             {aiError && <p className="text-xs text-red-500">{aiError}</p>}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {displayRecipes.map((recipe) => {
               const isBuild = props.mode === "build";
               const isSelected = isBuild && props.selectedIds.has(recipe.id);
@@ -372,7 +374,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                   }}
                 >
                   {/* Image */}
-                  <div className="relative h-36 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+                  <div className="relative h-32 sm:h-40 lg:h-44 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
                     {recipe.image_url ? (
                       <img
                         src={recipe.image_url}
@@ -439,7 +441,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
 
       {/* Build mode: "View meals · N" sticky CTA */}
       {props.mode === "build" && selectedCount > 0 && (
-        <div className="fixed bottom-20 inset-x-0 flex justify-center z-20 pointer-events-none">
+        <div className="fixed bottom-20 inset-x-0 flex justify-center z-20 pointer-events-none max-w-3xl mx-auto">
           <button
             onClick={props.onViewMeals}
             className="pointer-events-auto flex items-center gap-2 bg-gray-900 text-white px-6 py-3.5 rounded-full shadow-xl text-sm font-semibold hover:bg-gray-800 active:scale-95 transition-all"
