@@ -292,6 +292,27 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
 
       {/* Recipe grid */}
       <div className="flex-1 px-4 py-4 pb-28 overflow-y-auto max-w-5xl mx-auto w-full">
+        {/* Explore CTA card — build mode, no search active */}
+        {props.mode === "build" && !search && aiResults === null && (
+          <button
+            onClick={() => router.push("/recipes?tab=explore")}
+            className="w-full mb-4 flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 hover:border-orange-200 hover:shadow-sm transition-all text-left group"
+          >
+            <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+              <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900">Explore new recipes</p>
+              <p className="text-xs text-gray-400">Discover AI-powered recipe ideas for your meal plan</p>
+            </div>
+            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        )}
+
         {/* AI search label (build mode) */}
         {props.mode === "build" && aiResults !== null && (
           <div className="flex items-center gap-2 mb-3">

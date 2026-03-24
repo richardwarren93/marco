@@ -11,6 +11,7 @@ import CreateCollectionForm from "@/components/collections/CreateCollectionForm"
 import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
 import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
 import FriendsRecipeTable from "@/components/recipes/FriendsRecipeTable";
+import ExploreTab from "@/components/recipes/ExploreTab";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -24,7 +25,7 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-type ActiveTab = "recipes" | "collections" | "table";
+type ActiveTab = "recipes" | "collections" | "table" | "explore";
 
 export default function RecipesPage() {
   return (
@@ -45,6 +46,8 @@ function RecipesInner() {
       ? "collections"
       : searchParams.get("tab") === "table"
       ? "table"
+      : searchParams.get("tab") === "explore"
+      ? "explore"
       : "recipes"
   );
   const [showCollectionForm, setShowCollectionForm] = useState(false);
@@ -113,7 +116,7 @@ function RecipesInner() {
     <>
       <div className="max-w-5xl mx-auto px-4 pt-4 sm:pt-6">
         {/* Segmented control: Recipes | Collections | Table */}
-        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[340px] mb-4 sm:mb-6">
+        <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[440px] mb-4 sm:mb-6">
           <button
             onClick={() => setActiveTab("recipes")}
             className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all ${
@@ -143,6 +146,19 @@ function RecipesInner() {
             }`}
           >
             Table
+          </button>
+          <button
+            onClick={() => setActiveTab("explore")}
+            className={`flex-1 text-sm font-medium py-1.5 px-3 rounded-lg transition-all flex items-center justify-center gap-1 ${
+              activeTab === "explore"
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
+            </svg>
+            Explore
           </button>
         </div>
       </div>
@@ -219,6 +235,9 @@ function RecipesInner() {
           )}
         </div>
       )}
+
+      {/* Explore tab — AI recipe discovery */}
+      {activeTab === "explore" && <ExploreTab />}
 
       {/* Table tab — friends' recipes */}
       {activeTab === "table" && (
