@@ -131,7 +131,7 @@ function BrowserCard({
                   e.stopPropagation();
                   onAdd();
                 }}
-                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
+                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full backdrop-blur-sm flex items-center justify-center shadow transition-colors" style={{ background: "rgba(250,245,237,0.92)" }}
                 aria-label="Add to meal plan"
               >
                 <svg
