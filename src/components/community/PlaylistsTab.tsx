@@ -19,15 +19,16 @@ interface Playlist {
 
 /** Extract Spotify embed URL from various Spotify link formats */
 function getSpotifyEmbedUrl(url: string): string | null {
-  // Handle open.spotify.com/playlist/ID
-  const match = url.match(/spotify\.com\/playlist\/([a-zA-Z0-9]+)/);
-  if (match) {
-    return `https://open.spotify.com/embed/playlist/${match[1]}?utm_source=generator&theme=0`;
+  // Handle open.spotify.com URLs with optional locale prefix (e.g. /intl-en/)
+  // Supports: playlist, album, track, episode, show
+  const webMatch = url.match(/spotify\.com\/(?:intl-[a-z]+\/)?(playlist|album|track|episode|show)\/([a-zA-Z0-9]+)/);
+  if (webMatch) {
+    return `https://open.spotify.com/embed/${webMatch[1]}/${webMatch[2]}?utm_source=generator&theme=0`;
   }
-  // Handle spotify:playlist:ID
-  const uriMatch = url.match(/spotify:playlist:([a-zA-Z0-9]+)/);
+  // Handle spotify URI format (spotify:playlist:ID)
+  const uriMatch = url.match(/spotify:(playlist|album|track|episode|show):([a-zA-Z0-9]+)/);
   if (uriMatch) {
-    return `https://open.spotify.com/embed/playlist/${uriMatch[1]}?utm_source=generator&theme=0`;
+    return `https://open.spotify.com/embed/${uriMatch[1]}/${uriMatch[2]}?utm_source=generator&theme=0`;
   }
   return null;
 }
@@ -259,7 +260,14 @@ export default function PlaylistsTab() {
 
                     {/* Spotify / expand button */}
                     <button
-                      onClick={() => setExpandedId(isExpanded ? null : playlist.id)}
+                      onClick={() => {
+                        if (embedUrl) {
+                          setExpandedId(isExpanded ? null : playlist.id);
+                        } else {
+                          // No embeddable URL — open directly in Spotify
+                          window.open(playlist.spotify_url, "_blank");
+                        }
+                      }}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                         isExpanded
                           ? "bg-green-100 text-green-700"
