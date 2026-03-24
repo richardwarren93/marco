@@ -55,7 +55,7 @@ export default function SignupPage() {
   // Success confirmation
   if (success) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-white px-6">
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#faf9f7" }}>
         <div className="text-center space-y-4 max-w-sm">
           <span className="text-6xl block">📬</span>
           <h1 className="text-2xl font-black text-gray-900">Check your email!</h1>
@@ -76,7 +76,7 @@ export default function SignupPage() {
   // Email form
   if (mode === "email") {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
         {/* Compact hero */}
         <div className="relative">
           <div className="h-48 bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-300 flex items-center justify-center overflow-hidden">
@@ -119,7 +119,7 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none text-sm bg-gray-50"
+                className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
                 placeholder="you@example.com"
               />
             </div>
@@ -135,7 +135,7 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none text-sm bg-gray-50"
+                className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
                 placeholder="At least 6 characters"
               />
             </div>
@@ -143,7 +143,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
+              className="w-full py-3.5 px-4 bg-[#1a1410] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
             >
               {loading ? "Creating account..." : "Create account"}
             </button>
@@ -162,9 +162,9 @@ export default function SignupPage() {
 
   // Main choose screen
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
       {/* Hero illustration area */}
-      <div className="relative flex-1 min-h-[55vh] bg-gradient-to-b from-orange-50 via-amber-50 to-white flex flex-col items-center justify-center overflow-hidden">
+      <div className="relative flex-1 min-h-[55vh] bg-gradient-to-b from-[#fff4e8] via-[#fdf5ec] to-[#faf9f7] flex flex-col items-center justify-center overflow-hidden">
         <div className="absolute inset-0 opacity-[0.07]">
           <svg className="w-full h-full" viewBox="0 0 400 600" fill="none">
             <circle cx="50" cy="80" r="30" fill="currentColor" className="text-orange-500" />

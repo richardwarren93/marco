@@ -55,7 +55,7 @@ export default function LoginPage() {
   // Email sign-in form
   if (mode === "email") {
     return (
-      <div className="min-h-screen flex flex-col bg-white">
+      <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
         {/* Back button + compact hero */}
         <div className="relative">
           <div className="h-48 bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-300 flex items-center justify-center overflow-hidden">
@@ -99,7 +99,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none text-sm bg-gray-50"
+                className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
                 placeholder="you@example.com"
               />
             </div>
@@ -114,7 +114,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-transparent outline-none text-sm bg-gray-50"
+                className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
                 placeholder="••••••••"
               />
             </div>
@@ -122,7 +122,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
+              className="w-full py-3.5 px-4 bg-[#1a1410] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
             >
               {loading ? "Signing in..." : "Sign in"}
             </button>
@@ -141,9 +141,9 @@ export default function LoginPage() {
 
   // Main choose screen (matches the inspiration)
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
       {/* Hero illustration area */}
-      <div className="relative flex-1 min-h-[55vh] bg-gradient-to-b from-orange-50 via-amber-50 to-white flex flex-col items-center justify-center overflow-hidden">
+      <div className="relative flex-1 min-h-[55vh] bg-gradient-to-b from-[#fff4e8] via-[#fdf5ec] to-[#faf9f7] flex flex-col items-center justify-center overflow-hidden">
         {/* Background food pattern */}
         <div className="absolute inset-0 opacity-[0.07]">
           <svg className="w-full h-full" viewBox="0 0 400 600" fill="none">

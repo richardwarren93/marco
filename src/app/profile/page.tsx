@@ -112,11 +112,12 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="max-w-lg mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="w-20 h-20 rounded-full bg-gray-200 mx-auto" />
-          <div className="h-6 bg-gray-200 rounded w-32 mx-auto" />
-          <div className="h-20 bg-gray-200 rounded-2xl" />
+      <div className="max-w-lg mx-auto px-4 py-8" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+        <div className="space-y-4">
+          <div className="w-20 h-20 rounded-full skeleton-warm mx-auto" />
+          <div className="h-5 skeleton-warm rounded-2xl w-32 mx-auto" />
+          <div className="h-24 skeleton-warm rounded-3xl" />
+          <div className="h-32 skeleton-warm rounded-3xl" />
         </div>
       </div>
     );
@@ -130,7 +131,7 @@ export default function ProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-lg mx-auto px-4 py-8 space-y-6" style={{ background: "#faf9f7", minHeight: "100vh" }}>
       {/* Avatar & Name */}
       <div className="text-center">
         <button
@@ -198,7 +199,7 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={() => setEditing(true)}
-              className="text-xs text-gray-400 hover:text-orange-600 mt-1"
+              className="text-xs text-[#a09890] hover:text-orange-600 mt-1"
             >
               Edit name
             </button>
@@ -213,7 +214,7 @@ export default function ProfilePage() {
           { label: "Collections", value: stats.collections, Icon: CollectionsIcon, href: "/recipes?tab=collections" },
           { label: "Friends", value: stats.friends, Icon: FriendsIcon, href: "/friends" },
         ].map((stat) => (
-          <Link key={stat.label} href={stat.href} className="bg-white rounded-2xl shadow-sm p-3 text-center hover:shadow transition-shadow">
+          <Link key={stat.label} href={stat.href} className="bg-white rounded-3xl p-3 text-center transition-shadow" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
             <div className="text-orange-500 flex justify-center"><stat.Icon className="w-5 h-5" /></div>
             <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
             <p className="text-xs text-gray-500">{stat.label}</p>
@@ -235,7 +236,7 @@ export default function ProfilePage() {
 
       {/* Friend Code */}
       {profile && (
-        <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 text-center shadow-sm">
+        <div className="rounded-3xl p-5 text-center" style={{ background: "linear-gradient(135deg, #fff8f0 0%, #fef3e2 100%)", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
           <p className="text-xs text-gray-500 mb-1">Your Friend Code</p>
           <p className="text-2xl font-bold text-orange-600 tracking-widest mb-3">
             {profile.friend_code}
@@ -269,7 +270,7 @@ export default function ProfilePage() {
       <div className="space-y-2">
         <Link
           href="/friends"
-          className="flex items-center justify-between bg-white rounded-2xl shadow-sm p-4 hover:shadow transition-all"
+          className="flex items-center justify-between bg-white rounded-3xl p-4 transition-all" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
         >
           <div className="flex items-center gap-3">
             <FriendsIcon className="w-5 h-5 text-orange-500" />
@@ -279,7 +280,7 @@ export default function ProfilePage() {
         </Link>
         <Link
           href="/recipes"
-          className="flex items-center justify-between bg-white rounded-2xl shadow-sm p-4 hover:shadow transition-all"
+          className="flex items-center justify-between bg-white rounded-3xl p-4 transition-all" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
         >
           <div className="flex items-center gap-3">
             <RecipesIcon className="w-5 h-5 text-orange-500" />
@@ -292,7 +293,7 @@ export default function ProfilePage() {
       {/* Logout */}
       <button
         onClick={handleLogout}
-        className="w-full py-3 text-red-500 text-sm font-medium hover:bg-red-50 rounded-2xl transition-colors"
+        className="w-full py-3 text-red-400 text-sm font-medium hover:bg-red-50 rounded-3xl transition-colors"
       >
         Log out
       </button>
