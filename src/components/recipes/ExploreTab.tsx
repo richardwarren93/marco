@@ -4,6 +4,21 @@ import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { PromptRecipeResult } from "@/lib/claude";
 
+interface TrendingRecipe {
+  recipeId: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  tags: string[];
+  meal_type: string;
+  servings: number | null;
+  prep_time_minutes: number | null;
+  cook_time_minutes: number | null;
+  source_url: string | null;
+  saveCount: number;
+  userCount: number;
+}
+
 // ─── Suggestion categories ──────────────────────────────────────────────────
 const CATEGORIES = [
   { label: "Quick weeknight", emoji: "🍳", prompt: "Quick weeknight dinner under 30 minutes" },
@@ -27,7 +42,26 @@ export default function ExploreTab() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [trending, setTrending] = useState<TrendingRecipe[]>([]);
+  const [trendingLoading, setTrendingLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Fetch trending recipes on mount
+  useEffect(() => {
+    async function fetchTrending() {
+      try {
+        const res = await fetch("/api/recipes/trending");
+        if (!res.ok) return;
+        const data = await res.json();
+        setTrending(data.trending || []);
+      } catch {
+        // ignore
+      } finally {
+        setTrendingLoading(false);
+      }
+    }
+    fetchTrending();
+  }, []);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -239,18 +273,97 @@ export default function ExploreTab() {
         </div>
       )}
 
-      {/* Empty landing tips */}
+      {/* Empty landing tips + Trending */}
       {showLanding && (
-        <div className="text-center pt-4">
-          <div className="inline-flex flex-col items-center gap-2 text-gray-300">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <p className="text-xs">Try a category above or type anything</p>
+        <>
+          <div className="text-center pt-4 pb-6">
+            <div className="inline-flex flex-col items-center gap-2 text-gray-300">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
+              <p className="text-xs">Try a category above or type anything</p>
+            </div>
           </div>
-        </div>
+
+          {/* Trending / Popular recipes */}
+          {trendingLoading ? (
+            <div className="space-y-3 pt-2">
+              <div className="h-4 bg-gray-100 rounded w-40 animate-pulse" />
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
+                ))}
+              </div>
+            </div>
+          ) : trending.length > 0 && (
+            <div className="pt-2">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-base">🔥</span>
+                <h3 className="text-sm font-semibold text-gray-900">Popular in the community</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {trending.map((recipe) => (
+                  <TrendingCard key={recipe.recipeId} recipe={recipe} />
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
+  );
+}
+
+// ─── Trending card ──────────────────────────────────────────────────────────
+function TrendingCard({ recipe }: { recipe: TrendingRecipe }) {
+  const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
+
+  return (
+    <a
+      href={`/recipes/${recipe.recipeId}`}
+      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group"
+    >
+      {recipe.image_url ? (
+        <div className="h-28 sm:h-32 bg-gray-100 overflow-hidden relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={recipe.image_url}
+            alt={recipe.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+          {recipe.userCount > 1 && (
+            <div className="absolute top-2 left-2">
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500 text-white">
+                {recipe.userCount} saves
+              </span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="h-20 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center relative">
+          <span className="text-2xl">
+            {recipe.meal_type === "breakfast" ? "🌅" : recipe.meal_type === "lunch" ? "☀️" : recipe.meal_type === "snack" ? "🍎" : "🍽️"}
+          </span>
+          {recipe.userCount > 1 && (
+            <div className="absolute top-2 left-2">
+              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500 text-white">
+                {recipe.userCount} saves
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+      <div className="p-3">
+        <h4 className="font-semibold text-gray-900 text-xs leading-tight line-clamp-2 mb-1">
+          {recipe.title}
+        </h4>
+        <div className="flex items-center gap-2 text-[10px] text-gray-400">
+          {totalTime > 0 && <span>{totalTime}m</span>}
+          {recipe.servings && <span>Serves {recipe.servings}</span>}
+        </div>
+      </div>
+    </a>
   );
 }
 
