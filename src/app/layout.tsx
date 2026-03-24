@@ -60,7 +60,7 @@ export default function RootLayout({
             });
           }
         `}</Script>
-        <Navbar />
+<Navbar />
         <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">{children}</main>
         <BottomTabBar />
       </body>

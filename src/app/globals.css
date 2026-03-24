@@ -106,6 +106,33 @@ body {
 .animate-confetti     { animation: confetti-fall 1.2s ease-out forwards; }
 .animate-shine        { animation: shine-sweep 1.2s ease-in-out 0.4s forwards; }
 
+/* ── Finch-style entrance animations ─────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes cardPop {
+  0%   { opacity: 0; transform: scale(0.94) translateY(8px); }
+  70%  { transform: scale(1.01); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes warmFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes shimmerWarm {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.animate-fade-slide-up  { animation: fadeSlideUp 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-card-pop       { animation: cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) both; }
+.animate-warm-fade      { animation: warmFadeIn 0.35s ease both; }
+.skeleton-warm {
+  background: linear-gradient(90deg, #f5f0eb 25%, #ede8e0 50%, #f5f0eb 75%);
+  background-size: 400px 100%;
+  animation: shimmerWarm 1.4s ease-in-out infinite;
+}
+
 /* Hide scrollbar for horizontal scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;
