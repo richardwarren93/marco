@@ -300,9 +300,12 @@ export default function GroceryList() {
     <div className="bg-gray-50 pb-24">
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 px-4 pt-3 pb-3">
-        <div className="flex items-center justify-between mb-0.5 max-w-3xl mx-auto">
-          <h1 className="text-xl font-bold text-gray-900">Grocery</h1>
+      <div className="bg-white border-b border-gray-100 px-4 sticky top-0 z-10">
+        <div className="flex items-center justify-between max-w-3xl mx-auto h-14">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Grocery</h1>
+            <p className="text-xs text-gray-400 -mt-0.5">{formatRangeLabel(dateRange.start, dateRange.end)}</p>
+          </div>
           {/* Range selector */}
           <div className="relative">
             <button
@@ -374,9 +377,6 @@ export default function GroceryList() {
             )}
           </div>
         </div>
-        <p className="text-xs text-gray-400 max-w-3xl mx-auto">
-          {formatRangeLabel(dateRange.start, dateRange.end)}
-        </p>
       </div>
 
       {/* Centered content container */}

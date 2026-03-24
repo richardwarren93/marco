@@ -236,7 +236,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   return (
     <div className="flex flex-col bg-gray-50">
       {/* ── Sticky header ─────────────────────────────────────────── */}
-      <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+      <div className="bg-white border-b border-gray-100">
         <div className="max-w-5xl mx-auto">
 
         {/* Pick mode: back button + title */}
