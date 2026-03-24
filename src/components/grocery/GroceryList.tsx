@@ -301,7 +301,7 @@ export default function GroceryList() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 px-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between max-w-3xl mx-auto h-14">
+        <div className="flex items-center justify-between max-w-5xl mx-auto h-14">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Grocery</h1>
             <p className="text-xs text-gray-400 -mt-0.5">{formatRangeLabel(dateRange.start, dateRange.end)}</p>
