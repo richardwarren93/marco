@@ -23,15 +23,14 @@ export default function EatsStatusTabs({ active, onChange, counts }: EatsStatusT
         <button
           key={tab.value}
           onClick={() => onChange(tab.value)}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-            active === tab.value
-              ? "bg-orange-600 text-white"
-              : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-          }`}
+          className="px-4 py-1.5 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+          style={active === tab.value
+            ? { background: "#1a1410", color: "white" }
+            : { background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
         >
           {tab.label}
           {counts[tab.value] > 0 && (
-            <span className={`ml-1.5 ${active === tab.value ? "text-orange-200" : "text-gray-400"}`}>
+            <span className="ml-1.5" style={{ color: active === tab.value ? "rgba(255,255,255,0.6)" : "#c4b8af" }}>
               {counts[tab.value]}
             </span>
           )}

@@ -44,12 +44,12 @@ export default function FriendsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8">
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8" style={{ background: "#faf9f7", minHeight: "100vh" }}>
         <div className="space-y-4">
-          <div className="h-8 bg-gray-100 rounded-full animate-pulse w-32" />
-          <div className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
-          <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
-          <div className="h-20 bg-gray-100 rounded-2xl animate-pulse" />
+          <div className="h-8 skeleton-warm rounded-2xl w-32" />
+          <div className="h-40 skeleton-warm rounded-3xl" />
+          <div className="h-20 skeleton-warm rounded-3xl" />
+          <div className="h-20 skeleton-warm rounded-3xl" />
         </div>
       </div>
     );
@@ -58,10 +58,11 @@ export default function FriendsPage() {
   const pendingCount = incoming.length;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-        <FriendsIcon className="w-7 h-7 text-orange-600" /> Friends
-      </h1>
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 animate-fade-slide-up" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+      <div>
+        <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Friends</h1>
+        <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Cook & share with friends</p>
+      </div>
 
       {/* Your Code */}
       {profile && (
@@ -72,8 +73,8 @@ export default function FriendsPage() {
       )}
 
       {/* Add Friend */}
-      <div className="bg-white rounded-2xl shadow-sm p-5">
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+      <div className="rounded-3xl p-5" style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+        <h2 className="text-base font-bold mb-3" style={{ color: "#1a1410" }}>
           Add a Friend
         </h2>
         <AddFriendForm onRequestSent={loadAll} />
@@ -82,10 +83,10 @@ export default function FriendsPage() {
       {/* Pending Requests */}
       {(incoming.length > 0 || outgoing.length > 0) && (
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+          <h2 className="text-base font-bold mb-3 flex items-center gap-2" style={{ color: "#1a1410" }}>
             Pending Requests
             {pendingCount > 0 && (
-              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-orange-600 text-white text-xs font-bold">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold" style={{ background: "#f97316" }}>
                 {pendingCount}
               </span>
             )}
@@ -115,19 +116,19 @@ export default function FriendsPage() {
 
       {/* Friends List */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+        <h2 className="text-base font-bold mb-3 flex items-center gap-1.5" style={{ color: "#1a1410" }}>
           My Friends
           {friends.length > 0 && (
-            <span className="ml-2 text-sm font-normal text-gray-400">
+            <span className="text-sm font-normal" style={{ color: "#a09890" }}>
               ({friends.length})
             </span>
           )}
         </h2>
         {friends.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-            <div className="text-gray-300 flex justify-center mb-3"><FriendsIcon className="w-12 h-12" /></div>
-            <p className="text-gray-500">No friends yet</p>
-            <p className="text-gray-400 text-sm mt-1">
+          <div className="text-center py-12 rounded-3xl" style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+            <div className="flex justify-center mb-3" style={{ color: "#d4c9be" }}><FriendsIcon className="w-12 h-12" /></div>
+            <p style={{ color: "#a09890" }}>No friends yet</p>
+            <p className="text-sm mt-1" style={{ color: "#c4b8af" }}>
               Share your code or enter a friend&apos;s code above!
             </p>
           </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import RestaurantCard from "@/components/eats/RestaurantCard";
 import EatsStatusTabs, { type TabValue } from "@/components/eats/EatsStatusTabs";
 import AddRestaurantForm from "@/components/eats/AddRestaurantForm";
@@ -113,16 +113,18 @@ export default function EatsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8">
+    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 animate-fade-slide-up" style={{ background: "#faf9f7", minHeight: "100vh" }}>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <EatsIcon className="w-7 h-7 text-orange-600" /> Eats
-          </h1>
+        <div>
+          <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Eats</h1>
+          <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Your restaurant diary</p>
+        </div>
         <button
           onClick={() => setShowAdd(true)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm"
+          className="px-4 py-2.5 rounded-2xl text-sm font-bold text-white active:scale-95 transition-transform shadow-sm"
+          style={{ background: "#1a1410" }}
         >
-          + Add Restaurant
+          + Add
         </button>
       </div>
 
@@ -130,19 +132,24 @@ export default function EatsPage() {
       {loading ? (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse" />
+            <div key={i} className="h-24 skeleton-warm rounded-3xl" />
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          {statCards.map((stat) => (
+          {statCards.map((stat, i) => (
             <div
               key={stat.key}
-              className={`bg-gradient-to-br ${stat.gradient} rounded-2xl p-4 text-white shadow-sm`}
+              className="rounded-3xl p-4"
+              style={{
+                background: "white",
+                boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+                animation: `cardPop 0.4s ease ${i * 60}ms both`,
+              }}
             >
-              <stat.Icon className="w-6 h-6 mb-1" />
-              <p className="text-2xl font-bold">{statValues[stat.key]}</p>
-              <p className="text-white/80 text-xs mt-0.5">{stat.label}</p>
+              <div className="text-orange-500 mb-1"><stat.Icon className="w-5 h-5" /></div>
+              <p className="text-2xl font-black" style={{ color: "#1a1410" }}>{statValues[stat.key]}</p>
+              <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -154,23 +161,25 @@ export default function EatsPage() {
       {/* Search + Sort */}
       <div className="flex gap-3 mt-4 mb-6">
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"><SearchIcon className="w-4 h-4" /></span>
+          <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "#a09890" }}><SearchIcon className="w-4 h-4" /></span>
           <input
             type="text"
             placeholder="Search restaurants..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white rounded-full shadow-sm border-0 focus:ring-2 focus:ring-orange-500 outline-none text-sm"
+            className="w-full pl-9 pr-4 py-2.5 rounded-2xl border-0 outline-none text-sm"
+            style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", color: "#1a1410" }}
           />
         </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
-          className="bg-white rounded-full shadow-sm px-4 py-2.5 text-sm border-0 focus:ring-2 focus:ring-orange-500 outline-none appearance-none cursor-pointer"
+          className="rounded-2xl px-4 py-2.5 text-sm border-0 outline-none appearance-none cursor-pointer"
+          style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", color: "#1a1410" }}
         >
-          <option value="updated_at">Recently Updated</option>
-          <option value="name">Name A–Z</option>
-          <option value="rating">Highest Rated</option>
+          <option value="updated_at">Recent</option>
+          <option value="name">A–Z</option>
+          <option value="rating">Top Rated</option>
         </select>
       </div>
 
@@ -178,17 +187,17 @@ export default function EatsPage() {
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-48 bg-white rounded-2xl shadow-sm animate-pulse" />
+            <div key={i} className="h-48 skeleton-warm rounded-3xl" />
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-          <div className="text-gray-300 flex justify-center mb-3">
+        <div className="text-center py-16 rounded-3xl" style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+          <div className="flex justify-center mb-3" style={{ color: "#d4c9be" }}>
             {restaurants.length === 0
               ? <EatsIcon className="w-12 h-12" />
               : <SearchIcon className="w-12 h-12" />}
           </div>
-          <p className="text-gray-500 mb-3">
+          <p className="mb-3" style={{ color: "#a09890" }}>
             {restaurants.length === 0
               ? "No restaurants tracked yet"
               : "No restaurants match your filters"}
@@ -196,7 +205,8 @@ export default function EatsPage() {
           {restaurants.length === 0 && (
             <button
               onClick={() => setShowAdd(true)}
-              className="text-orange-600 hover:text-orange-700 font-medium text-sm"
+              className="text-sm font-semibold"
+              style={{ color: "#f97316" }}
             >
               Add your first restaurant →
             </button>
@@ -204,11 +214,12 @@ export default function EatsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((restaurant) => (
+          {filtered.map((restaurant, i) => (
             <RestaurantCard
               key={restaurant.id}
               restaurant={restaurant}
               onToggleGoBack={handleToggleGoBack}
+              index={i}
             />
           ))}
         </div>

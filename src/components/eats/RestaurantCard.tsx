@@ -55,19 +55,27 @@ function StarRating({ rating }: { rating: number }) {
 interface RestaurantCardProps {
   restaurant: Restaurant;
   onToggleGoBack?: (id: string, value: boolean) => void;
+  index?: number;
 }
 
-export default function RestaurantCard({ restaurant, onToggleGoBack }: RestaurantCardProps) {
+export default function RestaurantCard({ restaurant, onToggleGoBack, index = 0 }: RestaurantCardProps) {
   const status = statusLabels[restaurant.status];
 
   return (
     <Link href={`/eats/${restaurant.id}`}>
-      <div className={`bg-white rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 p-5 cursor-pointer relative overflow-hidden`}>
+      <div
+        className="bg-white rounded-3xl cursor-pointer relative overflow-hidden active:scale-[0.98] transition-transform duration-150"
+        style={{
+          boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
+          animation: `cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) ${index * 50}ms both`,
+          padding: "18px 20px",
+        }}
+      >
         {/* Subtle gradient accent */}
         <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${statusAccent[restaurant.status]}`} />
 
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-gray-900 leading-tight">
+          <h3 className="font-bold leading-tight" style={{ color: "#1a1410" }}>
             {restaurant.name}
           </h3>
           <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${status.bg}`}>
@@ -107,7 +115,7 @@ export default function RestaurantCard({ restaurant, onToggleGoBack }: Restauran
           </div>
         )}
 
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+        <div className="flex items-center justify-between mt-3 pt-3 border-t" style={{ borderColor: "#f0ebe4" }}>
           <div className="flex items-center gap-3 text-[11px] text-gray-400">
             {restaurant.visit_count !== undefined && restaurant.visit_count > 0 && (
               <span>{restaurant.visit_count} visit{restaurant.visit_count !== 1 ? "s" : ""}</span>

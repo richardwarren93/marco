@@ -191,7 +191,7 @@ export default function ProfilePage() {
         ) : (
           <div className="mt-3">
             <div className="flex items-center justify-center gap-2">
-              <h1 className="text-xl font-bold text-gray-900">{profile?.display_name}</h1>
+              <h1 className="text-xl font-bold" style={{ color: "#1a1410" }}>{profile?.display_name}</h1>
               <div className="flex items-center gap-1 bg-orange-50 px-2 py-0.5 rounded-full">
                 <TomatoIcon className="w-4 h-4 text-orange-500" />
                 <span className="text-sm font-semibold text-orange-600">{stats.tomatoes}</span>
@@ -216,8 +216,8 @@ export default function ProfilePage() {
         ].map((stat) => (
           <Link key={stat.label} href={stat.href} className="bg-white rounded-3xl p-3 text-center transition-shadow" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
             <div className="text-orange-500 flex justify-center"><stat.Icon className="w-5 h-5" /></div>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
-            <p className="text-xs text-gray-500">{stat.label}</p>
+            <p className="text-2xl font-black mt-1" style={{ color: "#1a1410" }}>{stat.value}</p>
+            <p className="text-xs" style={{ color: "#a09890" }}>{stat.label}</p>
           </Link>
         ))}
       </div>
