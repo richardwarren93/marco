@@ -76,6 +76,36 @@ body {
   to { stroke-dashoffset: 0; }
 }
 
+/* Badge achievement animations */
+@keyframes badge-zoom-in {
+  0%   { transform: scale(0.2) rotate(-12deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(4deg);  opacity: 1; }
+  80%  { transform: scale(0.93) rotate(-2deg); }
+  100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+}
+@keyframes badge-glow-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.8; transform: scale(1.15); }
+}
+@keyframes sparkle-shoot {
+  0%   { transform: translate(0,0) scale(1); opacity: 1; }
+  100% { transform: var(--tx,40px) var(--ty,-60px) scale(0); opacity: 0; }
+}
+@keyframes confetti-fall {
+  0%   { transform: translateY(120%) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; }
+}
+@keyframes shine-sweep {
+  0%   { left: -80%; }
+  100% { left: 130%; }
+}
+
+.animate-badge-zoom   { animation: badge-zoom-in 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.animate-badge-glow   { animation: badge-glow-pulse 1.8s ease-in-out infinite; }
+.animate-sparkle      { animation: sparkle-shoot 0.7s ease-out forwards; }
+.animate-confetti     { animation: confetti-fall 1.2s ease-out forwards; }
+.animate-shine        { animation: shine-sweep 1.2s ease-in-out 0.4s forwards; }
+
 /* Hide scrollbar for horizontal scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;
