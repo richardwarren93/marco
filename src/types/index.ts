@@ -34,6 +34,7 @@ export interface Collection {
   created_at: string;
   updated_at: string;
   recipe_count?: number;
+  preview_images?: string[];
 }
 
 export interface CollectionRecipe {

@@ -23,18 +23,40 @@ export async function GET() {
 
     if (error) throw error;
 
-    // Fetch recipe counts
-    const withCounts = await Promise.all(
+    // Fetch recipe counts + preview images (up to 4 per collection)
+    const withCountsAndPreviews = await Promise.all(
       (cols || []).map(async (col) => {
-        const { count } = await admin
-          .from("collection_recipes")
-          .select("*", { count: "exact", head: true })
-          .eq("collection_id", col.id);
-        return { ...col, recipe_count: count || 0 };
+        const [{ count }, { data: previewRows }] = await Promise.all([
+          admin
+            .from("collection_recipes")
+            .select("*", { count: "exact", head: true })
+            .eq("collection_id", col.id),
+          admin
+            .from("collection_recipes")
+            .select("recipe_id")
+            .eq("collection_id", col.id)
+            .order("added_at", { ascending: false })
+            .limit(4),
+        ]);
+
+        let preview_images: string[] = [];
+        if (previewRows && previewRows.length > 0) {
+          const { data: recipes } = await admin
+            .from("recipes")
+            .select("image_url")
+            .in("id", previewRows.map((r) => r.recipe_id))
+            .not("image_url", "is", null);
+          preview_images = (recipes || [])
+            .map((r) => r.image_url)
+            .filter(Boolean)
+            .slice(0, 4);
+        }
+
+        return { ...col, recipe_count: count || 0, preview_images };
       })
     );
 
-    return NextResponse.json({ collections: withCounts });
+    return NextResponse.json({ collections: withCountsAndPreviews });
   } catch (error) {
     console.error("Fetch collections error:", error);
     return NextResponse.json(
