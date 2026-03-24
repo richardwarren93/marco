@@ -193,7 +193,7 @@ export default function FriendsRecipeTable({
   }
 
   return (
-    <div className="px-4 pb-28 space-y-2.5">
+    <div className="px-4 pb-28 space-y-2.5 max-w-3xl mx-auto">
       {/* Section: Friends cooking now */}
       {recipes.some((r) => r.is_planned) && (
         <>

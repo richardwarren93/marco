@@ -79,11 +79,11 @@ function BrowserCard({
 
   return (
     <div
-      className="relative bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] transition-transform"
+      className="relative bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer active:scale-[0.98] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
       onClick={handleCardClick}
     >
       {/* Image */}
-      <div className="relative h-28 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
+      <div className="relative h-32 sm:h-40 lg:h-44 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
         {recipe.image_url ? (
           <img
             src={recipe.image_url}
@@ -104,18 +104,18 @@ function BrowserCard({
         )}
 
         {mode === "library" && (
-          <div className="absolute top-1.5 right-1.5 flex gap-1">
+          <div className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 flex gap-1 sm:gap-1.5">
             {onCollection && (
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onCollection();
                 }}
-                className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
+                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
                 aria-label="Add to collection"
               >
                 <svg
-                  className="w-3 h-3 text-gray-700"
+                  className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-700"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -131,11 +131,11 @@ function BrowserCard({
                   e.stopPropagation();
                   onAdd();
                 }}
-                className="w-6 h-6 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
+                className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow hover:bg-white transition-colors"
                 aria-label="Add to meal plan"
               >
                 <svg
-                  className="w-3 h-3 text-gray-700"
+                  className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-700"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -150,12 +150,12 @@ function BrowserCard({
       </div>
 
       {/* Content */}
-      <div className="p-2">
-        <p className="text-xs font-semibold text-gray-900 line-clamp-2 leading-snug">
+      <div className="p-2 sm:p-3">
+        <p className="text-xs sm:text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
           {recipe.title}
         </p>
         {totalTime > 0 && (
-          <p className="text-[10px] text-gray-400 mt-0.5">{totalTime} min</p>
+          <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">{totalTime} min</p>
         )}
       </div>
     </div>
@@ -237,6 +237,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
     <div className="flex flex-col bg-gray-50">
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+        <div className="max-w-5xl mx-auto">
 
         {/* Pick mode: back button + title */}
         {props.mode === "pick" && (
@@ -373,10 +374,11 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             </button>
           )}
         </div>
+        </div>{/* close max-w-5xl */}
       </div>
 
       {/* ── Scrollable body ────────────────────────────────────────── */}
-      <div className="flex-1 px-4 py-4 pb-28 overflow-y-auto">
+      <div className="flex-1 px-4 py-4 pb-28 overflow-y-auto max-w-5xl mx-auto w-full">
 
         {/* Collections row — library only */}
         {props.mode === "library" && props.collections.length > 0 && (
@@ -407,10 +409,10 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
 
         {/* Loading skeleton */}
         {isLoading ? (
-          <div className="grid grid-cols-2 gap-3">
-            {[...Array(6)].map((_, i) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {[...Array(8)].map((_, i) => (
               <div key={i} className="bg-white rounded-xl overflow-hidden shadow-sm">
-                <div className="h-28 bg-gray-100 animate-pulse" />
+                <div className="h-32 sm:h-40 lg:h-44 bg-gray-100 animate-pulse" />
                 <div className="p-2 space-y-1.5">
                   <div className="h-2.5 bg-gray-100 rounded-full animate-pulse w-4/5" />
                   <div className="h-2.5 bg-gray-100 rounded-full animate-pulse w-2/5" />
@@ -445,7 +447,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         ) : (
           /* Recipe grid */
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {filtered.map((recipe) => (
               <BrowserCard
                 key={recipe.id}
