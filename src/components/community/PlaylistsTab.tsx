@@ -146,7 +146,7 @@ export default function PlaylistsTab() {
       {/* Header + Sort */}
       <div className="flex items-center justify-between mb-4">
         <p className="text-sm text-gray-500">
-          Dinner party playlists from the community
+          Cooking playlists from the community
         </p>
         <div className="flex items-center bg-gray-100 rounded-full p-0.5">
           <button
