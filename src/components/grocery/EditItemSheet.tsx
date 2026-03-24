@@ -83,7 +83,7 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
 
       {/* Sheet */}
       <div
-        className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl flex flex-col"
+        className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl flex flex-col sm:max-w-lg sm:mx-auto sm:rounded-2xl sm:bottom-4"
         style={{
           maxHeight: "85dvh",
           paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",

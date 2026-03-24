@@ -368,7 +368,7 @@ export default function AddMealSheet({
     return (
       <div className="fixed inset-0 bg-black/40 z-[60]" onClick={exitSearchMode}>
         <div
-          className="fixed left-0 right-0 bg-white flex flex-col shadow-xl overflow-hidden"
+          className="fixed left-0 right-0 bg-white flex flex-col shadow-xl overflow-hidden sm:max-w-lg sm:mx-auto sm:rounded-2xl"
           style={sheetStyle}
           onClick={(e) => e.stopPropagation()}
         >
@@ -509,10 +509,10 @@ export default function AddMealSheet({
 
   // ─── Normal mode: compact form ──────────────────────────────────────────────
   return (
-    <div className="fixed inset-0 bg-black/40 z-[60] flex items-end" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 z-[60] flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
       <div
         ref={sheetRef}
-        className="bg-white w-full rounded-t-3xl max-h-[88dvh] flex flex-col shadow-xl"
+        className="bg-white w-full rounded-t-3xl max-h-[88dvh] flex flex-col shadow-xl sm:max-w-lg sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}

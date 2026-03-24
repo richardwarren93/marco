@@ -130,9 +130,9 @@ export default function QuickAddSheet({
 
   return (
     // Backdrop — click to close
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
       <div
-        className="bg-white w-full rounded-t-3xl max-h-[85vh] flex flex-col shadow-xl"
+        className="bg-white w-full rounded-t-3xl max-h-[85vh] flex flex-col shadow-xl sm:max-w-lg sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Drag handle */}

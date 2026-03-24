@@ -39,11 +39,11 @@ export default function RecipePreviewSheet({
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-[60] flex items-end"
+      className="fixed inset-0 bg-black/50 z-[60] flex items-end sm:items-center sm:justify-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="bg-white w-full rounded-t-3xl shadow-2xl"
+        className="bg-white w-full rounded-t-3xl shadow-2xl sm:max-w-lg sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}

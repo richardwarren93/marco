@@ -65,7 +65,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
 
       {/* Sheet */}
       <div
-        className="fixed inset-x-0 bottom-0 z-[70] bg-white rounded-t-2xl shadow-2xl"
+        className="fixed inset-x-0 bottom-0 z-[70] bg-white rounded-t-2xl shadow-2xl sm:max-w-lg sm:mx-auto sm:rounded-2xl sm:bottom-4"
         style={{ paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))" }}
       >
         {/* Handle */}

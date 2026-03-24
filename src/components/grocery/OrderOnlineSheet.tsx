@@ -225,7 +225,7 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
   return (
     // z-[60] to overlay above bottom tab bar (z-50)
     // Full-screen takeover on mobile to avoid iOS Safari bottom bar clipping
-    <div className="fixed inset-0 z-[60] flex flex-col bg-white">
+    <div className="fixed inset-0 z-[60] flex flex-col bg-white sm:inset-4 sm:rounded-2xl sm:shadow-2xl sm:max-w-2xl sm:mx-auto sm:my-auto sm:max-h-[90vh]">
       {/* No backdrop — full screen page */}
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
