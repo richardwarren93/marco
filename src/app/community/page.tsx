@@ -8,7 +8,7 @@ import PlaylistsTab from "@/components/community/PlaylistsTab";
 type Tab = "join" | "playlists";
 
 export default function CommunityPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("playlists");
+  const [activeTab, setActiveTab] = useState<Tab>("join");
   const router = useRouter();
 
   return (
