@@ -44,13 +44,11 @@ export default function Navbar() {
   const pathname = usePathname();
   const supabase = createClient();
 
-  // Hide on auth and onboarding pages
-  if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding")) {
-    return null;
-  }
+  const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding");
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  // All hooks must be called unconditionally — guard with isAuthPage inside
   useEffect(() => {
+    if (isAuthPage) return;
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
 
     const {
@@ -60,10 +58,9 @@ export default function Navbar() {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [isAuthPage]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close menu on outside click
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -75,6 +72,11 @@ export default function Navbar() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showMenu]);
+
+  // Hide on auth and onboarding pages — after all hooks
+  if (isAuthPage) {
+    return null;
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut();
