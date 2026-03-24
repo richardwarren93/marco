@@ -34,7 +34,7 @@ export default function ScheduleScreen({
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Sticky header */}
       <div className="bg-white px-4 pt-5 pb-3 border-b border-gray-100 sticky top-0 z-10">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between max-w-3xl mx-auto">
           <h1 className="text-xl font-bold text-gray-900">Meal plan</h1>
           <div className="flex items-center gap-2">
             <button
@@ -60,7 +60,7 @@ export default function ScheduleScreen({
 
       {/* Schedule content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-4">
+        <div className="px-4 py-4 max-w-3xl mx-auto">
           <MealPlanListView
             mealPlans={mealPlans}
             householdPlans={householdPlans}

@@ -74,7 +74,7 @@ export default function AnalyzeScreen({
     <div className="flex flex-col min-h-screen bg-gray-50 pb-24">
       {/* Header */}
       <div className="bg-white px-4 pt-5 pb-4 border-b border-gray-100">
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-3 max-w-3xl mx-auto">
           <button
             onClick={onBack}
             className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
@@ -131,7 +131,7 @@ export default function AnalyzeScreen({
 
       {/* Results */}
       {!loading && !error && insights && (
-        <div className="px-4 py-5 space-y-4">
+        <div className="px-4 py-5 space-y-4 max-w-3xl mx-auto">
 
           {/* ── Score Hero Card ──────────────────────────────────────── */}
           <div className={`bg-gradient-to-br ${getScoreBg(insights.overallScore)} rounded-2xl p-6 text-center border border-white/50 shadow-sm`}>

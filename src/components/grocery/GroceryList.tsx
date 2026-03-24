@@ -301,7 +301,7 @@ export default function GroceryList() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-gray-100 px-4 pt-3 pb-3">
-        <div className="flex items-center justify-between mb-0.5">
+        <div className="flex items-center justify-between mb-0.5 max-w-3xl mx-auto">
           <h1 className="text-xl font-bold text-gray-900">Grocery</h1>
           {/* Range selector */}
           <div className="relative">
@@ -374,10 +374,13 @@ export default function GroceryList() {
             )}
           </div>
         </div>
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-gray-400 max-w-3xl mx-auto">
           {formatRangeLabel(dateRange.start, dateRange.end)}
         </p>
       </div>
+
+      {/* Centered content container */}
+      <div className="max-w-3xl mx-auto">
 
       {error && (
         <div className="mx-4 mt-3 px-4 py-2.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
@@ -594,6 +597,8 @@ export default function GroceryList() {
           )}
         </div>
       )}
+
+      </div>{/* close max-w-3xl container */}
 
       {/* Generating overlay */}
       {generating && (
