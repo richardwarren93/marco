@@ -125,7 +125,7 @@ function RecipesInner() {
 
       <div className="max-w-5xl mx-auto px-4 pt-3 sm:pt-4">
         {/* Segmented control + Import button */}
-        <div className="flex items-center gap-3 mb-4 sm:mb-5">
+        <div className="flex items-center justify-between mb-4 sm:mb-5">
         <div className="flex items-center gap-1 bg-gray-100 rounded-xl p-1 max-w-[440px]">
           <button
             onClick={() => setActiveTab("recipes")}
