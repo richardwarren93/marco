@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWeekStart, TOMATO_REWARDS } from "@/lib/gamification";
+import { getOrCreateRecentlyMadeCollection } from "@/lib/collections";
 
 export async function GET() {
   const supabase = await createClient();
@@ -141,6 +142,24 @@ export async function POST(request: Request) {
 
         goalJustCompleted = true;
       }
+    }
+
+    // 5. Add to "Recently Made" collection
+    try {
+      const recentlyMadeId = await getOrCreateRecentlyMadeCollection(admin, user.id);
+      await admin
+        .from("collection_recipes")
+        .upsert(
+          {
+            collection_id: recentlyMadeId,
+            recipe_id,
+            added_at: new Date().toISOString(),
+          },
+          { onConflict: "collection_id,recipe_id" }
+        );
+    } catch (recentlyMadeError) {
+      console.error("Failed to add to Recently Made:", recentlyMadeError);
+      // Non-blocking: don't fail the cooking log
     }
 
     return NextResponse.json({

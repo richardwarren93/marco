@@ -7,22 +7,24 @@ interface Props {
   recipeId: string;
   isOpen: boolean;
   onClose: () => void;
+  defaultName?: string;
 }
 
-export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Props) {
+export default function AddToCollectionModal({ recipeId, isOpen, onClose, defaultName }: Props) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingId, setAddingId] = useState<string | null>(null);
   const [successId, setSuccessId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [newName, setNewName] = useState("");
+  const [newName, setNewName] = useState(defaultName || "");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
+      setNewName(defaultName || "");
       fetchCollections();
     }
-  }, [isOpen]);
+  }, [isOpen, defaultName]);
 
   async function fetchCollections() {
     setLoading(true);

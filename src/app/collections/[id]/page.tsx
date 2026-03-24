@@ -7,6 +7,7 @@ import ShareCollectionModal from "@/components/collections/ShareCollectionModal"
 import Link from "next/link";
 import type { Collection, Recipe } from "@/types";
 import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
+import { RECENTLY_MADE_COLLECTION_NAME } from "@/lib/collections";
 
 export default function CollectionDetailPage() {
   const { id } = useParams();
@@ -23,6 +24,7 @@ export default function CollectionDetailPage() {
   const [showShare, setShowShare] = useState(false);
   const [showShareWithFriends, setShowShareWithFriends] = useState(false);
   const [removingRecipeId, setRemovingRecipeId] = useState<string | null>(null);
+  const [addedAtMap, setAddedAtMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
     async function fetchData() {
@@ -36,6 +38,7 @@ export default function CollectionDetailPage() {
         setCollection(data.collection as Collection);
         setRecipes((data.recipes as Recipe[]) || []);
         setIsOwner(data.isOwner);
+        setAddedAtMap(data.addedAtMap || {});
         setEditName(data.collection.name);
         setEditDescription(data.collection.description || "");
       } catch (error) {
@@ -182,19 +185,23 @@ export default function CollectionDetailPage() {
                 >
                   Share Link
                 </button>
-                <button
-                  onClick={() => setEditing(true)}
-                  className="text-gray-600 hover:text-gray-900 text-sm font-medium"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium"
-                >
-                  {deleting ? "Deleting..." : "Delete"}
-                </button>
+                {collection.name !== RECENTLY_MADE_COLLECTION_NAME && (
+                  <>
+                    <button
+                      onClick={() => setEditing(true)}
+                      className="text-gray-600 hover:text-gray-900 text-sm font-medium"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
+                    >
+                      {deleting ? "Deleting..." : "Delete"}
+                    </button>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -210,6 +217,15 @@ export default function CollectionDetailPage() {
           {recipes.map((recipe) => (
             <div key={recipe.id} className="relative">
               <RecipeCard recipe={recipe} />
+              {addedAtMap[recipe.id] && collection?.name === RECENTLY_MADE_COLLECTION_NAME && (
+                <p className="text-xs text-gray-400 mt-1.5 px-1">
+                  Last made: {new Date(addedAtMap[recipe.id]).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
               {isOwner && (
                 <button
                   onClick={() => handleRemoveRecipe(recipe.id)}

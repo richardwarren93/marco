@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { RECENTLY_MADE_COLLECTION_NAME } from "@/lib/collections";
 
 export async function GET() {
   const supabase = await createClient();
@@ -33,6 +34,13 @@ export async function GET() {
         return { ...col, recipe_count: count || 0 };
       })
     );
+
+    // Sort "Recently Made" to the top
+    withCounts.sort((a, b) => {
+      if (a.name === RECENTLY_MADE_COLLECTION_NAME) return -1;
+      if (b.name === RECENTLY_MADE_COLLECTION_NAME) return 1;
+      return 0;
+    });
 
     return NextResponse.json({ collections: withCounts });
   } catch (error) {

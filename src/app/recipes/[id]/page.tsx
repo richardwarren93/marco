@@ -14,6 +14,7 @@ import PhotoUpload from "@/components/recipes/PhotoUpload";
 import ShareButton from "@/components/social/ShareButton";
 import ServingScaler from "@/components/recipes/ServingScaler";
 import UnitToggle from "@/components/recipes/UnitToggle";
+import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 import { convertIngredient } from "@/lib/units";
 
 export default function RecipeDetailPage() {
@@ -28,6 +29,7 @@ export default function RecipeDetailPage() {
   const [unitSystem, setUnitSystem] = useState<"us" | "metric">("us");
   const [servingMultiplier, setServingMultiplier] = useState(1);
   const [heroImage, setHeroImage] = useState<string | null>(null);
+  const [lastMade, setLastMade] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createClient();
 
@@ -58,12 +60,25 @@ export default function RecipeDetailPage() {
     setLoading(false);
   }, [id, supabase]);
 
+  const fetchLastMade = useCallback(async () => {
+    const { data } = await supabase
+      .from("cooking_logs")
+      .select("cooked_at")
+      .eq("recipe_id", id)
+      .order("cooked_at", { ascending: false })
+      .limit(1);
+    if (data && data.length > 0) {
+      setLastMade(data[0].cooked_at);
+    }
+  }, [id, supabase]);
+
   useEffect(() => {
     fetchRecipe();
+    fetchLastMade();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setCurrentUserId(user?.id);
     });
-  }, [fetchRecipe, supabase.auth]);
+  }, [fetchRecipe, fetchLastMade, supabase.auth]);
 
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
@@ -156,6 +171,25 @@ export default function RecipeDetailPage() {
       {recipe.description && (
         <p className="text-gray-600 mb-4">{recipe.description}</p>
       )}
+
+      {/* I Made This button */}
+      <div className="mb-6">
+        <IMadeThisButton
+          recipeId={recipe.id}
+          onCooked={() => {
+            setLastMade(new Date().toISOString());
+          }}
+        />
+        {lastMade && (
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            Last made: {new Date(lastMade).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </p>
+        )}
+      </div>
 
       <div className="flex items-center gap-4 text-sm text-gray-500 mb-6">
         {recipe.prep_time_minutes && <span>Prep: {recipe.prep_time_minutes} min</span>}

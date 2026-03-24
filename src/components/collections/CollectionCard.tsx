@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Collection } from "@/types";
+import { RECENTLY_MADE_COLLECTION_NAME } from "@/lib/collections";
 
 const cardGradients = [
   "from-orange-50 to-amber-50",
@@ -19,16 +20,25 @@ function getGradient(name: string): string {
 }
 
 export default function CollectionCard({ collection }: { collection: Collection }) {
+  const isRecentlyMade = collection.name === RECENTLY_MADE_COLLECTION_NAME;
+
   return (
     <Link
       href={`/collections/${collection.id}`}
       className="block bg-white rounded-2xl shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
     >
       {/* Colored header strip */}
-      <div className={`h-2 bg-gradient-to-r ${getGradient(collection.name)}`} />
+      <div
+        className={`h-2 bg-gradient-to-r ${
+          isRecentlyMade ? "from-green-400 to-emerald-400" : getGradient(collection.name)
+        }`}
+      />
       <div className="p-5">
         <div className="flex items-start justify-between">
-          <h3 className="font-semibold text-gray-900">{collection.name}</h3>
+          <h3 className="font-semibold text-gray-900">
+            {isRecentlyMade && <span className="mr-1.5">🍳</span>}
+            {collection.name}
+          </h3>
           <div className="flex items-center gap-1.5">
             {collection.is_public && (
               <span className="bg-green-50 text-green-600 text-[10px] font-semibold px-2 py-0.5 rounded-full">
