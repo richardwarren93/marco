@@ -193,11 +193,12 @@ function MealPlanInner() {
   // ─── Loading ──────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-40" />
-          <div className="h-24 bg-gray-200 rounded-2xl" />
-          <div className="h-64 bg-gray-200 rounded-2xl" />
+      <div className="max-w-4xl mx-auto px-4 py-8" style={{ background: "#faf9f7" }}>
+        <div className="space-y-4">
+          <div className="h-8 skeleton-warm rounded-2xl w-40" />
+          <div className="h-24 skeleton-warm rounded-3xl" />
+          <div className="h-64 skeleton-warm rounded-3xl" />
+          <div className="h-40 skeleton-warm rounded-3xl" />
         </div>
       </div>
     );

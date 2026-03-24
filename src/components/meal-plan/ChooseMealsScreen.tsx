@@ -160,15 +160,16 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
   const selectedCount = props.mode === "build" ? props.selectedIds.size : 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
       {/* Sticky header */}
-      <div className="bg-white px-4 pt-6 pb-3 space-y-3 sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+      <div className="px-4 pt-5 pb-3 space-y-3 sticky top-0 z-10" style={{ background: "#faf9f7" }}>
         <div className="max-w-3xl mx-auto space-y-3">
         <div className="flex items-center gap-3">
           {(props.mode === "browse" || (props.mode === "build" && props.onBack)) && (
             <button
               onClick={props.onBack}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+              className="w-9 h-9 flex items-center justify-center rounded-2xl transition-colors flex-shrink-0"
+              style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" }}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -176,15 +177,15 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
             </button>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">{headerTitle}</h1>
+            <h1 className="text-xl font-black tracking-tight leading-tight" style={{ color: "#1a1410" }}>{headerTitle}</h1>
             {headerSub && (
-              <p className="text-xs text-gray-400 mt-0.5">{headerSub}</p>
+              <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>{headerSub}</p>
             )}
           </div>
         </div>
 
         {/* Meal type tabs — All + Breakfast/Lunch/Dinner/Snack */}
-        <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-hide">
           {(["all", ...MEAL_TABS] as ActiveTab[]).map((tab) => (
             <button
               key={tab}
@@ -192,11 +193,10 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                 setActiveTab(tab);
                 handleSearchChange("");
               }}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              className="flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-bold transition-all"
+              style={activeTab === tab
+                ? { background: "#1a1410", color: "white" }
+                : { background: "white", color: "#a09890", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
             >
               {TAB_LABELS[tab]}
             </button>
@@ -219,12 +219,14 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={activeTab === "all" ? "Search all recipes…" : `Search ${TAB_LABELS[activeTab].toLowerCase()} recipes…`}
-                className="w-full pl-9 pr-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:bg-gray-200 transition-colors"
+                className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none transition-colors"
+                style={{ background: "white", color: "#1a1410", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" }}
               />
               {search && (
                 <button
                   onClick={() => handleSearchChange("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "#a09890" }}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -234,7 +236,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
             </div>
             <button
               onClick={() => router.push("/discover")}
-              className="text-sm font-bold text-orange-500 hover:text-orange-600 flex-shrink-0 px-1 transition-colors"
+              className="text-sm font-bold flex-shrink-0 px-1 transition-colors"
+              style={{ color: "#f97316" }}
             >
               Discover
             </button>
@@ -245,7 +248,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         {props.mode === "browse" && (
           <div className="relative">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
+              style={{ color: "#a09890" }}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -258,12 +262,14 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search recipes…"
-              className="w-full pl-9 pr-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:bg-gray-200 transition-colors"
+              className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none transition-colors"
+              style={{ background: "white", color: "#1a1410", boxShadow: "0 1px 6px rgba(0,0,0,0.07)" }}
             />
             {search && (
               <button
                 onClick={() => handleSearchChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2"
+                style={{ color: "#a09890" }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -280,7 +286,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               <button
                 key={pill}
                 onClick={() => handleSearchChange(pill)}
-                className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors border border-orange-100"
+                className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-bold transition-colors border border-orange-100"
+                style={{ background: "#fff7ed", color: "#f97316" }}
               >
                 {pill}
               </button>
@@ -296,18 +303,19 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         {props.mode === "build" && !search && aiResults === null && (
           <button
             onClick={() => router.push("/recipes?tab=explore")}
-            className="w-full mb-4 flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 hover:border-orange-200 hover:shadow-sm transition-all text-left group"
+            className="w-full mb-4 flex items-center gap-3 px-4 py-3.5 rounded-3xl border border-orange-100 hover:border-orange-200 transition-all text-left group active:scale-[0.98]"
+            style={{ background: "linear-gradient(135deg, #fff7ed 0%, #fffbeb 100%)", boxShadow: "0 2px 12px rgba(249,115,22,0.08)" }}
           >
-            <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform" style={{ background: "#f97316" }}>
               <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-900">Explore new recipes</p>
-              <p className="text-xs text-gray-400">Discover AI-powered recipe ideas for your meal plan</p>
+              <p className="text-sm font-bold" style={{ color: "#1a1410" }}>Explore new recipes</p>
+              <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Discover AI-powered recipe ideas for your meal plan</p>
             </div>
-            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#a09890" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -319,14 +327,15 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
             <svg className="w-3.5 h-3.5 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
             </svg>
-            <span className="text-xs font-medium text-orange-500">
+            <span className="text-xs font-bold" style={{ color: "#f97316" }}>
               {aiResults.length > 0
                 ? `AI found ${aiResults.length} match${aiResults.length !== 1 ? "es" : ""} in your recipes`
                 : "No matches found in your recipes"}
             </span>
             <button
               onClick={() => handleSearchChange("")}
-              className="ml-auto text-xs text-gray-400 hover:text-gray-600"
+              className="ml-auto text-xs font-medium"
+              style={{ color: "#a09890" }}
             >
               Clear
             </button>
@@ -341,13 +350,13 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                 <span className="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
                 <span className="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
-              <p className="text-sm font-medium text-gray-500">Simmering… Hold tight</p>
-              <p className="text-xs text-gray-300">Searching your recipe library with AI</p>
+              <p className="text-sm font-bold" style={{ color: "#a09890" }}>Simmering… Hold tight</p>
+              <p className="text-xs" style={{ color: "#c4bdb8" }}>Searching your recipe library with AI</p>
             </div>
           </div>
         ) : displayRecipes.length === 0 ? (
           <div className="text-center py-16 space-y-3">
-            <p className="text-gray-400 text-sm">
+            <p className="text-sm" style={{ color: "#a09890" }}>
               {search
                 ? aiResults !== null
                   ? `No saved recipes match "${search}"`
@@ -355,11 +364,12 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                 : `No ${activeTab === "all" ? "" : activeTab + " "}recipes saved yet`}
             </p>
             {search && aiResults !== null && props.mode === "build" && (
-              <p className="text-xs text-gray-300">
+              <p className="text-xs" style={{ color: "#c4bdb8" }}>
                 Try{" "}
                 <button
                   onClick={() => router.push("/discover")}
-                  className="text-orange-500 font-medium"
+                  className="font-bold"
+                  style={{ color: "#f97316" }}
                 >
                   Discover
                 </button>{" "}
@@ -370,7 +380,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {displayRecipes.map((recipe) => {
+            {displayRecipes.map((recipe, i) => {
               const isBuild = props.mode === "build";
               const isSelected = isBuild && props.selectedIds.has(recipe.id);
               const totalTime =
@@ -380,7 +390,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               return (
                 <div
                   key={recipe.id}
-                  className="relative bg-white rounded-2xl overflow-hidden shadow-sm cursor-pointer"
+                  className="relative bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform"
+                  style={{ animation: `cardPop 0.4s ease ${i * 40}ms both`, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}
                   onClick={async () => {
                     if (props.mode === "browse") {
                       setBrowsing(recipe.id);
@@ -411,6 +422,16 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                       </span>
                     )}
 
+                    {/* Gradient overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+
+                    {/* Time pill */}
+                    {totalTime > 0 && (
+                      <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-white" style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(4px)" }}>
+                        {totalTime} min
+                      </div>
+                    )}
+
                     {/* Build mode: ✓ toggle button */}
                     {isBuild && (
                       <button
@@ -418,11 +439,10 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                           e.stopPropagation();
                           props.onToggle(recipe.id);
                         }}
-                        className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all z-10 ${
-                          isSelected
-                            ? "bg-orange-500 text-white"
-                            : "bg-white/90 text-gray-700 hover:bg-white"
-                        }`}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all z-10"
+                        style={isSelected
+                          ? { background: "#f97316", color: "white" }
+                          : { background: "rgba(255,255,255,0.92)", color: "#1a1410" }}
                       >
                         {isSelected ? (
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -446,12 +466,9 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
 
                   {/* Card content */}
                   <div className="p-2.5">
-                    <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+                    <p className="text-sm font-bold line-clamp-2 leading-snug" style={{ color: "#1a1410" }}>
                       {recipe.title}
                     </p>
-                    {totalTime > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">{totalTime} min</p>
-                    )}
                   </div>
                 </div>
               );
@@ -465,7 +482,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         <div className="fixed bottom-20 inset-x-0 flex justify-center z-20 pointer-events-none max-w-3xl mx-auto">
           <button
             onClick={props.onViewMeals}
-            className="pointer-events-auto flex items-center gap-2 bg-gray-900 text-white px-6 py-3.5 rounded-full shadow-xl text-sm font-semibold hover:bg-gray-800 active:scale-95 transition-all"
+            className="pointer-events-auto flex items-center gap-2 text-white px-6 py-3.5 rounded-full shadow-xl text-sm font-bold active:scale-95 transition-all"
+            style={{ background: "#1a1410" }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
