@@ -11,6 +11,7 @@ import AddToCollectionModal from "@/components/collections/AddToCollectionModal"
 import CommunitySection from "@/components/community/CommunitySection";
 import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
+import CookPhotosGallery from "@/components/recipes/CookPhotosGallery";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
 import NutritionCard from "@/components/recipes/NutritionCard";
 
@@ -205,6 +206,7 @@ export default function RecipeDetailPage() {
   const [showMealPlanPrompt, setShowMealPlanPrompt] = useState(false);
   const [recipeCollections, setRecipeCollections] = useState<{ id: string; name: string }[]>([]);
   const [unitSystem, setUnitSystem] = useState<UnitSystem | null>(null); // null = original
+  const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
   const router = useRouter();
   const supabase = createClient();
 
@@ -519,9 +521,13 @@ export default function RecipeDetailPage() {
           <NutritionCard recipeId={recipe.id} ratio={ratio} />
         </div>
 
-        {/* ── I Made This + Notes ─────────────────────────────────────── */}
+        {/* ── I Made This + Cook Photos + Notes ──────────────────────── */}
         <div className="space-y-3 mb-4">
-          <IMadeThisButton recipeId={recipe.id} />
+          <IMadeThisButton
+            recipeId={recipe.id}
+            onPhotoAdded={() => setPhotoRefreshKey((k) => k + 1)}
+          />
+          <CookPhotosGallery recipeId={recipe.id} refreshKey={photoRefreshKey} />
           <MyNotesCard recipeId={recipe.id} />
         </div>
 

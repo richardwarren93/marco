@@ -145,6 +145,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       log,
+      cookingLogId: log.id,
       activityId: activityEntry?.id || null,
       tomatoesEarned: TOMATO_REWARDS.COOKED_RECIPE + (goalJustCompleted ? TOMATO_REWARDS.WEEKLY_GOAL_COMPLETE : 0),
       goalJustCompleted,

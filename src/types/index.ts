@@ -116,6 +116,8 @@ export interface CookingLog {
   user_id: string;
   recipe_id: string;
   cooked_at: string;
+  image_url: string | null;
+  caption: string | null;
   created_at: string;
   recipe?: Recipe;
 }

@@ -12,13 +12,15 @@ interface IMadeThisButtonProps {
     weekProgress: number;
     tomatoBalance: number;
   }) => void;
+  onPhotoAdded?: () => void;
 }
 
-export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonProps) {
+export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded }: IMadeThisButtonProps) {
   const [loading, setLoading] = useState(false);
   const [justCooked, setJustCooked] = useState(false);
   const [tomatoesEarned, setTomatoesEarned] = useState(0);
   const [showFloat, setShowFloat] = useState(false);
+  const [cookingLogId, setCookingLogId] = useState<string | null>(null);
   const [activityId, setActivityId] = useState<string | null>(null);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [photoPosted, setPhotoPosted] = useState(false);
@@ -40,6 +42,7 @@ export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonP
       setTomatoesEarned(data.tomatoesEarned);
       setJustCooked(true);
       setShowFloat(true);
+      setCookingLogId(data.cookingLogId || data.log?.id || null);
       setActivityId(data.activityId || null);
 
       // Hide float animation after 1.5s
@@ -54,20 +57,36 @@ export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonP
   }
 
   async function handlePhotoUploaded(imageUrl: string, caption: string) {
-    if (!activityId) return;
+    if (!cookingLogId) return;
 
     try {
-      await fetch("/api/activity-feed", {
-        method: "POST",
+      // Save photo to cooking_log
+      await fetch("/api/cooking-log/photos", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          activity_id: activityId,
+          cooking_log_id: cookingLogId,
           image_url: imageUrl,
           caption,
         }),
       });
+
+      // Also update activity_feed entry if it exists
+      if (activityId) {
+        await fetch("/api/activity-feed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            activity_id: activityId,
+            image_url: imageUrl,
+            caption,
+          }),
+        });
+      }
+
       setPhotoPosted(true);
       setShowPhotoUpload(false);
+      onPhotoAdded?.();
     } catch (error) {
       console.error("Photo post error:", error);
     }
@@ -111,18 +130,18 @@ export default function IMadeThisButton({ recipeId, onCooked }: IMadeThisButtonP
       )}
 
       {/* Photo upload prompt — appears after cooking */}
-      {justCooked && activityId && !showPhotoUpload && !photoPosted && (
+      {justCooked && cookingLogId && !showPhotoUpload && !photoPosted && (
         <button
           onClick={() => setShowPhotoUpload(true)}
           className="w-full mt-2 py-2 text-sm text-orange-600 hover:text-orange-700 font-medium hover:bg-orange-50 rounded-xl transition-colors"
         >
-          📸 Add a photo to your feed?
+          📸 Add a photo of your dish
         </button>
       )}
 
       {photoPosted && (
         <p className="mt-2 text-center text-xs text-green-600 font-medium">
-          Photo posted to your feed!
+          Photo saved!
         </p>
       )}
 

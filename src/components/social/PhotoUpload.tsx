@@ -111,7 +111,7 @@ export default function PhotoUpload({ onUploaded, onCancel }: PhotoUploadProps) 
             disabled={uploading}
             className="flex-1 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50"
           >
-            {uploading ? "Posting..." : "Post to Feed"}
+            {uploading ? "Saving..." : "Save Photo"}
           </button>
         )}
         <button
