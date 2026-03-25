@@ -7,6 +7,7 @@ import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
 import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
 import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
 import AnalyzeScreen from "@/components/meal-plan/AnalyzeScreen";
+import AssignDaysScreen, { type DayAssignment } from "@/components/meal-plan/AssignDaysScreen";
 import type { MealPlan, Recipe } from "@/types";
 
 function getMonday(date: Date): Date {
@@ -35,7 +36,7 @@ function MealPlanInner() {
 
   // ─── Step flow ───────────────────────────────────────────────────────────────
   // Default: step 3 (Schedule) — the app's main surface
-  const [step, setStep] = useState<1 | 2 | 3 | "insights">(3);
+  const [step, setStep] = useState<1 | 2 | "assign" | 3 | "insights">(3);
 
   // Which week the calendar is currently showing — jump to ?date= param if present
   const [calendarWeek, setCalendarWeek] = useState<Date>(() => {
@@ -145,7 +146,14 @@ function MealPlanInner() {
   }
 
   function handleBuildSchedule() {
-    setWeekPicks((prev) => ({ ...prev, [planningWeek]: [...selectedIds] }));
+    setStep("assign");
+  }
+
+  async function handleAssignDone(assignments: DayAssignment[]) {
+    await Promise.all(
+      assignments.map((a) => handleCalendarAdd(a.recipeId, a.dates, a.mealType))
+    );
+    setSelectedIds(new Set());
     setStep(3);
   }
 
@@ -232,6 +240,18 @@ function MealPlanInner() {
         }
         onBack={() => setStep(1)}
         onBuild={handleBuildSchedule}
+      />
+    );
+  }
+
+  // ─── Assign days ─────────────────────────────────────────────────────────────
+  if (step === "assign") {
+    return (
+      <AssignDaysScreen
+        selectedRecipes={selectedRecipes}
+        planningWeek={planningWeek}
+        onBack={() => setStep(2)}
+        onDone={handleAssignDone}
       />
     );
   }
