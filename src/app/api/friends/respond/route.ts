@@ -55,6 +55,26 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
+    // Notify the original requester that their request was accepted
+    const { data: acceptorProfile } = await admin
+      .from("user_profiles")
+      .select("display_name, avatar_url")
+      .eq("user_id", user.id)
+      .single();
+
+    try {
+      await admin.from("notifications").insert({
+        user_id: friendship.user_id, // the original sender
+        type: "friend_accepted",
+        actor_id: user.id,
+        actor_name: acceptorProfile?.display_name ?? null,
+        actor_avatar: acceptorProfile?.avatar_url ?? null,
+        reference_id: friendship_id,
+      });
+    } catch {
+      // Non-critical
+    }
+
     return NextResponse.json({
       friendship: updated,
       action: "accepted",

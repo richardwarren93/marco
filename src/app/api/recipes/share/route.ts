@@ -75,6 +75,27 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
+    // Notify the recipient about the shared recipe
+    const { data: senderProfile } = await admin
+      .from("user_profiles")
+      .select("display_name, avatar_url")
+      .eq("user_id", user.id)
+      .single();
+
+    try {
+      await admin.from("notifications").insert({
+        user_id: friend_user_id,
+        type: "recipe_shared",
+        actor_id: user.id,
+        actor_name: senderProfile?.display_name ?? null,
+        actor_avatar: senderProfile?.avatar_url ?? null,
+        reference_id: share.id,
+        recipe_title: recipe.title,
+      });
+    } catch {
+      // Non-critical
+    }
+
     return NextResponse.json({ share });
   } catch (error) {
     console.error("Share recipe error:", error);

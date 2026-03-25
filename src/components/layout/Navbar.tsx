@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   RecipesIcon,
@@ -12,6 +12,7 @@ import {
   MealPlanIcon,
   FriendsIcon,
 } from "@/components/icons/HandDrawnIcons";
+import NotificationSheet from "@/components/notifications/NotificationSheet";
 
 const navLinks = [
   { href: "/recipes", label: "Recipes", Icon: RecipesIcon },
@@ -39,6 +40,8 @@ const menuItems: { href: string; label: string; icon: React.ReactNode }[] = [
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -46,19 +49,41 @@ export default function Navbar() {
 
   const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding");
 
+  const fetchUnreadCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications");
+      if (!res.ok) return;
+      const data = await res.json();
+      setUnreadCount(data.unreadCount ?? 0);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // All hooks must be called unconditionally — guard with isAuthPage inside
   useEffect(() => {
     if (isAuthPage) return;
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+      if (user) fetchUnreadCount();
+    });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      if (session?.user) fetchUnreadCount();
     });
 
     return () => subscription.unsubscribe();
   }, [isAuthPage]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Poll for new notifications every 60s
+  useEffect(() => {
+    if (isAuthPage || !user) return;
+    const interval = setInterval(fetchUnreadCount, 60_000);
+    return () => clearInterval(interval);
+  }, [isAuthPage, user, fetchUnreadCount]);
 
   // Close menu on outside click
   useEffect(() => {
@@ -128,6 +153,22 @@ export default function Navbar() {
                   >
                     {initials}
                   </Link>
+
+                  {/* Notification bell */}
+                  <button
+                    onClick={() => setShowNotifications(true)}
+                    className="relative w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                    aria-label="Notifications"
+                  >
+                    <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                    </svg>
+                    {unreadCount > 0 && (
+                      <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-orange-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
+                        {unreadCount > 9 ? "9+" : unreadCount}
+                      </span>
+                    )}
+                  </button>
 
                   {/* Hamburger menu button */}
                   <div className="relative" ref={menuRef}>
@@ -231,6 +272,12 @@ export default function Navbar() {
         </div>
       </nav>
 
+      {/* Notification sheet */}
+      <NotificationSheet
+        isOpen={showNotifications}
+        onClose={() => setShowNotifications(false)}
+        onUnreadChange={setUnreadCount}
+      />
     </>
   );
 }

@@ -1,3 +1,19 @@
+// Notifications
+export type NotificationType = "friend_request" | "friend_accepted" | "recipe_shared" | "recipe_saved";
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  type: NotificationType;
+  actor_id: string | null;
+  actor_name: string | null;
+  actor_avatar: string | null;
+  reference_id: string | null; // friendship_id or recipe_share_id
+  recipe_title: string | null;
+  read: boolean;
+  created_at: string;
+}
+
 export interface Ingredient {
   name: string;
   amount: string;

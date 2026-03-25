@@ -86,6 +86,27 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
+    // Get the sender's profile for the notification
+    const { data: senderProfile } = await admin
+      .from("user_profiles")
+      .select("display_name, avatar_url")
+      .eq("user_id", user.id)
+      .single();
+
+    // Notify the recipient about the friend request
+    try {
+      await admin.from("notifications").insert({
+        user_id: friendProfile.user_id,
+        type: "friend_request",
+        actor_id: user.id,
+        actor_name: senderProfile?.display_name ?? null,
+        actor_avatar: senderProfile?.avatar_url ?? null,
+        reference_id: friendship.id,
+      });
+    } catch {
+      // Non-critical — don't fail the request if notification insert fails
+    }
+
     return NextResponse.json({
       friendship,
       friend_name: friendProfile.display_name,
