@@ -151,7 +151,9 @@ function MealPlanInner() {
 
   async function handleAssignDone(assignments: DayAssignment[]) {
     await Promise.all(
-      assignments.map((a) => handleCalendarAdd(a.recipeId, a.dates, a.mealType))
+      assignments.flatMap((a) =>
+        a.mealTypes.map((mt) => handleCalendarAdd(a.recipeId, a.dates, mt, a.servings))
+      )
     );
     setSelectedIds(new Set());
     setStep(3);
@@ -250,6 +252,7 @@ function MealPlanInner() {
       <AssignDaysScreen
         selectedRecipes={selectedRecipes}
         planningWeek={planningWeek}
+        existingMealPlans={mealPlans}
         onBack={() => setStep(2)}
         onDone={handleAssignDone}
       />
