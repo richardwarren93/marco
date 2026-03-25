@@ -301,7 +301,7 @@ export default function AssignDaysScreen({
 
       {/* Conflict modal */}
       {showConflictModal && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-8" style={{ background: "rgba(26,20,16,0.5)" }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(26,20,16,0.5)" }}>
           <div
             className="w-full max-w-sm bg-white rounded-3xl overflow-hidden"
             style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.2)", animation: "fadeSlideUp 0.3s ease both" }}
