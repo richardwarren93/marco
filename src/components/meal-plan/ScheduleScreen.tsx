@@ -11,6 +11,7 @@ export default function ScheduleScreen({
   currentWeekPickIds,
   onAddMeal,
   onRemoveMeal,
+  onEditMeal,
   onPlanThisWeek,
   onShowInsights,
   calendarWeek,
@@ -23,6 +24,7 @@ export default function ScheduleScreen({
   currentWeekPickIds: string[];
   onAddMeal: (recipeId: string, dates: string[], mealType: string, servings?: number) => Promise<void>;
   onRemoveMeal: (planId: string) => void;
+  onEditMeal?: (planId: string, updates: { meal_type?: string; recipe_id?: string; servings?: number }) => Promise<void>;
   onPlanThisWeek: () => void;
   onShowInsights: () => void;
   calendarWeek: Date;
@@ -68,6 +70,7 @@ export default function ScheduleScreen({
             householdPlans={householdPlans}
             onAddMeal={onAddMeal}
             onRemove={onRemoveMeal}
+            onEditMeal={onEditMeal}
             recipePool={pool}
             allRecipes={allRecipes}
             weekPickIds={currentWeekPickIds}

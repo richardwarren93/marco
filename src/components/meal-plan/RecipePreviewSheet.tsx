@@ -15,11 +15,13 @@ export default function RecipePreviewSheet({
   plan,
   onClose,
   onReplace,
+  onEdit,
 }: {
   isOpen: boolean;
   plan: MealPlan | null;
   onClose: () => void;
   onReplace: (plan: MealPlan) => void;
+  onEdit?: (plan: MealPlan) => void;
 }) {
   const router = useRouter();
 
@@ -102,10 +104,10 @@ export default function RecipePreviewSheet({
             View recipe
           </button>
 
-          {/* Secondary: Replace — only for own meals */}
-          {!plan.owner_name && (
+          {/* Edit — only for own meals */}
+          {!plan.owner_name && onEdit && (
             <button
-              onClick={handleReplace}
+              onClick={() => { onEdit(plan!); onClose(); }}
               className="w-full flex items-center justify-center gap-2.5 px-4 py-4 bg-gray-100 rounded-2xl text-gray-700 font-semibold text-sm hover:bg-gray-200 active:scale-[0.98] transition-all"
             >
               <svg
@@ -118,10 +120,10 @@ export default function RecipePreviewSheet({
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                 />
               </svg>
-              Replace meal
+              Edit meal
             </button>
           )}
         </div>

@@ -299,8 +299,8 @@ export default function RecipeDetailPage() {
     );
   }
 
-  const ingredients = recipe.ingredients as Ingredient[];
-  const steps = recipe.steps as string[];
+  const ingredients = (recipe.ingredients as Ingredient[]) || [];
+  const steps = (recipe.steps as string[]) || [];
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
   const originalServings = recipe.servings || null;
   const currentServings = adjustedServings ?? originalServings;
@@ -431,9 +431,9 @@ export default function RecipeDetailPage() {
           </div>
 
           {/* Tags */}
-          {recipe.tags.length > 0 && (
+          {(recipe.tags || []).length > 0 && (
             <div className="flex flex-wrap gap-1.5 pt-1">
-              {recipe.tags.map((tag) => (
+              {(recipe.tags || []).map((tag) => (
                 <span
                   key={tag}
                   className="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[11px] font-medium"

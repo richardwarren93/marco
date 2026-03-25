@@ -183,6 +183,18 @@ function MealPlanInner() {
     await fetchMealPlans();
   }
 
+  async function handleEditMealSave(
+    planId: string,
+    updates: { meal_type?: string; recipe_id?: string; servings?: number }
+  ) {
+    const { error: updateError } = await supabase
+      .from("meal_plans")
+      .update(updates)
+      .eq("id", planId);
+    if (updateError) { setError(updateError.message); return; }
+    await fetchMealPlans();
+  }
+
   async function handleCalendarRemove(planId: string) {
     const prev = mealPlans;
     setMealPlans(mealPlans.filter((p) => p.id !== planId));
@@ -283,6 +295,7 @@ function MealPlanInner() {
         currentWeekPickIds={currentWeekPickIds}
         onAddMeal={handleCalendarAdd}
         onRemoveMeal={handleCalendarRemove}
+        onEditMeal={handleEditMealSave}
         onPlanThisWeek={handlePlanThisWeek}
         onShowInsights={() => setStep("insights")}
         calendarWeek={calendarWeek}

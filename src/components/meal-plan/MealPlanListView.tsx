@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import type { MealPlan, Recipe } from "@/types";
 import AddMealSheet from "./AddMealSheet";
 import RecipePreviewSheet from "./RecipePreviewSheet";
+import EditMealSheet from "./EditMealSheet";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -53,6 +54,7 @@ export default function MealPlanListView({
   householdPlans = [],
   onAddMeal,
   onRemove,
+  onEditMeal,
   recipePool,
   allRecipes = [],
   weekPickIds = [],
@@ -69,6 +71,7 @@ export default function MealPlanListView({
     servings?: number
   ) => Promise<void>;
   onRemove: (planId: string) => void;
+  onEditMeal?: (planId: string, updates: { meal_type?: string; recipe_id?: string; servings?: number }) => Promise<void>;
   recipePool?: Recipe[];
   allRecipes?: Recipe[];
   weekPickIds?: string[];
@@ -100,6 +103,9 @@ export default function MealPlanListView({
 
   // ─── RecipePreviewSheet state ─────────────────────────────────────────────────
   const [previewPlan, setPreviewPlan] = useState<MealPlan | null>(null);
+
+  // ─── EditMealSheet state ──────────────────────────────────────────────────────
+  const [editingPlan, setEditingPlan] = useState<MealPlan | null>(null);
 
   // ─── Swipe-to-delete (mobile) ─────────────────────────────────────────────────
   const DELETE_BTN_WIDTH = 80;
@@ -551,7 +557,22 @@ export default function MealPlanListView({
         plan={previewPlan}
         onClose={() => setPreviewPlan(null)}
         onReplace={handleReplace}
+        onEdit={onEditMeal ? (plan) => setEditingPlan(plan) : undefined}
       />
+
+      {/* ── EditMealSheet ─────────────────────────────────────────────────────── */}
+      {onEditMeal && (
+        <EditMealSheet
+          isOpen={!!editingPlan}
+          plan={editingPlan}
+          allRecipes={recipeLibrary}
+          onClose={() => setEditingPlan(null)}
+          onSave={async (planId, updates) => {
+            await onEditMeal(planId, updates);
+            setEditingPlan(null);
+          }}
+        />
+      )}
     </>
   );
 }
