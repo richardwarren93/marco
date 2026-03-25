@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 import type { Recipe, Ingredient } from "@/types";
@@ -194,6 +194,7 @@ function formatAmount(n: number): string {
 
 export default function RecipeDetailPage() {
   const { id } = useParams();
+  const searchParams = useSearchParams();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
@@ -202,7 +203,10 @@ export default function RecipeDetailPage() {
   const [showShareWithFriends, setShowShareWithFriends] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [activeTab, setActiveTab] = useState<"ingredients" | "steps">("ingredients");
-  const [adjustedServings, setAdjustedServings] = useState<number | null>(null);
+  const servingsParam = searchParams ? parseInt(searchParams.get("servings") ?? "", 10) : NaN;
+  const [adjustedServings, setAdjustedServings] = useState<number | null>(
+    !isNaN(servingsParam) && servingsParam > 0 ? servingsParam : null
+  );
   const [showMealPlanPrompt, setShowMealPlanPrompt] = useState(false);
   const [recipeCollections, setRecipeCollections] = useState<{ id: string; name: string }[]>([]);
   const [unitSystem, setUnitSystem] = useState<UnitSystem | null>(null); // null = original

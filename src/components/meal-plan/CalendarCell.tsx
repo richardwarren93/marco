@@ -55,7 +55,7 @@ export default function DayColumn({
             {/* Meal type emoji */}
             <span className="text-[9px] mr-0.5">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>
             <Link
-              href={`/recipes/${plan.recipe_id}`}
+              href={`/recipes/${plan.recipe_id}${plan.servings ? `?servings=${plan.servings}` : ""}`}
               className={`font-medium line-clamp-2 ${
                 isHousehold
                   ? "text-gray-600 hover:text-purple-600"
