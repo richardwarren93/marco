@@ -160,15 +160,16 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
   const selectedCount = props.mode === "build" ? props.selectedIds.size : 0;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
       {/* Sticky header */}
-      <div className="bg-white px-4 pt-6 pb-3 space-y-3 sticky top-0 z-10 border-b border-gray-100 shadow-sm">
+      <div className="px-4 pt-5 pb-3 space-y-3 sticky top-0 z-10 border-b" style={{ background: "#faf9f7", borderColor: "#ede8e0" }}>
         <div className="max-w-3xl mx-auto space-y-3">
         <div className="flex items-center gap-3">
           {(props.mode === "browse" || (props.mode === "build" && props.onBack)) && (
             <button
               onClick={props.onBack}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors flex-shrink-0 active:scale-90"
+              style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -176,14 +177,14 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
             </button>
           )}
           <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-bold text-gray-900 leading-tight">{headerTitle}</h1>
+            <h1 className="text-lg font-black leading-tight" style={{ color: "#1a1410" }}>{headerTitle}</h1>
             {headerSub && (
-              <p className="text-xs text-gray-400 mt-0.5">{headerSub}</p>
+              <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>{headerSub}</p>
             )}
           </div>
         </div>
 
-        {/* Meal type tabs — All + Breakfast/Lunch/Dinner/Snack */}
+        {/* Meal type tabs */}
         <div className="flex gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
           {(["all", ...MEAL_TABS] as ActiveTab[]).map((tab) => (
             <button
@@ -192,11 +193,10 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                 setActiveTab(tab);
                 handleSearchChange("");
               }}
-              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                activeTab === tab
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-              }`}
+              className="flex-shrink-0 px-4 py-1.5 rounded-2xl text-sm font-semibold transition-all active:scale-95"
+              style={activeTab === tab
+                ? { background: "#1a1410", color: "white" }
+                : { background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
             >
               {TAB_LABELS[tab]}
             </button>
@@ -219,7 +219,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={activeTab === "all" ? "Search all recipes…" : `Search ${TAB_LABELS[activeTab].toLowerCase()} recipes…`}
-                className="w-full pl-9 pr-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:bg-gray-200 transition-colors"
+                className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none"
+                style={{ background: "white", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", color: "#1a1410" }}
               />
               {search && (
                 <button
@@ -258,7 +259,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search recipes…"
-              className="w-full pl-9 pr-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:bg-gray-200 transition-colors"
+              className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none"
+              style={{ background: "white", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", color: "#1a1410" }}
             />
             {search && (
               <button
@@ -380,7 +382,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               return (
                 <div
                   key={recipe.id}
-                  className="relative bg-white rounded-2xl overflow-hidden shadow-sm cursor-pointer"
+                  className="relative bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
+                  style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", animation: `cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) both` }}
                   onClick={async () => {
                     if (props.mode === "browse") {
                       setBrowsing(recipe.id);
@@ -446,11 +449,11 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
 
                   {/* Card content */}
                   <div className="p-2.5">
-                    <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
+                    <p className="text-sm font-bold line-clamp-2 leading-snug" style={{ color: "#1a1410" }}>
                       {recipe.title}
                     </p>
                     {totalTime > 0 && (
-                      <p className="text-xs text-gray-400 mt-1">{totalTime} min</p>
+                      <p className="text-xs mt-1" style={{ color: "#a09890" }}>{totalTime} min</p>
                     )}
                   </div>
                 </div>
@@ -465,7 +468,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         <div className="fixed bottom-20 inset-x-0 flex justify-center z-20 pointer-events-none max-w-3xl mx-auto">
           <button
             onClick={props.onViewMeals}
-            className="pointer-events-auto flex items-center gap-2 bg-gray-900 text-white px-6 py-3.5 rounded-full shadow-xl text-sm font-semibold hover:bg-gray-800 active:scale-95 transition-all"
+            className="pointer-events-auto flex items-center gap-2 text-white px-6 py-3.5 rounded-full text-sm font-bold active:scale-95 transition-all"
+            style={{ background: "#1a1410", boxShadow: "0 4px 20px rgba(26,20,16,0.25)" }}
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
