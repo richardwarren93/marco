@@ -299,7 +299,12 @@ export default function RecipeDetailPage() {
     );
   }
 
-  const ingredients = (recipe.ingredients as Ingredient[]) || [];
+  // Normalize ingredients: Claude sometimes returns numeric amounts (e.g. 3 instead of "3")
+  const ingredients = ((recipe.ingredients as Ingredient[]) || []).map((ing) => ({
+    ...ing,
+    amount: ing.amount != null ? String(ing.amount) : ing.amount,
+    unit: ing.unit != null ? String(ing.unit) : ing.unit,
+  }));
   const steps = (recipe.steps as string[]) || [];
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
   const originalServings = recipe.servings || null;
