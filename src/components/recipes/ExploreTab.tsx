@@ -164,13 +164,16 @@ export default function ExploreTab() {
   const showLanding = results.length === 0 && !searching && !error;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-28">
-      {/* Subtitle */}
-      <p className="text-sm text-gray-400 pt-1 pb-4">Tell us what you&apos;re craving and we&apos;ll find it</p>
+    <div className="max-w-3xl mx-auto px-4 pb-28 pt-5" style={{ background: "#faf9f7" }}>
+      {/* Headline */}
+      <div className="mb-5 animate-fade-slide-up">
+        <h2 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Explore</h2>
+        <p className="text-sm mt-1" style={{ color: "#a09890" }}>Describe what you&apos;re craving</p>
+      </div>
 
       {/* Search input */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-3 mb-4">
-        <div className="flex items-end gap-2">
+      <div className="bg-white rounded-3xl p-4 mb-5 animate-fade-slide-up" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", animationDelay: "60ms" }}>
+        <div className="flex items-end gap-3">
           <textarea
             ref={textareaRef}
             value={prompt}
@@ -179,17 +182,19 @@ export default function ExploreTab() {
             placeholder="What do you want to cook?"
             rows={1}
             disabled={searching}
-            className="flex-1 resize-none text-sm text-gray-900 placeholder-gray-400 outline-none bg-transparent py-1.5 min-h-[36px] max-h-[96px]"
+            className="flex-1 resize-none text-sm outline-none bg-transparent py-1 min-h-[36px] max-h-[96px] font-medium"
+            style={{ color: "#1a1410" }}
           />
           <button
             onClick={handleSubmit}
             disabled={!prompt.trim() || searching}
-            className="w-9 h-9 flex items-center justify-center bg-orange-500 text-white rounded-xl hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0 transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all active:scale-90 disabled:opacity-40"
+            style={{ background: "#1a1410" }}
           >
             {searching ? (
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             ) : (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
             )}
@@ -199,19 +204,21 @@ export default function ExploreTab() {
 
       {/* Category chips */}
       {showLanding && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
-          {CATEGORIES.map((cat) => (
+        <div className="grid grid-cols-2 gap-2.5 mb-6">
+          {CATEGORIES.map((cat, i) => (
             <button
               key={cat.label}
               onClick={() => handleCategoryClick(cat)}
-              className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-left transition-all ${
-                activeCategory === cat.label
-                  ? "bg-orange-50 border-orange-200 border shadow-sm"
-                  : "bg-white border border-gray-100 hover:border-orange-200 hover:bg-orange-50/50 shadow-sm"
-              }`}
+              className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.97]"
+              style={{
+                background: activeCategory === cat.label ? "#fff3e8" : "#fff",
+                border: `1.5px solid ${activeCategory === cat.label ? "#f97316" : "#ede9e3"}`,
+                boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
+                animation: `fadeSlideUp 0.35s ease ${i * 40}ms both`,
+              }}
             >
-              <span className="text-lg">{cat.emoji}</span>
-              <span className="text-xs font-medium text-gray-700">{cat.label}</span>
+              <span className="text-xl">{cat.emoji}</span>
+              <span className="text-xs font-bold" style={{ color: "#1a1410" }}>{cat.label}</span>
             </button>
           ))}
         </div>
@@ -241,18 +248,15 @@ export default function ExploreTab() {
 
       {/* Results */}
       {results.length > 0 && !searching && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fade-slide-up">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+            <p className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
               {results.length} recipes found
             </p>
             <button
-              onClick={() => {
-                setResults([]);
-                setPrompt("");
-                setActiveCategory(null);
-              }}
-              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+              onClick={() => { setResults([]); setPrompt(""); setActiveCategory(null); }}
+              className="text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
+              style={{ color: "#a09890", background: "#ede9e3" }}
             >
               Clear
             </button>
@@ -273,37 +277,27 @@ export default function ExploreTab() {
         </div>
       )}
 
-      {/* Empty landing tips + Trending */}
+      {/* Trending */}
       {showLanding && (
         <>
-          <div className="text-center pt-4 pb-6">
-            <div className="inline-flex flex-col items-center gap-2 text-gray-300">
-              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-              <p className="text-xs">Try a category above or type anything</p>
-            </div>
-          </div>
-
-          {/* Trending / Popular recipes */}
           {trendingLoading ? (
-            <div className="space-y-3 pt-2">
-              <div className="h-4 bg-gray-100 rounded w-40 animate-pulse" />
+            <div className="space-y-3">
+              <div className="h-3 skeleton-warm rounded-full w-40" />
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-40 bg-gray-100 rounded-2xl animate-pulse" />
-                ))}
+                {[1,2,3,4].map((i) => <div key={i} className="h-40 skeleton-warm rounded-3xl" />)}
               </div>
             </div>
           ) : trending.length > 0 && (
-            <div className="pt-2">
+            <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">🔥</span>
-                <h3 className="text-sm font-semibold text-gray-900">Popular in the community</h3>
+                <h3 className="text-sm font-black" style={{ color: "#1a1410" }}>Popular right now</h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {trending.map((recipe) => (
-                  <TrendingCard key={recipe.recipeId} recipe={recipe} />
+                {trending.map((recipe, i) => (
+                  <div key={recipe.recipeId} style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}>
+                    <TrendingCard recipe={recipe} />
+                  </div>
                 ))}
               </div>
             </div>
@@ -321,7 +315,8 @@ function TrendingCard({ recipe }: { recipe: TrendingRecipe }) {
   return (
     <a
       href={`/recipes/${recipe.recipeId}`}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-all group"
+      className="bg-white rounded-3xl overflow-hidden block active:scale-[0.97] transition-transform"
+      style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
     >
       {recipe.image_url ? (
         <div className="h-28 sm:h-32 bg-gray-100 overflow-hidden relative">
