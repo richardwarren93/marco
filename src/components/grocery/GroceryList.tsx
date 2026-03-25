@@ -297,14 +297,14 @@ export default function GroceryList() {
   })();
 
   return (
-    <div className="bg-gray-50 pb-24">
+    <div className="pb-24" style={{ background: "#faf9f7" }}>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 px-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between max-w-5xl mx-auto h-14">
+      <div className="px-4 sticky top-0 z-10" style={{ background: "#faf9f7" }}>
+        <div className="flex items-center justify-between max-w-5xl mx-auto py-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Grocery</h1>
-            <p className="text-xs text-gray-400 -mt-0.5">{formatRangeLabel(dateRange.start, dateRange.end)}</p>
+            <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Grocery</h1>
+            <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>{formatRangeLabel(dateRange.start, dateRange.end)}</p>
           </div>
           {/* Range selector */}
           <div className="relative">
@@ -482,36 +482,37 @@ export default function GroceryList() {
 
       {/* ── Content ─────────────────────────────────────────────────────────── */}
       {loading ? (
-        /* Loading skeleton */
         <div className="mx-4 mt-3 space-y-3">
           {[1, 2, 3].map((n) => (
-            <div key={n} className="bg-white rounded-2xl border border-gray-100 p-4">
-              <div className="h-3 w-24 bg-gray-100 rounded animate-pulse mb-3" />
-              <div className="space-y-2.5">
-                {[1, 2].map((m) => (
-                  <div key={m} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-md bg-gray-100 animate-pulse flex-shrink-0" />
-                    <div className="h-3 flex-1 bg-gray-100 rounded animate-pulse" />
-                  </div>
-                ))}
+            <div key={n} className="rounded-3xl overflow-hidden" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+              <div className="p-4 bg-white">
+                <div className="h-2.5 w-20 skeleton-warm rounded-full mb-4" />
+                <div className="space-y-3">
+                  {[1, 2].map((m) => (
+                    <div key={m} className="flex items-center gap-3">
+                      <div className="w-5 h-5 rounded-lg skeleton-warm flex-shrink-0" />
+                      <div className="h-2.5 flex-1 skeleton-warm rounded-full" />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
       ) : !list ? (
-        /* No list yet — empty state */
-        <div className="mx-4 mt-6 text-center">
-          <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10">
-            <p className="text-4xl mb-4">🛒</p>
-            <p className="text-gray-800 font-semibold text-base mb-1">No grocery list yet</p>
-            <p className="text-gray-400 text-sm mb-6">
-              Add meals to your {rangeLabel.toLowerCase()} calendar, then generate your list.
+        <div className="mx-4 mt-6 text-center animate-fade-slide-up">
+          <div className="bg-white rounded-3xl px-6 py-12" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+            <p className="text-5xl mb-4">🛒</p>
+            <p className="font-black text-lg mb-1" style={{ color: "#1a1410" }}>No grocery list yet</p>
+            <p className="text-sm mb-7" style={{ color: "#a09890" }}>
+              Add meals to your {rangeLabel.toLowerCase()} plan, then generate your list.
             </p>
             <button
               onClick={handleGenerate}
               disabled={generating}
-              className="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-xl transition-colors disabled:opacity-50"
+              className="px-7 py-3 rounded-2xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-50"
+              style={{ background: "#1a1410" }}
             >
               {generating ? "Generating…" : "Generate grocery list"}
             </button>
@@ -549,11 +550,18 @@ export default function GroceryList() {
       ) : (
         /* Grouped list */
         <div className="mx-4 mt-3 space-y-3">
-          {grouped.map(([cat, catItems]) => (
-            <div key={cat} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          {grouped.map(([cat, catItems], gi) => (
+            <div
+              key={cat}
+              className="bg-white rounded-3xl overflow-hidden"
+              style={{
+                boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+                animation: `fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) ${gi * 60}ms both`,
+              }}
+            >
               {/* Category header */}
-              <div className="px-4 pt-3 pb-1.5">
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+              <div className="px-4 pt-3.5 pb-1">
+                <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
                   {categoryLabel(cat)}
                 </h3>
               </div>
@@ -573,13 +581,16 @@ export default function GroceryList() {
             </div>
           ))}
 
-          {/* + Add item row — always at the bottom inside the list area */}
+          {/* + Add item row */}
           <button
             onClick={() => setAddSheetOpen(true)}
-            className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-white rounded-2xl border border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors text-left"
+            className="w-full flex items-center gap-3 px-4 py-4 rounded-3xl border-2 border-dashed transition-all active:scale-[0.98]"
+            style={{ borderColor: "#e8e2d8", background: "transparent" }}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = "#f97316")}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = "#e8e2d8")}
           >
-            <span className="w-5 h-5 rounded-md border-2 border-dashed border-gray-300 flex items-center justify-center text-gray-300 flex-shrink-0 text-sm">+</span>
-            <span className="text-sm text-gray-400">Add item</span>
+            <span className="w-6 h-6 rounded-xl flex items-center justify-center text-sm font-black" style={{ background: "#f0ede8", color: "#a09890" }}>+</span>
+            <span className="text-sm font-medium" style={{ color: "#a09890" }}>Add item</span>
           </button>
         </div>
       )}
