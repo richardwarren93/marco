@@ -13,12 +13,35 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
+  const [showTextInput, setShowTextInput] = useState(false);
+  const [pastedText, setPastedText] = useState("");
 
   if (!isOpen) return null;
 
   function handleUrl() {
     onClose();
     router.push("/recipes/new?mode=url");
+  }
+
+  async function handleTextExtract() {
+    if (!pastedText.trim()) return;
+    setExtracting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/recipes/extract-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: pastedText }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to extract recipe");
+      try { sessionStorage.setItem("importedRecipe", JSON.stringify(data.recipe)); } catch {}
+      onClose();
+      router.push("/recipes/new?mode=extracted");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to extract recipe. Please try again.");
+      setExtracting(false);
+    }
   }
 
   async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -97,11 +120,11 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           </div>
         ) : (
           /* Options */
-          <div className="px-4 py-3 space-y-1">
+          <div className="px-4 py-2 space-y-0.5">
             {/* Paste URL */}
             <button
               onClick={handleUrl}
-              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
             >
               <span className="w-11 h-11 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500 shrink-0">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -114,10 +137,10 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
               </div>
             </button>
 
-            {/* Camera or Photo Library — iOS presents its own native picker */}
+            {/* Camera */}
             <button
-              onClick={() => photoInputRef.current?.click()}
-              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+              onClick={() => { setShowTextInput(false); photoInputRef.current?.click(); }}
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
             >
               <span className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -130,6 +153,43 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
                 <p className="text-xs text-gray-400 mt-0.5">Photograph a cookbook or recipe card</p>
               </div>
             </button>
+
+            {/* Paste from text */}
+            <button
+              onClick={() => setShowTextInput((v) => !v)}
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+            >
+              <span className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shrink-0">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-medium text-gray-900 text-sm">Paste from text</p>
+                <p className="text-xs text-gray-400 mt-0.5">Copy a recipe from anywhere and paste it</p>
+              </div>
+            </button>
+
+            {/* Inline text input */}
+            {showTextInput && (
+              <div className="px-1 pt-1 pb-2">
+                <textarea
+                  autoFocus
+                  value={pastedText}
+                  onChange={(e) => setPastedText(e.target.value)}
+                  placeholder="Paste recipe text here…"
+                  rows={5}
+                  className="w-full text-sm text-gray-900 placeholder-gray-300 border border-gray-200 rounded-2xl px-4 py-3 resize-none focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200"
+                />
+                <button
+                  onClick={handleTextExtract}
+                  disabled={!pastedText.trim()}
+                  className="mt-2 w-full py-3 rounded-2xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  Extract Recipe
+                </button>
+              </div>
+            )}
 
             {/* Error */}
             {error && (
