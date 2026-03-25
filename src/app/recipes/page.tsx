@@ -265,7 +265,7 @@ function RecipesInner() {
       <AddToCollectionModal
         recipeId={collectionRecipeId ?? ""}
         isOpen={!!collectionRecipeId}
-        onClose={() => setCollectionRecipeId(null)}
+        onClose={() => { setCollectionRecipeId(null); fetchCollections(); }}
       />
 
       <ImportRecipeSheet isOpen={showImport} onClose={() => setShowImport(false)} />
