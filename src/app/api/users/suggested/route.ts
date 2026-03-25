@@ -33,7 +33,7 @@ export async function GET() {
     .from("user_profiles")
     .select("user_id, display_name, avatar_url, friend_code")
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(15);
 
   const suggested = (profiles || []).filter((p) => !connectedIds.has(p.user_id));
 
