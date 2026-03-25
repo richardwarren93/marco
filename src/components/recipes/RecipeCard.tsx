@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Recipe } from "@/types";
 
 const tagColors = [
@@ -30,7 +31,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
     >
       {recipe.image_url && !imgError ? (
         <div className="h-40 bg-gray-100 relative">
-          <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" onError={() => setImgError(true)} />
+          <Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" onError={() => setImgError(true)} sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw" />
           <div className="absolute top-2 left-2 flex gap-1">
             {recipe.source_platform && recipe.source_platform !== "other" && (
               <span className={`text-white text-[10px] font-semibold px-2 py-0.5 rounded-full ${platformStyles[recipe.source_platform]}`}>

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Recipe, Collection } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
@@ -91,10 +92,12 @@ function BrowserCard({
       {/* Image */}
       <div className="relative h-36 sm:h-44 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 flex items-center justify-center overflow-hidden">
         {recipe.image_url ? (
-          <img
+          <Image
             src={recipe.image_url}
             alt={recipe.title}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
             onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
           />
         ) : (
