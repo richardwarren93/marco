@@ -19,7 +19,6 @@ interface BatchPhoto {
 export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheetProps) {
   const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement>(null);
-  const batchInputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
@@ -54,35 +53,6 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
       setError(err instanceof Error ? err.message : "Failed to extract recipe. Please try again.");
       setExtracting(false);
     }
-  }
-
-  function handleBatchSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files || []);
-    if (!files.length) return;
-    e.target.value = "";
-
-    const valid = files
-      .filter((f) => f.type.startsWith("image/") && f.size <= 10 * 1024 * 1024)
-      .slice(0, 10);
-
-    if (valid.length === 0) {
-      setError("No valid images selected (JPEG, PNG, WebP under 10MB)");
-      return;
-    }
-
-    const photos: BatchPhoto[] = valid.map((file) => ({
-      file,
-      preview: URL.createObjectURL(file),
-      status: "queued" as const,
-    }));
-
-    setBatchPhotos(photos);
-    setBatchMode(true);
-    setBatchComplete(false);
-    setError("");
-
-    // Start processing
-    processBatch(photos);
   }
 
   async function processBatch(photos: BatchPhoto[]) {
@@ -169,10 +139,34 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
   }
 
   async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
     e.target.value = ""; // reset so same file can be picked again
 
+    // Multiple files → batch mode
+    if (files.length > 1) {
+      const valid = files
+        .filter((f) => f.type.startsWith("image/") && f.size <= 10 * 1024 * 1024)
+        .slice(0, 10);
+      if (valid.length === 0) {
+        setError("No valid images selected (under 10MB)");
+        return;
+      }
+      const photos: BatchPhoto[] = valid.map((file) => ({
+        file,
+        preview: URL.createObjectURL(file),
+        status: "queued" as const,
+      }));
+      setBatchPhotos(photos);
+      setBatchMode(true);
+      setBatchComplete(false);
+      setError("");
+      processBatch(photos);
+      return;
+    }
+
+    // Single file → original flow
+    const file = files[0];
     setExtracting(true);
     setError("");
 
@@ -187,11 +181,10 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to extract recipe");
 
-      // Store result for /recipes/new?mode=extracted to pick up
       try {
         sessionStorage.setItem("importedRecipe", JSON.stringify(data.recipe));
       } catch {
-        // sessionStorage full or unavailable — recipe data will just be lost
+        // sessionStorage full or unavailable
       }
 
       onClose();
@@ -363,24 +356,8 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
                 </svg>
               </span>
               <div>
-                <p className="font-medium text-gray-900 text-sm">Camera</p>
-                <p className="text-xs text-gray-400 mt-0.5">Photograph a cookbook or recipe card</p>
-              </div>
-            </button>
-
-            {/* Batch from photos */}
-            <button
-              onClick={() => { setShowTextInput(false); batchInputRef.current?.click(); }}
-              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
-            >
-              <span className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </span>
-              <div>
-                <p className="font-medium text-gray-900 text-sm">Batch from photos</p>
-                <p className="text-xs text-gray-400 mt-0.5">Upload multiple cookbook pages at once (max 10)</p>
+                <p className="font-medium text-gray-900 text-sm">Photos</p>
+                <p className="text-xs text-gray-400 mt-0.5">Select one or multiple cookbook pages</p>
               </div>
             </button>
 
@@ -428,21 +405,14 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           </div>
         )}
 
-        {/* Hidden file inputs */}
+        {/* Hidden file input — multiple enabled for batch */}
         <input
           ref={photoInputRef}
           type="file"
           accept="image/*"
-          className="hidden"
-          onChange={handleFileSelected}
-        />
-        <input
-          ref={batchInputRef}
-          type="file"
-          accept="image/*"
           multiple
           className="hidden"
-          onChange={handleBatchSelect}
+          onChange={handleFileSelected}
         />
       </div>
       </div>
