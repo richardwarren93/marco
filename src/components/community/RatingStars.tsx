@@ -20,7 +20,7 @@ export default function RatingStars({ sourceUrl }: { sourceUrl: string }) {
         .eq("source_url", sourceUrl);
 
       if (ratings && ratings.length > 0) {
-        const total = ratings.reduce((sum, r) => sum + r.rating, 0);
+        const total = ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0);
         setAverage(total / ratings.length);
         setCount(ratings.length);
       }
@@ -61,7 +61,7 @@ export default function RatingStars({ sourceUrl }: { sourceUrl: string }) {
           .select("*")
           .eq("source_url", sourceUrl);
         if (ratings && ratings.length > 0) {
-          const total = ratings.reduce((sum, r) => sum + r.rating, 0);
+          const total = ratings.reduce((sum: number, r: { rating: number }) => sum + r.rating, 0);
           setAverage(total / ratings.length);
           setCount(ratings.length);
         }

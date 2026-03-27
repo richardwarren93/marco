@@ -22,7 +22,7 @@ export default function AddFriendPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: User | null } }) => setUser(u));
 
     // Lookup the friend code
     fetch(`/api/friends/lookup?code=${encodeURIComponent(code)}`)

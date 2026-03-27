@@ -19,7 +19,7 @@ export default function KitchenEquipment() {
       .eq("user_id", user.id);
 
     if (data) {
-      setSelected(new Set(data.map((d) => d.equipment_name)));
+      setSelected(new Set(data.map((d: { equipment_name: string }) => d.equipment_name)));
     }
     setLoading(false);
   }, [supabase]);

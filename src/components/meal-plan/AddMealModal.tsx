@@ -95,7 +95,7 @@ export default function AddMealModal({
         .select("*")
         .order("created_at", { ascending: false })
         .limit(100)
-        .then(({ data }) => {
+        .then(({ data }: { data: Recipe[] | null }) => {
           setAllRecipes((data as Recipe[]) || []);
           setLoading(false);
         });

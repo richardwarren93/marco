@@ -63,14 +63,14 @@ export default function Navbar() {
   // All hooks must be called unconditionally — guard with isAuthPage inside
   useEffect(() => {
     if (isAuthPage) return;
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) fetchUnreadCount();
+    supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: User | null } }) => {
+      setUser(u);
+      if (u) fetchUnreadCount();
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((_event: string, session: { user: User | null } | null) => {
       setUser(session?.user ?? null);
       if (session?.user) fetchUnreadCount();
     });
