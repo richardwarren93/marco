@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import type { Recipe } from "@/types";
 
@@ -242,7 +243,7 @@ export default function AddMealModal({
                       <>
                         <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
                           {selectedRecipe.image_url ? (
-                            <img src={selectedRecipe.image_url} alt={selectedRecipe.title} className="w-full h-full object-cover" />
+                            <div className="relative w-full h-full"><Image src={selectedRecipe.image_url} alt={selectedRecipe.title} fill className="object-cover" sizes="32px" /></div>
                           ) : (
                             <span className="text-sm">{MEAL_PLACEHOLDER[selectedRecipe.meal_type] || "🍳"}</span>
                           )}
@@ -275,7 +276,7 @@ export default function AddMealModal({
                           >
                             <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
                               {recipe.image_url ? (
-                                <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" />
+                                <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="32px" /></div>
                               ) : (
                                 <span className="text-sm">{MEAL_PLACEHOLDER[recipe.meal_type] || "🍳"}</span>
                               )}

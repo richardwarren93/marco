@@ -15,6 +15,7 @@ export async function GET() {
   try {
     const admin = createAdminClient();
 
+    // Single query: get all collections
     const { data: cols, error } = await admin
       .from("collections")
       .select("*")
@@ -23,40 +24,57 @@ export async function GET() {
 
     if (error) throw error;
 
-    // Fetch recipe counts + preview images (up to 4 per collection)
-    const withCountsAndPreviews = await Promise.all(
-      (cols || []).map(async (col) => {
-        const [{ count }, { data: previewRows }] = await Promise.all([
-          admin
-            .from("collection_recipes")
-            .select("*", { count: "exact", head: true })
-            .eq("collection_id", col.id),
-          admin
-            .from("collection_recipes")
-            .select("recipe_id")
-            .eq("collection_id", col.id)
-            .order("added_at", { ascending: false })
-            .limit(4),
-        ]);
+    if (!cols || cols.length === 0) {
+      return NextResponse.json({ collections: [] }, {
+        headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
+      });
+    }
 
-        let preview_images: string[] = [];
-        if (previewRows && previewRows.length > 0) {
-          const { data: recipes } = await admin
-            .from("recipes")
-            .select("image_url")
-            .in("id", previewRows.map((r) => r.recipe_id))
-            .not("image_url", "is", null);
-          preview_images = (recipes || [])
-            .map((r) => r.image_url)
-            .filter(Boolean)
-            .slice(0, 4);
-        }
+    // Two bulk queries instead of 3 per collection (N+1 → 2 total)
+    const colIds = cols.map((c) => c.id);
 
-        return { ...col, recipe_count: count || 0, preview_images };
-      })
-    );
+    const [{ data: allCR }, { data: previewCR }] = await Promise.all([
+      // Count: get all collection_recipes for these collections
+      admin
+        .from("collection_recipes")
+        .select("collection_id")
+        .in("collection_id", colIds),
+      // Preview images: get recent recipe IDs per collection (we'll take first 4 per group)
+      admin
+        .from("collection_recipes")
+        .select("collection_id, recipe:recipes(image_url)")
+        .in("collection_id", colIds)
+        .order("added_at", { ascending: false }),
+    ]);
 
-    return NextResponse.json({ collections: withCountsAndPreviews });
+    // Build counts map
+    const countMap = new Map<string, number>();
+    for (const row of allCR || []) {
+      countMap.set(row.collection_id, (countMap.get(row.collection_id) || 0) + 1);
+    }
+
+    // Build preview images map (max 4 per collection)
+    const previewMap = new Map<string, string[]>();
+    for (const row of previewCR || []) {
+      const colId = row.collection_id;
+      const images = previewMap.get(colId) || [];
+      const recipe = row.recipe as unknown as { image_url: string | null } | null;
+      const imgUrl = recipe?.image_url;
+      if (imgUrl && images.length < 4) {
+        images.push(imgUrl);
+        previewMap.set(colId, images);
+      }
+    }
+
+    const withCountsAndPreviews = cols.map((col) => ({
+      ...col,
+      recipe_count: countMap.get(col.id) || 0,
+      preview_images: previewMap.get(col.id) || [],
+    }));
+
+    return NextResponse.json({ collections: withCountsAndPreviews }, {
+      headers: { "Cache-Control": "private, max-age=30, stale-while-revalidate=60" },
+    });
   } catch (error) {
     console.error("Fetch collections error:", error);
     return NextResponse.json(

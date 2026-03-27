@@ -1,20 +1,37 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import Image from "next/image";
+import useSWR from "swr";
 import type { UserProfile, CookingGoal } from "@/types";
+import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
 import { RecipesIcon, CollectionsIcon, FriendsIcon, TomatoIcon } from "@/components/icons/HandDrawnIcons";
 import GoalSetting from "@/components/gamification/GoalSetting";
 import BadgesCard from "@/components/gamification/BadgesCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
 
 export default function ProfilePage() {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [stats, setStats] = useState({ recipes: 0, collections: 0, friends: 0, tomatoes: 0 });
-  const [goal, setGoal] = useState<CookingGoal | null>(null);
-  const [loading, setLoading] = useState(true);
+  // ── SWR data ────────────────────────────────────────────────────────────────
+  const { data: profileData, isLoading: profileLoading, mutate: mutateProfile } = useProfile();
+  const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
+  const { data: collectionsData, isLoading: collectionsLoading } = useCollections();
+  const { data: friendsData, isLoading: friendsLoading } = useSWR("/api/friends", apiFetcher, { revalidateOnFocus: false });
+  const { data: goalData, isLoading: goalLoading, mutate: mutateGoal } = useSWR("/api/cooking-goal", apiFetcher, { revalidateOnFocus: false });
+
+  const profile: UserProfile | null = profileData?.profile ?? null;
+  const goal: CookingGoal | null = goalData?.goal ?? null;
+  const loading = profileLoading || recipesLoading || collectionsLoading || friendsLoading || goalLoading;
+
+  const stats = {
+    recipes: recipes.length,
+    collections: (collectionsData?.collections ?? []).length,
+    friends: (friendsData?.friends ?? []).length,
+    tomatoes: profile?.tomato_balance ?? 0,
+  };
+
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -24,34 +41,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const supabase = createClient();
 
+  // Sync displayName when profile loads
   useEffect(() => {
-    async function load() {
-      const [profileRes, recipesRes, collectionsRes, friendsRes, goalRes] = await Promise.all([
-        fetch("/api/profile"),
-        supabase.from("recipes").select("id", { count: "exact", head: true }),
-        fetch("/api/collections"),
-        fetch("/api/friends"),
-        fetch("/api/cooking-goal"),
-      ]);
-
-      const profileData = await profileRes.json();
-      const collectionsData = await collectionsRes.json();
-      const friendsData = await friendsRes.json();
-      const goalData = await goalRes.json();
-
-      setProfile(profileData.profile || null);
-      setDisplayName(profileData.profile?.display_name || "");
-      setGoal(goalData.goal || null);
-      setStats({
-        recipes: recipesRes.count || 0,
-        collections: (collectionsData.collections || []).length,
-        friends: (friendsData.friends || []).length,
-        tomatoes: profileData.profile?.tomato_balance || 0,
-      });
-      setLoading(false);
+    if (profile?.display_name && !editing) {
+      setDisplayName(profile.display_name);
     }
-    load();
-  }, [supabase]);
+  }, [profile?.display_name, editing]);
 
   async function handleSave() {
     setSaving(true);
@@ -61,8 +56,7 @@ export default function ProfilePage() {
       body: JSON.stringify({ display_name: displayName }),
     });
     if (res.ok) {
-      const data = await res.json();
-      setProfile(data.profile);
+      await mutateProfile();
       setEditing(false);
     }
     setSaving(false);
@@ -92,8 +86,7 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ avatar_url: uploadData.url }),
       });
-      const profileData = await profileRes.json();
-      if (profileRes.ok) setProfile(profileData.profile);
+      if (profileRes.ok) await mutateProfile();
     } catch {
       // upload failed silently
     } finally {
@@ -140,10 +133,11 @@ export default function ProfilePage() {
           className="relative w-20 h-20 rounded-full mx-auto shadow-lg group"
         >
           {profile?.avatar_url ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <Image
               src={profile.avatar_url}
               alt={profile.display_name}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-full object-cover"
             />
           ) : (
@@ -228,7 +222,7 @@ export default function ProfilePage() {
       {/* Cooking Goal */}
       <GoalSetting
         currentTarget={goal?.weekly_target ?? null}
-        onSaved={(target) => setGoal(goal ? { ...goal, weekly_target: target } : null)}
+        onSaved={() => mutateGoal()}
       />
 
       {/* Household */}

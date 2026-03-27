@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
+import { useState, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import dynamic from "next/dynamic";
 import type { Recipe, Collection } from "@/types";
+import { useRecipes, useCollections } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
-import AddMealSheet from "@/components/meal-plan/AddMealSheet";
 import CollectionCard from "@/components/collections/CollectionCard";
 import CreateCollectionForm from "@/components/collections/CreateCollectionForm";
-import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
 import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
-import FriendsRecipeTable from "@/components/recipes/FriendsRecipeTable";
-import ExploreTab from "@/components/recipes/ExploreTab";
-import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
+
+// ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
+const ExploreTab = dynamic(() => import("@/components/recipes/ExploreTab"));
+const FriendsRecipeTable = dynamic(() => import("@/components/recipes/FriendsRecipeTable"));
+const ImportRecipeSheet = dynamic(() => import("@/components/recipes/ImportRecipeSheet"), { ssr: false });
+const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
+const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -39,9 +43,13 @@ export default function RecipesPage() {
 function RecipesInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  // ── SWR data ────────────────────────────────────────────────────────────────
+  const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
+  const { data: collectionsData, isLoading: collectionsLoading, mutate: mutateCollections } = useCollections();
+  const collections: Collection[] = collectionsData?.collections ?? [];
+  const loading = recipesLoading || collectionsLoading;
+
   const [activeTab, setActiveTab] = useState<ActiveTab>(
     searchParams.get("tab") === "collections"
       ? "collections"
@@ -63,30 +71,6 @@ function RecipesInner() {
   const [showImport, setShowImport] = useState(false);
 
   const supabase = createClient();
-
-  async function fetchCollections() {
-    try {
-      const res = await fetch("/api/collections");
-      if (!res.ok) throw new Error("Failed to fetch");
-      const data = await res.json();
-      setCollections(data.collections || []);
-    } catch (error) {
-      console.error("Fetch collections error:", error);
-    }
-  }
-
-  useEffect(() => {
-    async function fetchData() {
-      const [recipesRes, collectionsRes] = await Promise.all([
-        supabase.from("recipes").select("*").order("created_at", { ascending: false }),
-        fetch("/api/collections").then((r) => r.json()),
-      ]);
-      setRecipes((recipesRes.data as Recipe[]) ?? []);
-      setCollections(collectionsRes.collections ?? []);
-      setLoading(false);
-    }
-    fetchData();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const today = useMemo(() => formatDateKey(new Date()), []);
   const weekStart = useMemo(() => getMonday(new Date()), []);
@@ -193,7 +177,7 @@ function RecipesInner() {
 
           {showCollectionForm && (
             <div className="mb-5 animate-card-pop">
-              <CreateCollectionForm onCreated={() => { setShowCollectionForm(false); fetchCollections(); }} />
+              <CreateCollectionForm onCreated={() => { setShowCollectionForm(false); mutateCollections(); }} />
             </div>
           )}
 
@@ -265,7 +249,7 @@ function RecipesInner() {
       <AddToCollectionModal
         recipeId={collectionRecipeId ?? ""}
         isOpen={!!collectionRecipeId}
-        onClose={() => { setCollectionRecipeId(null); fetchCollections(); }}
+        onClose={() => { setCollectionRecipeId(null); mutateCollections(); }}
       />
 
       <ImportRecipeSheet isOpen={showImport} onClose={() => setShowImport(false)} />

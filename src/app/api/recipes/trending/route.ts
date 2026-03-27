@@ -92,5 +92,7 @@ export async function GET() {
       userCount: r.users.size,
     }));
 
-  return NextResponse.json({ trending });
+  return NextResponse.json({ trending }, {
+    headers: { "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600" },
+  });
 }

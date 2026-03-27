@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import MealPlanListView from "./MealPlanListView";
 
@@ -55,8 +56,7 @@ export default function ScheduleScreen({
               style={{ background: "#f97316" }}
             >
               Plan week with
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/marco-icon.svg" alt="Marco" className="w-4 h-4 rounded-full" />
+              <Image src="/marco-icon.svg" alt="Marco" width={16} height={16} className="rounded-full" />
             </button>
           </div>
         </div>

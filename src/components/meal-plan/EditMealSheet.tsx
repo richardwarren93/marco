@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -156,11 +157,7 @@ export default function EditMealSheet({
               <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-xl mb-2">
                 <div className="w-9 h-9 rounded-lg overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
                   {selectedRecipe.image_url ? (
-                    <img
-                      src={selectedRecipe.image_url}
-                      alt={selectedRecipe.title}
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="relative w-full h-full"><Image src={selectedRecipe.image_url} alt={selectedRecipe.title} fill className="object-cover" sizes="36px" /></div>
                   ) : (
                     <span className="text-sm">
                       {MEAL_PLACEHOLDER[selectedRecipe.meal_type] || "🍳"}
@@ -205,7 +202,7 @@ export default function EditMealSheet({
                   >
                     <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
                       {r.image_url ? (
-                        <img src={r.image_url} alt={r.title} className="w-full h-full object-cover" />
+                        <div className="relative w-full h-full"><Image src={r.image_url} alt={r.title} fill className="object-cover" sizes="32px" /></div>
                       ) : (
                         <span className="text-sm">{MEAL_PLACEHOLDER[r.meal_type] || "🍳"}</span>
                       )}

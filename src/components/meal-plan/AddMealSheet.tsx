@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 
@@ -77,7 +78,7 @@ function RecipeRow({
         }`}
       >
         {recipe.image_url ? (
-          <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" />
+          <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="36px" /></div>
         ) : (
           <span className={compact ? "text-xs" : "text-sm"}>
             {MEAL_PLACEHOLDER[recipe.meal_type] || "🍳"}

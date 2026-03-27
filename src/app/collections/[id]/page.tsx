@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import type { Collection, Recipe } from "@/types";
 import ShareCollectionModal from "@/components/collections/ShareCollectionModal";
 import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
@@ -40,10 +41,12 @@ function CollectionRecipeCard({
         {/* Image */}
         <div className="relative h-32 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
           {recipe.image_url && !imgError ? (
-            <img
+            <Image
               src={recipe.image_url}
               alt={recipe.title}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 50vw, 33vw"
               onError={() => setImgError(true)}
             />
           ) : (
@@ -589,7 +592,7 @@ function AddRecipesSheet({
                     {/* Thumbnail */}
                     <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
                       {recipe.image_url ? (
-                        <img src={recipe.image_url} alt="" className="w-full h-full object-cover" />
+                        <div className="relative w-full h-full"><Image src={recipe.image_url} alt="" fill className="object-cover" sizes="44px" /></div>
                       ) : (
                         <span className="text-lg">{emoji}</span>
                       )}

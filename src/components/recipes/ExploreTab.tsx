@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { useTrending } from "@/lib/hooks/use-data";
 import type { PromptRecipeResult } from "@/lib/claude";
 
 interface TrendingRecipe {
@@ -66,29 +67,12 @@ export default function ExploreTab() {
   const [error, setError] = useState("");
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
-  const [trending, setTrending] = useState<TrendingRecipe[]>([]);
+  const { data: trendingData, isLoading: trendingLoading } = useTrending();
+  const trending: TrendingRecipe[] = trendingData?.trending ?? [];
   const [questionStep, setQuestionStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showRawInput, setShowRawInput] = useState(false);
-  const [trendingLoading, setTrendingLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Fetch trending recipes on mount
-  useEffect(() => {
-    async function fetchTrending() {
-      try {
-        const res = await fetch("/api/recipes/trending");
-        if (!res.ok) return;
-        const data = await res.json();
-        setTrending(data.trending || []);
-      } catch {
-        // ignore
-      } finally {
-        setTrendingLoading(false);
-      }
-    }
-    fetchTrending();
-  }, []);
 
   // Auto-grow textarea
   useEffect(() => {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import type { AppNotification } from "@/types";
 
 interface SuggestedUser {
@@ -48,7 +49,7 @@ function Avatar({
 }) {
   const cls = `w-${size} h-${size} rounded-full flex-shrink-0`;
   if (avatar) {
-    return <img src={avatar} alt={name || ""} className={`${cls} object-cover`} />;
+    return <Image src={avatar} alt={name || ""} width={size * 4} height={size * 4} className={`${cls} object-cover`} />;
   }
   const initials = name ? name.slice(0, 2).toUpperCase() : "?";
   return (

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import type { Ingredient, Recipe } from "@/types";
 import { useToast } from "@/components/ui/Toast";
 import { GENERIC_UNITS } from "@/data/ingredients";
@@ -263,7 +264,7 @@ export default function RecipeForm({
           <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
             {imageUrl && (
               <div className="relative h-52 bg-gray-100">
-                <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+                <Image src={imageUrl} alt={title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 672px" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
               </div>
             )}
@@ -394,8 +395,8 @@ export default function RecipeForm({
           {/* Compact image + title header */}
           <div className="flex items-center gap-3">
             {imageUrl && (
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
+                <Image src={imageUrl} alt={title} fill className="object-cover" sizes="56px" />
               </div>
             )}
             <input

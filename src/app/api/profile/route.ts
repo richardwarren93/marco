@@ -24,7 +24,9 @@ export async function GET() {
       .single();
 
     if (existing) {
-      return NextResponse.json({ profile: existing });
+      return NextResponse.json({ profile: existing }, {
+        headers: { "Cache-Control": "private, max-age=60" },
+      });
     }
 
     // Create profile with friend code (retry on collision)

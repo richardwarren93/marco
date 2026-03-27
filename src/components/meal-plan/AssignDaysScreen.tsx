@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -196,7 +197,7 @@ export default function AssignDaysScreen({
                 <div className="w-12 h-12 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center"
                   style={{ background: "linear-gradient(135deg, #fff4e8, #fde8cc)" }}>
                   {recipe.image_url
-                    ? <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" />
+                    ? <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="48px" /></div>
                     : <span className="text-xl">🍳</span>}
                 </div>
                 <div className="flex-1 min-w-0">

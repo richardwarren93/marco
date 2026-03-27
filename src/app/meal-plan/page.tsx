@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, Suspense } from "react";
+import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useRecipes, useMealPlans } from "@/lib/hooks/use-data";
 import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
 import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
 import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
@@ -59,18 +60,36 @@ function MealPlanInner() {
   // Recipes selected during the current Build flow pass
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-  // ─── Data ─────────────────────────────────────────────────────────────────────
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
-  const [householdPlans, setHouseholdPlans] = useState<MealPlan[]>([]);
-  const [loading, setLoading] = useState(true);
+  // ─── Data (SWR-cached) ───────────────────────────────────────────────────────
+  const dateRange = useMemo(() => {
+    const monday = getMonday(new Date());
+    const start = new Date(monday);
+    start.setDate(start.getDate() - 28);
+    const end = new Date(monday);
+    end.setDate(end.getDate() + 35);
+    return {
+      startStr: start.toISOString().split("T")[0],
+      endStr: end.toISOString().split("T")[0],
+    };
+  }, []);
+
+  const { data: recipesData = [], isLoading: recipesLoading } = useRecipes();
+  const recipes: Recipe[] = recipesData;
+  const {
+    data: mealPlanData,
+    isLoading: plansLoading,
+    mutate: mutateMealPlans,
+  } = useMealPlans(dateRange.startStr, dateRange.endStr);
+
+  const mealPlans: MealPlan[] = mealPlanData?.plans ?? [];
+  const householdPlans: MealPlan[] = mealPlanData?.householdPlans ?? [];
+  const loading = recipesLoading || plansLoading;
   const [error, setError] = useState("");
 
   // ─── Scroll to specific day after loading (from ?date= param) ────────────────
   const scrollTargetDate = searchParams.get("date");
   useEffect(() => {
     if (!scrollTargetDate || loading) return;
-    // Wait one frame for the DOM to paint the day elements
     const rafId = requestAnimationFrame(() => {
       document.getElementById(`day-${scrollTargetDate}`)
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -79,50 +98,6 @@ function MealPlanInner() {
   }, [loading, scrollTargetDate]);
 
   const supabase = createClient();
-
-  // ─── Data fetching ────────────────────────────────────────────────────────────
-  const fetchMealPlans = useCallback(async () => {
-    const monday = getMonday(new Date());
-    const start = new Date(monday);
-    start.setDate(start.getDate() - 28);
-    const end = new Date(monday);
-    end.setDate(end.getDate() + 35);
-    const startStr = start.toISOString().split("T")[0];
-    const endStr = end.toISOString().split("T")[0];
-
-    const { data } = await supabase
-      .from("meal_plans")
-      .select("*, recipe:recipes(*)")
-      .order("planned_date", { ascending: true })
-      .gte("planned_date", startStr)
-      .lte("planned_date", endStr);
-
-    setMealPlans((data as MealPlan[]) || []);
-
-    try {
-      const hhRes = await fetch(`/api/meal-plan/household?start=${startStr}&end=${endStr}`);
-      const hhData = await hhRes.json();
-      setHouseholdPlans((hhData.plans as MealPlan[]) || []);
-    } catch {
-      setHouseholdPlans([]);
-    }
-  }, [supabase]);
-
-  useEffect(() => {
-    async function fetchData() {
-      await Promise.all([
-        fetchMealPlans(),
-        supabase
-          .from("recipes")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(100)
-          .then(({ data }) => setRecipes((data as Recipe[]) || [])),
-      ]);
-      setLoading(false);
-    }
-    fetchData();
-  }, [supabase, fetchMealPlans]);
 
   // ─── Derived ─────────────────────────────────────────────────────────────────
   const currentWeekPickIds: string[] = weekPicks[formatDateKey(calendarWeek)] || [];
@@ -180,7 +155,7 @@ function MealPlanInner() {
 
     const { error: insertError } = await supabase.from("meal_plans").insert(rows);
     if (insertError) { setError(insertError.message); return; }
-    await fetchMealPlans();
+    await mutateMealPlans();
   }
 
   async function handleEditMealSave(
@@ -192,12 +167,16 @@ function MealPlanInner() {
       .update(updates)
       .eq("id", planId);
     if (updateError) { setError(updateError.message); return; }
-    await fetchMealPlans();
+    await mutateMealPlans();
   }
 
   async function handleCalendarRemove(planId: string) {
-    const prev = mealPlans;
-    setMealPlans(mealPlans.filter((p) => p.id !== planId));
+    // Optimistic update: remove from cache immediately
+    const optimistic = mealPlanData
+      ? { ...mealPlanData, plans: mealPlanData.plans.filter((p) => p.id !== planId) }
+      : undefined;
+    mutateMealPlans(optimistic, false);
+
     try {
       const res = await fetch("/api/meal-plan/remove", {
         method: "POST",
@@ -207,8 +186,7 @@ function MealPlanInner() {
       if (!res.ok) throw new Error("Delete failed");
     } catch (err) {
       console.error("Remove meal plan error:", err);
-      setMealPlans(prev);
-      await fetchMealPlans();
+      await mutateMealPlans(); // revert by refetching
     }
   }
 

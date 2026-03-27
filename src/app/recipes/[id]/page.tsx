@@ -1,19 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import useSWR from "swr";
+import dynamic from "next/dynamic";
 import type { Recipe, Ingredient } from "@/types";
+import { useRecipe, apiFetcher } from "@/lib/hooks/use-data";
 import SocialEmbed from "@/components/recipes/SocialEmbed";
-import RecipeForm from "@/components/recipes/RecipeForm";
-import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
-import CommunitySection from "@/components/community/CommunitySection";
-import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
-import CookPhotosGallery from "@/components/recipes/CookPhotosGallery";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
-import NutritionCard from "@/components/recipes/NutritionCard";
+
+// ── Lazy-load heavy/conditional components ──────────────────────────────────
+const RecipeForm = dynamic(() => import("@/components/recipes/RecipeForm"), { ssr: false });
+const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
+const ShareWithFriendsModal = dynamic(() => import("@/components/friends/ShareWithFriendsModal"), { ssr: false });
+const CommunitySection = dynamic(() => import("@/components/community/CommunitySection"));
+const CookPhotosGallery = dynamic(() => import("@/components/recipes/CookPhotosGallery"));
+const NutritionCard = dynamic(() => import("@/components/recipes/NutritionCard"));
 
 const MEAL_ICONS: Record<string, string> = {
   breakfast: "🌅",
@@ -195,8 +200,6 @@ function formatAmount(n: number): string {
 export default function RecipeDetailPage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
-  const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [editing, setEditing] = useState(false);
   const [showAddToCollection, setShowAddToCollection] = useState(false);
@@ -208,55 +211,21 @@ export default function RecipeDetailPage() {
     !isNaN(servingsParam) && servingsParam > 0 ? servingsParam : null
   );
   const [showMealPlanPrompt, setShowMealPlanPrompt] = useState(false);
-  const [recipeCollections, setRecipeCollections] = useState<{ id: string; name: string }[]>([]);
   const [unitSystem, setUnitSystem] = useState<UnitSystem | null>(null); // null = original
   const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
   const router = useRouter();
   const supabase = createClient();
 
-  // Fetch collections this recipe belongs to
-  const fetchRecipeCollections = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/recipes/${id}/collections`);
-      if (!res.ok) return;
-      const { collections } = await res.json();
-      setRecipeCollections(collections || []);
-    } catch {
-      // ignore
-    }
-  }, [id]);
+  // ── SWR data ────────────────────────────────────────────────────────────────
+  const { data: recipeData, isLoading: loading, mutate: mutateRecipe } = useRecipe(id as string);
+  const recipe = recipeData ?? null;
 
-  const fetchRecipe = useCallback(async () => {
-    // Try direct query first (works for own recipes via RLS)
-    const { data } = await supabase
-      .from("recipes")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (data) {
-      setRecipe(data as Recipe);
-      setLoading(false);
-      return;
-    }
-
-    // Fallback: fetch via API (handles household/shared recipes)
-    try {
-      const res = await fetch(`/api/recipes/${id}`);
-      if (res.ok) {
-        const json = await res.json();
-        setRecipe(json.recipe as Recipe);
-      }
-    } catch {
-      // fetch failed
-    }
-    setLoading(false);
-  }, [id, supabase]);
-
-  useEffect(() => {
-    fetchRecipe();
-    fetchRecipeCollections();
-  }, [fetchRecipe, fetchRecipeCollections]);
+  const { data: collectionsData, mutate: mutateCollections } = useSWR(
+    id ? `/api/recipes/${id}/collections` : null,
+    apiFetcher,
+    { revalidateOnFocus: false }
+  );
+  const recipeCollections: { id: string; name: string }[] = collectionsData?.collections ?? [];
 
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
@@ -292,7 +261,7 @@ export default function RecipeDetailPage() {
           onCancel={() => setEditing(false)}
           onSaved={() => {
             setEditing(false);
-            fetchRecipe();
+            mutateRecipe();
           }}
         />
       </div>
@@ -764,7 +733,7 @@ export default function RecipeDetailPage() {
         isOpen={showAddToCollection}
         onClose={() => {
           setShowAddToCollection(false);
-          fetchRecipeCollections();
+          mutateCollections();
         }}
       />
 
