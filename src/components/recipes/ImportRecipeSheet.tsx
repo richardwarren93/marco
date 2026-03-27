@@ -8,13 +8,25 @@ interface ImportRecipeSheetProps {
   onClose: () => void;
 }
 
+interface BatchPhoto {
+  file: File;
+  preview: string;
+  status: "queued" | "extracting" | "saving" | "done" | "error";
+  title?: string;
+  error?: string;
+}
+
 export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheetProps) {
   const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const batchInputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
   const [pastedText, setPastedText] = useState("");
+  const [batchPhotos, setBatchPhotos] = useState<BatchPhoto[]>([]);
+  const [batchMode, setBatchMode] = useState(false);
+  const [batchComplete, setBatchComplete] = useState(false);
 
   if (!isOpen) return null;
 
@@ -42,6 +54,118 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
       setError(err instanceof Error ? err.message : "Failed to extract recipe. Please try again.");
       setExtracting(false);
     }
+  }
+
+  function handleBatchSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    e.target.value = "";
+
+    const valid = files
+      .filter((f) => f.type.startsWith("image/") && f.size <= 10 * 1024 * 1024)
+      .slice(0, 10);
+
+    if (valid.length === 0) {
+      setError("No valid images selected (JPEG, PNG, WebP under 10MB)");
+      return;
+    }
+
+    const photos: BatchPhoto[] = valid.map((file) => ({
+      file,
+      preview: URL.createObjectURL(file),
+      status: "queued" as const,
+    }));
+
+    setBatchPhotos(photos);
+    setBatchMode(true);
+    setBatchComplete(false);
+    setError("");
+
+    // Start processing
+    processBatch(photos);
+  }
+
+  async function processBatch(photos: BatchPhoto[]) {
+    setExtracting(true);
+    const updated = [...photos];
+
+    for (let i = 0; i < updated.length; i++) {
+      // Update status to extracting
+      updated[i] = { ...updated[i], status: "extracting" };
+      setBatchPhotos([...updated]);
+
+      try {
+        // Extract recipe from image
+        const formData = new FormData();
+        formData.append("file", updated[i].file);
+        const extractRes = await fetch("/api/recipes/extract-image", {
+          method: "POST",
+          body: formData,
+        });
+        const extractData = await extractRes.json();
+        if (!extractRes.ok) throw new Error(extractData.error || "Extraction failed");
+
+        // Save recipe
+        updated[i] = { ...updated[i], status: "saving" };
+        setBatchPhotos([...updated]);
+
+        const recipe = extractData.recipe;
+        const saveRes = await fetch("/api/recipes/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: recipe.title,
+            description: recipe.description,
+            ingredients: recipe.ingredients,
+            steps: recipe.steps,
+            servings: recipe.servings,
+            prep_time_minutes: recipe.prep_time_minutes,
+            cook_time_minutes: recipe.cook_time_minutes,
+            tags: recipe.tags || [],
+            meal_type: recipe.tags?.includes("breakfast")
+              ? "breakfast"
+              : recipe.tags?.includes("lunch")
+              ? "lunch"
+              : "dinner",
+            image_url: recipe.image_url || null,
+            notes: "Imported from photo (batch)",
+          }),
+        });
+        if (!saveRes.ok) {
+          const saveData = await saveRes.json();
+          throw new Error(saveData.error || "Save failed");
+        }
+
+        updated[i] = { ...updated[i], status: "done", title: recipe.title };
+      } catch (err) {
+        updated[i] = {
+          ...updated[i],
+          status: "error",
+          error: err instanceof Error ? err.message : "Failed",
+        };
+      }
+      setBatchPhotos([...updated]);
+    }
+
+    setExtracting(false);
+    setBatchComplete(true);
+  }
+
+  function handleBatchClose() {
+    // Clean up object URLs
+    batchPhotos.forEach((p) => URL.revokeObjectURL(p.preview));
+    setBatchPhotos([]);
+    setBatchMode(false);
+    setBatchComplete(false);
+    setExtracting(false);
+    onClose();
+    // Refresh recipes list
+    router.refresh();
+  }
+
+  function removeBatchPhoto(index: number) {
+    URL.revokeObjectURL(batchPhotos[index].preview);
+    setBatchPhotos((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
@@ -109,8 +233,98 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           )}
         </div>
 
-        {/* Extracting state */}
-        {extracting ? (
+        {/* Batch mode */}
+        {batchMode ? (
+          <div className="px-4 py-4 max-h-[70vh] overflow-y-auto">
+            {/* Batch header */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-medium text-gray-700">
+                {batchComplete
+                  ? `${batchPhotos.filter((p) => p.status === "done").length} of ${batchPhotos.length} recipes imported`
+                  : `Importing ${batchPhotos.length} photo${batchPhotos.length > 1 ? "s" : ""}…`}
+              </p>
+              {/* Progress fraction */}
+              <span className="text-xs text-gray-400">
+                {batchPhotos.filter((p) => p.status === "done" || p.status === "error").length}/{batchPhotos.length}
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="w-full h-1.5 bg-gray-100 rounded-full mb-4 overflow-hidden">
+              <div
+                className="h-full bg-orange-500 rounded-full transition-all duration-300"
+                style={{
+                  width: `${(batchPhotos.filter((p) => p.status === "done" || p.status === "error").length / batchPhotos.length) * 100}%`,
+                }}
+              />
+            </div>
+
+            {/* Photo grid */}
+            <div className="grid grid-cols-2 gap-3">
+              {batchPhotos.map((photo, i) => (
+                <div key={i} className="relative rounded-xl overflow-hidden border border-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={photo.preview}
+                    alt={`Photo ${i + 1}`}
+                    className={`w-full h-28 object-cover ${photo.status === "done" ? "opacity-80" : photo.status === "error" ? "opacity-40" : ""}`}
+                  />
+                  {/* Status overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {photo.status === "extracting" && (
+                      <div className="bg-black/50 rounded-full p-2">
+                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                    {photo.status === "saving" && (
+                      <div className="bg-black/50 rounded-full p-2">
+                        <div className="w-6 h-6 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                    {photo.status === "done" && (
+                      <div className="bg-green-500 rounded-full p-1.5">
+                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                    {photo.status === "error" && (
+                      <div className="bg-red-500 rounded-full p-1.5">
+                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  {/* Title or status text */}
+                  <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5">
+                    <p className="text-[11px] text-white font-medium truncate">
+                      {photo.status === "done" && photo.title
+                        ? photo.title
+                        : photo.status === "extracting"
+                        ? "Reading recipe…"
+                        : photo.status === "saving"
+                        ? "Saving…"
+                        : photo.status === "error"
+                        ? photo.error || "Failed"
+                        : "Queued"}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Done button */}
+            {batchComplete && (
+              <button
+                onClick={handleBatchClose}
+                className="mt-4 w-full py-3 rounded-2xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 active:scale-[0.98] transition-all"
+              >
+                Done — View Recipes
+              </button>
+            )}
+          </div>
+        ) : extracting ? (
           <div className="px-5 py-12 flex flex-col items-center gap-4">
             <div className="w-12 h-12 border-[3px] border-orange-500 border-t-transparent rounded-full animate-spin" />
             <div className="text-center">
@@ -151,6 +365,22 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
               <div>
                 <p className="font-medium text-gray-900 text-sm">Camera</p>
                 <p className="text-xs text-gray-400 mt-0.5">Photograph a cookbook or recipe card</p>
+              </div>
+            </button>
+
+            {/* Batch from photos */}
+            <button
+              onClick={() => { setShowTextInput(false); batchInputRef.current?.click(); }}
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+            >
+              <span className="w-11 h-11 rounded-xl bg-purple-50 flex items-center justify-center text-purple-500 shrink-0">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-medium text-gray-900 text-sm">Batch from photos</p>
+                <p className="text-xs text-gray-400 mt-0.5">Upload multiple cookbook pages at once (max 10)</p>
               </div>
             </button>
 
@@ -198,13 +428,21 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           </div>
         )}
 
-        {/* Hidden file input — no capture attr so iOS shows its native picker */}
+        {/* Hidden file inputs */}
         <input
           ref={photoInputRef}
           type="file"
           accept="image/*"
           className="hidden"
           onChange={handleFileSelected}
+        />
+        <input
+          ref={batchInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={handleBatchSelect}
         />
       </div>
       </div>
