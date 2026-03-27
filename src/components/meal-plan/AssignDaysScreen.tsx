@@ -4,6 +4,10 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 
+// ─── Theme ─────────────────────────────────────────────────────────────────────
+const ACCENT = "#3f7058";
+const ACCENT_LIGHT = "#e6f0eb";
+
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
 
@@ -62,12 +66,7 @@ export default function AssignDaysScreen({
   const [assignments, setAssignments] = useState<Record<string, DayAssignment>>(() => {
     const init: Record<string, DayAssignment> = {};
     for (const r of selectedRecipes) {
-      init[r.id] = {
-        recipeId: r.id,
-        mealTypes: [(r.meal_type as MealType) || "dinner"],
-        dates: [],
-        servings: 2,
-      };
+      init[r.id] = { recipeId: r.id, mealTypes: [(r.meal_type as MealType) || "dinner"], dates: [], servings: 2 };
     }
     return init;
   });
@@ -80,9 +79,7 @@ export default function AssignDaysScreen({
   function toggleDay(recipeId: string, iso: string) {
     setAssignments((prev) => {
       const cur = prev[recipeId];
-      const dates = cur.dates.includes(iso)
-        ? cur.dates.filter((d) => d !== iso)
-        : [...cur.dates, iso];
+      const dates = cur.dates.includes(iso) ? cur.dates.filter((d) => d !== iso) : [...cur.dates, iso];
       return { ...prev, [recipeId]: { ...cur, dates } };
     });
   }
@@ -91,7 +88,7 @@ export default function AssignDaysScreen({
     setAssignments((prev) => {
       const cur = prev[recipeId];
       const mealTypes = cur.mealTypes.includes(mt)
-        ? cur.mealTypes.length > 1 ? cur.mealTypes.filter((m) => m !== mt) : cur.mealTypes // keep at least 1
+        ? cur.mealTypes.length > 1 ? cur.mealTypes.filter((m) => m !== mt) : cur.mealTypes
         : [...cur.mealTypes, mt];
       return { ...prev, [recipeId]: { ...cur, mealTypes } };
     });
@@ -105,19 +102,15 @@ export default function AssignDaysScreen({
     });
   }
 
-  const totalSlots = useMemo(() =>
-    Object.values(assignments).reduce(
-      (sum, a) => sum + a.dates.length * a.mealTypes.length, 0
-    ), [assignments]);
-
+  const totalSlots = useMemo(
+    () => Object.values(assignments).reduce((sum, a) => sum + a.dates.length * a.mealTypes.length, 0),
+    [assignments]
+  );
   const readyCount = Object.values(assignments).filter((a) => a.dates.length > 0).length;
 
-  // Build a lookup of existing meals: "date|mealType" → MealPlan
   const existingLookup = useMemo(() => {
     const map = new Map<string, MealPlan>();
-    for (const mp of existingMealPlans) {
-      map.set(`${mp.planned_date}|${mp.meal_type}`, mp);
-    }
+    for (const mp of existingMealPlans) map.set(`${mp.planned_date}|${mp.meal_type}`, mp);
     return map;
   }, [existingMealPlans]);
 
@@ -129,12 +122,7 @@ export default function AssignDaysScreen({
         for (const mt of a.mealTypes) {
           const existing = existingLookup.get(`${date}|${mt}`);
           if (existing && existing.recipe) {
-            found.push({
-              date,
-              mealType: mt,
-              existingTitle: (existing.recipe as Recipe).title,
-              incomingTitle: recipe?.title ?? "New meal",
-            });
+            found.push({ date, mealType: mt, existingTitle: (existing.recipe as Recipe).title, incomingTitle: recipe?.title ?? "New meal" });
           }
         }
       }
@@ -145,15 +133,9 @@ export default function AssignDaysScreen({
   async function handleSchedulePress() {
     const toSave = Object.values(assignments).filter((a) => a.dates.length > 0);
     if (toSave.length === 0) return;
-
     const found = detectConflicts(toSave);
-    if (found.length > 0) {
-      setConflicts(found);
-      setPendingAssignments(toSave);
-      setShowConflictModal(true);
-    } else {
-      await save(toSave);
-    }
+    if (found.length > 0) { setConflicts(found); setPendingAssignments(toSave); setShowConflictModal(true); }
+    else await save(toSave);
   }
 
   async function save(toSave: DayAssignment[]) {
@@ -163,24 +145,24 @@ export default function AssignDaysScreen({
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "#f6f6f4" }}>
       {/* Header */}
-      <div className="px-4 pt-5 pb-4 border-b sticky top-0 z-10" style={{ background: "#faf9f7", borderColor: "#ede8e0" }}>
+      <div className="px-4 pt-5 pb-4 border-b sticky top-0 z-10" style={{ background: "#f6f6f4", borderColor: "#eaeae8" }}>
         <button
           onClick={onBack}
           className="w-8 h-8 flex items-center justify-center rounded-full mb-4 active:scale-90 transition-transform"
-          style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
+          style={{ background: "white", color: "#888", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
-        <h1 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>Assign to days</h1>
-        <p className="text-sm mt-0.5" style={{ color: "#a09890" }}>Pick days, meal types, and servings for each meal</p>
+        <h1 className="text-xl font-bold tracking-tight" style={{ color: "#1a1a1a" }}>Place on calendar</h1>
+        <p className="text-sm mt-0.5" style={{ color: "#888" }}>Choose days and meal types for each recipe</p>
       </div>
 
       {/* Meal cards */}
-      <div className="flex-1 px-4 py-4 space-y-4 overflow-y-auto pb-32">
+      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto pb-32">
         {selectedRecipes.map((recipe, i) => {
           const a = assignments[recipe.id];
           const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
@@ -189,31 +171,33 @@ export default function AssignDaysScreen({
           return (
             <div
               key={recipe.id}
-              className="bg-white rounded-3xl overflow-hidden"
-              style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", animation: `cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) ${i * 60}ms both` }}
+              className="bg-white rounded-2xl overflow-hidden"
+              style={{
+                boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
+                animation: `cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) ${i * 60}ms both`,
+              }}
             >
               {/* Recipe info */}
-              <div className="flex items-center gap-3 p-3 pb-0">
-                <div className="w-12 h-12 rounded-2xl flex-shrink-0 overflow-hidden flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg, #fff4e8, #fde8cc)" }}>
+              <div className="flex items-center gap-3 p-3.5 pb-0">
+                <div className="w-11 h-11 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ background: "#f3f3f1" }}>
                   {recipe.image_url
-                    ? <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="48px" /></div>
-                    : <span className="text-xl">🍳</span>}
+                    ? <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="44px" /></div>
+                    : <span className="text-lg">🍳</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold line-clamp-1" style={{ color: "#1a1410" }}>{recipe.title}</p>
-                  {totalTime > 0 && <p className="text-xs" style={{ color: "#a09890" }}>{totalTime} min</p>}
+                  <p className="text-sm font-semibold line-clamp-1" style={{ color: "#1a1a1a" }}>{recipe.title}</p>
+                  {totalTime > 0 && <p className="text-xs mt-0.5" style={{ color: "#888" }}>{totalTime} min</p>}
                 </div>
                 {slotCount > 0 && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#fff4e8", color: "#f97316" }}>
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: ACCENT_LIGHT, color: ACCENT }}>
                     {slotCount}×
                   </span>
                 )}
               </div>
 
               {/* Days */}
-              <div className="px-3 pt-3 pb-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#a09890" }}>Days</p>
+              <div className="px-3.5 pt-3 pb-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#bbb" }}>Days</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {weekDates.map(({ label, iso }) => {
                     const selected = a.dates.includes(iso);
@@ -222,7 +206,7 @@ export default function AssignDaysScreen({
                         key={iso}
                         onClick={() => toggleDay(recipe.id, iso)}
                         className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-95"
-                        style={selected ? { background: "#1a1410", color: "white" } : { background: "#f5f0eb", color: "#a09890" }}
+                        style={selected ? { background: "#1a1a1a", color: "white" } : { background: "#f3f3f1", color: "#888" }}
                       >
                         {label}
                       </button>
@@ -231,9 +215,9 @@ export default function AssignDaysScreen({
                 </div>
               </div>
 
-              {/* Meal types (multi-select) */}
-              <div className="px-3 pt-2 pb-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#a09890" }}>Meal type</p>
+              {/* Meal types */}
+              <div className="px-3.5 pt-2 pb-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#bbb" }}>Meal type</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {MEAL_TYPES.map((mt) => {
                     const selected = a.mealTypes.includes(mt);
@@ -242,7 +226,7 @@ export default function AssignDaysScreen({
                         key={mt}
                         onClick={() => toggleMealType(recipe.id, mt)}
                         className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-95"
-                        style={selected ? { background: "#f97316", color: "white" } : { background: "#f5f0eb", color: "#a09890" }}
+                        style={selected ? { background: ACCENT, color: "white" } : { background: "#f3f3f1", color: "#888" }}
                       >
                         {MEAL_LABELS[mt]}
                       </button>
@@ -252,20 +236,12 @@ export default function AssignDaysScreen({
               </div>
 
               {/* Servings */}
-              <div className="px-3 pt-2 pb-3 flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#a09890" }}>Servings</p>
+              <div className="px-3.5 pt-2 pb-3.5 flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#bbb" }}>Servings</p>
                 <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => changeServings(recipe.id, -1)}
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90"
-                    style={{ background: "#f5f0eb", color: "#1a1410" }}
-                  >−</button>
-                  <span className="text-sm font-bold w-4 text-center" style={{ color: "#1a1410" }}>{a.servings}</span>
-                  <button
-                    onClick={() => changeServings(recipe.id, 1)}
-                    className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90"
-                    style={{ background: "#f5f0eb", color: "#1a1410" }}
-                  >+</button>
+                  <button onClick={() => changeServings(recipe.id, -1)} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90" style={{ background: "#f3f3f1", color: "#1a1a1a" }}>−</button>
+                  <span className="text-sm font-bold w-4 text-center" style={{ color: "#1a1a1a" }}>{a.servings}</span>
+                  <button onClick={() => changeServings(recipe.id, 1)} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90" style={{ background: "#f3f3f1", color: "#1a1a1a" }}>+</button>
                 </div>
               </div>
             </div>
@@ -279,7 +255,7 @@ export default function AssignDaysScreen({
           onClick={handleSchedulePress}
           disabled={readyCount === 0 || saving}
           className="w-full py-4 text-white rounded-2xl font-bold text-base active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ background: "#1a1410", boxShadow: "0 4px 20px rgba(26,20,16,0.2)" }}
+          style={{ background: "#1a1a1a", boxShadow: "0 4px 20px rgba(0,0,0,0.18)" }}
         >
           {saving ? (
             <>
@@ -300,35 +276,35 @@ export default function AssignDaysScreen({
         </button>
       </div>
 
-      {/* Conflict modal */}
+      {/* Conflict modal — calm copy */}
       {showConflictModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(26,20,16,0.5)" }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.35)" }}>
           <div
             className="w-full max-w-sm bg-white rounded-3xl overflow-hidden"
-            style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.2)", animation: "fadeSlideUp 0.3s ease both" }}
+            style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)", animation: "fadeSlideUp 0.3s ease both" }}
           >
-            {/* Modal header */}
+            {/* Header */}
             <div className="px-5 pt-5 pb-3">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3" style={{ background: "#fff4e8" }}>
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="#f97316" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3" style={{ background: "#f3f3f1" }}>
+                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-base font-black" style={{ color: "#1a1410" }}>Replacing existing meals</h2>
-              <p className="text-sm mt-1" style={{ color: "#a09890" }}>
-                These slots already have meals — scheduling will add alongside them:
+              <h2 className="text-base font-bold" style={{ color: "#1a1a1a" }}>Some meals already exist</h2>
+              <p className="text-sm mt-1" style={{ color: "#888" }}>
+                Add alongside them, or go back to adjust your plan.
               </p>
             </div>
 
             {/* Conflict list */}
             <div className="px-5 pb-3 space-y-2 max-h-48 overflow-y-auto">
               {conflicts.map((c, i) => (
-                <div key={i} className="rounded-2xl px-3 py-2.5" style={{ background: "#faf9f7" }}>
-                  <p className="text-xs font-bold" style={{ color: "#1a1410" }}>
+                <div key={i} className="rounded-xl px-3 py-2.5" style={{ background: "#f6f6f4" }}>
+                  <p className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>
                     {formatDate(c.date)} · {MEAL_LABELS[c.mealType]}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>
-                    Already has: <span style={{ color: "#1a1410" }}>{c.existingTitle}</span>
+                  <p className="text-xs mt-0.5" style={{ color: "#888" }}>
+                    Already has: <span style={{ color: "#1a1a1a" }}>{c.existingTitle}</span>
                   </p>
                 </div>
               ))}
@@ -338,20 +314,17 @@ export default function AssignDaysScreen({
             <div className="px-5 pb-5 flex gap-2 pt-2">
               <button
                 onClick={() => setShowConflictModal(false)}
-                className="flex-1 py-3 rounded-2xl font-bold text-sm transition-all active:scale-95"
-                style={{ background: "#f5f0eb", color: "#1a1410" }}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition-all active:scale-95"
+                style={{ background: "#f3f3f1", color: "#1a1a1a" }}
               >
                 Go back
               </button>
               <button
-                onClick={async () => {
-                  setShowConflictModal(false);
-                  await save(pendingAssignments);
-                }}
-                className="flex-1 py-3 rounded-2xl font-bold text-sm text-white transition-all active:scale-95"
-                style={{ background: "#1a1410" }}
+                onClick={async () => { setShowConflictModal(false); await save(pendingAssignments); }}
+                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition-all active:scale-95"
+                style={{ background: "#1a1a1a" }}
               >
-                Schedule anyway
+                Add anyway
               </button>
             </div>
           </div>

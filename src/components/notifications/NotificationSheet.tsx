@@ -152,10 +152,10 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
   async function handleFollow(profile: SuggestedUser) {
     setFollowingInProgress(profile.user_id);
     try {
-      const res = await fetch("/api/friends/request", {
+      const res = await fetch("/api/friends/follow", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ friend_code: profile.friend_code }),
+        body: JSON.stringify({ friend_user_id: profile.user_id }),
       });
       if (res.ok) {
         setFollowingIds((prev) => new Set([...prev, profile.user_id]));

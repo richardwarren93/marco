@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import MealPlanListView from "./MealPlanListView";
+
+const ACCENT = "#3f7058";
 
 export default function ScheduleScreen({
   mealPlans,
@@ -34,35 +35,44 @@ export default function ScheduleScreen({
   const pool = selectedPool.length > 0 ? selectedPool : undefined;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
-      {/* Sticky header */}
-      <div className="px-4 sticky top-0 z-10 border-b" style={{ background: "#faf9f7", borderColor: "#ede8e0" }}>
-        <div className="flex items-center justify-between max-w-5xl mx-auto h-14">
-          <h1 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>Meal Plan</h1>
+    <div className="flex flex-col min-h-screen" style={{ background: "#f6f6f4" }}>
+      {/* Header */}
+      <div
+        className="px-4 sticky top-0 z-10"
+        style={{ background: "#f6f6f4", borderBottom: "1px solid #eaeae8" }}
+      >
+        <div className="flex items-center justify-between max-w-3xl mx-auto h-14">
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: "#1a1a1a" }}>
+            Meal Plan
+          </h1>
           <div className="flex items-center gap-2">
+            {/* Insights */}
             <button
               onClick={onShowInsights}
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-2xl transition-colors active:scale-95"
-              style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
+              style={{ background: "white", color: "#888", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
               Insights
             </button>
+            {/* Build plan */}
             <button
               onClick={onPlanThisWeek}
               className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-2xl transition-colors active:scale-95 text-white"
-              style={{ background: "#f97316" }}
+              style={{ background: ACCENT }}
             >
-              Plan week with
-              <Image src="/marco-icon.svg" alt="Marco" width={16} height={16} className="rounded-full" />
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              Plan week
             </button>
           </div>
         </div>
       </div>
 
-      {/* Schedule content */}
+      {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="px-4 py-4 max-w-3xl mx-auto">
           <MealPlanListView
