@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import type { BadgeProgress, BadgeCategory } from "@/lib/badges";
 import { TIER_COLORS, CATEGORY_LABELS } from "@/lib/badges";
 
@@ -367,9 +367,6 @@ export default function BadgesCard() {
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<BadgeProgress | null>(null);
-  const [newAchievement, setNewAchievement] = useState<BadgeProgress | null>(null);
-  const seenRef = useRef(false);
-
   useEffect(() => {
     async function fetchBadges() {
       try {
@@ -380,27 +377,6 @@ export default function BadgesCard() {
         setProgress(badgeProgress);
         setEarned(data.earned || 0);
         setTotal(data.total || 0);
-
-        // Detect newly earned badges via localStorage
-        if (!seenRef.current) {
-          seenRef.current = true;
-          try {
-            const seenKey = "marco_seen_badges";
-            const seen: string[] = JSON.parse(localStorage.getItem(seenKey) || "[]");
-            const earnedBadges = badgeProgress.filter((p) => p.earned);
-            const newBadge = earnedBadges.find((p) => !seen.includes(p.badge.id));
-            if (newBadge) {
-              setNewAchievement(newBadge);
-              // Mark all currently earned as seen
-              localStorage.setItem(seenKey, JSON.stringify(earnedBadges.map((p) => p.badge.id)));
-            } else {
-              // Always keep seen list up to date
-              localStorage.setItem(seenKey, JSON.stringify(earnedBadges.map((p) => p.badge.id)));
-            }
-          } catch {
-            // localStorage unavailable
-          }
-        }
       } catch {
         // ignore
       } finally {
@@ -491,10 +467,6 @@ export default function BadgesCard() {
         <BadgeDetailModal badge={selectedBadge} onClose={() => setSelectedBadge(null)} />
       )}
 
-      {/* Achievement celebration */}
-      {newAchievement && (
-        <AchievementModal badge={newAchievement} onClose={() => setNewAchievement(null)} />
-      )}
     </>
   );
 }

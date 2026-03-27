@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import BottomTabBar from "@/components/layout/BottomTabBar";
+import Providers from "@/components/ui/Providers";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -60,9 +61,11 @@ export default function RootLayout({
             });
           }
         `}</Script>
+<Providers>
 <Navbar />
         <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:pb-0">{children}</main>
         <BottomTabBar />
+</Providers>
       </body>
     </html>
   );

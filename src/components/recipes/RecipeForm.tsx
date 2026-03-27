@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Ingredient, Recipe } from "@/types";
+import { useToast } from "@/components/ui/Toast";
+import { GENERIC_UNITS } from "@/data/ingredients";
 
-type Step = "url" | "extracting" | "preview" | "editing" | "saving" | "saved";
+type Step = "url" | "extracting" | "preview" | "editing" | "saving";
 
 export default function RecipeForm({
   recipe,
@@ -20,7 +22,7 @@ export default function RecipeForm({
   const [error, setError] = useState("");
   const [duplicateRecipeId, setDuplicateRecipeId] = useState<string | null>(null);
   const [step, setStep] = useState<Step>(recipe ? "preview" : "url");
-  const [savedRecipeId, setSavedRecipeId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const [title, setTitle] = useState(recipe?.title || "");
   const [description, setDescription] = useState(recipe?.description || "");
@@ -139,8 +141,15 @@ export default function RecipeForm({
         throw new Error(data.error);
       }
 
-      setSavedRecipeId(data.recipe?.id || null);
-      setStep("saved");
+      const recipeId = data.recipe?.id;
+      showToast(isEditing ? "Recipe updated!" : "Recipe saved!", { variant: "success" });
+      if (onSaved) {
+        onSaved();
+      } else if (recipeId) {
+        router.push(`/recipes/${recipeId}`);
+      } else {
+        router.push("/recipes");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save");
       setStep("preview");
@@ -475,6 +484,7 @@ export default function RecipeForm({
                   />
                   <input
                     placeholder="Unit"
+                    list="unit-options"
                     value={ing.unit}
                     onChange={(e) => updateIngredient(i, "unit", e.target.value)}
                     className="w-16 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50"
@@ -498,6 +508,13 @@ export default function RecipeForm({
               ))}
             </div>
           </EditSection>
+
+          {/* Unit suggestions datalist */}
+          <datalist id="unit-options">
+            {GENERIC_UNITS.map((u) => (
+              <option key={u} value={u} />
+            ))}
+          </datalist>
 
           {/* Steps */}
           <EditSection
@@ -578,21 +595,6 @@ export default function RecipeForm({
         </div>
       )}
 
-      {/* ── Step: Saved ──────────────────────────────────────────────────── */}
-      {step === "saved" && (
-        <SavedAnimation
-          title={title}
-          imageUrl={imageUrl}
-          recipeId={savedRecipeId}
-          onDone={() => {
-            if (onSaved) {
-              onSaved();
-            } else {
-              router.push("/recipes");
-            }
-          }}
-        />
-      )}
     </div>
   );
 }
@@ -684,84 +686,3 @@ function ExtractingAnimation() {
   );
 }
 
-// ─── Saved animation ─────────────────────────────────────────────────────────
-function SavedAnimation({
-  title,
-  imageUrl,
-  recipeId,
-  onDone,
-}: {
-  title: string;
-  imageUrl: string | null;
-  recipeId: string | null;
-  onDone: () => void;
-}) {
-  const [showContent, setShowContent] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowContent(true), 400);
-    return () => clearTimeout(t);
-  }, []);
-
-  return (
-    <div className="flex flex-col items-center py-12 space-y-6">
-      {/* Checkmark animation */}
-      <div className="animate-pop-in">
-        <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center">
-          <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M5 13l4 4L19 7"
-              style={{
-                strokeDasharray: 30,
-                strokeDashoffset: 30,
-                animation: "check-draw 0.5s ease-out 0.2s forwards",
-              }}
-            />
-          </svg>
-        </div>
-      </div>
-
-      {showContent && (
-        <div className="text-center space-y-6 animate-slide-up w-full">
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold text-gray-900">Recipe saved!</h2>
-            <p className="text-sm text-gray-500">Added to your collection</p>
-          </div>
-
-          {/* Mini preview */}
-          <div className="flex items-center gap-3 bg-white rounded-2xl p-3 shadow-sm border border-gray-100 mx-auto max-w-xs">
-            {imageUrl ? (
-              <div className="w-12 h-12 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
-                <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-              </div>
-            ) : (
-              <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-                <span className="text-xl">🍽️</span>
-              </div>
-            )}
-            <p className="text-sm font-semibold text-gray-900 line-clamp-2 text-left">{title}</p>
-          </div>
-
-          <div className="space-y-2.5 pt-2">
-            {recipeId && (
-              <Link
-                href={`/recipes/${recipeId}`}
-                className="block w-full py-3.5 bg-orange-500 text-white rounded-2xl font-semibold text-sm hover:bg-orange-600 active:scale-[0.98] transition-all text-center"
-              >
-                View Recipe
-              </Link>
-            )}
-            <button
-              onClick={onDone}
-              className="w-full py-3 text-gray-500 text-sm font-medium hover:text-orange-600 transition-colors"
-            >
-              Back to recipes
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}

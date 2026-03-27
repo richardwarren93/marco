@@ -19,16 +19,41 @@ interface TrendingRecipe {
   userCount: number;
 }
 
-// ─── Suggestion categories ──────────────────────────────────────────────────
-const CATEGORIES = [
-  { label: "Quick weeknight", emoji: "🍳", prompt: "Quick weeknight dinner under 30 minutes" },
-  { label: "Healthy", emoji: "🥗", prompt: "Healthy balanced meal with lots of vegetables" },
-  { label: "Comfort food", emoji: "🍝", prompt: "Warm comfort food perfect for a cozy night in" },
-  { label: "High protein", emoji: "💪", prompt: "High protein meal for muscle building" },
-  { label: "Meal prep", emoji: "📦", prompt: "Easy meal prep recipe that stores well for the week" },
-  { label: "Impress guests", emoji: "✨", prompt: "Impressive dinner party recipe that looks fancy but is doable" },
-  { label: "One-pot", emoji: "🫕", prompt: "One-pot or one-pan recipe with minimal cleanup" },
-  { label: "Budget friendly", emoji: "💰", prompt: "Budget-friendly meal under $10 for the whole family" },
+// ─── Questionnaire steps ────────────────────────────────────────────────────
+const QUESTIONS = [
+  {
+    id: "meal",
+    question: "What meal is this for?",
+    options: [
+      { label: "Breakfast", emoji: "🌅", value: "breakfast" },
+      { label: "Lunch", emoji: "🥪", value: "lunch" },
+      { label: "Dinner", emoji: "🍽️", value: "dinner" },
+      { label: "Snack", emoji: "🍿", value: "snack" },
+      { label: "Any", emoji: "🎲", value: "" },
+    ],
+  },
+  {
+    id: "time",
+    question: "How much time do you have?",
+    options: [
+      { label: "15 min", emoji: "⚡", value: "under 15 minutes" },
+      { label: "30 min", emoji: "🕐", value: "about 30 minutes" },
+      { label: "1 hour", emoji: "⏰", value: "about an hour" },
+      { label: "No rush", emoji: "🧑‍🍳", value: "no time limit" },
+    ],
+  },
+  {
+    id: "vibe",
+    question: "What's the vibe?",
+    options: [
+      { label: "Healthy", emoji: "🥗", value: "healthy and nutritious" },
+      { label: "Comfort", emoji: "🍝", value: "warm comfort food" },
+      { label: "Impress", emoji: "✨", value: "impressive for guests" },
+      { label: "Quick & easy", emoji: "🍳", value: "quick and easy" },
+      { label: "High protein", emoji: "💪", value: "high protein" },
+      { label: "Budget", emoji: "💰", value: "budget friendly" },
+    ],
+  },
 ];
 
 // ─── Main component ─────────────────────────────────────────────────────────
@@ -41,8 +66,10 @@ export default function ExploreTab() {
   const [error, setError] = useState("");
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [savedIds, setSavedIds] = useState<Set<number>>(new Set());
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [trending, setTrending] = useState<TrendingRecipe[]>([]);
+  const [questionStep, setQuestionStep] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [showRawInput, setShowRawInput] = useState(false);
   const [trendingLoading, setTrendingLoading] = useState(true);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -94,15 +121,37 @@ export default function ExploreTab() {
     }
   }
 
-  function handleCategoryClick(cat: typeof CATEGORIES[number]) {
-    setActiveCategory(cat.label);
-    setPrompt(cat.prompt);
-    handleSearch(cat.prompt);
+  function handleQuestionAnswer(questionId: string, value: string) {
+    const newAnswers = { ...answers, [questionId]: value };
+    setAnswers(newAnswers);
+
+    if (questionStep < QUESTIONS.length - 1) {
+      // Next question
+      setQuestionStep(questionStep + 1);
+    } else {
+      // Build prompt from answers and search
+      const parts: string[] = [];
+      if (newAnswers.meal) parts.push(`a ${newAnswers.meal} recipe`);
+      else parts.push("a recipe");
+      if (newAnswers.time) parts.push(`that takes ${newAnswers.time}`);
+      if (newAnswers.vibe) parts.push(`that is ${newAnswers.vibe}`);
+      const builtPrompt = `Find me ${parts.join(" ")}`;
+      setPrompt(builtPrompt);
+      handleSearch(builtPrompt);
+    }
+  }
+
+  function handleResetQuestionnaire() {
+    setQuestionStep(0);
+    setAnswers({});
+    setResults([]);
+    setPrompt("");
+    setError("");
+    setShowRawInput(false);
   }
 
   function handleSubmit() {
     if (!prompt.trim() || searching) return;
-    setActiveCategory(null);
     handleSearch(prompt);
   }
 
@@ -168,59 +217,111 @@ export default function ExploreTab() {
       {/* Headline */}
       <div className="mb-5 animate-fade-slide-up">
         <h2 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Explore</h2>
-        <p className="text-sm mt-1" style={{ color: "#a09890" }}>Describe what you&apos;re craving</p>
+        <p className="text-sm mt-1" style={{ color: "#a09890" }}>
+          {showRawInput ? "Describe what you\u2019re craving" : "Let\u2019s find your next meal"}
+        </p>
       </div>
 
-      {/* Search input */}
-      <div className="bg-white rounded-3xl p-4 mb-5 animate-fade-slide-up" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", animationDelay: "60ms" }}>
-        <div className="flex items-end gap-3">
-          <textarea
-            ref={textareaRef}
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="What do you want to cook?"
-            rows={1}
-            disabled={searching}
-            className="flex-1 resize-none text-sm outline-none bg-transparent py-1 min-h-[36px] max-h-[96px] font-medium"
-            style={{ color: "#1a1410" }}
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={!prompt.trim() || searching}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all active:scale-90 disabled:opacity-40"
-            style={{ background: "#1a1410" }}
-          >
-            {searching ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M5 12h14M12 5l7 7-7 7" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Category chips */}
-      {showLanding && (
-        <div className="grid grid-cols-2 gap-2.5 mb-6">
-          {CATEGORIES.map((cat, i) => (
+      {/* Raw text input (shown when user taps "Or just type") */}
+      {showRawInput && (
+        <div className="bg-white rounded-3xl p-4 mb-5 animate-fade-slide-up" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}>
+          <div className="flex items-end gap-3">
+            <textarea
+              ref={textareaRef}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="What do you want to cook?"
+              rows={1}
+              disabled={searching}
+              className="flex-1 resize-none text-sm outline-none bg-transparent py-1 min-h-[36px] max-h-[96px] font-medium"
+              style={{ color: "#1a1410" }}
+            />
             <button
-              key={cat.label}
-              onClick={() => handleCategoryClick(cat)}
-              className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.97]"
-              style={{
-                background: activeCategory === cat.label ? "#fff3e8" : "#fff",
-                border: `1.5px solid ${activeCategory === cat.label ? "#f97316" : "#ede9e3"}`,
-                boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
-                animation: `fadeSlideUp 0.35s ease ${i * 40}ms both`,
-              }}
+              onClick={handleSubmit}
+              disabled={!prompt.trim() || searching}
+              className="w-10 h-10 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all active:scale-90 disabled:opacity-40"
+              style={{ background: "#1a1410" }}
             >
-              <span className="text-xl">{cat.emoji}</span>
-              <span className="text-xs font-bold" style={{ color: "#1a1410" }}>{cat.label}</span>
+              {searching ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
+              )}
             </button>
-          ))}
+          </div>
+        </div>
+      )}
+
+      {/* Questionnaire flow */}
+      {showLanding && !showRawInput && (
+        <div className="mb-6">
+          {/* Progress dots */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {QUESTIONS.map((_, i) => (
+              <div
+                key={i}
+                className="h-1.5 rounded-full transition-all duration-300"
+                style={{
+                  width: i === questionStep ? 24 : 8,
+                  background: i <= questionStep ? "#f97316" : "#ede9e3",
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Current question */}
+          <div
+            key={QUESTIONS[questionStep].id}
+            className="bg-white rounded-3xl p-5 animate-fade-slide-up"
+            style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
+          >
+            <h3 className="text-base font-bold mb-4" style={{ color: "#1a1410" }}>
+              {QUESTIONS[questionStep].question}
+            </h3>
+            <div className="grid grid-cols-2 gap-2.5">
+              {QUESTIONS[questionStep].options.map((opt, i) => (
+                <button
+                  key={opt.label}
+                  onClick={() => handleQuestionAnswer(QUESTIONS[questionStep].id, opt.value)}
+                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.97]"
+                  style={{
+                    background: answers[QUESTIONS[questionStep].id] === opt.value ? "#fff3e8" : "#fff",
+                    border: `1.5px solid ${answers[QUESTIONS[questionStep].id] === opt.value ? "#f97316" : "#ede9e3"}`,
+                    boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
+                    animation: `fadeSlideUp 0.3s ease ${i * 40}ms both`,
+                  }}
+                >
+                  <span className="text-xl">{opt.emoji}</span>
+                  <span className="text-xs font-bold" style={{ color: "#1a1410" }}>{opt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Back button for questions after the first */}
+            {questionStep > 0 && (
+              <button
+                onClick={() => setQuestionStep(questionStep - 1)}
+                className="mt-3 text-xs font-semibold transition-colors"
+                style={{ color: "#a09890" }}
+              >
+                ← Back
+              </button>
+            )}
+          </div>
+
+          {/* Or just type */}
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setShowRawInput(true)}
+              className="text-xs font-semibold transition-colors"
+              style={{ color: "#a09890" }}
+            >
+              Or just type what you want
+            </button>
+          </div>
         </div>
       )}
 
@@ -254,7 +355,7 @@ export default function ExploreTab() {
               {results.length} recipes found
             </p>
             <button
-              onClick={() => { setResults([]); setPrompt(""); setActiveCategory(null); }}
+              onClick={handleResetQuestionnaire}
               className="text-xs font-semibold px-3 py-1.5 rounded-full transition-colors"
               style={{ color: "#a09890", background: "#ede9e3" }}
             >
