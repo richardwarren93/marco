@@ -117,7 +117,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40">
+      <nav className="hidden sm:block bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-14 sm:h-16 items-center">
             {/* Left: Logo */}

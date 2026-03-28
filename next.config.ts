@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Prevent Turbopack from scanning Claude worktrees (contain Windows nul device paths)
+  outputFileTracingExcludes: {
+    "*": [".claude/**/*"],
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import AddMealSheet from "./AddMealSheet";
@@ -8,8 +8,8 @@ import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
-const ACCENT = "#3f7058";
-const ACCENT_LIGHT = "#e6f0eb";
+const ACCENT = "#ea580c";
+const ACCENT_LIGHT = "#fff7ed";
 const BG = "#f6f6f4";
 const SURFACE = "#ffffff";
 const TEXT_1 = "#1a1a1a";
@@ -179,6 +179,7 @@ export default function MealPlanListView({
   weekStart: weekStartProp,
   onWeekChange,
   onPlanThisWeek,
+  onShowInsights,
 }: {
   mealPlans: MealPlan[];
   householdPlans?: MealPlan[];
@@ -186,6 +187,7 @@ export default function MealPlanListView({
   onRemove: (planId: string) => void;
   onEditMeal?: (planId: string, updates: { meal_type?: string; recipe_id?: string; servings?: number }) => Promise<void>;
   recipePool?: Recipe[];
+  onShowInsights?: () => void;
   allRecipes?: Recipe[];
   weekPickIds?: string[];
   weekStart: Date;
@@ -199,12 +201,94 @@ export default function MealPlanListView({
   const [weekStart, setWeekStart] = useState<Date>(weekStartProp);
   const today = formatDateKey(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(today);
+  // Animate key — increment on day change to replay animation
+  const [heroKey, setHeroKey] = useState(0);
 
   useEffect(() => { setWeekStart(weekStartProp); }, [weekStartProp]);
+
+  // ─── FAB "Add meal" event listener ───────────────────────────────────────────
+  useEffect(() => {
+    function handleFabAdd() { openAddSheet(selectedDate); }
+    window.addEventListener("openMealAddSheet", handleFabAdd);
+    return () => window.removeEventListener("openMealAddSheet", handleFabAdd);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
 
   function changeWeek(newWeek: Date) {
     setWeekStart(newWeek);
     onWeekChange(newWeek);
+  }
+
+  // ─── Day navigation (used by swipe + strip tap) ───────────────────────────
+  function navigateToDate(dateKey: string) {
+    setSelectedDate(dateKey);
+    setHeroKey((k) => k + 1);
+  }
+
+  function goToPrevDay() {
+    const idx = sortedDates.indexOf(selectedDate);
+    if (idx > 0) {
+      navigateToDate(sortedDates[idx - 1]);
+    } else {
+      // Cross week boundary backwards
+      const newWeek = addDays(weekStart, -7);
+      changeWeek(newWeek);
+      navigateToDate(formatDateKey(addDays(newWeek, 6)));
+    }
+  }
+
+  function goToNextDay() {
+    const idx = sortedDates.indexOf(selectedDate);
+    if (idx < sortedDates.length - 1) {
+      navigateToDate(sortedDates[idx + 1]);
+    } else {
+      // Cross week boundary forwards
+      const newWeek = addDays(weekStart, 7);
+      changeWeek(newWeek);
+      navigateToDate(formatDateKey(newWeek));
+    }
+  }
+
+  // ─── Day-swipe touch handlers (wraps entire daily view) ─────────────────────
+  const daySwipeRef = useRef<{
+    startX: number; startY: number;
+    locked: boolean; cancelled: boolean;
+    startedOnMealRow: boolean;
+  } | null>(null);
+
+  function handleDaySwipeStart(e: React.TouchEvent) {
+    // Always start tracking — but record whether touch began on a meal row.
+    // touchRef.current is set synchronously by the meal row's onTouchStart
+    // (inner element fires before bubbling up to this handler).
+    daySwipeRef.current = {
+      startX: e.touches[0].clientX,
+      startY: e.touches[0].clientY,
+      locked: false,
+      cancelled: false,
+      startedOnMealRow: !!touchRef.current,
+    };
+  }
+
+  function handleDaySwipeMove(e: React.TouchEvent) {
+    const ref = daySwipeRef.current;
+    if (!ref || ref.cancelled) return;
+    const dx = e.touches[0].clientX - ref.startX;
+    const dy = e.touches[0].clientY - ref.startY;
+    if (!ref.locked) {
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) { ref.cancelled = true; return; }
+      if (Math.abs(dx) > 8) ref.locked = true;
+    }
+  }
+
+  function handleDaySwipeEnd(e: React.TouchEvent) {
+    const ref = daySwipeRef.current;
+    daySwipeRef.current = null;
+    // Skip if cancelled, not committed horizontal, or if touch began on a meal row
+    if (!ref || ref.cancelled || !ref.locked || ref.startedOnMealRow) return;
+    const dx = e.changedTouches[0].clientX - ref.startX;
+    if (Math.abs(dx) < 44) return; // ~44px threshold
+    if (dx < 0) goToNextDay();
+    else goToPrevDay();
   }
 
   // ─── Derived data ────────────────────────────────────────────────────────────
@@ -235,6 +319,7 @@ export default function MealPlanListView({
   const [addDate, setAddDate] = useState("");
   const [addMealTypes, setAddMealTypes] = useState<string[] | undefined>(undefined);
   const [replacePlanId, setReplacePlanId] = useState<string | undefined>(undefined);
+  const [addDefaultRecipeId, setAddDefaultRecipeId] = useState<string | undefined>(undefined);
 
   // ─── RecipePreviewSheet & EditMealSheet state ─────────────────────────────────
   const [previewPlan, setPreviewPlan] = useState<MealPlan | null>(null);
@@ -295,8 +380,27 @@ export default function MealPlanListView({
     setAddDate(date);
     setAddMealTypes(mealTypes);
     setReplacePlanId(undefined);
+    setAddDefaultRecipeId(undefined);
     setAddSheetOpen(true);
   }
+
+  function openAddSheetWithRecipe(date: string, recipeId: string) {
+    setAddDate(date);
+    setAddMealTypes(undefined);
+    setReplacePlanId(undefined);
+    setAddDefaultRecipeId(recipeId);
+    setAddSheetOpen(true);
+  }
+
+  // ─── Suggested recipes for daily view ────────────────────────────────────────
+  const suggestedRecipes = useMemo(() => {
+    if (recipeLibrary.length === 0) return [];
+    const plannedIds = new Set((byDate[selectedDate] || []).map((p) => p.recipe_id).filter(Boolean));
+    const available = recipeLibrary.filter((r) => !plannedIds.has(r.id));
+    // Rotate by day-of-week for variety without randomness
+    const offset = new Date(selectedDate).getDay();
+    return [...available.slice(offset), ...available.slice(0, offset)].slice(0, 6);
+  }, [recipeLibrary, selectedDate, byDate]);
 
   function handleReplace(plan: MealPlan) {
     setAddDate(plan.planned_date);
@@ -343,12 +447,48 @@ export default function MealPlanListView({
     const otherDates = sortedDates.filter((d) => d !== selectedDate);
 
     return (
-      <div className="space-y-5">
-        {/* ── Day strip ──────────────────────────────────────────────────── */}
-        <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+      <div
+        className="space-y-3"
+        style={{ touchAction: "pan-y" }}
+        onTouchStart={handleDaySwipeStart}
+        onTouchMove={handleDaySwipeMove}
+        onTouchEnd={handleDaySwipeEnd}
+      >
+        {/* ── Week navigator ─────────────────────────────────────────────── */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => changeWeek(addDays(weekStart, -7))}
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+            style={{ color: TEXT_2 }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+
+          <span className="text-sm font-semibold" style={{ color: TEXT_1 }}>{weekLabel}</span>
+
+          <button
+            onClick={() => changeWeek(addDays(weekStart, 7))}
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+            style={{ color: TEXT_2 }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* ── Day strip — full width, evenly spaced circles ──────────────── */}
+        <div className="relative">
+          {/* Left edge fade */}
+          <div className="absolute left-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to right, #faf9f7 10%, transparent)" }} />
+          {/* Right edge fade */}
+          <div className="absolute right-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to left, #faf9f7 10%, transparent)" }} />
+        <div className="flex justify-between items-center w-full">
           {sortedDates.map((dateKey) => {
             const d = new Date(dateKey + "T12:00:00");
-            const abbr = d.toLocaleDateString("en-US", { weekday: "short" }).charAt(0);
+            const abbr = d.toLocaleDateString("en-US", { weekday: "short" });
             const num = d.getDate();
             const isSelected = dateKey === selectedDate;
             const isToday = dateKey === today;
@@ -357,31 +497,60 @@ export default function MealPlanListView({
             return (
               <button
                 key={dateKey}
-                onClick={() => setSelectedDate(dateKey)}
-                className="flex flex-col items-center flex-shrink-0 w-10 py-2 rounded-2xl transition-all active:scale-95 touch-manipulation relative"
-                style={
-                  isSelected
-                    ? { background: ACCENT, color: "white" }
-                    : { background: "transparent", color: isToday ? ACCENT : TEXT_2 }
-                }
+                onClick={() => navigateToDate(dateKey)}
+                className="flex flex-col items-center gap-1 active:scale-90 transition-transform touch-manipulation"
               >
-                <span className="text-[10px] font-medium">{abbr}</span>
-                <span className="text-sm font-bold mt-0.5" style={isToday && !isSelected ? { textDecoration: "underline", textDecorationColor: ACCENT } : {}}>
-                  {num}
+                {/* Day abbreviation */}
+                <span
+                  className="text-[10px] font-medium"
+                  style={{ color: isSelected ? ACCENT : TEXT_2 }}
+                >
+                  {abbr}
                 </span>
+                {/* Circle */}
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center transition-all"
+                  style={
+                    isSelected
+                      ? { background: ACCENT }
+                      : isToday
+                      ? { border: `2px solid ${ACCENT}` }
+                      : { border: "1.5px solid #e0e0de" }
+                  }
+                >
+                  <span
+                    className="text-sm font-semibold"
+                    style={{
+                      color: isSelected ? "white" : isToday ? ACCENT : TEXT_1,
+                    }}
+                  >
+                    {num}
+                  </span>
+                </div>
                 {/* Meal dot */}
-                {hasMeals && !isSelected && (
-                  <span className="w-1 h-1 rounded-full mt-1" style={{ background: isToday ? ACCENT : "#ccc" }} />
-                )}
-                {hasMeals && isSelected && <span className="w-1 h-1 rounded-full mt-1 bg-white/60" />}
-                {!hasMeals && <span className="w-1 h-1 mt-1" />}
+                <span
+                  className="w-1 h-1 rounded-full"
+                  style={{
+                    background: hasMeals
+                      ? isSelected
+                        ? "rgba(255,255,255,0.6)"
+                        : isToday
+                        ? ACCENT
+                        : "#ccc"
+                      : "transparent",
+                  }}
+                />
               </button>
             );
           })}
         </div>
+        </div>
 
-        {/* ── Selected day hero ───────────────────────────────────────────── */}
-        <div style={{ animation: "dayHeroIn 0.25s ease both" }}>
+        {/* ── Selected day hero ────────────────────────────────────────────── */}
+        <div
+          key={heroKey}
+          style={{ animation: "dayHeroIn 0.22s ease both" }}
+        >
           {/* Day label */}
           <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: TEXT_2 }}>
             {selectedDate === today ? "Today" : selectedDayLabel}
@@ -424,43 +593,65 @@ export default function MealPlanListView({
           </div>
         </div>
 
-        {/* ── Rest of week ────────────────────────────────────────────────── */}
-        {otherDates.some((d) => byDate[d]?.length > 0) && (
+        {/* ── Suggested Recipes ───────────────────────────────────────────── */}
+        {suggestedRecipes.length > 0 && (
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: TEXT_2 }}>
-              Rest of week
+              Suggested for you
             </p>
-            <div className="space-y-2">
-              {otherDates.map((dateKey) => {
-                const plans = byDate[dateKey] || [];
-                if (plans.length === 0) return null;
-                const d = new Date(dateKey + "T12:00:00");
-                const dayName = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-                const isToday = dateKey === today;
+            <div className="grid grid-cols-2 gap-3">
+              {suggestedRecipes.map((recipe) => {
+                const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
+                const emoji = MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "🍳";
                 return (
-                  <button
-                    key={dateKey}
-                    onClick={() => setSelectedDate(dateKey)}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-left transition-colors active:scale-[0.99] touch-manipulation"
-                    style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
+                  <div
+                    key={recipe.id}
+                    className="relative bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
+                    style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
+                    onClick={() => openAddSheetWithRecipe(selectedDate, recipe.id)}
                   >
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: isToday ? ACCENT_LIGHT : "#f3f3f1" }}>
-                      <span className="text-xs font-bold" style={{ color: isToday ? ACCENT : TEXT_2 }}>
-                        {d.getDate()}
-                      </span>
+                    {/* Image */}
+                    <div className="relative h-36 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 flex items-center justify-center overflow-hidden">
+                      {recipe.image_url ? (
+                        <Image
+                          src={recipe.image_url}
+                          alt={recipe.title}
+                          fill
+                          className="object-cover"
+                          sizes="(max-width: 640px) 50vw, 33vw"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <span className="text-4xl opacity-70 select-none">{emoji}</span>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
+                      {totalTime > 0 && (
+                        <div className="absolute bottom-2 left-2.5 flex items-center gap-1 bg-black/25 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none">
+                          <svg className="w-2.5 h-2.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-white text-[10px] font-semibold">{totalTime} min</span>
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, recipe.id); }}
+                          className="w-7 h-7 rounded-full bg-[#e8ddd3] flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+                          aria-label="Add to meal plan"
+                        >
+                          <svg className="w-3.5 h-3.5 text-[#7a6355]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium" style={{ color: TEXT_1 }}>{dayName}</p>
-                      <p className="text-xs mt-0.5" style={{ color: TEXT_2 }}>
-                        {plans.slice(0, 2).map((p) => p.recipe?.title || p.meal_type).join(" · ")}
-                        {plans.length > 2 ? ` +${plans.length - 2} more` : ""}
+                    {/* Title */}
+                    <div className="px-3 pt-2.5 pb-3">
+                      <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug tracking-tight">
+                        {recipe.title}
                       </p>
                     </div>
-                    <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#ccc" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -520,6 +711,22 @@ export default function MealPlanListView({
           </button>
         </div>
 
+        {/* Insights button */}
+        {onShowInsights && (
+          <div className="flex justify-end -mt-1 mb-1">
+            <button
+              onClick={onShowInsights}
+              className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full transition-colors active:scale-95"
+              style={{ background: ACCENT_LIGHT, color: ACCENT }}
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              Insights
+            </button>
+          </div>
+        )}
+
         {/* Empty state */}
         {totalVisibleMeals === 0 && (
           <div className="text-center py-12 space-y-3">
@@ -552,14 +759,15 @@ export default function MealPlanListView({
               className="rounded-2xl overflow-hidden"
               style={{
                 background: SURFACE,
-                border: `1px solid ${isToday ? "#c5dbd0" : BORDER}`,
-                boxShadow: isToday ? `0 0 0 1px ${ACCENT_LIGHT}` : undefined,
+                boxShadow: isToday
+                  ? `0 1px 8px rgba(234,88,12,0.10), 0 0 0 1.5px rgba(234,88,12,0.22)`
+                  : "0 1px 6px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04)",
               }}
             >
               {/* Day header */}
               <div
                 className="flex items-center justify-between px-4 py-3"
-                style={{ borderBottom: `1px solid #f0f0ee`, background: isToday ? "#f5faf7" : SURFACE }}
+                style={{ borderBottom: "1px solid #f3f3f1", background: isToday ? "#fff7ed" : SURFACE }}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold" style={{ color: TEXT_1 }}>{weekday} {dayNum}</span>
@@ -584,8 +792,13 @@ export default function MealPlanListView({
               {plans.length === 0 ? (
                 <p className="text-xs text-center py-3 italic" style={{ color: "#ccc" }}>Nothing planned</p>
               ) : (
-                <div className="divide-y" style={{ borderColor: "#f0f0ee" }}>
-                  {plans.map((plan) => renderMealRow(plan, true))}
+                <div>
+                  {plans.map((plan, i) => (
+                    <div key={plan.id}>
+                      {i > 0 && <div style={{ height: 1, background: "#f3f3f1", marginLeft: 60 }} />}
+                      {renderMealRow(plan, true)}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -598,12 +811,7 @@ export default function MealPlanListView({
   return (
     <>
       {/* ── View mode toggle ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          {viewMode === "weekly" && (
-            <p className="text-sm font-semibold" style={{ color: TEXT_1 }}>{weekLabel}</p>
-          )}
-        </div>
+      <div className="flex items-center justify-end mb-5">
         <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "#f0f0ee" }}>
           <button
             onClick={() => setViewMode("daily")}
@@ -641,6 +849,7 @@ export default function MealPlanListView({
         isOpen={addSheetOpen}
         defaultDate={addDate}
         defaultMealTypes={addMealTypes}
+        defaultRecipeId={addDefaultRecipeId}
         replacePlanId={replacePlanId}
         weekStart={weekStart}
         allRecipes={recipeLibrary}

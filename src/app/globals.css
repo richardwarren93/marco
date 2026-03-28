@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@source not "../../.claude";
 
 html {
   /* Prevent iOS rubber-band bounce from shifting fixed-position elements */

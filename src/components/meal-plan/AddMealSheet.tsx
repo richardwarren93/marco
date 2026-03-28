@@ -6,8 +6,8 @@ import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
-const ACCENT = "#3f7058";
-const ACCENT_LIGHT = "#e6f0eb";
+const ACCENT = "#ea580c";
+const ACCENT_LIGHT = "#fff7ed";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
@@ -40,7 +40,7 @@ function RecipeRow({
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 rounded-xl text-left transition-colors border ${
         compact ? "px-2.5 py-1.5" : "px-3 py-2.5"
-      } ${isSelected ? "border-[#3f7058]/30" : "border-transparent hover:bg-gray-100"} ${dimmed ? "opacity-55" : ""}`}
+      } ${isSelected ? "border-[#ea580c]/30" : "border-transparent hover:bg-gray-100"} ${dimmed ? "opacity-55" : ""}`}
       style={isSelected ? { background: ACCENT_LIGHT } : { background: "#f5f5f3" }}
     >
       <div
@@ -57,7 +57,7 @@ function RecipeRow({
       </span>
       {badge && (
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-          badge === "Scheduled" ? "bg-gray-100 text-gray-400" : "text-[#3f7058]"
+          badge === "Scheduled" ? "bg-gray-100 text-gray-400" : "text-[#ea580c]"
         }`} style={badge !== "Scheduled" ? { background: ACCENT_LIGHT } : {}}>
           {badge}
         </span>

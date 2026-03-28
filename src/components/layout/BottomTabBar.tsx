@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import {
   RecipesIcon,
   GroceryIcon,
@@ -10,7 +10,7 @@ import {
 } from "@/components/icons/HandDrawnIcons";
 import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
 
-const ACCENT = "#3f7058";
+const ACCENT = "#ea580c";
 
 const leftTabs = [
   { href: "/recipes", label: "Recipes", Icon: RecipesIcon },
@@ -39,7 +39,26 @@ export default function BottomTabBar() {
 
   function handleAddMeal() {
     closeFab();
-    if (!isOnMealPlan) router.push("/meal-plan");
+    if (isOnMealPlan) {
+      window.dispatchEvent(new CustomEvent("openMealAddSheet"));
+    } else {
+      router.push("/meal-plan");
+    }
+  }
+
+  function handleImportLink() {
+    closeFab();
+    router.push("/recipes/new?mode=url");
+  }
+
+  function handleImportPhoto() {
+    closeFab();
+    setShowImport(true);
+  }
+
+  function handleImportText() {
+    closeFab();
+    setShowImport(true);
   }
 
   return (
@@ -53,7 +72,7 @@ export default function BottomTabBar() {
         />
       )}
 
-      {/* Floating popup — above FAB */}
+      {/* Floating popup */}
       {fabOpen && (
         <div
           className="fixed z-50 left-1/2 sm:hidden"
@@ -62,95 +81,120 @@ export default function BottomTabBar() {
             animation: "fabMenuIn 0.22s cubic-bezier(0.34,1.2,0.64,1) both",
           }}
         >
+          {/* Outer clip — fixed width, hides the offscreen panel */}
           <div
-            className="flex flex-col overflow-hidden min-w-[232px] rounded-2xl"
             style={{
+              width: 220,
+              overflow: "hidden",
+              borderRadius: 16,
               background: "white",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.15), 0 2px 8px rgba(0,0,0,0.06)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)",
+              height: importExpanded ? 220 : 121,
+              transition: "height 0.22s cubic-bezier(0.4,0,0.2,1)",
             }}
           >
-            {/* Add meal */}
-            <button
-              onClick={handleAddMeal}
-              className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+            {/* Sliding track — two panels side by side */}
+            <div
+              style={{
+                display: "flex",
+                width: "200%",
+                transform: importExpanded ? "translateX(-50%)" : "translateX(0)",
+                transition: "transform 0.22s cubic-bezier(0.4,0,0.2,1)",
+              }}
             >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#e6f0eb" }}>
-                <svg className="w-4 h-4" style={{ color: ACCENT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-gray-900">Add meal</p>
-                <p className="text-xs text-gray-400">Schedule a recipe</p>
-              </div>
-            </button>
+              {/* ── Panel 1: Main menu ── */}
+              <div style={{ width: "50%", flexShrink: 0 }}>
+                {/* Add meal */}
+                <button
+                  onClick={handleAddMeal}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#fff7ed" }}>
+                    <svg className="w-3.5 h-3.5" style={{ color: ACCENT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">Add meal</p>
+                </button>
 
-            <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
+                <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
 
-            {/* Import recipe — expandable */}
-            <button
-              onClick={() => setImportExpanded((v) => !v)}
-              className="flex items-center gap-3 px-5 py-4 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
-            >
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
-                <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
+                {/* Import recipe → */}
+                <button
+                  onClick={() => setImportExpanded(true)}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900 flex-1">Import recipe</p>
+                  <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1 text-left">
-                <p className="text-sm font-semibold text-gray-900">Import recipe</p>
-                <p className="text-xs text-gray-400">Add from a source</p>
-              </div>
-              <svg
-                className="w-4 h-4 text-gray-300 transition-transform duration-200"
-                style={{ transform: importExpanded ? "rotate(90deg)" : "rotate(0deg)" }}
-                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
 
-            {/* Inline import options */}
-            {importExpanded && (
-              <div className="px-3 pb-3 space-y-0.5" style={{ animation: "expandDown 0.18s ease both" }}>
-                {[
-                  {
-                    label: "Paste link",
-                    desc: "From a website URL",
-                    icon: <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />,
-                    action: () => { closeFab(); router.push("/recipes/new?mode=url"); },
-                  },
-                  {
-                    label: "Photo",
-                    desc: "From a screenshot or card",
-                    icon: (<><path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></>),
-                    action: () => { closeFab(); setShowImport(true); },
-                  },
-                  {
-                    label: "Text",
-                    desc: "Paste recipe text",
-                    icon: <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />,
-                    action: () => { closeFab(); router.push("/recipes/new?mode=text"); },
-                  },
-                ].map(({ label, desc, icon, action }) => (
-                  <button
-                    key={label}
-                    onClick={action}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
-                  >
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
-                      <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        {icon}
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-800">{label}</p>
-                      <p className="text-[11px] text-gray-400">{desc}</p>
-                    </div>
-                  </button>
-                ))}
+              {/* ── Panel 2: Import sub-options ── */}
+              <div style={{ width: "50%", flexShrink: 0 }}>
+                {/* Back row */}
+                <button
+                  onClick={() => setImportExpanded(false)}
+                  className="flex items-center gap-2 px-4 py-3 w-full hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                  style={{ borderBottom: "1px solid #f0f0ee" }}
+                >
+                  <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#aaa" }}>Import</p>
+                </button>
+
+                {/* Paste link */}
+                <button
+                  onClick={handleImportLink}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">Paste link</p>
+                </button>
+
+                <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
+
+                {/* Photo */}
+                <button
+                  onClick={handleImportPhoto}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">Photo</p>
+                </button>
+
+                <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
+
+                {/* Text */}
+                <button
+                  onClick={handleImportText}
+                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
+                >
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">Text</p>
+                </button>
               </div>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -180,15 +224,17 @@ export default function BottomTabBar() {
           <div className="flex flex-col items-center justify-end flex-1 pb-2">
             <button
               onClick={() => setFabOpen((v) => !v)}
-              className="-translate-y-5 ring-4 ring-white active:scale-90 transition-all duration-150 touch-manipulation"
+              className="-translate-y-5 active:scale-90 transition-all duration-150 touch-manipulation"
               aria-label={fabOpen ? "Close menu" : "Add or import"}
               style={{
                 width: 56,
                 height: 56,
                 borderRadius: "50%",
-                background: fabOpen ? ACCENT : "#1a1a1a",
-                boxShadow: fabOpen ? `0 4px 20px rgba(63,112,88,0.4)` : "0 4px 20px rgba(0,0,0,0.28)",
-                transition: "background 0.2s ease, box-shadow 0.2s ease",
+                background: ACCENT,
+                boxShadow: fabOpen
+                  ? `0 0 0 4px white, 0 4px 24px rgba(234,88,12,0.55)`
+                  : `0 0 0 4px white, 0 4px 20px rgba(234,88,12,0.38)`,
+                transition: "box-shadow 0.2s ease",
               }}
             >
               <span

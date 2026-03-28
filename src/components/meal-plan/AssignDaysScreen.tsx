@@ -5,8 +5,8 @@ import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
-const ACCENT = "#3f7058";
-const ACCENT_LIGHT = "#e6f0eb";
+const ACCENT = "#ea580c";
+const ACCENT_LIGHT = "#fff7ed";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
