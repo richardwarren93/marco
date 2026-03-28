@@ -63,16 +63,16 @@ export default function ScheduleScreen({
   }, [fetchUnreadCount]);
 
   return (
-    <div style={{ background: "#faf9f7", minHeight: "100%" }}>
+    <div style={{ background: "#f4f3f1", minHeight: "100%" }}>
       {/* Header — matches Recipes page style exactly */}
-      <div className="sticky top-0 z-10 px-4 pt-4 pb-0" style={{ background: "#faf9f7" }}>
+      <div className="sticky top-0 z-10 px-4 pt-5 pb-0" style={{ background: "#f4f3f1" }}>
         <div className="flex items-center justify-between max-w-3xl mx-auto mb-2">
           <div>
             <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>
               Meal Plan
             </h1>
             {weekMealCount > 0 && (
-              <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>
+              <p className="text-xs font-medium mt-1" style={{ color: "#999" }}>
                 {weekMealCount} meal{weekMealCount !== 1 ? "s" : ""} this week
               </p>
             )}
@@ -97,7 +97,7 @@ export default function ScheduleScreen({
       </div>
 
       {/* Content */}
-      <div className="px-4 pt-2 pb-4 max-w-3xl mx-auto">
+      <div className="px-4 pt-3 pb-28 max-w-3xl mx-auto">
         <MealPlanListView
           mealPlans={mealPlans}
           householdPlans={householdPlans}

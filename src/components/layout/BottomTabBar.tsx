@@ -89,7 +89,7 @@ export default function BottomTabBar() {
       {fabOpen && (
         <div
           className="fixed inset-0 z-40"
-          style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(2px)" }}
+          style={{ background: "rgba(0,0,0,0.15)", backdropFilter: "blur(1px)" }}
           onClick={closeFab}
         />
       )}
@@ -106,11 +106,11 @@ export default function BottomTabBar() {
           {/* Outer clip — fixed width, hides the offscreen panel */}
           <div
             style={{
-              width: 220,
+              width: 224,
               overflow: "hidden",
-              borderRadius: 16,
+              borderRadius: 18,
               background: "white",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.06)",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)",
               height: importExpanded ? 220 : 121,
               transition: "height 0.22s cubic-bezier(0.4,0,0.2,1)",
             }}
@@ -223,8 +223,15 @@ export default function BottomTabBar() {
 
       {/* Tab bar */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 sm:hidden bg-white border-t border-gray-100 touch-manipulation"
-        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)", willChange: "transform" }}
+        className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation"
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          willChange: "transform",
+          background: "rgba(255,255,255,0.97)",
+          borderTop: "1px solid #e8e8e5",
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+        }}
       >
         <div className="flex justify-around items-end h-16 px-1">
           {leftTabs.map((tab) => {
@@ -246,16 +253,16 @@ export default function BottomTabBar() {
           <div className="flex flex-col items-center justify-end flex-1 pb-2">
             <button
               onClick={() => setFabOpen((v) => !v)}
-              className="-translate-y-5 active:scale-90 transition-all duration-150 touch-manipulation"
+              className="-translate-y-4 active:scale-90 transition-all duration-150 touch-manipulation"
               aria-label={fabOpen ? "Close menu" : "Add or import"}
               style={{
-                width: 56,
-                height: 56,
+                width: 50,
+                height: 50,
                 borderRadius: "50%",
-                background: ACCENT,
+                background: "#e8530a",
                 boxShadow: fabOpen
-                  ? `0 0 0 3px white, 0 4px 18px rgba(234,88,12,0.35)`
-                  : `0 0 0 3px white, 0 4px 14px rgba(234,88,12,0.25)`,
+                  ? `0 0 0 3px white, 0 3px 12px rgba(232,83,10,0.28)`
+                  : `0 0 0 3px white, 0 2px 10px rgba(232,83,10,0.20)`,
                 transition: "box-shadow 0.2s ease",
               }}
             >
@@ -266,7 +273,7 @@ export default function BottomTabBar() {
                   transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)",
                 }}
               >
-                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
               </span>
