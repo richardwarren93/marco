@@ -526,39 +526,64 @@ export default function MealPlanListView({
         onTouchMove={handleDaySwipeMove}
         onTouchEnd={handleDaySwipeEnd}
       >
-        {/* ── Week nav + Day strip — tight together ───────────────────────── */}
+        {/* ── Week nav + Day strip ─────────────────────────────────────────── */}
         <div className="space-y-2">
-        {/* ── Week navigator ─────────────────────────────────────────────── */}
+
+        {/* Week navigator with view toggle */}
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => changeWeek(addDays(weekStart, -7))}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
-            style={{ color: TEXT_2 }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <span className="text-sm font-semibold" style={{ color: TEXT_1 }}>{weekLabel}</span>
-
-          <button
-            onClick={() => changeWeek(addDays(weekStart, 7))}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
-            style={{ color: TEXT_2 }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => changeWeek(addDays(weekStart, -7))}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              style={{ color: TEXT_2 }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-sm font-semibold px-1" style={{ color: TEXT_1 }}>{weekLabel}</span>
+            <button
+              onClick={() => changeWeek(addDays(weekStart, 7))}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              style={{ color: TEXT_2 }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+          <div className="flex items-center gap-0.5 p-0.5 rounded-lg" style={{ background: "#ebebea" }}>
+            <button
+              onClick={() => setViewMode("daily")}
+              className="w-8 h-8 rounded-md flex items-center justify-center transition-all"
+              style={viewMode === "daily"
+                ? { background: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.08)", color: ACCENT }
+                : { background: "transparent", color: "#bbb" }}
+              aria-label="Day view"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
+                <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode("weekly")}
+              className="w-8 h-8 rounded-md flex items-center justify-center transition-all"
+              style={viewMode === "weekly"
+                ? { background: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.08)", color: ACCENT }
+                : { background: "transparent", color: "#bbb" }}
+              aria-label="Week view"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18M9 10v10M15 10v10" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {/* ── Day strip — full width, evenly spaced circles ──────────────── */}
-        <div className="relative">
-          {/* Left edge fade */}
-          <div className="absolute left-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to right, #f4f3f1 10%, transparent)" }} />
-          {/* Right edge fade */}
-          <div className="absolute right-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to left, #f4f3f1 10%, transparent)" }} />
+        {/* Day strip — full width, evenly spaced */}
         <div className="flex justify-between items-center w-full">
           {sortedDates.map((dateKey) => {
             const d = new Date(dateKey + "T12:00:00");
@@ -566,30 +591,36 @@ export default function MealPlanListView({
             const num = d.getDate();
             const isSelected = dateKey === selectedDate;
             const isToday = dateKey === today;
-            const hasMeals = (byDate[dateKey]?.length || 0) > 0;
 
             return (
               <button
                 key={dateKey}
                 onClick={() => navigateToDate(dateKey)}
-                className="flex flex-col items-center gap-1 active:scale-95 transition-transform touch-manipulation"
+                className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform touch-manipulation"
                 style={{ minWidth: 36 }}
               >
                 {/* Day abbreviation */}
                 <span
-                  className="text-[9px] font-semibold uppercase tracking-wider"
-                  style={{ color: isSelected ? ACCENT : "#c8c8c6" }}
+                  className="text-[9px] font-semibold tracking-wide"
+                  style={{ color: isSelected ? ACCENT : isToday ? ACCENT : "#c0c0be" }}
                 >
-                  {abbr.slice(0, 2)}
+                  {abbr.slice(0, 3)}
                 </span>
                 {/* Circle */}
                 <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
-                  style={isSelected ? { background: ACCENT } : { background: "transparent" }}
+                  className="rounded-full flex items-center justify-center transition-all duration-150"
+                  style={{
+                    width: 38, height: 38,
+                    ...(isSelected
+                      ? { background: ACCENT }
+                      : isToday
+                        ? { background: "transparent", boxShadow: `0 0 0 1.5px ${ACCENT}` }
+                        : { background: "transparent" }),
+                  }}
                 >
                   <span
-                    className="text-[13px] font-semibold"
-                    style={{ color: isSelected ? "white" : "#888" }}
+                    className="text-[14px] font-semibold"
+                    style={{ color: isSelected ? "white" : isToday ? ACCENT : "#888" }}
                   >
                     {num}
                   </span>
@@ -598,8 +629,8 @@ export default function MealPlanListView({
             );
           })}
         </div>
-        </div>
-        </div>{/* end week nav + strip tight group */}
+
+        </div>{/* end week nav + strip */}
 
         {/* ── Selected day hero ────────────────────────────────────────────── */}
         <div
@@ -607,18 +638,13 @@ export default function MealPlanListView({
           className="mt-5"
           style={{ animation: "dayHeroIn 0.22s ease both" }}
         >
-          {/* Day label */}
-          <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#999" }}>
-            {selectedDate === today ? "Today" : selectedDayLabel}
-          </p>
-
           {/* Meal cards */}
           <div
             className="rounded-2xl overflow-hidden"
             style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
           >
             {selectedPlans.length === 0 ? (
-              <div className="flex flex-col items-center py-8 px-6">
+              <div className="flex flex-col items-center py-5 px-6">
                 <p className="text-sm" style={{ color: "#ccc" }}>Nothing planned</p>
               </div>
             ) : (
@@ -728,17 +754,31 @@ export default function MealPlanListView({
       <div className="space-y-2.5">
         {/* Week nav */}
         <div className="flex items-center justify-between mb-1">
-          <button
-            onClick={() => changeWeek(addDays(weekStart, -7))}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-gray-100"
-            style={{ color: TEXT_2 }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
+          {/* Left: prev + week label + today pill + next */}
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => changeWeek(addDays(weekStart, -7))}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              style={{ color: TEXT_2 }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-sm font-semibold px-1" style={{ color: TEXT_1 }}>{weekLabel}</span>
+            <button
+              onClick={() => changeWeek(addDays(weekStart, 7))}
+              className="w-8 h-8 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              style={{ color: TEXT_2 }}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Right: Today pill + icon toggle */}
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold" style={{ color: TEXT_1 }}>{weekLabel}</span>
             <button
               onClick={() => { changeWeek(getMonday(new Date())); setSelectedDate(today); }}
               className="text-[10px] font-semibold px-2 py-0.5 rounded-full transition-colors"
@@ -746,16 +786,36 @@ export default function MealPlanListView({
             >
               Today
             </button>
+            <div className="flex items-center gap-0.5 p-0.5 rounded-lg" style={{ background: "#ebebea" }}>
+              <button
+                onClick={() => setViewMode("daily")}
+                className="w-8 h-8 rounded-md flex items-center justify-center transition-all"
+                style={viewMode === "daily"
+                  ? { background: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.08)", color: ACCENT }
+                  : { background: "transparent", color: "#bbb" }}
+                aria-label="Day view"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
+                  <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode("weekly")}
+                className="w-8 h-8 rounded-md flex items-center justify-center transition-all"
+                style={viewMode === "weekly"
+                  ? { background: "white", boxShadow: "0 1px 2px rgba(0,0,0,0.08)", color: ACCENT }
+                  : { background: "transparent", color: "#bbb" }}
+                aria-label="Week view"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18M9 10v10M15 10v10" />
+                </svg>
+              </button>
+            </div>
           </div>
-          <button
-            onClick={() => changeWeek(addDays(weekStart, 7))}
-            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors hover:bg-gray-100"
-            style={{ color: TEXT_2 }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
         </div>
 
         {/* Insights button */}
@@ -854,36 +914,6 @@ export default function MealPlanListView({
 
   return (
     <>
-      {/* ── View mode toggle ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-end mb-4">
-        <div className="flex items-center gap-0.5 p-0.5 rounded-lg" style={{ background: "#ebebea" }}>
-          <button
-            onClick={() => setViewMode("daily")}
-            className="px-3.5 py-1.5 rounded-md text-[12px] font-semibold transition-all"
-            style={
-              viewMode === "daily"
-                ? { background: "white", color: TEXT_1, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }
-                : { background: "transparent", color: "#aaa" }
-            }
-          >
-            Today
-          </button>
-          <button
-            onClick={() => setViewMode("weekly")}
-            className="px-3.5 py-1.5 rounded-md text-[12px] font-semibold transition-all flex items-center gap-1.5"
-            style={
-              viewMode === "weekly"
-                ? { background: "white", color: TEXT_1, boxShadow: "0 1px 2px rgba(0,0,0,0.08)" }
-                : { background: "transparent", color: "#aaa" }
-            }
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-            Week
-          </button>
-        </div>
-      </div>
 
       {/* ── Content ───────────────────────────────────────────────────────────── */}
       {viewMode === "daily" ? renderDailyView() : renderWeeklyView()}

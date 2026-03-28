@@ -33,30 +33,14 @@ export default function ScheduleScreen({
 }) {
   const pool = selectedPool.length > 0 ? selectedPool : undefined;
 
-  // ── Count meals for the current calendar week
-  const weekStartStr = calendarWeek.toISOString().split("T")[0];
-  const weekEndDate = new Date(calendarWeek);
-  weekEndDate.setDate(weekEndDate.getDate() + 6);
-  const weekEndStr = weekEndDate.toISOString().split("T")[0];
-  const weekMealCount = mealPlans.filter(
-    (p) => p.planned_date >= weekStartStr && p.planned_date <= weekEndStr
-  ).length;
-
   return (
     <div style={{ background: "#f4f3f1", minHeight: "100%" }}>
-      {/* Header — matches Recipes page style exactly */}
+      {/* Header */}
       <div className="sticky top-0 z-10 px-4 pt-5 pb-0" style={{ background: "#f4f3f1" }}>
         <div className="flex items-center justify-between max-w-3xl mx-auto mb-2">
-          <div>
-            <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>
-              Meal Plan
-            </h1>
-            {weekMealCount > 0 && (
-              <p className="text-xs font-medium mt-1" style={{ color: "#999" }}>
-                {weekMealCount} meal{weekMealCount !== 1 ? "s" : ""} this week
-              </p>
-            )}
-          </div>
+          <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>
+            Meal Plan
+          </h1>
 
           {/* Bell + hamburger — mobile only (sm:hidden since desktop uses Navbar) */}
           <div className="sm:hidden">
