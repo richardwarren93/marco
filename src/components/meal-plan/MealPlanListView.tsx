@@ -15,7 +15,7 @@ const SURFACE = "#ffffff";
 const TEXT_1 = "#141414";          // deeper near-black
 const TEXT_2 = "#888";
 const BORDER = "#e8e8e5";
-const CARD_SHADOW = "0 1px 4px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04)";
+const CARD_SHADOW = "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -485,9 +485,9 @@ export default function MealPlanListView({
         {/* ── Day strip — full width, evenly spaced circles ──────────────── */}
         <div className="relative">
           {/* Left edge fade */}
-          <div className="absolute left-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to right, #faf9f7 10%, transparent)" }} />
+          <div className="absolute left-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to right, #f4f3f1 10%, transparent)" }} />
           {/* Right edge fade */}
-          <div className="absolute right-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to left, #faf9f7 10%, transparent)" }} />
+          <div className="absolute right-0 top-0 bottom-0 w-10 pointer-events-none z-10" style={{ background: "linear-gradient(to left, #f4f3f1 10%, transparent)" }} />
         <div className="flex justify-between items-center w-full">
           {sortedDates.map((dateKey) => {
             const d = new Date(dateKey + "T12:00:00");
@@ -514,19 +514,11 @@ export default function MealPlanListView({
                 {/* Circle */}
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center transition-all duration-150"
-                  style={
-                    isSelected
-                      ? { background: ACCENT }
-                      : isToday
-                      ? { border: `1.5px solid ${ACCENT}`, background: "transparent" }
-                      : { background: "transparent" }
-                  }
+                  style={isSelected ? { background: ACCENT } : { background: "transparent" }}
                 >
                   <span
                     className="text-[13px] font-semibold"
-                    style={{
-                      color: isSelected ? "white" : isToday ? ACCENT : "#888",
-                    }}
+                    style={{ color: isSelected ? "white" : "#888" }}
                   >
                     {num}
                   </span>
@@ -545,7 +537,7 @@ export default function MealPlanListView({
           style={{ animation: "dayHeroIn 0.22s ease both" }}
         >
           {/* Day label */}
-          <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#aaa" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#999" }}>
             {selectedDate === today ? "Today" : selectedDayLabel}
           </p>
 
@@ -559,8 +551,13 @@ export default function MealPlanListView({
                 <p className="text-sm" style={{ color: "#ccc" }}>Nothing planned</p>
               </div>
             ) : (
-              <div className="divide-y" style={{ borderColor: "#f0f0ee" }}>
-                {selectedPlans.map((plan) => renderMealRow(plan))}
+              <div>
+                {selectedPlans.map((plan, i) => (
+                  <div key={plan.id}>
+                    {i > 0 && <div style={{ height: 1, background: "#f2f2f0" }} />}
+                    {renderMealRow(plan)}
+                  </div>
+                ))}
               </div>
             )}
 
@@ -569,7 +566,7 @@ export default function MealPlanListView({
               <button
                 onClick={() => openAddSheet(selectedDate)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
-                style={{ background: "#f4f4f2", color: "#444" }}
+                style={{ background: "#eeecea", color: "#333" }}
               >
                 <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -583,7 +580,7 @@ export default function MealPlanListView({
         {/* ── Suggested Recipes ───────────────────────────────────────────── */}
         {suggestedRecipes.length > 0 && (
           <div className="mt-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#aaa" }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#999" }}>
               Suggested for you
             </p>
             <div className="grid grid-cols-2 gap-3">
