@@ -59,6 +59,9 @@ export interface BadgeStats {
   // Tomatoes
   totalTomatoes: number;
   petFeedings: number;
+
+  // Special
+  dessertRecipes: number;
 }
 
 // ─── Badge Definitions ───────────────────────────────────────────
@@ -248,6 +251,18 @@ export const BADGES: BadgeDefinition[] = [
     tier: "silver",
     statKey: "uniqueRecipesCooked",
     threshold: 10,
+  },
+
+  // ── Special ──
+  {
+    id: "sweet_tooth",
+    name: "Sweet Tooth",
+    description: "You've made 3 desserts",
+    icon: "🍰",
+    category: "cooking",
+    tier: "silver",
+    statKey: "dessertRecipes",
+    threshold: 3,
   },
 
   // ── Collections ──
