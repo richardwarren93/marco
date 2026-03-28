@@ -156,11 +156,11 @@ function MealRow({
             transition: isActive ? undefined : "transform 0.3s cubic-bezier(0.25,1,0.5,1)",
             background: SURFACE,
           }}
-          className="group relative w-full flex items-center gap-3.5 px-4 py-3 cursor-pointer text-left hover:bg-gray-50/30 active:bg-gray-100/30"
+          className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left hover:bg-gray-50/30 active:bg-gray-100/30"
         >
           {/* Large left image */}
           <div
-            className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+            className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
             style={{ background: "#eeecea" }}
           >
             {plan.recipe?.image_url
@@ -170,10 +170,10 @@ function MealRow({
 
           {/* Text */}
           <div className="flex-1 min-w-0">
-            <p className="text-[14px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+            <p className="text-[13.5px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
               {plan.recipe?.title || "Untitled"}
             </p>
-            <p className="text-[11px] mt-1 capitalize font-medium" style={{ color: "#b8b8b6" }}>
+            <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
               {(() => {
                 const base = plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type;
                 const t = (plan.recipe?.prep_time_minutes ?? 0) + (plan.recipe?.cook_time_minutes ?? 0);
@@ -235,8 +235,11 @@ export default function MealPlanListView({
   const [selectedDate, setSelectedDate] = useState<string>(today);
   // Animate key — increment on day change to replay animation
   const [heroKey, setHeroKey] = useState(0);
+  // Suggested recipe carousel index (resets on day change)
+  const [suggestedIdx, setSuggestedIdx] = useState(0);
 
   useEffect(() => { setWeekStart(weekStartProp); }, [weekStartProp]);
+  useEffect(() => { setSuggestedIdx(0); }, [selectedDate]);
 
   // ─── FAB "Add meal" event listener ───────────────────────────────────────────
   useEffect(() => {
@@ -297,7 +300,7 @@ export default function MealPlanListView({
       startY: e.touches[0].clientY,
       locked: false,
       cancelled: false,
-      startedOnMealRow: !!touchRef.current,
+      startedOnMealRow: !!touchRef.current || suggestedCardIsTouching.current,
     };
   }
 
@@ -361,6 +364,9 @@ export default function MealPlanListView({
   const DELETE_BTN_WIDTH = 80;
   const touchRef = useRef<{ id: string; startX: number; startY: number; locked: boolean; cancelled: boolean } | null>(null);
   const swipedRef = useRef(false);
+  // Suggested card swipe refs (for gesture isolation from day-swipe)
+  const suggestedCardTouchRef = useRef<{ startX: number; startY: number; locked: boolean; cancelled: boolean } | null>(null);
+  const suggestedCardIsTouching = useRef(false);
   const [swipingId, setSwipingId] = useState<string | null>(null);
   const [swipeX, setSwipeX] = useState(0);
   const [revealedId, setRevealedId] = useState<string | null>(null);
@@ -406,6 +412,41 @@ export default function MealPlanListView({
   }
 
   useEffect(() => { if (!revealedId) setConfirmingId(null); }, [revealedId]);
+
+  // ─── Suggested card swipe handlers ───────────────────────────────────────────
+  function handleSuggestedTouchStart(e: React.TouchEvent) {
+    suggestedCardIsTouching.current = true;
+    suggestedCardTouchRef.current = {
+      startX: e.touches[0].clientX,
+      startY: e.touches[0].clientY,
+      locked: false,
+      cancelled: false,
+    };
+  }
+  function handleSuggestedTouchMove(e: React.TouchEvent) {
+    const ref = suggestedCardTouchRef.current;
+    if (!ref || ref.cancelled) return;
+    const dx = e.touches[0].clientX - ref.startX;
+    const dy = e.touches[0].clientY - ref.startY;
+    if (!ref.locked) {
+      if (Math.abs(dy) > 8 && Math.abs(dy) > Math.abs(dx)) { ref.cancelled = true; return; }
+      if (Math.abs(dx) > 8) ref.locked = true; else return;
+    }
+    // Stop propagation so day-swipe doesn't fire
+    e.stopPropagation();
+  }
+  function handleSuggestedTouchEnd(e: React.TouchEvent) {
+    suggestedCardIsTouching.current = false;
+    const ref = suggestedCardTouchRef.current;
+    suggestedCardTouchRef.current = null;
+    if (!ref || ref.cancelled || !ref.locked) return;
+    const dx = e.changedTouches[0].clientX - ref.startX;
+    if (Math.abs(dx) < 40) return;
+    const n = suggestedRecipes.length;
+    if (n === 0) return;
+    if (dx < 0) setSuggestedIdx((i) => (i + 1) % n);
+    else setSuggestedIdx((i) => (i - 1 + n) % n);
+  }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   function openAddSheet(date: string, mealTypes?: string[]) {
@@ -584,7 +625,6 @@ export default function MealPlanListView({
               <div>
                 {selectedPlans.map((plan, i) => (
                   <div key={plan.id}>
-                    {i > 0 && <div style={{ height: 1, background: "#f0f0ee" }} />}
                     {renderMealRow(plan)}
                   </div>
                 ))}
@@ -592,7 +632,7 @@ export default function MealPlanListView({
             )}
 
             {/* Add meal CTA */}
-            <div className="px-3.5 py-3" style={{ borderTop: "1px solid #f0f0ee" }}>
+            <div className="px-3.5 py-3">
               <button
                 onClick={() => openAddSheet(selectedDate)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
@@ -607,63 +647,56 @@ export default function MealPlanListView({
           </div>
         </div>
 
-        {/* ── Suggested Recipes ───────────────────────────────────────────── */}
+
+        {/* ── Suggested for you (up to 3 cards) ───────────────────────────── */}
         {suggestedRecipes.length > 0 && (
-          <div className="mt-6">
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#999" }}>
+          <div className="mt-5">
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#c0c0be" }}>
               Suggested for you
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              {suggestedRecipes.map((recipe) => {
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
+            >
+              {suggestedRecipes.slice(0, 3).map((recipe, i) => {
                 const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
-                const emoji = MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "🍳";
                 return (
-                  <div
-                    key={recipe.id}
-                    className="relative bg-white rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
-                    style={{ boxShadow: CARD_SHADOW }}
-                    onClick={() => openAddSheetWithRecipe(selectedDate, recipe.id)}
-                  >
-                    {/* Image */}
-                    <div className="relative h-28 flex items-center justify-center overflow-hidden" style={{ background: "#f0f0ee" }}>
-                      {recipe.image_url ? (
-                        <Image
-                          src={recipe.image_url}
-                          alt={recipe.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 640px) 50vw, 33vw"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                        />
-                      ) : (
-                        <span className="text-3xl opacity-50 select-none">{emoji}</span>
-                      )}
-                      {totalTime > 0 && (
-                        <div className="absolute bottom-2 left-2.5 flex items-center gap-1 bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none">
-                          <svg className="w-2.5 h-2.5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-white text-[10px] font-semibold">{totalTime} min</span>
-                        </div>
-                      )}
-                      <div className="absolute top-2 right-2">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, recipe.id); }}
-                          className="w-6 h-6 rounded-full flex items-center justify-center active:scale-90 transition-transform"
-                          style={{ background: "rgba(255,255,255,0.92)", boxShadow: "0 1px 3px rgba(0,0,0,0.12)" }}
-                          aria-label="Add to meal plan"
-                        >
-                          <svg className="w-3 h-3" style={{ color: ACCENT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                          </svg>
-                        </button>
+                  <div key={recipe.id}>
+                    <div
+                      className="flex items-center gap-3 px-4 py-2.5 cursor-pointer active:bg-gray-50/40 transition-colors"
+                      onClick={() => openAddSheetWithRecipe(selectedDate, recipe.id)}
+                    >
+                      {/* Image */}
+                      <div
+                        className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
+                        style={{ background: "#f0f0ee" }}
+                      >
+                        {recipe.image_url
+                          ? <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" />
+                          : <span className="text-lg opacity-40 select-none">{MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "🍳"}</span>}
                       </div>
-                    </div>
-                    {/* Title */}
-                    <div className="px-3 pt-2 pb-3">
-                      <p className="text-[12px] font-semibold line-clamp-2 leading-snug" style={{ color: TEXT_1 }}>
-                        {recipe.title}
-                      </p>
+                      {/* Text */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-semibold line-clamp-1 leading-snug" style={{ color: TEXT_1 }}>
+                          {recipe.title}
+                        </p>
+                        {totalTime > 0 && (
+                          <p className="text-[11px] mt-0.5 font-medium" style={{ color: "#c0c0be" }}>
+                            {totalTime} min
+                          </p>
+                        )}
+                      </div>
+                      {/* Add button */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, recipe.id); }}
+                        className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform"
+                        style={{ background: "#f0f0ee" }}
+                        aria-label="Add to meal plan"
+                      >
+                        <svg className="w-3 h-3" style={{ color: "#999" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 );
@@ -773,15 +806,13 @@ export default function MealPlanListView({
               className="rounded-2xl overflow-hidden"
               style={{
                 background: SURFACE,
-                boxShadow: isToday
-                  ? `0 0 0 1.5px rgba(232,83,10,0.28), 0 1px 4px rgba(0,0,0,0.04)`
-                  : CARD_SHADOW,
+                boxShadow: CARD_SHADOW,
               }}
             >
               {/* Day header */}
               <div
                 className="flex items-center justify-between px-4 py-3"
-                style={{ borderBottom: "1px solid #f2f2f0", background: isToday ? "#fffbf8" : "#fafaf9" }}
+                style={{ background: isToday ? "#fffbf8" : "#fafaf9" }}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-[13px] font-semibold" style={{ color: TEXT_1 }}>{weekday} {dayNum}</span>
@@ -809,7 +840,6 @@ export default function MealPlanListView({
                 <div>
                   {plans.map((plan, i) => (
                     <div key={plan.id}>
-                      {i > 0 && <div style={{ height: 1, background: "#f2f2f0", marginLeft: 64 }} />}
                       {renderMealRow(plan, true)}
                     </div>
                   ))}
