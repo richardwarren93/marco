@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import type { Ingredient } from "@/types";
 
@@ -28,8 +28,14 @@ export default function NewRecipePage() {
 
 function NewRecipeInner() {
   const searchParams = useSearchParams();
-  const isExtracted = searchParams.get("mode") === "extracted";
+  const router = useRouter();
+  const mode = searchParams.get("mode");
+  const isExtracted = mode === "extracted";
+  const isTextMode = mode === "text";
   const [extractedRecipe, setExtractedRecipe] = useState<ExtractedRecipe | null>(null);
+  const [pastedText, setPastedText] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState("");
   const didRestoreRef = useRef(false);
 
   // Pick up the pre-extracted recipe that ImportRecipeSheet placed in sessionStorage
@@ -47,7 +53,57 @@ function NewRecipeInner() {
     }
   }, [isExtracted]);
 
-  // Arrived via ImportRecipeSheet photo flow — show spinner while sessionStorage hydrates
+  async function handleTextExtract() {
+    if (!pastedText.trim()) return;
+    setExtracting(true);
+    setExtractError("");
+    try {
+      const res = await fetch("/api/recipes/extract-text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: pastedText }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to extract recipe");
+      try { sessionStorage.setItem("importedRecipe", JSON.stringify(data.recipe)); } catch {}
+      router.push("/recipes/new?mode=extracted");
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : "Failed to extract recipe. Please try again.");
+      setExtracting(false);
+    }
+  }
+
+  // Text paste mode — show text input inline
+  if (isTextMode && !extractedRecipe) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-6">
+        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 mb-6">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
+          Back
+        </button>
+        <h1 className="text-xl font-bold text-gray-900 mb-1">Paste a recipe</h1>
+        <p className="text-sm text-gray-500 mb-5">Paste any recipe text and we&apos;ll extract it automatically.</p>
+        <textarea
+          value={pastedText}
+          onChange={(e) => setPastedText(e.target.value)}
+          placeholder="Paste recipe text here…"
+          rows={10}
+          className="w-full border border-gray-200 rounded-2xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-orange-400/40"
+        />
+        {extractError && <p className="text-sm text-red-500 mt-2">{extractError}</p>}
+        <button
+          onClick={handleTextExtract}
+          disabled={extracting || !pastedText.trim()}
+          className="mt-4 w-full py-3 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50"
+          style={{ background: "#ea580c" }}
+        >
+          {extracting ? "Extracting…" : "Extract Recipe"}
+        </button>
+      </div>
+    );
+  }
+
+  // Arrived via photo flow — show spinner while sessionStorage hydrates
   if (isExtracted && !extractedRecipe) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6">

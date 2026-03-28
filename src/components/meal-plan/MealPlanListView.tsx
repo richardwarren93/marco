@@ -13,8 +13,8 @@ const ACCENT_LIGHT = "#fff7ed";
 const BG = "#f6f6f4";
 const SURFACE = "#ffffff";
 const TEXT_1 = "#1a1a1a";
-const TEXT_2 = "#888888";
-const BORDER = "#e8e8e6";
+const TEXT_2 = "#9a9a9a";
+const BORDER = "#efefed";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -118,8 +118,8 @@ function MealRow({
           background: SURFACE,
         }}
         className={`group relative w-full flex items-center gap-3 cursor-pointer text-left ${
-          compact ? "px-4 py-3" : "px-4 py-3.5"
-        } hover:bg-gray-50/70 active:bg-gray-100/70`}
+          compact ? "px-4 py-2.5" : "px-4 py-3"
+        } hover:bg-gray-50/50 active:bg-gray-100/50`}
       >
         {/* Thumbnail */}
         <div
@@ -448,12 +448,13 @@ export default function MealPlanListView({
 
     return (
       <div
-        className="space-y-3"
         style={{ touchAction: "pan-y" }}
         onTouchStart={handleDaySwipeStart}
         onTouchMove={handleDaySwipeMove}
         onTouchEnd={handleDaySwipeEnd}
       >
+        {/* ── Week nav + Day strip — tight together ───────────────────────── */}
+        <div className="space-y-2">
         {/* ── Week navigator ─────────────────────────────────────────────── */}
         <div className="flex items-center justify-between">
           <button
@@ -503,7 +504,7 @@ export default function MealPlanListView({
                 {/* Day abbreviation */}
                 <span
                   className="text-[10px] font-medium"
-                  style={{ color: isSelected ? ACCENT : TEXT_2 }}
+                  style={{ color: isSelected ? ACCENT : "#bbb" }}
                 >
                   {abbr}
                 </span>
@@ -514,14 +515,14 @@ export default function MealPlanListView({
                     isSelected
                       ? { background: ACCENT }
                       : isToday
-                      ? { border: `2px solid ${ACCENT}` }
-                      : { border: "1.5px solid #e0e0de" }
+                      ? { border: `1.5px solid ${ACCENT}` }
+                      : { border: "1px solid #e8e8e6" }
                   }
                 >
                   <span
                     className="text-sm font-semibold"
                     style={{
-                      color: isSelected ? "white" : isToday ? ACCENT : TEXT_1,
+                      color: isSelected ? "white" : isToday ? ACCENT : "#555",
                     }}
                   >
                     {num}
@@ -533,10 +534,8 @@ export default function MealPlanListView({
                   style={{
                     background: hasMeals
                       ? isSelected
-                        ? "rgba(255,255,255,0.6)"
-                        : isToday
-                        ? ACCENT
-                        : "#ccc"
+                        ? "rgba(255,255,255,0.5)"
+                        : "#d0d0ce"
                       : "transparent",
                   }}
                 />
@@ -545,14 +544,16 @@ export default function MealPlanListView({
           })}
         </div>
         </div>
+        </div>{/* end week nav + strip tight group */}
 
         {/* ── Selected day hero ────────────────────────────────────────────── */}
         <div
           key={heroKey}
+          className="mt-5"
           style={{ animation: "dayHeroIn 0.22s ease both" }}
         >
           {/* Day label */}
-          <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: TEXT_2 }}>
+          <p className="text-[10px] font-semibold uppercase tracking-widest mb-2.5" style={{ color: "#bbb" }}>
             {selectedDate === today ? "Today" : selectedDayLabel}
           </p>
 
@@ -562,29 +563,23 @@ export default function MealPlanListView({
             style={{ background: SURFACE, border: `1px solid ${BORDER}` }}
           >
             {selectedPlans.length === 0 ? (
-              <div className="flex flex-col items-center py-10 px-6">
-                <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-3" style={{ background: "#f3f3f1" }}>
-                  <svg className="w-5 h-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                </div>
-                <p className="text-sm font-medium" style={{ color: TEXT_2 }}>Nothing planned</p>
-                <p className="text-xs mt-1" style={{ color: "#bbb" }}>Add a meal below</p>
+              <div className="flex flex-col items-center py-8 px-6">
+                <p className="text-sm" style={{ color: "#ccc" }}>Nothing planned</p>
               </div>
             ) : (
-              <div className="divide-y" style={{ borderColor: "#f0f0ee" }}>
+              <div className="divide-y" style={{ borderColor: BORDER }}>
                 {selectedPlans.map((plan) => renderMealRow(plan))}
               </div>
             )}
 
             {/* Add meal CTA */}
-            <div className="px-4 py-3" style={{ borderTop: `1px solid #f0f0ee` }}>
+            <div className="px-4 py-2.5" style={{ borderTop: `1px solid ${BORDER}` }}>
               <button
                 onClick={() => openAddSheet(selectedDate)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors active:scale-[0.98] touch-manipulation"
-                style={{ background: ACCENT_LIGHT, color: ACCENT }}
+                className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-sm font-medium transition-colors active:scale-[0.98] touch-manipulation"
+                style={{ background: "#f5f5f3", color: TEXT_1 }}
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-3.5 h-3.5" style={{ color: TEXT_2 }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 Add meal
@@ -595,8 +590,8 @@ export default function MealPlanListView({
 
         {/* ── Suggested Recipes ───────────────────────────────────────────── */}
         {suggestedRecipes.length > 0 && (
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest mb-3" style={{ color: TEXT_2 }}>
+          <div className="mt-6">
+            <p className="text-[10px] font-semibold uppercase tracking-widest mb-3" style={{ color: "#bbb" }}>
               Suggested for you
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -606,12 +601,12 @@ export default function MealPlanListView({
                 return (
                   <div
                     key={recipe.id}
-                    className="relative bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
-                    style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
+                    className="relative bg-white rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
+                    style={{ border: "1px solid #efefed" }}
                     onClick={() => openAddSheetWithRecipe(selectedDate, recipe.id)}
                   >
                     {/* Image */}
-                    <div className="relative h-36 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 flex items-center justify-center overflow-hidden">
+                    <div className="relative h-32 flex items-center justify-center overflow-hidden" style={{ background: "#f8f8f6" }}>
                       {recipe.image_url ? (
                         <Image
                           src={recipe.image_url}
@@ -622,12 +617,11 @@ export default function MealPlanListView({
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : (
-                        <span className="text-4xl opacity-70 select-none">{emoji}</span>
+                        <span className="text-3xl opacity-50 select-none">{emoji}</span>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
                       {totalTime > 0 && (
-                        <div className="absolute bottom-2 left-2.5 flex items-center gap-1 bg-black/25 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none">
-                          <svg className="w-2.5 h-2.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <div className="absolute bottom-2 left-2.5 flex items-center gap-1 bg-black/20 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none">
+                          <svg className="w-2.5 h-2.5 text-white/90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <span className="text-white text-[10px] font-semibold">{totalTime} min</span>
@@ -636,18 +630,19 @@ export default function MealPlanListView({
                       <div className="absolute top-2 right-2">
                         <button
                           onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, recipe.id); }}
-                          className="w-7 h-7 rounded-full bg-[#e8ddd3] flex items-center justify-center shadow-sm active:scale-90 transition-transform"
+                          className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center active:scale-90 transition-transform"
+                          style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.10)" }}
                           aria-label="Add to meal plan"
                         >
-                          <svg className="w-3.5 h-3.5 text-[#7a6355]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <svg className="w-3.5 h-3.5" style={{ color: ACCENT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                           </svg>
                         </button>
                       </div>
                     </div>
                     {/* Title */}
-                    <div className="px-3 pt-2.5 pb-3">
-                      <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug tracking-tight">
+                    <div className="px-3 pt-2 pb-2.5">
+                      <p className="text-[13px] font-semibold line-clamp-2 leading-snug" style={{ color: TEXT_1 }}>
                         {recipe.title}
                       </p>
                     </div>
@@ -678,7 +673,7 @@ export default function MealPlanListView({
   // ─── Weekly view ──────────────────────────────────────────────────────────────
   function renderWeeklyView() {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {/* Week nav */}
         <div className="flex items-center justify-between mb-2">
           <button
@@ -759,20 +754,20 @@ export default function MealPlanListView({
               className="rounded-2xl overflow-hidden"
               style={{
                 background: SURFACE,
-                boxShadow: isToday
-                  ? `0 1px 8px rgba(234,88,12,0.10), 0 0 0 1.5px rgba(234,88,12,0.22)`
-                  : "0 1px 6px rgba(0,0,0,0.05), 0 0 0 1px rgba(0,0,0,0.04)",
+                border: isToday
+                  ? `1.5px solid rgba(234,88,12,0.22)`
+                  : `1px solid ${BORDER}`,
               }}
             >
               {/* Day header */}
               <div
-                className="flex items-center justify-between px-4 py-3"
-                style={{ borderBottom: "1px solid #f3f3f1", background: isToday ? "#fff7ed" : SURFACE }}
+                className="flex items-center justify-between px-4 py-2.5"
+                style={{ borderBottom: `1px solid ${BORDER}`, background: isToday ? "#fffaf7" : "#fafafa" }}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold" style={{ color: TEXT_1 }}>{weekday} {dayNum}</span>
                   {isToday && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#fff0e8", color: ACCENT }}>
                       Today
                     </span>
                   )}
@@ -795,7 +790,7 @@ export default function MealPlanListView({
                 <div>
                   {plans.map((plan, i) => (
                     <div key={plan.id}>
-                      {i > 0 && <div style={{ height: 1, background: "#f3f3f1", marginLeft: 60 }} />}
+                      {i > 0 && <div style={{ height: 1, background: BORDER, marginLeft: 60 }} />}
                       {renderMealRow(plan, true)}
                     </div>
                   ))}
@@ -811,15 +806,15 @@ export default function MealPlanListView({
   return (
     <>
       {/* ── View mode toggle ─────────────────────────────────────────────────── */}
-      <div className="flex items-center justify-end mb-5">
+      <div className="flex items-center justify-end mb-4">
         <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: "#f0f0ee" }}>
           <button
             onClick={() => setViewMode("daily")}
             className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
             style={
               viewMode === "daily"
-                ? { background: "white", color: ACCENT, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }
-                : { background: "transparent", color: TEXT_2 }
+                ? { background: "white", color: ACCENT, boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }
+                : { background: "transparent", color: "#aaa" }
             }
           >
             Today
@@ -829,8 +824,8 @@ export default function MealPlanListView({
             className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5"
             style={
               viewMode === "weekly"
-                ? { background: "white", color: ACCENT, boxShadow: "0 1px 4px rgba(0,0,0,0.08)" }
-                : { background: "transparent", color: TEXT_2 }
+                ? { background: "white", color: ACCENT, boxShadow: "0 1px 3px rgba(0,0,0,0.07)" }
+                : { background: "transparent", color: "#aaa" }
             }
           >
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

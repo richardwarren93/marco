@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   RecipesIcon,
   GroceryIcon,
   MealPlanIcon,
 } from "@/components/icons/HandDrawnIcons";
-import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
 
 const ACCENT = "#ea580c";
 
@@ -22,7 +21,8 @@ export default function BottomTabBar() {
   const router = useRouter();
   const [fabOpen, setFabOpen] = useState(false);
   const [importExpanded, setImportExpanded] = useState(false);
-  const [showImport, setShowImport] = useState(false);
+  const [photoUploading, setPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
 
   if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding")) {
     return null;
@@ -53,12 +53,34 @@ export default function BottomTabBar() {
 
   function handleImportPhoto() {
     closeFab();
-    setShowImport(true);
+    // Slight delay so FAB animation closes before native picker opens
+    setTimeout(() => photoInputRef.current?.click(), 120);
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setPhotoUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/recipes/extract-image", { method: "POST", body: formData });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed");
+      try { sessionStorage.setItem("importedRecipe", JSON.stringify(data.recipe)); } catch {}
+      router.push("/recipes/new?mode=extracted");
+    } catch {
+      // If extraction fails, just go to the new recipe form blank
+      router.push("/recipes/new");
+    } finally {
+      setPhotoUploading(false);
+    }
   }
 
   function handleImportText() {
     closeFab();
-    setShowImport(true);
+    router.push("/recipes/new?mode=text");
   }
 
   return (
@@ -109,8 +131,8 @@ export default function BottomTabBar() {
                   onClick={handleAddMeal}
                   className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
                 >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#fff7ed" }}>
-                    <svg className="w-3.5 h-3.5" style={{ color: ACCENT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f4f4f2" }}>
+                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                     </svg>
                   </div>
@@ -232,8 +254,8 @@ export default function BottomTabBar() {
                 borderRadius: "50%",
                 background: ACCENT,
                 boxShadow: fabOpen
-                  ? `0 0 0 4px white, 0 4px 24px rgba(234,88,12,0.55)`
-                  : `0 0 0 4px white, 0 4px 20px rgba(234,88,12,0.38)`,
+                  ? `0 0 0 3px white, 0 4px 18px rgba(234,88,12,0.35)`
+                  : `0 0 0 3px white, 0 4px 14px rgba(234,88,12,0.25)`,
                 transition: "box-shadow 0.2s ease",
               }}
             >
@@ -281,7 +303,22 @@ export default function BottomTabBar() {
         </div>
       </nav>
 
-      <ImportRecipeSheet isOpen={showImport} onClose={() => setShowImport(false)} />
+      {/* Hidden photo file input */}
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handlePhotoChange}
+      />
+
+      {/* Full-screen uploading indicator */}
+      {photoUploading && (
+        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
+          <div className="w-10 h-10 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mb-3" />
+          <p className="text-sm font-medium text-gray-600">Extracting recipe…</p>
+        </div>
+      )}
     </>
   );
 }
