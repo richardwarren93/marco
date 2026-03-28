@@ -108,62 +108,92 @@ function MealRow({
       </button>
 
       {/* Row content */}
-      <div
-        onClick={() => {
-          if (isRevealed) return;
-          onTap();
-        }}
-        style={{
-          transform: `translateX(${currentX}px)`,
-          transition: isActive ? undefined : "transform 0.3s cubic-bezier(0.25,1,0.5,1)",
-          background: SURFACE,
-        }}
-        className={`group relative w-full flex items-center gap-3 cursor-pointer text-left ${
-          compact ? "px-4 py-2.5" : "px-4 py-3.5"
-        } hover:bg-gray-50/40 active:bg-gray-100/40`}
-      >
-        {/* Thumbnail */}
+      {compact ? (
+        /* ── Compact layout (weekly view): small left thumbnail ── */
         <div
-          className={`rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center ${
-            compact ? "w-9 h-9" : "w-11 h-11"
-          }`}
-          style={{ background: "#f0f0ee" }}
+          onClick={() => { if (isRevealed) return; onTap(); }}
+          style={{
+            transform: `translateX(${currentX}px)`,
+            transition: isActive ? undefined : "transform 0.3s cubic-bezier(0.25,1,0.5,1)",
+            background: SURFACE,
+          }}
+          className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left hover:bg-gray-50/40 active:bg-gray-100/40"
         >
-          {plan.recipe?.image_url ? (
-            <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-sm">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>
+          <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#f0f0ee" }}>
+            {plan.recipe?.image_url
+              ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
+              : <span className="text-sm">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+              {plan.recipe?.title || "Untitled"}
+            </p>
+            <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b8" }}>
+              {plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type}
+            </p>
+          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
+            className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity"
+            aria-label="Remove meal"
+          >
+            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+          {!isActive && !isRevealed && (
+            <svg className="sm:hidden w-3 h-3 flex-shrink-0" style={{ color: "#d8d8d6" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
           )}
         </div>
-
-        {/* Title + type */}
-        <div className="flex-1 min-w-0">
-          <p className="text-[14px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
-            {plan.recipe?.title || "Untitled"}
-          </p>
-          <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b0b0b0" }}>
-            {plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type}
-          </p>
-        </div>
-
-        {/* Desktop: trash on hover */}
-        <button
-          onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
-          className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity"
-          aria-label="Remove meal"
+      ) : (
+        /* ── Full layout (daily view): large left image ── */
+        <div
+          onClick={() => { if (isRevealed) return; onTap(); }}
+          style={{
+            transform: `translateX(${currentX}px)`,
+            transition: isActive ? undefined : "transform 0.3s cubic-bezier(0.25,1,0.5,1)",
+            background: SURFACE,
+          }}
+          className="group relative w-full flex items-center gap-3.5 px-4 py-3 cursor-pointer text-left hover:bg-gray-50/30 active:bg-gray-100/30"
         >
-          <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
-        </button>
+          {/* Large left image */}
+          <div
+            className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+            style={{ background: "#eeecea" }}
+          >
+            {plan.recipe?.image_url
+              ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
+              : <span className="text-2xl opacity-50 select-none">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
+          </div>
 
-        {/* Mobile: chevron */}
-        {!isActive && !isRevealed && (
-          <svg className="sm:hidden w-3.5 h-3.5 flex-shrink-0" style={{ color: "#d0d0ce" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        )}
-      </div>
+          {/* Text */}
+          <div className="flex-1 min-w-0">
+            <p className="text-[14px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+              {plan.recipe?.title || "Untitled"}
+            </p>
+            <p className="text-[11px] mt-1 capitalize font-medium" style={{ color: "#b8b8b6" }}>
+              {(() => {
+                const base = plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type;
+                const t = (plan.recipe?.prep_time_minutes ?? 0) + (plan.recipe?.cook_time_minutes ?? 0);
+                return t > 0 ? `${base} · ${t} min` : base;
+              })()}
+            </p>
+          </div>
+
+          {/* Desktop: trash on hover */}
+          <button
+            onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
+            className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity"
+            aria-label="Remove meal"
+          >
+            <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -554,7 +584,7 @@ export default function MealPlanListView({
               <div>
                 {selectedPlans.map((plan, i) => (
                   <div key={plan.id}>
-                    {i > 0 && <div style={{ height: 1, background: "#f2f2f0" }} />}
+                    {i > 0 && <div style={{ height: 1, background: "#f0f0ee" }} />}
                     {renderMealRow(plan)}
                   </div>
                 ))}
