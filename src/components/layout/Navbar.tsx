@@ -117,11 +117,11 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="hidden sm:block bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40">
+      <nav className="bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-14 sm:h-16 items-center">
-            {/* Left: Logo */}
-            <Link href={user ? "/recipes" : "/"} className="flex items-center gap-2 text-xl sm:text-2xl font-bold text-orange-600">
+          <div className="flex justify-between h-11 sm:h-16 items-center">
+            {/* Left: Logo — desktop only (mobile uses BottomTabBar for nav) */}
+            <Link href={user ? "/recipes" : "/"} className="hidden sm:flex items-center gap-2 text-xl sm:text-2xl font-bold text-orange-600">
               <Image src="/marco-icon.svg" alt="Marco" width={28} height={28} className="rounded-full sm:w-8 sm:h-8" />
               Marco
             </Link>
@@ -143,7 +143,7 @@ export default function Navbar() {
             )}
 
             {/* Right: Actions */}
-            <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
               {user ? (
                 <>
                   {/* Profile avatar — desktop only */}
@@ -157,7 +157,7 @@ export default function Navbar() {
                   {/* Notification bell */}
                   <button
                     onClick={() => setShowNotifications(true)}
-                    className="relative w-9 h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+                    className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
                     aria-label="Notifications"
                   >
                     <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

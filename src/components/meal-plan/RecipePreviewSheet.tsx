@@ -16,12 +16,14 @@ export default function RecipePreviewSheet({
   onClose,
   onReplace,
   onEdit,
+  onDelete,
 }: {
   isOpen: boolean;
   plan: MealPlan | null;
   onClose: () => void;
   onReplace: (plan: MealPlan) => void;
   onEdit?: (plan: MealPlan) => void;
+  onDelete?: () => void;
 }) {
   const router = useRouter();
 
@@ -48,9 +50,20 @@ export default function RecipePreviewSheet({
         className="bg-white w-full rounded-t-3xl shadow-2xl sm:max-w-lg sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-2">
+        {/* Handle + delete */}
+        <div className="relative flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="absolute right-3 top-1.5 w-8 h-8 rounded-full flex items-center justify-center transition-colors active:bg-red-50"
+              aria-label="Delete meal"
+            >
+              <svg className="w-4.5 h-4.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {/* Recipe info */}
