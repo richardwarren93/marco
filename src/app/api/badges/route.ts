@@ -103,6 +103,8 @@ export async function GET() {
   const uniqueCuisines = new Set<string>();
   const mealTypes = new Set<string>();
 
+  let dessertRecipes = 0;
+
   for (const recipe of recipes) {
     if (recipe.meal_type) mealTypes.add(recipe.meal_type);
     if (recipe.tags && Array.isArray(recipe.tags)) {
@@ -111,7 +113,13 @@ export async function GET() {
         if (CUISINE_TAGS.has(lower)) {
           uniqueCuisines.add(lower);
         }
+        if (lower === "dessert" || lower === "desserts") {
+          dessertRecipes++;
+        }
       }
+    }
+    if (recipe.meal_type?.toLowerCase() === "dessert") {
+      dessertRecipes++;
     }
   }
 
@@ -190,6 +198,8 @@ export async function GET() {
 
     totalTomatoes: tomatoRes.data?.tomato_balance || 0,
     petFeedings: petRes.data?.total_feedings || 0,
+
+    dessertRecipes,
   };
 
   const progress = computeBadgeProgress(stats);
