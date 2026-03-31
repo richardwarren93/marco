@@ -143,6 +143,63 @@ export async function POST(request: Request) {
       }
     }
 
+    // 5. Auto-manage "Recently Made" collection (max 12 recipes, most recent first)
+    try {
+      // Find or create the "Recently Made" collection
+      let { data: recentCollection } = await admin
+        .from("collections")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("name", "Recently Made")
+        .single();
+
+      if (!recentCollection) {
+        const { data: created } = await admin
+          .from("collections")
+          .insert({
+            user_id: user.id,
+            name: "Recently Made",
+            description: "Recipes you've cooked recently",
+            is_public: false,
+          })
+          .select("id")
+          .single();
+        recentCollection = created;
+      }
+
+      if (recentCollection) {
+        // Remove the recipe if it already exists (so we can re-add with fresh timestamp)
+        await admin
+          .from("collection_recipes")
+          .delete()
+          .eq("collection_id", recentCollection.id)
+          .eq("recipe_id", recipe_id);
+
+        // Add recipe with current timestamp
+        await admin.from("collection_recipes").insert({
+          collection_id: recentCollection.id,
+          recipe_id,
+        });
+
+        // Enforce 12-recipe cap: remove oldest entries beyond 12
+        const { data: allEntries } = await admin
+          .from("collection_recipes")
+          .select("id, added_at")
+          .eq("collection_id", recentCollection.id)
+          .order("added_at", { ascending: false });
+
+        if (allEntries && allEntries.length > 12) {
+          const toRemove = allEntries.slice(12).map((e) => e.id);
+          await admin
+            .from("collection_recipes")
+            .delete()
+            .in("id", toRemove);
+        }
+      }
+    } catch {
+      // Non-critical — don't fail the cooking log
+    }
+
     return NextResponse.json({
       log,
       cookingLogId: log.id,

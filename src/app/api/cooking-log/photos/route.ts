@@ -126,5 +126,57 @@ export async function PATCH(request: Request) {
     .eq("recipe_id", log.recipe_id)
     .is("image_url", null);
 
+  // Update the recipe's default image to this cooking photo
+  await admin
+    .from("recipes")
+    .update({ image_url })
+    .eq("id", log.recipe_id)
+    .eq("user_id", user.id);
+
   return NextResponse.json({ success: true });
+}
+
+// POST: Backfill recipe images from existing cooking photos
+export async function POST(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const admin = createAdminClient();
+
+  // Find all cooking logs with photos for this user's recipes
+  // Get the most recent photo per recipe
+  const { data: logs } = await admin
+    .from("cooking_logs")
+    .select("recipe_id, image_url, cooked_at")
+    .eq("user_id", user.id)
+    .not("image_url", "is", null)
+    .order("cooked_at", { ascending: false });
+
+  if (!logs || logs.length === 0) {
+    return NextResponse.json({ updated: 0 });
+  }
+
+  // Group by recipe_id, keep only the most recent photo per recipe
+  const latestByRecipe = new Map<string, string>();
+  for (const log of logs) {
+    if (!latestByRecipe.has(log.recipe_id)) {
+      latestByRecipe.set(log.recipe_id, log.image_url);
+    }
+  }
+
+  let updated = 0;
+  for (const [recipeId, imageUrl] of latestByRecipe) {
+    const { error } = await admin
+      .from("recipes")
+      .update({ image_url: imageUrl })
+      .eq("id", recipeId)
+      .eq("user_id", user.id);
+
+    if (!error) updated++;
+  }
+
+  return NextResponse.json({ updated, total: latestByRecipe.size });
 }

@@ -364,6 +364,69 @@ Return a JSON array of these recipe objects. Make the recipes practical, varied,
   }
 }
 
+// ─── Document Batch Extraction ────────────────────────────────────────────
+
+export async function extractRecipesFromDocument(
+  text: string
+): Promise<Partial<Recipe>[]> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 8000,
+    system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Never say "I cannot". Always produce JSON.
+
+You are extracting recipes from a document that may contain multiple recipes. The document could be:
+- A cookbook or recipe collection (PDF or Word doc)
+- A ChatGPT conversation export with recipes
+- A plain text file with recipes
+- A meal prep list or blog post with multiple recipes
+
+Your job is to identify ALL distinct recipes in the document and extract each one fully. Ignore non-recipe content like table of contents, introductions, conversational text, or notes that aren't part of a recipe.`,
+    messages: [
+      {
+        role: "user",
+        content: `Extract ALL recipes from this document. Return a JSON array where each element is a recipe object.
+
+Document text:
+${text.slice(0, 100000)}
+
+For each recipe, return an object with:
+- title (string): The recipe name
+- description (string): Brief description of the dish
+- ingredients (array of {name, amount, unit}): All ingredients with quantities
+- steps (array of strings): Ordered cooking steps
+- servings (number or null): Number of servings
+- prep_time_minutes (number or null): Prep time
+- cook_time_minutes (number or null): Cook time
+- tags (array of strings): Relevant tags like cuisine type, dietary info, "dessert", etc.
+- meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack". Infer from the dish. Never leave this null or empty.
+
+If the document contains only one recipe, return an array with one element.
+If you find no recipes, return an empty array [].
+
+Return ONLY a valid JSON array. No markdown, no code blocks.`,
+      },
+    ],
+  });
+
+  const respText =
+    response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = respText
+    .replace(/```json\n?/g, "")
+    .replace(/```\n?/g, "")
+    .trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    return Array.isArray(parsed) ? parsed : [parsed];
+  } catch {
+    console.error(
+      "Claude returned non-JSON for document extraction:",
+      cleaned.slice(0, 200)
+    );
+    return [];
+  }
+}
+
 // ─── Nutrition Estimation ──────────────────────────────────────────────────
 
 export interface NutritionEstimate {

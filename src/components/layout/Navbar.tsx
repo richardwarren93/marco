@@ -13,6 +13,7 @@ import {
   FriendsIcon,
 } from "@/components/icons/HandDrawnIcons";
 import NotificationSheet from "@/components/notifications/NotificationSheet";
+import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
 
 const navLinks = [
   { href: "/recipes", label: "Recipes", Icon: RecipesIcon },
@@ -41,6 +42,7 @@ export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -144,6 +146,17 @@ export default function Navbar() {
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">
+              {/* Add recipe button — always visible on desktop */}
+              <button
+                onClick={() => setShowImport(true)}
+                className="hidden sm:flex w-9 h-9 rounded-full bg-orange-500 hover:bg-orange-600 text-white items-center justify-center transition-all hover:shadow-md"
+                aria-label="Add recipe"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              </button>
+
               {user ? (
                 <>
                   {/* Profile avatar — desktop only */}
@@ -277,6 +290,12 @@ export default function Navbar() {
         isOpen={showNotifications}
         onClose={() => setShowNotifications(false)}
         onUnreadChange={setUnreadCount}
+      />
+
+      {/* Import recipe sheet */}
+      <ImportRecipeSheet
+        isOpen={showImport}
+        onClose={() => setShowImport(false)}
       />
     </>
   );
