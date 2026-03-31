@@ -16,9 +16,17 @@ interface BatchPhoto {
   error?: string;
 }
 
+interface DocumentResult {
+  status: "idle" | "uploading" | "done" | "error";
+  recipes: { id: string; title: string }[];
+  totalExtracted: number;
+  error?: string;
+}
+
 export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheetProps) {
   const router = useRouter();
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const docInputRef = useRef<HTMLInputElement>(null);
   const [extracting, setExtracting] = useState(false);
   const [error, setError] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
@@ -26,6 +34,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
   const [batchPhotos, setBatchPhotos] = useState<BatchPhoto[]>([]);
   const [batchMode, setBatchMode] = useState(false);
   const [batchComplete, setBatchComplete] = useState(false);
+  const [docResult, setDocResult] = useState<DocumentResult>({ status: "idle", recipes: [], totalExtracted: 0 });
 
   if (!isOpen) return null;
 
@@ -195,12 +204,53 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
     }
   }
 
+  async function handleDocSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+
+    setDocResult({ status: "uploading", recipes: [], totalExtracted: 0 });
+    setError("");
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/recipes/extract-document", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to process document");
+
+      setDocResult({
+        status: "done",
+        recipes: data.recipes,
+        totalExtracted: data.totalExtracted,
+        error: data.errors?.length ? `${data.errors.length} recipe(s) failed to save` : undefined,
+      });
+    } catch (err) {
+      setDocResult({
+        status: "error",
+        recipes: [],
+        totalExtracted: 0,
+        error: err instanceof Error ? err.message : "Failed to process document",
+      });
+    }
+  }
+
+  function handleDocClose() {
+    setDocResult({ status: "idle", recipes: [], totalExtracted: 0 });
+    onClose();
+    router.refresh();
+  }
+
   return (
     <>
       {/* Backdrop + centered container */}
       <div
         className="fixed inset-0 z-[70] bg-black/40 flex items-end sm:items-center sm:justify-center"
-        onClick={extracting ? undefined : onClose}
+        onClick={extracting || docResult.status === "uploading" ? undefined : onClose}
       >
 
       {/* Sheet */}
@@ -226,8 +276,77 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           )}
         </div>
 
-        {/* Batch mode */}
-        {batchMode ? (
+        {/* Document mode */}
+        {docResult.status !== "idle" ? (
+          <div className="px-5 py-6">
+            {docResult.status === "uploading" && (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="w-12 h-12 border-[3px] border-violet-500 border-t-transparent rounded-full animate-spin" />
+                <div className="text-center">
+                  <p className="font-semibold text-gray-900">Scanning your document…</p>
+                  <p className="text-sm text-gray-400 mt-1">Finding and saving recipes</p>
+                </div>
+              </div>
+            )}
+            {docResult.status === "done" && (
+              <div>
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                    <svg className="w-4 h-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {docResult.recipes.length} recipe{docResult.recipes.length !== 1 ? "s" : ""} imported
+                  </p>
+                </div>
+                {docResult.error && (
+                  <p className="text-xs text-amber-600 mb-3">{docResult.error}</p>
+                )}
+                <div className="space-y-1.5 max-h-[40vh] overflow-y-auto">
+                  {docResult.recipes.map((r) => (
+                    <a
+                      key={r.id}
+                      href={`/recipes/${r.id}`}
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                    >
+                      <span className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-base shrink-0">
+                        🍽️
+                      </span>
+                      <span className="text-sm font-medium text-gray-900 truncate">{r.title}</span>
+                      <svg className="w-4 h-4 text-gray-300 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  ))}
+                </div>
+                <button
+                  onClick={handleDocClose}
+                  className="mt-4 w-full py-3 rounded-2xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 active:scale-[0.98] transition-all"
+                >
+                  Done
+                </button>
+              </div>
+            )}
+            {docResult.status === "error" && (
+              <div className="text-center py-6">
+                <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-3">
+                  <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <p className="text-sm font-medium text-gray-900 mb-1">Could not process document</p>
+                <p className="text-xs text-gray-400 mb-4">{docResult.error}</p>
+                <button
+                  onClick={() => setDocResult({ status: "idle", recipes: [], totalExtracted: 0 })}
+                  className="text-sm text-orange-500 font-medium"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+          </div>
+        ) : batchMode ? (
           <div className="px-4 py-4 max-h-[70vh] overflow-y-auto">
             {/* Batch header */}
             <div className="flex items-center justify-between mb-3">
@@ -377,6 +496,22 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
               </div>
             </button>
 
+            {/* Upload document */}
+            <button
+              onClick={() => { setShowTextInput(false); docInputRef.current?.click(); }}
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
+            >
+              <span className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center text-violet-500 shrink-0">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+              </span>
+              <div>
+                <p className="font-medium text-gray-900 text-sm">Upload document</p>
+                <p className="text-xs text-gray-400 mt-0.5">PDF, Word doc, or text file with recipes</p>
+              </div>
+            </button>
+
             {/* Inline text input */}
             {showTextInput && (
               <div className="px-1 pt-1 pb-2">
@@ -413,6 +548,14 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
           multiple
           className="hidden"
           onChange={handleFileSelected}
+        />
+        {/* Hidden file input for documents */}
+        <input
+          ref={docInputRef}
+          type="file"
+          accept=".pdf,.docx,.doc,.txt"
+          className="hidden"
+          onChange={handleDocSelected}
         />
       </div>
       </div>

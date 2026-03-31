@@ -16,17 +16,37 @@ const MEAL_EMOJIS: Record<string, string> = {
   snack: "🍎",
 };
 
+function timeAgo(dateStr: string): string {
+  const now = new Date();
+  const date = new Date(dateStr);
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  const diffWeeks = Math.floor(diffDays / 7);
+  if (diffWeeks < 5) return `${diffWeeks}w ago`;
+  const diffMonths = Math.floor(diffDays / 30);
+  return `${diffMonths}mo ago`;
+}
+
 // ─── Mini recipe card for collection view ────────────────────────────────────
 function CollectionRecipeCard({
   recipe,
   isOwner,
   removing,
   onRemove,
+  lastMadeAt,
 }: {
   recipe: Recipe;
   isOwner: boolean;
   removing: boolean;
   onRemove: () => void;
+  lastMadeAt?: string;
 }) {
   const [imgError, setImgError] = useState(false);
   const emoji = MEAL_EMOJIS[recipe.meal_type ?? "dinner"] ?? "🍳";
@@ -73,14 +93,20 @@ function CollectionRecipeCard({
           <h3 className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">
             {recipe.title}
           </h3>
-          <div className="flex items-center gap-2 mt-1.5">
-            {totalTime > 0 && (
-              <span className="text-[11px] text-gray-400">{totalTime} min</span>
-            )}
-            {recipe.servings && (
-              <span className="text-[11px] text-gray-400">serves {recipe.servings}</span>
-            )}
-          </div>
+          {lastMadeAt ? (
+            <p className="text-[11px] text-orange-500 font-medium mt-1.5">
+              Made {timeAgo(lastMadeAt)}
+            </p>
+          ) : (
+            <div className="flex items-center gap-2 mt-1.5">
+              {totalTime > 0 && (
+                <span className="text-[11px] text-gray-400">{totalTime} min</span>
+              )}
+              {recipe.servings && (
+                <span className="text-[11px] text-gray-400">serves {recipe.servings}</span>
+              )}
+            </div>
+          )}
           {recipe.tags && recipe.tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-2">
               {recipe.tags.slice(0, 2).map((tag) => (
@@ -125,6 +151,7 @@ export default function CollectionDetailPage() {
   const [isOwner, setIsOwner] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [removingRecipeId, setRemovingRecipeId] = useState<string | null>(null);
+  const [isRecentlyMade, setIsRecentlyMade] = useState(false);
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -148,6 +175,7 @@ export default function CollectionDetailPage() {
       setCollection(data.collection as Collection);
       setRecipes((data.recipes as Recipe[]) || []);
       setIsOwner(data.isOwner);
+      setIsRecentlyMade(data.isRecentlyMade || false);
       setEditName(data.collection.name);
       setEditDescription(data.collection.description || "");
     } catch (error) {
@@ -422,6 +450,7 @@ export default function CollectionDetailPage() {
                 isOwner={isOwner}
                 removing={removingRecipeId === recipe.id}
                 onRemove={() => handleRemoveRecipe(recipe.id)}
+                lastMadeAt={isRecentlyMade ? (recipe as Recipe & { last_made_at?: string }).last_made_at : undefined}
               />
             ))}
 
