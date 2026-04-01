@@ -71,6 +71,121 @@ IMPORTANT: Even if the content is very limited, use your knowledge to fill in re
   }
 }
 
+export async function extractRecipeFromCarousel(
+  imageUrls: string[],
+  caption: string
+): Promise<Partial<Recipe>> {
+  // Download all carousel images in parallel (with timeout)
+  const imageBlocks: Array<{
+    type: "image";
+    source: {
+      type: "base64";
+      media_type: "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+      data: string;
+    };
+  }> = [];
+
+  const downloads = await Promise.allSettled(
+    imageUrls.slice(0, 10).map(async (url) => {
+      const resp = await fetch(url, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        signal: AbortSignal.timeout(15000),
+      });
+      if (!resp.ok) return null;
+      const buffer = Buffer.from(await resp.arrayBuffer());
+      const contentType = resp.headers.get("content-type") || "image/jpeg";
+      const mediaType = contentType.split(";")[0].trim() as
+        | "image/jpeg"
+        | "image/png"
+        | "image/webp"
+        | "image/gif";
+      return {
+        type: "image" as const,
+        source: {
+          type: "base64" as const,
+          media_type: mediaType,
+          data: buffer.toString("base64"),
+        },
+      };
+    })
+  );
+
+  for (const result of downloads) {
+    if (result.status === "fulfilled" && result.value) {
+      imageBlocks.push(result.value);
+    }
+  }
+
+  if (imageBlocks.length === 0) {
+    // Couldn't download any images — fall back to text-only extraction
+    return extractRecipe(caption, "tiktok carousel");
+  }
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 3000,
+    system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Always produce JSON.
+
+You are extracting a recipe from a TikTok photo carousel. The slides may contain:
+- A beautiful food photo (usually the first slide)
+- Ingredient lists (often handwritten or as text overlays)
+- Step-by-step cooking instructions
+- Tips or notes about the recipe
+
+The caption from the post is also provided for additional context. Combine information from ALL slides and the caption to produce a complete recipe.`,
+    messages: [
+      {
+        role: "user",
+        content: [
+          ...imageBlocks,
+          {
+            type: "text",
+            text: `These are ${imageBlocks.length} slides from a TikTok recipe carousel. The post caption is:
+"${caption}"
+
+Extract the complete recipe from these carousel slides. Return a JSON object with:
+- title (string): The recipe name from the post
+- description (string): Brief description of the dish
+- ingredients (array of {name, amount, unit}): All ingredients with quantities — look carefully at each slide for ingredient lists
+- steps (array of strings): Ordered cooking steps — look for step-by-step slides
+- servings (number or null): Number of servings if mentioned
+- prep_time_minutes (number or null): Prep time if mentioned or estimate
+- cook_time_minutes (number or null): Cook time if mentioned or estimate
+- tags (array of strings): Relevant tags from hashtags, cuisine type, dietary info
+- meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack"
+
+Return ONLY valid JSON. No markdown, no code blocks.`,
+          },
+        ],
+      },
+    ],
+  });
+
+  const text =
+    response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    console.error(
+      "Claude returned non-JSON for carousel extraction:",
+      cleaned.slice(0, 200)
+    );
+    return {
+      title: "Untitled Recipe",
+      description: "",
+      ingredients: [],
+      steps: [],
+      servings: null,
+      prep_time_minutes: null,
+      cook_time_minutes: null,
+      tags: [],
+      meal_type: "dinner",
+    };
+  }
+}
+
 export async function extractRecipeFromImage(
   imageBase64: string,
   mimeType: string

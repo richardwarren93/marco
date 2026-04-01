@@ -3,6 +3,7 @@ import * as cheerio from "cheerio";
 export interface ScrapeResult {
   content: string;
   image_url: string | null;
+  image_urls?: string[]; // All carousel/slideshow images (TikTok photo posts)
 }
 
 export async function scrapeUrl(url: string): Promise<ScrapeResult> {
@@ -264,38 +265,115 @@ function findCaptionText(obj: unknown, depth: number): string {
 async function scrapeTikTok(url: string): Promise<ScrapeResult> {
   const parts: string[] = [];
   let image_url: string | null = null;
+  let image_urls: string[] | undefined;
 
-  // TikTok oembed is reliable
-  try {
-    const oembedResp = await fetch(
-      `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`,
-      { signal: AbortSignal.timeout(10000) }
-    );
-    if (oembedResp.ok) {
-      const oembed = await oembedResp.json();
-      if (oembed.title) parts.push(`Title: ${oembed.title}`);
-      if (oembed.author_name) parts.push(`Author: ${oembed.author_name}`);
-      if (oembed.thumbnail_url) image_url = oembed.thumbnail_url;
+  // Step 1: Resolve short URLs (tiktok.com/t/...) to canonical form
+  let resolvedUrl = url;
+  if (url.includes("tiktok.com/t/")) {
+    try {
+      const headResp = await fetch(url, {
+        method: "HEAD",
+        redirect: "manual",
+        signal: AbortSignal.timeout(10000),
+      });
+      const location = headResp.headers.get("location");
+      if (location) resolvedUrl = location;
+    } catch {
+      // Continue with original URL
     }
-  } catch {
-    // oembed failed
   }
 
-  // Also scrape the page
+  // Step 2: Try carousel extraction via mobile page (has hydration data for photo posts)
   try {
-    const pageContent = await fetchPage(url);
-    const meta = extractMetaTags(pageContent);
-    if (!image_url && meta.image) image_url = meta.image;
-    if (meta.description) parts.push(`Description: ${meta.description}`);
-    const text = extractVisibleText(pageContent);
-    if (text) parts.push(`Page Content: ${text}`);
+    const mobileHtml = await fetchPageMobile(resolvedUrl);
+    const hydrationMatch = mobileHtml.match(
+      /__UNIVERSAL_DATA_FOR_REHYDRATION__[^>]*>([\s\S]*?)<\/script>/
+    );
+    if (hydrationMatch) {
+      const hydrationData = JSON.parse(hydrationMatch[1]);
+      const detail =
+        hydrationData?.["__DEFAULT_SCOPE__"]?.["webapp.reflow.video.detail"];
+      const itemStruct = detail?.itemInfo?.itemStruct;
+
+      if (itemStruct) {
+        // Extract caption
+        if (itemStruct.desc) parts.push(`Caption: ${itemStruct.desc}`);
+        if (itemStruct.author?.nickname)
+          parts.push(`Author: ${itemStruct.author.nickname}`);
+
+        // Check for carousel (imagePost)
+        if (itemStruct.imagePost?.images?.length) {
+          const images = itemStruct.imagePost.images as Array<{
+            imageURL?: { urlList?: string[] };
+          }>;
+          const urls = images
+            .map((img) => img.imageURL?.urlList?.[0])
+            .filter((u): u is string => !!u);
+
+          if (urls.length > 0) {
+            image_urls = urls;
+            image_url = urls[0];
+            parts.push(
+              `[TikTok carousel with ${urls.length} slides — recipe content is in the images]`
+            );
+          }
+        }
+
+        // Extract hashtags/challenges
+        if (itemStruct.challenges?.length) {
+          const tags = (
+            itemStruct.challenges as Array<{ title?: string }>
+          ).map((c) => c.title || "");
+          if (tags.length) parts.push(`Hashtags: ${tags.join(", ")}`);
+        }
+
+        // For video posts, get the thumbnail
+        if (!image_url && itemStruct.video?.cover)
+          image_url = itemStruct.video.cover;
+      }
+    }
   } catch {
-    // page scrape failed
+    // Hydration data extraction failed, fall through to oEmbed
+  }
+
+  // Step 3: oEmbed fallback (works for video posts, fails for photo posts)
+  if (parts.length === 0) {
+    try {
+      const oembedResp = await fetch(
+        `https://www.tiktok.com/oembed?url=${encodeURIComponent(resolvedUrl)}`,
+        { signal: AbortSignal.timeout(10000) }
+      );
+      if (oembedResp.ok) {
+        const oembed = await oembedResp.json();
+        if (oembed.title) parts.push(`Title: ${oembed.title}`);
+        if (oembed.author_name) parts.push(`Author: ${oembed.author_name}`);
+        if (!image_url && oembed.thumbnail_url)
+          image_url = oembed.thumbnail_url;
+      }
+    } catch {
+      // oembed failed
+    }
+  }
+
+  // Step 4: Additional page scrape for meta tags (desktop)
+  if (parts.length <= 1) {
+    try {
+      const pageContent = await fetchPage(resolvedUrl);
+      const meta = extractMetaTags(pageContent);
+      if (!image_url && meta.image) image_url = meta.image;
+      if (meta.description) parts.push(`Description: ${meta.description}`);
+      const text = extractVisibleText(pageContent);
+      if (text) parts.push(`Page Content: ${text}`);
+    } catch {
+      // page scrape failed
+    }
   }
 
   return {
-    content: parts.join("\n\n") || "Could not extract content from TikTok URL",
+    content:
+      parts.join("\n\n") || "Could not extract content from TikTok URL",
     image_url,
+    image_urls,
   };
 }
 

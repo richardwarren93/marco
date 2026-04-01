@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { scrapeUrl, detectPlatform } from "@/lib/scraper";
-import { extractRecipe } from "@/lib/claude";
+import { extractRecipe, extractRecipeFromCarousel } from "@/lib/claude";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -53,14 +53,17 @@ export async function POST(request: Request) {
     }
 
     // Scrape the URL content
-    const { content: scrapedContent, image_url: scraped_image_url } = await scrapeUrl(url);
+    const { content: scrapedContent, image_url: scraped_image_url, image_urls } = await scrapeUrl(url);
 
     console.log("Scraped content preview:", scrapedContent.slice(0, 500));
     console.log("Scraped content length:", scrapedContent.length);
+    if (image_urls?.length) console.log("Carousel detected:", image_urls.length, "slides");
 
-    // Extract recipe using Claude (run in parallel with image rehosting)
+    // Extract recipe: carousel path (vision on all slides) vs standard path (text-based)
     const [recipe, image_url] = await Promise.all([
-      extractRecipe(scrapedContent, url),
+      image_urls?.length
+        ? extractRecipeFromCarousel(image_urls, scrapedContent)
+        : extractRecipe(scrapedContent, url),
       rehostImage(scraped_image_url),
     ]);
 
