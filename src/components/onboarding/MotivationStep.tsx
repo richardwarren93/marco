@@ -18,10 +18,10 @@ export default function MotivationStep({ value, onNext }: Props) {
   const [selected, setSelected] = useState(value);
 
   return (
-    <div className="flex flex-col h-full px-6 pb-8">
+    <div className="flex flex-col h-full px-6 pb-24">
       <div className="pt-4 pb-8">
         <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1a1410" }}>
-          What brings you here?
+          What brings <span style={{ color: "#ea580c" }}>you here</span>?
         </h1>
         <p className="text-sm mt-2" style={{ color: "#a09890" }}>
           This helps us personalize your experience

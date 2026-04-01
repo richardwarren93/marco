@@ -11,7 +11,7 @@ export default function WelcomeStep({ kitchenPal, onNext }: Props) {
   const pal = KITCHEN_PALS.find((p) => p.id === kitchenPal);
 
   return (
-    <div className="flex flex-col h-full px-6 pb-8">
+    <div className="flex flex-col h-full px-6 pb-24">
       {/* Pal greeting */}
       <div className="flex-1 flex flex-col items-center justify-center">
         {pal && (

@@ -19,7 +19,7 @@ export default function MealsPerWeekStep({ value, onNext }: Props) {
   const [selected, setSelected] = useState(value);
 
   return (
-    <div className="flex flex-col h-full px-6 pb-8">
+    <div className="flex flex-col h-full px-6 pb-24">
       <div className="pt-4 pb-8">
         <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1a1410" }}>
           How many meals a week do you{" "}
