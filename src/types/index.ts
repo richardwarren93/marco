@@ -380,3 +380,41 @@ export interface RestaurantList {
   updated_at: string;
   restaurant_count?: number;
 }
+
+// Onboarding
+export interface TasteProfile {
+  flavor: string[];
+  texture: string[];
+  cuisine: string[];
+  nutritional_bias: string[];
+  cooking_style: string[];
+  ingredient_affinities: string[];
+}
+
+export interface OnboardingData {
+  kitchen_pal: string;
+  motivation: string;
+  meal_planning_priority: string;
+  meals_per_week: string;
+  household_size: number;
+  household_type: string | null;
+  allergies: string[];
+  taste_profile: TasteProfile;
+  liked_recipe_ids: string[];
+}
+
+export interface UserPreferences {
+  id: string;
+  user_id: string;
+  kitchen_pal: string | null;
+  motivation: string | null;
+  meal_planning_priority: string | null;
+  meals_per_week: string | null;
+  household_size: number;
+  household_type: string | null;
+  allergies: string[];
+  taste_profile: TasteProfile;
+  liked_recipe_ids: string[];
+  created_at: string;
+  updated_at: string;
+}
