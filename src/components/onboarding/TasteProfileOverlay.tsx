@@ -151,7 +151,7 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
   // ─── Loading ───
   if (phase === "loading") {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "#f8f7f5" }}>
+      <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-5 px-8 max-w-sm">
           <span className="text-6xl block animate-pulse-soft">{"\u{1F9D1}\u{200D}\u{1F373}"}</span>
           <h2 className="text-xl font-black" style={{ color: "#1a1410" }}>Generating your taste profile...</h2>
@@ -171,8 +171,8 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
   // ─── Import modal ───
   if (phase === "import") {
     return (
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
-        <div className="relative bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-3xl p-8 text-center animate-slide-up">
+      <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
+        <div className="w-full max-w-sm mx-auto p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
           <span className="text-6xl block mb-4">{"\u{1F389}"}</span>
           <h2 className="text-2xl font-black mb-2" style={{ color: "#1a1410" }}>You&apos;re all set!</h2>
           <p className="text-sm mb-6" style={{ color: "#a09890" }}>Import your first recipe to get started</p>
@@ -193,10 +193,10 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
 
   // ─── Taste Profile ───
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "#f8f7f5" }}>
-      <div className="flex-1 overflow-y-auto">
+    <div className="max-w-2xl mx-auto w-full flex flex-col">
+      <div className="flex-1">
         {/* Header */}
-        <div className="pt-10 pb-2 px-6 text-center">
+        <div className="pt-6 pb-2 px-6 text-center">
           <h1 className="text-[32px] font-black leading-none" style={{ color: "#1a1410" }}>Taste DNA</h1>
         </div>
 
@@ -285,7 +285,7 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
       </div>
 
       {/* Footer */}
-      <div className="px-5 pb-8 pt-3 space-y-3" style={{ background: "linear-gradient(to top, #f8f7f5 60%, transparent)" }}>
+      <div className="px-5 pb-6 pt-3 space-y-3">
         <button
           onClick={async () => {
             const text = `My Marco Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;

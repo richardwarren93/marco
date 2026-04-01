@@ -28,7 +28,7 @@ export default function OnboardingShell({
   }, [step, direction]);
 
   return (
-    <div className="h-full flex flex-col" style={{ background: "#faf9f7" }}>
+    <div className="max-w-2xl mx-auto w-full flex flex-col min-h-[calc(100vh-10rem)] sm:min-h-[calc(100vh-5rem)]">
       {/* Header with back button only */}
       <div className="flex items-center px-4 py-2 flex-shrink-0">
         {!hideBack && step > 0 ? (
