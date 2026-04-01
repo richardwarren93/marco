@@ -166,6 +166,74 @@ body {
   display: none;
 }
 
+/* ── Onboarding animations ──────────────────────────────────────────── */
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes slide-in-left {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes slide-out-left {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-100%); opacity: 0; }
+}
+@keyframes slide-out-right {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+.animate-slide-in-right  { animation: slide-in-right 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-in-left   { animation: slide-in-left 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-out-left  { animation: slide-out-left 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+.animate-slide-out-right { animation: slide-out-right 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes blink-cursor {
+  0%, 100% { border-right-color: transparent; }
+  50% { border-right-color: #ea580c; }
+}
+.animate-cursor { animation: blink-cursor 0.8s step-end infinite; border-right: 2px solid transparent; }
+
+@keyframes swipe-away-right {
+  to { transform: translateX(150%) rotate(20deg); opacity: 0; }
+}
+@keyframes swipe-away-left {
+  to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+}
+.animate-swipe-right { animation: swipe-away-right 0.4s ease-out forwards; }
+.animate-swipe-left  { animation: swipe-away-left 0.4s ease-out forwards; }
+
+@keyframes profile-reveal {
+  0%   { transform: scale(0.85); opacity: 0; filter: blur(8px); }
+  100% { transform: scale(1); opacity: 1; filter: blur(0); }
+}
+.animate-profile-reveal { animation: profile-reveal 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes bar-fill {
+  from { width: 0; }
+}
+.animate-bar-fill { animation: bar-fill 0.8s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-stagger-in { animation: stagger-in 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
+
+@keyframes bounce-in {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.15); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.34,1.56,0.64,1) both; }
+
 /* Safe area for bottom tab bar */
 @supports (padding-bottom: env(safe-area-inset-bottom)) {
   .pb-safe {

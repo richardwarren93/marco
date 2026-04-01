@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   RecipesIcon,
   GroceryIcon,
@@ -23,6 +23,16 @@ export default function BottomTabBar() {
   const [importExpanded, setImportExpanded] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+
+  // Listen for programmatic trigger to open the FAB import menu
+  useEffect(() => {
+    function handleOpenFabImport() {
+      setFabOpen(true);
+      setImportExpanded(true);
+    }
+    window.addEventListener("openFabImport", handleOpenFabImport);
+    return () => window.removeEventListener("openFabImport", handleOpenFabImport);
+  }, []);
 
   if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding")) {
     return null;
