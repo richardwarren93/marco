@@ -296,9 +296,9 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
             }
           }}
           className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
-          style={{ background: "white", color: "#1a1410", border: "1px solid #eae7e2" }}
+          style={{ background: "#1a1410", color: "white" }}
         >
-          Share my taste profile
+          🔗 Share my Taste DNA
         </button>
         <button onClick={() => setPhase("import")} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#ea580c" }}>
           Continue

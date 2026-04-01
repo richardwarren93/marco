@@ -41,7 +41,7 @@ export default function AllergiesStep({ value, onNext }: Props) {
   const customAllergies = selected.filter((a) => !COMMON_ALLERGIES.includes(a));
 
   return (
-    <div className="flex flex-col h-full px-6 pb-8">
+    <div className="flex flex-col h-full px-6 pb-24">
       <div className="pt-4 pb-6">
         <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1a1410" }}>
           Any food{" "}

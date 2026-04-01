@@ -7,20 +7,23 @@ import OnboardingShell from "@/components/onboarding/OnboardingShell";
 import MotivationStep from "@/components/onboarding/MotivationStep";
 import PriorityStep from "@/components/onboarding/PriorityStep";
 import MealsPerWeekStep from "@/components/onboarding/MealsPerWeekStep";
+import JoinHouseholdStep from "@/components/onboarding/JoinHouseholdStep";
 import HouseholdStep from "@/components/onboarding/HouseholdStep";
 import AllergiesStep from "@/components/onboarding/AllergiesStep";
 import AutoDemoStep from "@/components/onboarding/AutoDemoStep";
+import SignatureDishStep from "@/components/onboarding/SignatureDishStep";
 import DinnerRankingStep from "@/components/onboarding/DinnerRankingStep";
 import TasteProfileOverlay from "@/components/onboarding/TasteProfileOverlay";
 import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes";
 
-const TOTAL_STEPS = 8;
+const TOTAL_STEPS = 10;
 const STORAGE_KEY = "marco_onboarding";
 
 interface OnboardingState {
   motivation: string | null;
   priority: string | null;
   mealsPerWeek: string | null;
+  joinedHousehold: boolean;
   householdSize: number;
   householdType: string | null;
   allergies: string[];
@@ -34,6 +37,7 @@ const defaultState: OnboardingState = {
   motivation: null,
   priority: null,
   mealsPerWeek: null,
+  joinedHousehold: false,
   householdSize: 1,
   householdType: null,
   allergies: [],
@@ -55,12 +59,11 @@ export default function OnboardingPage() {
     supabase.auth.getUser().then(({ data: { user } }: { data: { user: unknown } }) => {
       if (!user) { router.replace("/auth/login"); return; }
       try {
-        const saved = sessionStorage.getItem(STORAGE_KEY);
+        const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed.step !== undefined) setStep(parsed.step);
           if (parsed.data) {
-            // Restore but handle rankedRecipes carefully (may not serialize well)
             setData({ ...defaultState, ...parsed.data, rankedRecipes: parsed.data.rankedRecipes || [] });
           }
         }
@@ -72,10 +75,15 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (ready) {
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, data }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, data }));
       } catch { /* ignore */ }
     }
   }, [step, data, ready]);
+
+  const goTo = useCallback((target: number) => {
+    setDirection("forward");
+    setStep(target);
+  }, []);
 
   const goForward = useCallback(() => {
     setDirection("forward");
@@ -84,8 +92,13 @@ export default function OnboardingPage() {
 
   const goBack = useCallback(() => {
     setDirection("back");
-    setStep((s) => Math.max(s - 1, 0));
-  }, []);
+    setStep((prev) => {
+      // If on HouseholdStep (4) and they joined a household, skip back to JoinHouseholdStep (3)
+      // If on AllergiesStep (5) and they joined a household, skip back past HouseholdStep to JoinHouseholdStep
+      if (prev === 5 && data.joinedHousehold) return 3;
+      return Math.max(prev - 1, 0);
+    });
+  }, [data.joinedHousehold]);
 
   const update = useCallback((partial: Partial<OnboardingState>) => {
     setData((prev) => ({ ...prev, ...partial }));
@@ -100,7 +113,7 @@ export default function OnboardingPage() {
         body: JSON.stringify(payload),
       });
     } catch { /* continue anyway */ }
-    sessionStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(STORAGE_KEY);
   }, [data]);
 
   if (!ready) {
@@ -115,8 +128,8 @@ export default function OnboardingPage() {
     );
   }
 
-  // Steps 0-6 render inside OnboardingShell, step 7 (profile) is a full overlay
-  if (step === 7) {
+  // Step 9 (profile) is a full overlay outside OnboardingShell
+  if (step === 9) {
     return (
       <TasteProfileOverlay
         rankedIds={data.rankedIds}
@@ -136,16 +149,40 @@ export default function OnboardingPage() {
       case 2:
         return <MealsPerWeekStep value={data.mealsPerWeek} onNext={(meals) => { update({ mealsPerWeek: meals }); goForward(); }} />;
       case 3:
-        return <HouseholdStep size={data.householdSize} type={data.householdType} onNext={(size, type) => { update({ householdSize: size, householdType: type }); goForward(); }} />;
+        // Join household step - before household size
+        return (
+          <JoinHouseholdStep
+            onJoin={() => {
+              // They joined an existing household → skip the size/type question
+              update({ joinedHousehold: true });
+              goTo(5); // Jump to AllergiesStep
+            }}
+            onCreateNew={() => {
+              // They want to create new → go to household size step
+              update({ joinedHousehold: false });
+              goForward(); // Go to step 4 (HouseholdStep)
+            }}
+          />
+        );
       case 4:
-        return <AllergiesStep value={data.allergies} onNext={(allergies) => { update({ allergies }); goForward(); }} />;
+        // Household size/type - only shown if creating new
+        return <HouseholdStep size={data.householdSize} type={data.householdType} onNext={(size, type) => { update({ householdSize: size, householdType: type }); goForward(); }} />;
       case 5:
-        return <AutoDemoStep onNext={goForward} />;
+        return <AllergiesStep value={data.allergies} onNext={(allergies) => { update({ allergies }); goForward(); }} />;
       case 6:
+        return <AutoDemoStep onNext={goForward} />;
+      case 7:
+        return (
+          <SignatureDishStep
+            value={data.signatureDish}
+            onNext={(dish) => { update({ signatureDish: dish }); goForward(); }}
+          />
+        );
+      case 8:
         return (
           <DinnerRankingStep
-            onNext={(rankedIds, rankedRecipes, signatureDish) => {
-              update({ rankedIds, rankedRecipes, signatureDish });
+            onNext={(rankedIds, rankedRecipes) => {
+              update({ rankedIds, rankedRecipes });
               goForward();
             }}
           />
@@ -156,7 +193,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <OnboardingShell step={step} totalSteps={TOTAL_STEPS} direction={direction} onBack={goBack} hideBack={step === 0 || step === 5}>
+    <OnboardingShell step={step} totalSteps={TOTAL_STEPS} direction={direction} onBack={goBack} hideBack={step === 0 || step === 6 || step === 8}>
       {renderStep()}
     </OnboardingShell>
   );
