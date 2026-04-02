@@ -133,9 +133,9 @@ export default function Navbar() {
       <nav className="bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-11 sm:h-16 items-center">
-            {/* Left: Logo — desktop only (mobile uses BottomTabBar for nav) */}
-            <Link href={user ? "/recipes" : "/"} className="hidden sm:flex items-center gap-2 text-xl sm:text-2xl font-bold text-orange-600">
-              <Image src="/marco-icon.svg" alt="Marco" width={28} height={28} className="rounded-full sm:w-8 sm:h-8" />
+            {/* Left: Logo */}
+            <Link href={user ? "/recipes" : "/"} className="flex items-center gap-1.5 sm:gap-2 text-lg sm:text-2xl font-bold text-orange-600">
+              <Image src="/marco-icon.svg" alt="Marco" width={24} height={24} className="rounded-full sm:w-8 sm:h-8" />
               Marco
             </Link>
 
