@@ -151,7 +151,6 @@ export default function GroceryList() {
 
   // Meal plan summary
   const [mealsExpanded, setMealsExpanded] = useState(true);
-  const [removingMealId, setRemovingMealId] = useState<string | null>(null);
 
   // Data (SWR-cached)
   const [generating, setGenerating] = useState(false);
@@ -226,29 +225,45 @@ export default function GroceryList() {
     }
   }
 
-  // ── Remove meal and sync ──────────────────────────────────────────────────
+  // ── Remove meal (optimistic — instant UI, background API) ──────────────────
   async function handleRemoveMeal(planId: string) {
-    setRemovingMealId(planId);
+    // Find the meal being removed to know which recipe it references
+    const removedMeal = meals.find((m) => m.id === planId);
+    const removedRecipeTitle = removedMeal?.recipe?.title;
+
+    // Optimistically: remove meal from local list, flag list as changed
+    const optimistic = groceryData ? {
+      ...groceryData,
+      meals: (groceryData.meals ?? []).filter((m: MealPlanSummaryItem) => m.id !== planId),
+      meal_plan_changed: true,
+      // If this was the only meal using a recipe, remove those grocery items too
+      ...(removedRecipeTitle ? {
+        items: (groceryData.items ?? []).map((item: GroceryItemType) => {
+          if (!item.recipe_sources?.includes(removedRecipeTitle)) return item;
+          // Check if other remaining meals also use this recipe
+          const otherMealsWithRecipe = (groceryData.meals ?? []).filter(
+            (m: MealPlanSummaryItem) => m.id !== planId && m.recipe?.title === removedRecipeTitle
+          );
+          if (otherMealsWithRecipe.length > 0) return item;
+          // This was the only meal with this recipe — remove or update recipe_sources
+          const newSources = item.recipe_sources.filter((s: string) => s !== removedRecipeTitle);
+          if (newSources.length === 0) return null; // remove entirely
+          return { ...item, recipe_sources: newSources };
+        }).filter(Boolean),
+      } : {}),
+    } : undefined;
+    mutateGrocery(optimistic, false);
+
+    // Fire-and-forget API call
     try {
-      const res = await fetch("/api/meal-plan/remove", {
+      await fetch("/api/meal-plan/remove", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
       });
-      if (!res.ok) throw new Error("Failed to remove meal");
-
-      // Regenerate grocery list to reflect the change
-      await fetch("/api/grocery-list", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date_start: dateRange.start, date_end: dateRange.end }),
-      });
-      await mutateGrocery();
     } catch {
       // Revert on failure
-      await mutateGrocery();
-    } finally {
-      setRemovingMealId(null);
+      mutateGrocery();
     }
   }
 
@@ -512,7 +527,7 @@ export default function GroceryList() {
               {meals.map((meal, i) => (
                 <div
                   key={meal.id}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 transition-opacity ${removingMealId === meal.id ? "opacity-40" : ""}`}
+                  className="flex items-center gap-3 px-3.5 py-2.5"
                   style={i < meals.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
                 >
                   <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
@@ -530,7 +545,6 @@ export default function GroceryList() {
                   </div>
                   <button
                     onClick={() => handleRemoveMeal(meal.id)}
-                    disabled={!!removingMealId}
                     className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 disabled:opacity-50"
                     aria-label={`Remove ${meal.recipe?.title}`}
                   >
@@ -817,13 +831,11 @@ export default function GroceryList() {
 
       </div>{/* close max-w-3xl container */}
 
-      {/* Generating overlay */}
+      {/* Generating indicator — inline, non-blocking */}
       {generating && (
-        <div className="fixed inset-0 z-50 bg-white/60 flex items-center justify-center">
-          <div className="bg-white rounded-2xl shadow-xl px-8 py-6 flex flex-col items-center gap-3">
-            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium text-gray-700">Syncing with your meal plan\u2026</p>
-          </div>
+        <div className="mx-4 mt-3 flex items-center justify-center gap-2 py-4">
+          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-medium text-gray-500">Updating list\u2026</p>
         </div>
       )}
 
