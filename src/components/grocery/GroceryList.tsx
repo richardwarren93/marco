@@ -179,6 +179,7 @@ export default function GroceryList() {
   const list: GroceryListType | null = groceryData?.list ?? null;
   const items: GroceryItemType[] = groceryData?.items ?? [];
   const householdItems: HouseholdGroceryItem[] = groceryData?.householdItems ?? [];
+  const mealPlanChanged: boolean = groceryData?.meal_plan_changed ?? false;
   const meals: MealPlanSummaryItem[] = groceryData?.meals ?? [];
 
   // ── Auto-generate when there's no list yet ────────────────────────────────
@@ -189,6 +190,20 @@ export default function GroceryList() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, list]);
+
+  // ── Auto-sync when meal plan has changed ──────────────────────────────────
+  const lastSyncedAt = useRef<string | null>(null);
+  useEffect(() => {
+    if (!loading && mealPlanChanged && list && !generating) {
+      // Only auto-sync once per generation cycle
+      const generatedAt = list.generated_at ?? "";
+      if (lastSyncedAt.current !== generatedAt) {
+        lastSyncedAt.current = generatedAt;
+        handleAutoGenerate();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, mealPlanChanged, list?.generated_at]);
 
   async function handleAutoGenerate() {
     setGenerating(true);
