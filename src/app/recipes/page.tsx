@@ -10,6 +10,8 @@ import RecipeBrowser from "@/components/recipes/RecipeBrowser";
 
 // ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
 const DiscoverTab = dynamic(() => import("@/components/recipes/DiscoverTab"));
+const GroceryPageContent = dynamic(() => import("@/components/grocery/GroceryPageContent"), { ssr: false });
+const MealPlanPageContent = dynamic(() => import("@/components/meal-plan/MealPlanPageContent"), { ssr: false });
 const ImportRecipeSheet = dynamic(() => import("@/components/recipes/ImportRecipeSheet"), { ssr: false });
 const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
 const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
@@ -26,7 +28,14 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-type ActiveTab = "recipes" | "discover";
+type ActiveTab = "recipes" | "discover" | "grocery" | "meal-plan";
+
+const TAB_CONFIG: { key: ActiveTab; label: string; emoji: string }[] = [
+  { key: "recipes", label: "My Recipes", emoji: "📖" },
+  { key: "discover", label: "Discover", emoji: "🔍" },
+  { key: "meal-plan", label: "Meal Plan", emoji: "📅" },
+  { key: "grocery", label: "Grocery", emoji: "🛒" },
+];
 
 export default function RecipesPage() {
   return (
@@ -46,9 +55,11 @@ function RecipesInner() {
   const collections: Collection[] = collectionsData?.collections ?? [];
   const loading = recipesLoading || collectionsLoading;
 
+  const tabParam = searchParams.get("tab");
   const [activeTab, setActiveTab] = useState<ActiveTab>(
-    searchParams.get("tab") === "discover" ? "discover" : "recipes"
+    (["recipes", "discover", "grocery", "meal-plan"].includes(tabParam ?? "") ? tabParam : "recipes") as ActiveTab
   );
+
   // Quick-add sheet state
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [addSheetRecipeId, setAddSheetRecipeId] = useState<string | null>(null);
@@ -79,11 +90,10 @@ function RecipesInner() {
           })
         )
       );
-      // After adding, navigate to meal plan and jump to the week of the first selected date
-      const firstDate = [...dates].sort()[0];
-      router.push(firstDate ? `/meal-plan?date=${firstDate}` : "/meal-plan");
+      // After adding, switch to meal plan tab and set date
+      setActiveTab("meal-plan");
     },
-    [supabase, router]
+    [supabase]
   );
 
   return (
@@ -105,27 +115,56 @@ function RecipesInner() {
             </div>
           </div>
 
-          {/* Tab bar */}
-          <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0">
-            {(["recipes", "discover"] as ActiveTab[]).map((tab) => {
-              const labels: Record<ActiveTab, string> = { recipes: "My Recipes", discover: "Discover" };
-              const active = activeTab === tab;
+          {/* ── Folder tab bar ──────────────────────────────────────── */}
+          <div className="flex gap-0 overflow-x-auto scrollbar-hide pb-0 -mb-px">
+            {TAB_CONFIG.map((tab) => {
+              const active = activeTab === tab.key;
               return (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className="flex-shrink-0 px-4 py-2.5 text-sm font-bold rounded-t-2xl transition-all relative"
-                  style={active
-                    ? { background: "#fff", color: "#f97316", borderTop: "2px solid #f97316" }
-                    : { background: "transparent", color: "#a09890", borderTop: "2px solid transparent" }}
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  className="flex-shrink-0 relative group"
                 >
-                  {labels[tab]}
+                  {/* Gradient border wrapper */}
+                  <div
+                    className="rounded-t-2xl p-[1.5px] transition-all duration-200"
+                    style={{
+                      background: active
+                        ? "linear-gradient(135deg, #f97316, #fb923c, #fbbf24)"
+                        : "transparent",
+                    }}
+                  >
+                    <div
+                      className="rounded-t-[14px] px-4 py-2.5 flex items-center gap-1.5 transition-all duration-200"
+                      style={{
+                        background: active ? "#fff" : "transparent",
+                      }}
+                    >
+                      <span className="text-xs">{tab.emoji}</span>
+                      <span
+                        className="text-sm font-bold transition-colors duration-200"
+                        style={{ color: active ? "#f97316" : "#a09890" }}
+                      >
+                        {tab.label}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Inactive hover underline hint */}
+                  {!active && (
+                    <div className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
                 </button>
               );
             })}
           </div>
+
+          {/* Active tab bottom border line */}
+          <div className="h-[1.5px]" style={{ background: "linear-gradient(90deg, #f97316, #fb923c, #fbbf24)" }} />
         </div>
       </div>
+
+      {/* ── Tab content ────────────────────────────────────────────── */}
 
       {/* Recipes tab */}
       {activeTab === "recipes" && (
@@ -145,7 +184,7 @@ function RecipesInner() {
         />
       )}
 
-      {/* Discover tab — AI discovery + friends + community feed */}
+      {/* Discover tab */}
       {activeTab === "discover" && (
         <DiscoverTab
           onAddToMealPlan={(id) => {
@@ -156,6 +195,16 @@ function RecipesInner() {
           }}
           onAddToCollection={(id) => setCollectionRecipeId(id)}
         />
+      )}
+
+      {/* Meal Plan tab */}
+      {activeTab === "meal-plan" && (
+        <MealPlanPageContent />
+      )}
+
+      {/* Grocery tab */}
+      {activeTab === "grocery" && (
+        <GroceryPageContent />
       )}
 
       <AddMealSheet
