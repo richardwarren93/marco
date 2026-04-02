@@ -462,7 +462,7 @@ export default function GroceryList() {
 
   const toBuyCount = allItems.filter((i) => !i.checked).length;
   const checkedCount = allItems.filter((i) => i.checked).length;
-  const hasItems = allItems.length > 0;
+
 
   // Navigate week with smart preset detection
   function navigateWeek(days: number) {
@@ -716,14 +716,14 @@ export default function GroceryList() {
 
 
       {/* ── List header + filter + view toggle ─────────────────────────── */}
-      {hasItems && (
+      {!loading && (
         <div className="mx-4 mt-4 mb-1">
           <h2 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
             List ({toBuyCount})
           </h2>
         </div>
       )}
-      {hasItems && (
+      {!loading && (
         <div className="mx-4 mt-3">
           <div className="flex items-center gap-2">
             {/* Full-width sliding pill toggle */}
@@ -813,48 +813,21 @@ export default function GroceryList() {
           ))}
         </div>
 
-      ) : !list ? (
-        <div className="mx-4 mt-6 text-center animate-fade-slide-up">
-          <div className="bg-white rounded-3xl px-6 py-12" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-            <p className="text-5xl mb-4">🛒</p>
-            <p className="font-black text-lg mb-1" style={{ color: "#1a1410" }}>No grocery list yet</p>
-            <p className="text-sm mb-7" style={{ color: "#a09890" }}>
-              Add meals to your plan, then generate your list.
-            </p>
-            <button
-              onClick={handleGenerate}
-              disabled={generating}
-              className="px-7 py-3 rounded-2xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-50"
-              style={{ background: "#1a1410" }}
-            >
-              {generating ? "Syncing\u2026" : "Generate from Plan"}
-            </button>
-          </div>
-        </div>
-
       ) : grouped.length === 0 ? (
-        <div className="mx-4 mt-6 text-center">
-          {allItems.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10">
-              <p className="text-4xl mb-4">✨</p>
-              <p className="text-gray-800 font-semibold text-base mb-1">List cleared</p>
-              <p className="text-gray-400 text-sm mb-1">
-                Add meals to your plan, then tap generate to build your list.
-              </p>
-            </div>
-          ) : filter === "to_buy" ? (
-            <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10">
-              <p className="text-4xl mb-3">🎉</p>
-              <p className="text-gray-800 font-semibold text-base mb-1">All done!</p>
-              <p className="text-gray-400 text-sm">Everything is checked off your list.</p>
+        <div className="mx-4 mt-3 text-center">
+          {filter === "to_buy" && allItems.some((i) => i.checked) ? (
+            <div className="bg-white rounded-2xl border border-gray-100 px-6 py-8">
+              <p className="text-3xl mb-3">🎉</p>
+              <p className="text-gray-800 font-semibold text-sm">All done!</p>
+              <p className="text-gray-400 text-xs mt-0.5">Everything is checked off.</p>
             </div>
           ) : filter === "checked" ? (
-            <div className="py-10">
+            <div className="py-8">
               <p className="text-gray-400 text-sm">Nothing marked as have yet.</p>
             </div>
           ) : (
-            <div className="py-10">
-              <p className="text-gray-400 text-sm">Your list is empty.</p>
+            <div className="py-8">
+              <p className="text-gray-400 text-sm">No items yet. Add meals to get started.</p>
             </div>
           )}
         </div>
