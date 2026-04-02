@@ -99,24 +99,17 @@ function RecipesInner() {
   return (
     <>
       {/* ── Banner + Folder Tabs ──────────────────────────────────── */}
-      <div className="sticky top-0 z-10" style={{ background: "#faf9f7" }}>
-        {/* Banner area */}
-        <div
-          className="w-full h-20 sm:h-28"
-          style={{
-            background: "linear-gradient(135deg, #fef3c7 0%, #fed7aa 40%, #fdba74 70%, #fb923c 100%)",
-          }}
-        >
-          <div className="max-w-5xl mx-auto h-full px-4 flex items-end">
-            {/* Optional: subtle brand text in the banner */}
-            <div className="pb-3">
-              <h1 className="text-lg sm:text-xl font-black text-white/90 drop-shadow-sm tracking-tight">Marco</h1>
-            </div>
-          </div>
-        </div>
+      <div className="sticky top-0 z-10 px-4 pt-3 pb-0" style={{ background: "#faf9f7" }}>
+        <div className="max-w-5xl mx-auto">
+          {/* Banner */}
+          <div
+            className="rounded-2xl h-16 sm:h-20 mb-2"
+            style={{
+              background: "linear-gradient(135deg, #fef3c7 0%, #fed7aa 40%, #fdba74 70%, #fb923c 100%)",
+            }}
+          />
 
-        {/* Folder tabs — overlapping the banner bottom edge */}
-        <div className="max-w-5xl mx-auto px-4" style={{ marginTop: -1 }}>
+          {/* Folder tabs */}
           <div className="flex gap-0 overflow-x-auto scrollbar-hide">
             {TAB_CONFIG.map((tab) => {
               const active = activeTab === tab.key;
@@ -130,7 +123,7 @@ function RecipesInner() {
                   <div
                     className="rounded-t-xl px-4 sm:px-5 py-2 sm:py-2.5 flex items-center gap-1.5 transition-all duration-200 border border-b-0"
                     style={{
-                      background: active ? "#fff" : "#f5f0eb",
+                      background: active ? "#fff" : "#f0ece7",
                       borderColor: active ? "#e8a050" : "#ddd5cc",
                       position: "relative",
                       zIndex: active ? 2 : 1,
@@ -148,7 +141,7 @@ function RecipesInner() {
                 </button>
               );
             })}
-            {/* Filler to extend the bottom border across remaining width */}
+            {/* Filler to extend the bottom border */}
             <div className="flex-1 border-b" style={{ borderColor: "#e8a050" }} />
           </div>
         </div>

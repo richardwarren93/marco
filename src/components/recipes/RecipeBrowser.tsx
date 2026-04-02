@@ -371,7 +371,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, ingredient, tag…"
               className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-sm outline-none transition-all"
-              style={{ background: "#f0ede8", border: "1.5px solid transparent" }}
+              style={{ background: "#ffffff", border: "1.5px solid #e8e4df" }}
               onFocus={e => (e.target.style.borderColor = "#f97316")}
               onBlur={e => (e.target.style.borderColor = "transparent")}
               autoComplete="off"
