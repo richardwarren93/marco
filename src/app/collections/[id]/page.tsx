@@ -195,7 +195,7 @@ export default function CollectionDetailPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    if (res.ok) router.push("/recipes?tab=collections");
+    if (res.ok) router.push("/recipes");
     else setDeleting(false);
   }
 
@@ -256,7 +256,7 @@ export default function CollectionDetailPage() {
       <div className="max-w-5xl mx-auto px-4 pt-8 text-center">
         <div className="text-4xl mb-3">📚</div>
         <p className="text-gray-500 mb-3">Collection not found</p>
-        <Link href="/recipes?tab=collections" className="text-orange-600 hover:text-orange-700 text-sm font-medium">
+        <Link href="/recipes" className="text-orange-600 hover:text-orange-700 text-sm font-medium">
           Back to collections
         </Link>
       </div>
@@ -268,7 +268,7 @@ export default function CollectionDetailPage() {
       <div className="max-w-5xl mx-auto px-4 pt-4 pb-28">
         {/* Back navigation */}
         <Link
-          href="/recipes?tab=collections"
+          href="/recipes"
           className="inline-flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600 transition-colors mb-4"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -20,6 +20,8 @@ type LibraryMode = {
   onAddToMealPlan?: (recipeId: string) => void;
   /** Called when user taps bookmark on a card — parent opens AddToCollectionModal */
   onAddToCollection?: (recipeId: string) => void;
+  /** Revalidate collections after creation */
+  mutateCollections?: () => void;
 };
 
 type PickMode = {
@@ -157,6 +159,265 @@ function BrowserCard({
           {recipe.title}
         </p>
       </div>
+    </div>
+  );
+}
+
+// ─── Inline collection recipe card (compact) ────────────────────────────────
+
+const COLLECTION_MEAL_EMOJIS: Record<string, string> = {
+  breakfast: "🥞", lunch: "🥗", dinner: "🍽️", snack: "🍎",
+};
+
+function CollectionRecipeCard({ recipe, index }: { recipe: Recipe; index: number }) {
+  const emoji = COLLECTION_MEAL_EMOJIS[recipe.meal_type ?? "dinner"] ?? "🍳";
+  const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
+
+  return (
+    <Link
+      href={`/recipes/${recipe.id}`}
+      className="block bg-white rounded-2xl overflow-hidden active:scale-[0.97] transition-all duration-150"
+      style={{
+        boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
+        animation: `cardPop 0.35s cubic-bezier(0.34,1.2,0.64,1) ${index * 50}ms both`,
+      }}
+    >
+      <div className="relative h-28 sm:h-32 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
+        {recipe.image_url ? (
+          <Image
+            src={recipe.image_url}
+            alt={recipe.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 50vw, 33vw"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
+        ) : (
+          <span className="text-3xl opacity-70">{emoji}</span>
+        )}
+        {recipe.meal_type && (
+          <span className="absolute top-1.5 left-1.5 text-[9px] bg-black/40 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium capitalize">
+            {recipe.meal_type}
+          </span>
+        )}
+      </div>
+      <div className="px-2.5 pt-2 pb-2.5">
+        <p className="text-xs font-bold text-gray-900 line-clamp-2 leading-snug">{recipe.title}</p>
+        {totalTime > 0 && (
+          <p className="text-[10px] text-gray-400 mt-1">{totalTime} min</p>
+        )}
+      </div>
+    </Link>
+  );
+}
+
+// ─── Collections row with inline expand ──────────────────────────────────────
+
+function CollectionsRow({ collections, mutateCollections }: { collections: Collection[]; mutateCollections?: () => void }) {
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [collectionRecipes, setCollectionRecipes] = useState<Recipe[]>([]);
+  const [loadingRecipes, setLoadingRecipes] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newDesc, setNewDesc] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [createError, setCreateError] = useState("");
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  const fetchCollectionRecipes = useCallback(async (collectionId: string) => {
+    setLoadingRecipes(true);
+    try {
+      const res = await fetch(`/api/collections/${collectionId}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setCollectionRecipes(data.recipes || []);
+    } catch {
+      // ignore
+    } finally {
+      setLoadingRecipes(false);
+    }
+  }, []);
+
+  function handlePillClick(collectionId: string) {
+    if (expandedId === collectionId) {
+      setExpandedId(null);
+      setCollectionRecipes([]);
+    } else {
+      setExpandedId(collectionId);
+      fetchCollectionRecipes(collectionId);
+    }
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    setCreating(true);
+    setCreateError("");
+    try {
+      const res = await fetch("/api/collections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim(), description: newDesc.trim() || null }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to create collection");
+      }
+      setNewName("");
+      setNewDesc("");
+      setShowCreateForm(false);
+      mutateCollections?.();
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Failed to create collection");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  const expandedCollection = collections.find((c) => c.id === expandedId);
+
+  return (
+    <div className="mb-5 animate-fade-slide-up">
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-0.5">
+        Collections
+      </p>
+
+      {/* Pills row */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-0.5 px-0.5 pb-0.5">
+        {collections.map((col, i) => {
+          const isExpanded = expandedId === col.id;
+          return (
+            <button
+              key={col.id}
+              onClick={() => handlePillClick(col.id)}
+              className={`flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl border transition-all whitespace-nowrap ${
+                isExpanded
+                  ? "border-orange-400 bg-orange-50 shadow-sm"
+                  : "border-orange-100 bg-white hover:border-orange-300 hover:shadow-sm"
+              }`}
+              style={{ animation: `fadeSlideUp 0.35s ease ${i * 50}ms both` }}
+            >
+              <span className={`text-sm font-bold ${isExpanded ? "text-orange-600" : "text-gray-800"}`}>
+                {col.name}
+              </span>
+              {col.recipe_count !== undefined && col.recipe_count > 0 && (
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                  isExpanded ? "text-orange-600 bg-orange-100" : "text-orange-400 bg-orange-50"
+                }`}>
+                  {col.recipe_count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+
+        {/* + Create collection button */}
+        <button
+          onClick={() => { setShowCreateForm(!showCreateForm); setExpandedId(null); setTimeout(() => nameInputRef.current?.focus(), 100); }}
+          className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-2xl border transition-all whitespace-nowrap ${
+            showCreateForm
+              ? "border-orange-400 bg-orange-50"
+              : "border-dashed border-gray-200 bg-white hover:border-orange-300"
+          }`}
+          style={{ animation: `fadeSlideUp 0.35s ease ${collections.length * 50}ms both` }}
+        >
+          <svg className={`w-4 h-4 transition-transform ${showCreateForm ? "rotate-45 text-orange-500" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          <span className={`text-sm font-bold ${showCreateForm ? "text-orange-600" : "text-gray-400"}`}>New</span>
+        </button>
+      </div>
+
+      {/* Create collection form — slides open */}
+      {showCreateForm && (
+        <div className="mt-3 overflow-hidden" style={{ animation: "slideDown 0.25s ease both" }}>
+          <form onSubmit={handleCreate} className="bg-white rounded-2xl border border-orange-100 p-3.5 space-y-2.5" style={{ boxShadow: "0 2px 12px rgba(234,88,12,0.06)" }}>
+            <input
+              ref={nameInputRef}
+              type="text"
+              placeholder="Collection name"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm font-medium"
+              required
+            />
+            <input
+              type="text"
+              placeholder="Description (optional)"
+              value={newDesc}
+              onChange={(e) => setNewDesc(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm text-gray-600"
+            />
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={creating || !newName.trim()}
+                className="flex-1 bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-orange-600 disabled:opacity-50 transition-colors"
+              >
+                {creating ? "Creating..." : "Create"}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowCreateForm(false); setNewName(""); setNewDesc(""); setCreateError(""); }}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+            {createError && <p className="text-red-500 text-xs">{createError}</p>}
+          </form>
+        </div>
+      )}
+
+      {/* Expanded collection recipes — slides open */}
+      {expandedId && expandedCollection && (
+        <div ref={contentRef} className="mt-3 overflow-hidden" style={{ animation: "slideDown 0.3s ease both" }}>
+          <div className="bg-white rounded-2xl border border-orange-100 p-3.5" style={{ boxShadow: "0 2px 12px rgba(234,88,12,0.06)" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h3 className="text-sm font-black text-gray-900">{expandedCollection.name}</h3>
+                {expandedCollection.description && (
+                  <p className="text-[11px] text-gray-400 mt-0.5">{expandedCollection.description}</p>
+                )}
+              </div>
+              <Link
+                href={`/collections/${expandedId}`}
+                className="text-[11px] font-bold text-orange-500 hover:text-orange-600 transition-colors"
+              >
+                View all →
+              </Link>
+            </div>
+
+            {/* Recipe grid */}
+            {loadingRecipes ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="rounded-2xl overflow-hidden">
+                    <div className="h-28 sm:h-32 skeleton-warm rounded-2xl" />
+                    <div className="pt-2 space-y-1.5">
+                      <div className="h-2.5 skeleton-warm rounded-full w-4/5" />
+                      <div className="h-2.5 skeleton-warm rounded-full w-2/5" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : collectionRecipes.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-2xl mb-2">📚</p>
+                <p className="text-xs text-gray-400 font-medium">No recipes in this collection yet</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
+                {collectionRecipes.slice(0, 8).map((recipe, i) => (
+                  <CollectionRecipeCard key={recipe.id} recipe={recipe} index={i} />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -373,29 +634,11 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
       <div className="flex-1 px-4 py-4 pb-28 overflow-y-auto max-w-5xl mx-auto w-full">
 
         {/* Collections row — library only */}
-        {props.mode === "library" && props.collections.length > 0 && (
-          <div className="mb-5 animate-fade-slide-up">
-            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2.5 px-0.5">
-              Collections
-            </p>
-            <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-0.5 px-0.5 pb-0.5">
-              {props.collections.map((col, i) => (
-                <Link
-                  key={col.id}
-                  href={`/collections/${col.id}`}
-                  className="flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-orange-100 bg-white hover:border-orange-300 hover:shadow-sm transition-all whitespace-nowrap"
-                  style={{ animation: `fadeSlideUp 0.35s ease ${i * 50}ms both` }}
-                >
-                  <span className="text-sm font-bold text-gray-800">{col.name}</span>
-                  {col.recipe_count !== undefined && col.recipe_count > 0 && (
-                    <span className="text-[10px] font-bold text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded-full">
-                      {col.recipe_count}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
+        {props.mode === "library" && (
+          <CollectionsRow
+            collections={props.collections}
+            mutateCollections={props.mutateCollections}
+          />
         )}
 
         {/* Loading skeleton */}

@@ -215,7 +215,7 @@ export default function ProfilePage() {
         </Link>
 
         <Link
-          href="/recipes?tab=collections"
+          href="/recipes"
           className="flex items-center justify-center gap-1.5 bg-violet-50 py-2.5 rounded-2xl ring-1 ring-violet-200/50 hover:shadow-md transition-all active:scale-95"
         >
           <CollectionsIcon className="w-4 h-4 text-violet-600" />

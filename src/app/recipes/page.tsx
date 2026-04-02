@@ -7,9 +7,6 @@ import dynamic from "next/dynamic";
 import type { Recipe, Collection } from "@/types";
 import { useRecipes, useCollections } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
-import CollectionCard from "@/components/collections/CollectionCard";
-import CreateCollectionForm from "@/components/collections/CreateCollectionForm";
-import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
 
 // ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
 const ExploreTab = dynamic(() => import("@/components/recipes/ExploreTab"));
@@ -30,7 +27,7 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-type ActiveTab = "recipes" | "collections" | "table" | "explore";
+type ActiveTab = "recipes" | "table" | "explore";
 
 export default function RecipesPage() {
   return (
@@ -51,16 +48,12 @@ function RecipesInner() {
   const loading = recipesLoading || collectionsLoading;
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(
-    searchParams.get("tab") === "collections"
-      ? "collections"
-      : searchParams.get("tab") === "table"
+    searchParams.get("tab") === "table"
       ? "table"
       : searchParams.get("tab") === "explore"
       ? "explore"
       : "recipes"
   );
-  const [showCollectionForm, setShowCollectionForm] = useState(false);
-
   // Quick-add sheet state
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [addSheetRecipeId, setAddSheetRecipeId] = useState<string | null>(null);
@@ -119,8 +112,8 @@ function RecipesInner() {
 
           {/* Tab bar */}
           <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0">
-            {(["recipes", "collections", "table", "explore"] as ActiveTab[]).map((tab) => {
-              const labels: Record<ActiveTab, string> = { recipes: "My Recipes", collections: "Collections", table: "Friends", explore: "Explore" };
+            {(["recipes", "table", "explore"] as ActiveTab[]).map((tab) => {
+              const labels: Record<ActiveTab, string> = { recipes: "My Recipes", table: "Friends", explore: "Explore" };
               const active = activeTab === tab;
               return (
                 <button
@@ -146,6 +139,7 @@ function RecipesInner() {
           recipes={recipes}
           collections={collections}
           loading={loading}
+          mutateCollections={mutateCollections}
           onAddToMealPlan={(id) => {
             const recipe = recipes.find((r) => r.id === id);
             setAddSheetRecipeId(id);
@@ -154,60 +148,6 @@ function RecipesInner() {
           }}
           onAddToCollection={(id) => setCollectionRecipeId(id)}
         />
-      )}
-
-      {/* Collections tab */}
-      {activeTab === "collections" && (
-        <div className="max-w-5xl mx-auto px-4 pb-8 pt-5 animate-fade-slide-up" style={{ background: "#faf9f7" }}>
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>Collections</h2>
-              {collections.length > 0 && (
-                <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>{collections.length} collection{collections.length !== 1 ? "s" : ""}</p>
-              )}
-            </div>
-            <button
-              onClick={() => setShowCollectionForm(!showCollectionForm)}
-              className="text-white px-4 py-2 rounded-2xl text-sm font-bold active:scale-95 transition-transform"
-              style={{ background: showCollectionForm ? "#6b6560" : "#1a1410" }}
-            >
-              {showCollectionForm ? "Cancel" : "+ New"}
-            </button>
-          </div>
-
-          {showCollectionForm && (
-            <div className="mb-5 animate-card-pop">
-              <CreateCollectionForm onCreated={() => { setShowCollectionForm(false); mutateCollections(); }} />
-            </div>
-          )}
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-28 skeleton-warm rounded-3xl" />
-              ))}
-            </div>
-          ) : collections.length === 0 ? (
-            <div className="text-center py-20 rounded-3xl bg-white" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-              <div className="flex justify-center mb-4 opacity-30">
-                <CollectionsIcon className="w-14 h-14" />
-              </div>
-              <p className="font-black text-gray-700 text-base mb-1">No collections yet</p>
-              <p className="text-gray-400 text-sm mb-5">Group your recipes into curated collections</p>
-              <button onClick={() => setShowCollectionForm(true)} className="px-5 py-2.5 rounded-2xl text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors">
-                Create first collection
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {collections.map((collection, i) => (
-                <div key={collection.id} style={{ animation: `cardPop 0.4s ease ${i * 60}ms both` }}>
-                  <CollectionCard collection={collection} />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       )}
 
       {/* Explore tab — AI recipe discovery */}
