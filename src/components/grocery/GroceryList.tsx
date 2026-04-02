@@ -623,11 +623,10 @@ export default function GroceryList() {
 
       {/* ── Filter + group toggle + clear ────────────────────────────────── */}
       {hasItems && (
-        <div className="mx-4 mt-3 space-y-2">
-          <div className="flex items-center gap-2">
-            {/* Sliding pill toggle — matches Discover tab style */}
-            <div className="flex flex-1 bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
-              {/* Sliding indicator */}
+        <div className="mx-4 mt-3 space-y-2.5">
+          {/* Centered sliding pill toggle */}
+          <div className="max-w-[280px] mx-auto">
+            <div className="flex bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
               <div
                 className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
                 style={{
@@ -650,10 +649,36 @@ export default function GroceryList() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Group by + clear all row */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-gray-400">Group by:</span>
+              <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
+                {([
+                  { key: "category", label: "Category" },
+                  { key: "meal", label: "Meal" },
+                ] as { key: GroupMode; label: string }[]).map(({ key, label }) => (
+                  <button
+                    key={key}
+                    onClick={() => setGroupMode(key)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                      groupMode === key
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {/* Clear all — right-aligned */}
             {!clearConfirm ? (
               <button
                 onClick={() => setClearConfirm(true)}
-                className="text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
+                className="text-[11px] text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
               >
                 Clear all
               </button>
@@ -661,41 +686,18 @@ export default function GroceryList() {
               <div className="flex items-center gap-1">
                 <button
                   onClick={handleClearAll}
-                  className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                  className="text-[11px] font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
                 >
                   Confirm
                 </button>
                 <button
                   onClick={() => setClearConfirm(false)}
-                  className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg transition-colors"
+                  className="text-[11px] text-gray-400 hover:text-gray-600 px-1.5 py-1 rounded-lg transition-colors"
                 >
                   Cancel
                 </button>
               </div>
             )}
-          </div>
-
-          {/* Group by toggle */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-medium text-gray-400">Group by:</span>
-            <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
-              {([
-                { key: "category", label: "Category" },
-                { key: "meal", label: "Meal" },
-              ] as { key: GroupMode; label: string }[]).map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setGroupMode(key)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                    groupMode === key
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       )}
