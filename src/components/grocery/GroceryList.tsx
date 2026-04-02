@@ -381,18 +381,30 @@ export default function GroceryList() {
 
   const allItems: HouseholdGroceryItem[] = [...items, ...householdItems];
 
-  const filteredItems = useMemo(() => {
+  // Items filtered by exclusions only (not by checked state — tabs handle display)
+  const activeItems = useMemo(() => {
     return allItems.filter((item) => {
-      // Filter out items whose ONLY recipe sources are excluded
       if (excludedRecipeTitles.size > 0 && item.recipe_sources?.length) {
         const hasActiveSource = item.recipe_sources.some((s: string) => !excludedRecipeTitles.has(s));
         if (!hasActiveSource) return false;
       }
-      if (filter === "to_buy") return !item.checked;
-      if (filter === "checked") return item.checked;
       return true;
     });
-  }, [allItems, filter, excludedRecipeTitles]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allItems, excludedRecipeTitles]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // For Buy tab: unchecked items shown normally; checked items shown crossed out at bottom
+  // For Have tab: only checked items
+  const filteredItems = useMemo(() => {
+    if (filter === "to_buy") return activeItems.filter((i) => !i.checked);
+    if (filter === "checked") return activeItems.filter((i) => i.checked);
+    return activeItems;
+  }, [activeItems, filter]);
+
+  // "Have" items to show crossed out at the bottom of Buy tab
+  const haveItemsForBuyTab = useMemo(() => {
+    if (filter !== "to_buy") return [];
+    return activeItems.filter((i) => i.checked);
+  }, [activeItems, filter]);
 
   // Group by category
   const groupedByCategory = useMemo(() => {
@@ -879,6 +891,7 @@ export default function GroceryList() {
                         onEdit={setEditItem}
                         onDelete={handleDelete}
                         ownerName={item.owner_name}
+                        haveMode={filter === "checked"}
                       />
                     ))}
                   </div>
@@ -886,6 +899,55 @@ export default function GroceryList() {
               </div>
             );
           })}
+
+          {/* "Already Have" section — shown at bottom of Buy tab */}
+          {filter === "to_buy" && haveItemsForBuyTab.length > 0 && (
+            <div
+              className="bg-white/60 rounded-3xl overflow-hidden"
+              style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.03)" }}
+            >
+              <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
+                <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+                <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+                  Already have ({haveItemsForBuyTab.length})
+                </h3>
+              </div>
+              <div className="px-4 pb-3">
+                {haveItemsForBuyTab.map((item) => {
+                  const displayName = item.name_override ?? item.name;
+                  const displayAmount = item.amount_override ?? item.amount;
+                  const displayUnit = item.unit_override ?? item.unit;
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center gap-2.5 py-1.5"
+                      style={{ borderBottom: "1px solid #f5f3f0" }}
+                    >
+                      <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-gray-400 line-through capitalize flex-1 min-w-0 truncate">
+                        {displayName}
+                      </span>
+                      {displayAmount && (
+                        <span className="text-xs text-gray-300 flex-shrink-0">
+                          {displayAmount}{displayUnit ? ` ${displayUnit}` : ""}
+                        </span>
+                      )}
+                      <button
+                        onClick={() => handleToggle(item.id, false)}
+                        className="text-[10px] font-semibold text-orange-400 hover:text-orange-600 flex-shrink-0 px-1"
+                      >
+                        Need
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Bottom action — Order Online (Buy tab) or Add Item (Have tab) */}
           {filter === "to_buy" ? (

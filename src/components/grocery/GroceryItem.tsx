@@ -9,12 +9,14 @@ interface Props {
   onEdit: (item: GroceryItemType) => void;
   onDelete: (id: string) => void;
   ownerName?: string;
+  /** When true, checked items show as "owned" (checkmark, no strikethrough) instead of "done" */
+  haveMode?: boolean;
 }
 
 const DELETE_WIDTH = 72;
 const REVEAL_THRESHOLD = 40;
 
-export default function GroceryItem({ item, onToggle, onEdit, onDelete, ownerName }: Props) {
+export default function GroceryItem({ item, onToggle, onEdit, onDelete, ownerName, haveMode }: Props) {
   const displayName = item.name_override ?? item.name;
   const displayAmount = item.amount_override ?? item.amount;
   const displayUnit = item.unit_override ?? item.unit;
@@ -105,7 +107,7 @@ export default function GroceryItem({ item, onToggle, onEdit, onDelete, ownerNam
         onTouchEnd={onTouchEnd}
         className={`flex items-center gap-3 px-1 py-2 bg-white transition-all duration-300 ${
           justChecked ? "bg-green-50" : justUnchecked ? "bg-orange-50" : ""
-        } ${item.checked && !justChecked ? "opacity-60" : ""}`}
+        } ${item.checked && !justChecked && !haveMode ? "opacity-60" : ""}`}
         onClick={revealed ? closeSwipe : undefined}
       >
         {/* Checkbox */}
@@ -148,12 +150,12 @@ export default function GroceryItem({ item, onToggle, onEdit, onDelete, ownerNam
         >
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <span className={`text-sm font-medium capitalize transition-all duration-300 ${
-              item.checked ? "line-through text-gray-400" : "text-gray-800"
+              item.checked && !haveMode ? "line-through text-gray-400" : "text-gray-800"
             } ${justChecked ? "text-green-600" : ""}`}>
               {displayName}
             </span>
             {displayAmount && (
-              <span className={`text-xs transition-colors duration-300 ${justChecked ? "text-green-400" : "text-gray-400"}`}>
+              <span className={`text-xs transition-colors duration-300 ${justChecked ? "text-green-400" : haveMode ? "text-gray-500" : "text-gray-400"}`}>
                 {displayAmount}{displayUnit ? ` ${displayUnit}` : ""}
               </span>
             )}
