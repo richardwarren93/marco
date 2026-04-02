@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import type { GroceryItem as GroceryItemType, GroceryList as GroceryListType } from "@/types";
@@ -16,13 +17,13 @@ const CATEGORY_CONFIG: Record<string, { label: string; emoji: string }> = {
   protein:   { label: "Protein",              emoji: "🥩" },
   dairy:     { label: "Dairy & Eggs",         emoji: "🥛" },
   pantry:    { label: "Pantry",               emoji: "🥫" },
-  canned:    { label: "Pantry",               emoji: "🥫" },  // legacy alias
+  canned:    { label: "Pantry",               emoji: "🥫" },
   spices:    { label: "Spices & Condiments",  emoji: "🧂" },
-  spice:     { label: "Spices & Condiments",  emoji: "🧂" },  // legacy alias
-  condiment: { label: "Spices & Condiments",  emoji: "🧂" },  // legacy alias
+  spice:     { label: "Spices & Condiments",  emoji: "🧂" },
+  condiment: { label: "Spices & Condiments",  emoji: "🧂" },
   frozen:    { label: "Frozen",               emoji: "🧊" },
   bakery:    { label: "Bakery",               emoji: "🍞" },
-  grain:     { label: "Bakery",               emoji: "🍞" },  // legacy alias
+  grain:     { label: "Bakery",               emoji: "🍞" },
   other:     { label: "Other",               emoji: "📦" },
 };
 
@@ -48,7 +49,6 @@ function categorySort(cat: string | null): number {
 // ─── Date range helpers ───────────────────────────────────────────────────────
 type RangePreset = "this_week" | "next_week" | "custom";
 
-/** Format a Date as YYYY-MM-DD in local time (avoids UTC shift). */
 function localDateStr(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -58,13 +58,13 @@ function localDateStr(d: Date): string {
 
 function getMonday(date: Date): string {
   const d = new Date(date);
-  const day = d.getDay(); // 0 = Sunday
+  const day = d.getDay();
   d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
   return localDateStr(d);
 }
 
 function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T12:00:00"); // noon avoids DST edge cases
+  const d = new Date(dateStr + "T12:00:00");
   d.setDate(d.getDate() + days);
   return localDateStr(d);
 }
@@ -89,19 +89,48 @@ function formatRangeLabel(start: string, end: string): string {
   const monthFmt = (d: Date) => d.toLocaleString("en-US", { month: "short" });
   const dayFmt = (d: Date) => d.getDate();
   if (s.getMonth() === e.getMonth()) {
-    return `${monthFmt(s)} ${dayFmt(s)}–${dayFmt(e)}`;
+    return `${monthFmt(s)} ${dayFmt(s)}\u2013${dayFmt(e)}`;
   }
-  return `${monthFmt(s)} ${dayFmt(s)} – ${monthFmt(e)} ${dayFmt(e)}`;
+  return `${monthFmt(s)} ${dayFmt(s)} \u2013 ${monthFmt(e)} ${dayFmt(e)}`;
 }
 
-// ─── HouseholdGroceryItem ─────────────────────────────────────────────────────
+function formatCookTime(minutes: number): string {
+  if (minutes >= 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${minutes}m`;
+}
+
+function getDayLabel(dateStr: string): string {
+  const d = new Date(dateStr + "T12:00:00");
+  return d.toLocaleDateString("en-US", { weekday: "short" });
+}
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 interface HouseholdGroceryItem extends GroceryItemType {
   owner_name?: string;
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-type FilterMode = "to_buy" | "checked" | "all";
+interface MealPlanSummaryItem {
+  id: string;
+  planned_date: string;
+  meal_type: string;
+  servings: number;
+  recipe: {
+    id: string;
+    title: string;
+    image_url: string | null;
+    prep_time_minutes: number | null;
+    cook_time_minutes: number | null;
+  };
+}
 
+type FilterMode = "to_buy" | "checked" | "all";
+type GroupMode = "category" | "meal";
+
+// ─── Main component ───────────────────────────────────────────────────────────
 export default function GroceryList() {
   const router = useRouter();
 
@@ -113,8 +142,13 @@ export default function GroceryList() {
   });
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
 
-  // Filter
+  // Filter & grouping
   const [filter, setFilter] = useState<FilterMode>("to_buy");
+  const [groupMode, setGroupMode] = useState<GroupMode>("category");
+
+  // Meal plan summary
+  const [mealsExpanded, setMealsExpanded] = useState(true);
+  const [removingMealId, setRemovingMealId] = useState<string | null>(null);
 
   // Data (SWR-cached)
   const [generating, setGenerating] = useState(false);
@@ -141,6 +175,7 @@ export default function GroceryList() {
   const items: GroceryItemType[] = groceryData?.items ?? [];
   const householdItems: HouseholdGroceryItem[] = groceryData?.householdItems ?? [];
   const mealPlanChanged: boolean = groceryData?.meal_plan_changed ?? false;
+  const meals: MealPlanSummaryItem[] = groceryData?.meals ?? [];
 
   // ── Auto-generate when there's no list yet ────────────────────────────────
   useEffect(() => {
@@ -162,7 +197,7 @@ export default function GroceryList() {
       if (!res.ok) return;
       await mutateGrocery();
     } catch {
-      // Silently fail — user can still manually generate
+      // Silently fail
     } finally {
       setGenerating(false);
     }
@@ -188,9 +223,34 @@ export default function GroceryList() {
     }
   }
 
+  // ── Remove meal and sync ──────────────────────────────────────────────────
+  async function handleRemoveMeal(planId: string) {
+    setRemovingMealId(planId);
+    try {
+      const res = await fetch("/api/meal-plan/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan_id: planId }),
+      });
+      if (!res.ok) throw new Error("Failed to remove meal");
+
+      // Regenerate grocery list to reflect the change
+      await fetch("/api/grocery-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date_start: dateRange.start, date_end: dateRange.end }),
+      });
+      await mutateGrocery();
+    } catch {
+      // Revert on failure
+      await mutateGrocery();
+    } finally {
+      setRemovingMealId(null);
+    }
+  }
+
   // ── Toggle checked (optimistic) ───────────────────────────────────────────
   async function handleToggle(id: string, checked: boolean) {
-    // Optimistic: update cache immediately
     const optimistic = groceryData ? {
       ...groceryData,
       items: groceryData.items?.map((i: GroceryItemType) => i.id === id ? { ...i, checked } : i) ?? [],
@@ -205,7 +265,7 @@ export default function GroceryList() {
         body: JSON.stringify({ id, checked }),
       });
     } catch {
-      await mutateGrocery(); // revert
+      await mutateGrocery();
     }
   }
 
@@ -222,7 +282,7 @@ export default function GroceryList() {
       });
       await mutateGrocery();
     } catch {
-      // ignore – let user retry
+      // ignore
     }
   }
 
@@ -242,7 +302,7 @@ export default function GroceryList() {
         body: JSON.stringify({ id }),
       });
     } catch {
-      await mutateGrocery(); // revert
+      await mutateGrocery();
     }
   }
 
@@ -262,7 +322,7 @@ export default function GroceryList() {
         body: JSON.stringify({ list_id: list.id }),
       });
     } catch {
-      await mutateGrocery(); // revert
+      await mutateGrocery();
     }
   }
 
@@ -273,7 +333,7 @@ export default function GroceryList() {
       items: [...(groceryData.items ?? []), item],
     } : undefined;
     mutateGrocery(optimistic, false);
-    if (!list) mutateGrocery(); // list was auto-created, refetch for metadata
+    if (!list) mutateGrocery();
   }
 
   // ── Derived display data ───────────────────────────────────────────────────
@@ -287,22 +347,56 @@ export default function GroceryList() {
     });
   }, [allItems, filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Group by effective category (apply override), preserving category grouping
-  const grouped = useMemo(() => {
+  // Group by category
+  const groupedByCategory = useMemo(() => {
     const map = new Map<string, HouseholdGroceryItem[]>();
     for (const item of filteredItems) {
       const cat = item.category_override ?? item.category ?? "other";
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push(item);
     }
-    // Sort categories
     return [...map.entries()].sort(([a], [b]) => categorySort(a) - categorySort(b));
   }, [filteredItems]);
+
+  // Group by meal/recipe
+  const groupedByMeal = useMemo(() => {
+    const map = new Map<string, HouseholdGroceryItem[]>();
+    for (const item of filteredItems) {
+      if (item.is_custom || !item.recipe_sources?.length) {
+        const key = "__custom__";
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(item);
+      } else {
+        for (const source of item.recipe_sources) {
+          if (!map.has(source)) map.set(source, []);
+          map.get(source)!.push(item);
+        }
+      }
+    }
+    // Sort: recipe names alphabetically, custom at end
+    return [...map.entries()].sort(([a], [b]) => {
+      if (a === "__custom__") return 1;
+      if (b === "__custom__") return -1;
+      return a.localeCompare(b);
+    });
+  }, [filteredItems]);
+
+  const grouped = groupMode === "category" ? groupedByCategory : groupedByMeal;
 
   const toBuyCount = allItems.filter((i) => !i.checked).length;
   const checkedCount = allItems.filter((i) => i.checked).length;
   const hasItems = allItems.length > 0;
-  const generatedFrom = list?.meal_count ?? 0;
+
+  // Plan health stats
+  const mealCount = meals.length;
+  const ingredientCount = toBuyCount;
+  const totalCookTime = useMemo(() => {
+    return meals.reduce((sum, m) => {
+      const prep = m.recipe?.prep_time_minutes ?? 0;
+      const cook = m.recipe?.cook_time_minutes ?? 0;
+      return sum + prep + cook;
+    }, 0);
+  }, [meals]);
 
   const rangeLabel = (() => {
     if (rangePreset === "this_week") return "This week";
@@ -315,13 +409,33 @@ export default function GroceryList() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="px-4 sticky top-0 z-10" style={{ background: "#faf9f7" }}>
-        <div className="flex items-center justify-between max-w-5xl mx-auto pt-2 pb-3">
+        <div className="flex items-start justify-between max-w-5xl mx-auto pt-3 pb-3">
           <div>
-            <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Grocery</h1>
-            <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>{formatRangeLabel(dateRange.start, dateRange.end)}</p>
+            <h1 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>
+              {rangePreset === "this_week" ? "This Week\u2019s Plan" : rangePreset === "next_week" ? "Next Week\u2019s Plan" : "Grocery Plan"}
+            </h1>
+            <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>
+              {formatRangeLabel(dateRange.start, dateRange.end)}
+            </p>
+            {/* Plan health stats */}
+            {!loading && mealCount > 0 && (
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#7a7068" }}>
+                  {mealCount} {mealCount === 1 ? "meal" : "meals"}
+                </span>
+                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#7a7068" }}>
+                  {ingredientCount} to buy
+                </span>
+                {totalCookTime > 0 && (
+                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#7a7068" }}>
+                    ~{formatCookTime(totalCookTime)} cook time
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           {/* Range selector */}
-          <div className="relative">
+          <div className="relative flex-shrink-0">
             <button
               onClick={() => setRangePickerOpen((v) => !v)}
               className="flex items-center gap-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
@@ -353,7 +467,6 @@ export default function GroceryList() {
                     </button>
                   ))}
 
-                  {/* Custom range date inputs */}
                   {rangePreset === "custom" && (
                     <div className="px-4 pb-3 pt-1 border-t border-gray-100 space-y-2">
                       <div>
@@ -402,80 +515,181 @@ export default function GroceryList() {
         </div>
       )}
 
+      {/* ── Meal Plan Summary ──────────────────────────────────────────────── */}
+      {!loading && meals.length > 0 && (
+        <div className="mx-4 mt-2">
+          <button
+            onClick={() => setMealsExpanded((v) => !v)}
+            className="flex items-center gap-2 w-full text-left py-2"
+          >
+            <h2 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+              Meals ({meals.length})
+            </h2>
+            <svg
+              className={`w-3.5 h-3.5 transition-transform ${mealsExpanded ? "rotate-180" : ""}`}
+              style={{ color: "#a09890" }}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {mealsExpanded && (
+            <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
+              {meals.map((meal, i) => (
+                <div
+                  key={meal.id}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 transition-opacity ${removingMealId === meal.id ? "opacity-40" : ""}`}
+                  style={i < meals.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
+                >
+                  {/* Recipe thumbnail */}
+                  <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    {meal.recipe?.image_url ? (
+                      <Image src={meal.recipe.image_url} alt="" width={36} height={36} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-sm">🍽</div>
+                    )}
+                  </div>
+                  {/* Details */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-800 truncate">{meal.recipe?.title}</p>
+                    <p className="text-[11px] text-gray-400">
+                      {getDayLabel(meal.planned_date)} &middot; {meal.meal_type}
+                    </p>
+                  </div>
+                  {/* Remove button */}
+                  <button
+                    onClick={() => handleRemoveMeal(meal.id)}
+                    disabled={!!removingMealId}
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 disabled:opacity-50"
+                    aria-label={`Remove ${meal.recipe?.title}`}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              {/* + Add meal */}
+              <button
+                onClick={() => router.push("/recipes?tab=meal-plan")}
+                className="flex items-center gap-2.5 px-3.5 py-2.5 w-full hover:bg-gray-50 transition-colors"
+                style={{ borderTop: "1px solid #f5f3f0" }}
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#f5f3f0" }}>
+                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <span className="text-sm font-medium text-gray-400">Add meal</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ── Meal plan changed notice ────────────────────────────────────────── */}
       {mealPlanChanged && !generating && (
         <div className="mx-4 mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm font-medium text-amber-800">Meal plan changed</p>
-            <p className="text-xs text-amber-600 mt-0.5">Regenerate to reflect latest meals</p>
+            <p className="text-sm font-medium text-amber-800">Meal plan updated</p>
+            <p className="text-xs text-amber-600 mt-0.5">Sync to reflect your latest meals</p>
           </div>
           <button
             onClick={handleGenerate}
             disabled={generating}
             className="text-xs font-semibold text-orange-600 bg-white border border-orange-200 px-3 py-1.5 rounded-full hover:bg-orange-50 transition-colors whitespace-nowrap disabled:opacity-50"
           >
-            Regenerate
+            Sync with Plan
           </button>
         </div>
       )}
 
-      {/* ── Regenerate button — when list exists and no change notice showing ── */}
+      {/* ── Sync button ────────────────────────────────────────────────────── */}
       {list && !loading && !mealPlanChanged && (
         <div className="mx-4 mt-3 flex justify-end">
           <button
             onClick={handleGenerate}
             disabled={generating}
-            className="text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 active:bg-orange-700 px-4 py-2 rounded-full shadow-sm transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-orange-600 bg-gray-100 hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
           >
-            {generating ? "Regenerating…" : allItems.length === 0 ? "Generate grocery list" : "Regenerate"}
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
+            </svg>
+            {generating ? "Syncing\u2026" : allItems.length === 0 ? "Generate from plan" : "Sync with Plan"}
           </button>
         </div>
       )}
 
-      {/* ── Filter segmented control + clear all ────────────────────────────── */}
+      {/* ── Filter + group toggle + clear ────────────────────────────────── */}
       {hasItems && (
-        <div className="mx-4 mt-3 flex items-center gap-2">
-          <div className="flex flex-1 bg-gray-100 rounded-xl p-1 gap-1">
-            {([
-              { key: "to_buy",  label: `Buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
-              { key: "checked", label: `Have${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
-            ] as { key: FilterMode; label: string }[]).map(({ key, label }) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key)}
-                className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  filter === key
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          {!clearConfirm ? (
-            <button
-              onClick={() => setClearConfirm(true)}
-              className="text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
-            >
-              Clear all
-            </button>
-          ) : (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleClearAll}
-                className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-              >
-                Confirm
-              </button>
-              <button
-                onClick={() => setClearConfirm(false)}
-                className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
+        <div className="mx-4 mt-3 space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="flex flex-1 bg-gray-100 rounded-xl p-1 gap-1">
+              {([
+                { key: "to_buy",  label: `Buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
+                { key: "checked", label: `Have${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
+              ] as { key: FilterMode; label: string }[]).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    filter === key
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-          )}
+            {!clearConfirm ? (
+              <button
+                onClick={() => setClearConfirm(true)}
+                className="text-xs text-gray-400 hover:text-red-500 px-2 py-1.5 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
+              >
+                Clear all
+              </button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleClearAll}
+                  className="text-xs font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                >
+                  Confirm
+                </button>
+                <button
+                  onClick={() => setClearConfirm(false)}
+                  className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Group by toggle */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-medium text-gray-400">Group by:</span>
+            <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
+              {([
+                { key: "category", label: "Category" },
+                { key: "meal", label: "Meal" },
+              ] as { key: GroupMode; label: string }[]).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setGroupMode(key)}
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
+                    groupMode === key
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -528,20 +742,19 @@ export default function GroceryList() {
               className="px-7 py-3 rounded-2xl text-sm font-black text-white transition-all active:scale-95 disabled:opacity-50"
               style={{ background: "#1a1410" }}
             >
-              {generating ? "Generating…" : "Generate grocery list"}
+              {generating ? "Syncing\u2026" : "Generate from Plan"}
             </button>
           </div>
         </div>
 
       ) : grouped.length === 0 ? (
-        /* List exists but nothing to show */
         <div className="mx-4 mt-6 text-center">
           {allItems.length === 0 ? (
             <div className="bg-white rounded-2xl border border-gray-100 px-6 py-10">
               <p className="text-4xl mb-4">✨</p>
               <p className="text-gray-800 font-semibold text-base mb-1">List cleared</p>
               <p className="text-gray-400 text-sm mb-1">
-                Tap &quot;Generate grocery list&quot; above to rebuild from your meal plan.
+                Tap &quot;Sync with Plan&quot; above to rebuild from your meal plan.
               </p>
             </div>
           ) : filter === "to_buy" ? (
@@ -564,24 +777,29 @@ export default function GroceryList() {
       ) : (
         /* Grouped list */
         <div className="mx-4 mt-3 space-y-3">
-          {grouped.map(([cat, catItems], gi) => (
+          {grouped.map(([groupKey, groupItems], gi) => (
             <div
-              key={cat}
+              key={groupKey}
               className="bg-white rounded-3xl overflow-hidden"
               style={{
                 boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
                 animation: `fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) ${gi * 60}ms both`,
               }}
             >
-              {/* Category header */}
+              {/* Section header */}
               <div className="px-4 pt-3.5 pb-1">
                 <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
-                  {categoryLabel(cat)}
+                  {groupMode === "category"
+                    ? categoryLabel(groupKey)
+                    : groupKey === "__custom__"
+                      ? "📦 Custom & Added"
+                      : `🍽 ${groupKey}`
+                  }
                 </h3>
               </div>
               {/* Items */}
               <div className="px-3 pb-2 space-y-0.5">
-                {catItems.map((item) => (
+                {groupItems.map((item) => (
                   <GroceryItem
                     key={item.id}
                     item={item}
@@ -609,7 +827,7 @@ export default function GroceryList() {
         </div>
       )}
 
-      {/* + Add item button when list is empty state with items */}
+      {/* + Add item button when list is empty */}
       {!loading && list && (
         <div className="mx-4 mt-3">
           {grouped.length === 0 && (
@@ -630,7 +848,7 @@ export default function GroceryList() {
         <div className="fixed inset-0 z-50 bg-white/60 flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-xl px-8 py-6 flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium text-gray-700">Generating your list…</p>
+            <p className="text-sm font-medium text-gray-700">Syncing with your meal plan\u2026</p>
           </div>
         </div>
       )}

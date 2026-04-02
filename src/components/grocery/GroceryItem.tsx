@@ -159,8 +159,9 @@ export default function GroceryItem({ item, onToggle, onEdit, onDelete, ownerNam
             )}
           </div>
           {!item.checked && item.recipe_sources && item.recipe_sources.length > 0 && (
-            <p className="text-[10px] text-gray-400 mt-0.5 truncate">
-              {item.recipe_sources.join(" · ")}
+            <p className="text-[11px] mt-0.5 leading-tight">
+              <span className="text-gray-400">for </span>
+              <span className="text-gray-500">{item.recipe_sources.join(", ")}</span>
             </p>
           )}
           {justChecked && (

@@ -130,7 +130,29 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ list, items: ownItems, householdItems, householdMembers, meal_plan_changed });
+  // Fetch this week's meal plans with recipe details for the grocery page summary
+  const planUserIds = [user.id];
+  if (membership) {
+    const { data: allMembers } = await admin
+      .from("household_members")
+      .select("user_id")
+      .eq("household_id", membership.household_id);
+    if (allMembers) {
+      for (const m of allMembers) {
+        if (!planUserIds.includes(m.user_id)) planUserIds.push(m.user_id);
+      }
+    }
+  }
+  const { data: meals } = await admin
+    .from("meal_plans")
+    .select("id, planned_date, meal_type, servings, recipe:recipes(id, title, image_url, prep_time_minutes, cook_time_minutes)")
+    .in("user_id", planUserIds)
+    .gte("planned_date", dateStart)
+    .lte("planned_date", dateEnd ?? dateStart)
+    .not("recipe_id", "is", null)
+    .order("planned_date", { ascending: true });
+
+  return NextResponse.json({ list, items: ownItems, householdItems, householdMembers, meal_plan_changed, meals: meals ?? [] });
 }
 
 // ─── POST (generate / regenerate) ────────────────────────────────────────────
