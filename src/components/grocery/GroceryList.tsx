@@ -242,13 +242,13 @@ export default function GroceryList() {
     }
   }
 
-  // ── Remove meal (optimistic — instant UI, background API) ──────────────────
+  // ── Remove meal (optimistic — instant UI, background regenerate) ────────────
   async function handleRemoveMeal(planId: string) {
     // Find the meal being removed to know which recipe it references
     const removedMeal = meals.find((m) => m.id === planId);
     const removedRecipeTitle = removedMeal?.recipe?.title;
 
-    // Optimistically: remove meal from local list, flag list as changed
+    // Optimistically: remove meal from local list and its grocery items
     const optimistic = groceryData ? {
       ...groceryData,
       meals: (groceryData.meals ?? []).filter((m: MealPlanSummaryItem) => m.id !== planId),
@@ -270,13 +270,23 @@ export default function GroceryList() {
     } : undefined;
     mutateGrocery(optimistic, false);
 
-    // Fire-and-forget API call
+    // Delete the meal plan, then regenerate grocery list so DB stays in sync
     try {
-      await fetch("/api/meal-plan/remove", {
+      const removeRes = await fetch("/api/meal-plan/remove", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ plan_id: planId }),
       });
+      if (!removeRes.ok) throw new Error("Remove failed");
+
+      // Regenerate grocery list in background to sync DB items with current meals
+      await fetch("/api/grocery-list", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date_start: dateRange.start, date_end: dateRange.end }),
+      });
+      // Revalidate to pick up the regenerated list
+      await mutateGrocery();
     } catch {
       // Revert on failure
       mutateGrocery();

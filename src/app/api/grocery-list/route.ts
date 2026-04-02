@@ -102,7 +102,9 @@ export async function GET(request: NextRequest) {
     itemsPromise, mealsPromise, changePromise, householdListsPromise,
   ]);
 
-  const meal_plan_changed = !!changeRes.data;
+  // Detect changes: new meals added OR meals deleted (count mismatch)
+  const currentMealCount = (mealsRes.data ?? []).length;
+  const meal_plan_changed = !!changeRes.data || (list?.meal_count != null && currentMealCount !== list.meal_count);
 
   // Fetch household grocery items (parallel for all household lists)
   let householdItems: any[] = [];
