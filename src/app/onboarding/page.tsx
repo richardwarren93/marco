@@ -104,9 +104,12 @@ export default function OnboardingPage() {
     setData((prev) => ({ ...prev, ...partial }));
   }, []);
 
-  const handleComplete = useCallback(async () => {
+  const handleComplete = useCallback(async (
+    tasteScores?: { sweet: number; savory: number; richness: number; tangy: number },
+    cuisinePreferences?: string[],
+  ) => {
     try {
-      const payload = { ...data };
+      const payload = { ...data, tasteScores, cuisinePreferences };
       await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

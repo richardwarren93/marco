@@ -27,7 +27,11 @@ export async function POST(request: Request) {
         household_size: body.householdSize || 1,
         household_type: body.householdType || null,
         allergies: body.allergies || [],
-        taste_profile: body.tasteProfile || {},
+        taste_profile: {
+          ...(body.tasteProfile || {}),
+          ...(body.tasteScores ? { scores: body.tasteScores } : {}),
+          ...(body.cuisinePreferences ? { cuisines: body.cuisinePreferences } : {}),
+        },
         liked_recipe_ids: body.likedRecipes || [],
         updated_at: new Date().toISOString(),
       },
