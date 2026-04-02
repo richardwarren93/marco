@@ -158,17 +158,23 @@ function NavbarInner() {
 
             {/* Center: Page tabs (desktop only, on recipes page) */}
             {isRecipesPage && user && (
-              <div className="hidden sm:flex items-center gap-1">
+              <div className="hidden sm:flex items-end gap-0.5 -mb-[1px]">
                 {TAB_CONFIG.map((tab) => {
                   const isActive = activeTab === tab.key;
                   return (
                     <Link
                       key={tab.key}
                       href={tab.key === "recipes" ? "/recipes" : `/recipes?tab=${tab.key}`}
-                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all duration-200"
+                      className="flex items-center gap-1.5 px-4 pt-2 pb-2.5 text-sm font-semibold transition-all duration-200 relative"
                       style={{
-                        background: isActive ? "#fff4ed" : "transparent",
+                        background: isActive ? "#fff" : "transparent",
                         color: isActive ? "#ea580c" : "#9a918a",
+                        borderRadius: "12px 12px 0 0",
+                        borderTop: isActive ? "2px solid #fb923c" : "2px solid transparent",
+                        borderLeft: isActive ? "1px solid #ede8e0" : "1px solid transparent",
+                        borderRight: isActive ? "1px solid #ede8e0" : "1px solid transparent",
+                        borderBottom: isActive ? "1px solid #fff" : "1px solid transparent",
+                        marginBottom: isActive ? "-1px" : "0",
                       }}
                     >
                       <span className="text-xs">{tab.emoji}</span>
