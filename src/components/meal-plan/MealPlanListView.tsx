@@ -681,40 +681,22 @@ export default function MealPlanListView({
               </svg>
             </button>
 
-          </div>
-
-          {/* Right: Insights + View dropdown */}
-          <div className="flex items-center gap-1">
-            {/* Insights button */}
-            {onShowInsights && (
-              <button
-                onClick={onShowInsights}
-                className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
-                style={{ color: TEXT_2 }}
-                aria-label="Insights"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-                </svg>
-              </button>
-            )}
-
             {/* View dropdown — icon trigger */}
             <div className="relative">
               <button
                 onClick={() => setViewDropdownOpen((v) => !v)}
-                className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
+                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
                 style={{ color: viewDropdownOpen ? ACCENT : TEXT_2, background: viewDropdownOpen ? "#ebebea" : "transparent" }}
                 aria-label="Switch view"
               >
                 {viewMode === "daily" ? (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
                     <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18M9 10v10M15 10v10" />
                   </svg>
@@ -722,7 +704,7 @@ export default function MealPlanListView({
               </button>
               {viewDropdownOpen && (
                 <div
-                  className="absolute right-0 top-full mt-1 rounded-xl overflow-hidden z-20"
+                  className="absolute left-0 top-full mt-1 rounded-xl overflow-hidden z-20"
                   style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)", minWidth: 110 }}
                 >
                   {(["daily", "weekly"] as const).map((mode) => (
@@ -751,6 +733,32 @@ export default function MealPlanListView({
               )}
             </div>
           </div>
+
+          {/* Right: Insights (weekly only) */}
+          {viewMode === "weekly" && onShowInsights && (
+            <button
+              onClick={onShowInsights}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all active:scale-95"
+              style={{
+                background: "linear-gradient(135deg, #fff8f0, #fff3e0)",
+                border: "1.5px solid #f0a050",
+                boxShadow: "0 0 8px rgba(240,160,80,0.2)",
+                animation: "insightsWiggle 3s ease-in-out infinite",
+              }}
+            >
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="#e8890a"
+                strokeWidth={2}
+                style={{ animation: "insightsSparkle 2s ease-in-out infinite" }}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
+              </svg>
+              <span className="text-[11px] font-bold" style={{ color: "#e8890a" }}>Insights</span>
+            </button>
+          )}
         </div>
 
         {/* Row 2: day strip (both daily and weekly views) */}

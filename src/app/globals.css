@@ -179,6 +179,21 @@ body {
   100% { opacity: 1; transform: translateY(0); }
 }
 
+/* Insights button animations */
+@keyframes insightsWiggle {
+  0%, 86% { transform: rotate(0deg); }
+  88% { transform: rotate(-3deg); }
+  90% { transform: rotate(3deg); }
+  92% { transform: rotate(-3deg); }
+  94% { transform: rotate(2deg); }
+  96% { transform: rotate(-1deg); }
+  98%, 100% { transform: rotate(0deg); }
+}
+@keyframes insightsSparkle {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.85; }
+}
+
 /* Hide scrollbar for horizontal scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;
