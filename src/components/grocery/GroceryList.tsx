@@ -939,53 +939,79 @@ export default function GroceryList() {
           })}
 
           {/* "Already Have" section — shown at bottom of Buy tab */}
-          {filter === "to_buy" && haveItemsForBuyTab.length > 0 && (
-            <div
-              className="bg-white/60 rounded-3xl overflow-hidden"
-              style={{ boxShadow: "0 1px 8px rgba(0,0,0,0.03)" }}
-            >
-              <div className="flex items-center gap-2 px-4 pt-3 pb-1.5">
-                <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
-                  Already have ({haveItemsForBuyTab.length})
-                </h3>
-              </div>
-              <div className="px-4 pb-3">
-                {haveItemsForBuyTab.map((item) => {
-                  const displayName = item.name_override ?? item.name;
-                  const displayAmount = item.amount_override ?? item.amount;
-                  const displayUnit = item.unit_override ?? item.unit;
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-2.5 py-1.5"
-                      style={{ borderBottom: "1px solid #f5f3f0" }}
+          {filter === "to_buy" && haveItemsForBuyTab.length > 0 && (() => {
+            const haveKey = "__already_have__";
+            const isHaveExpanded = expandedGroups.has(haveKey);
+            const toggleHave = () => setExpandedGroups((prev) => {
+              const next = new Set(prev);
+              if (next.has(haveKey)) next.delete(haveKey);
+              else next.add(haveKey);
+              return next;
+            });
+            return (
+              <div
+                className="bg-white rounded-3xl overflow-hidden"
+                style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
+              >
+                <button
+                  onClick={toggleHave}
+                  className="w-full flex items-center justify-between px-4 pt-3.5 pb-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+                      ✅ Already have
+                    </h3>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#a09890" }}>
+                      {haveItemsForBuyTab.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${isHaveExpanded ? "rotate-180" : ""}`}
+                      style={{ color: "#c0b8b0" }}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                     >
-                      <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-sm text-gray-400 line-through capitalize flex-1 min-w-0 truncate">
-                        {displayName}
-                      </span>
-                      {displayAmount && (
-                        <span className="text-xs text-gray-300 flex-shrink-0">
-                          {displayAmount}{displayUnit ? ` ${displayUnit}` : ""}
-                        </span>
-                      )}
-                      <button
-                        onClick={() => handleToggle(item.id, false)}
-                        className="text-[10px] font-semibold text-orange-400 hover:text-orange-600 flex-shrink-0 px-1"
-                      >
-                        Need
-                      </button>
-                    </div>
-                  );
-                })}
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </button>
+                {isHaveExpanded && (
+                  <div className="px-4 pb-3">
+                    {haveItemsForBuyTab.map((item) => {
+                      const displayName = item.name_override ?? item.name;
+                      const displayAmount = item.amount_override ?? item.amount;
+                      const displayUnit = item.unit_override ?? item.unit;
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-2.5 py-1.5"
+                          style={{ borderBottom: "1px solid #f5f3f0" }}
+                        >
+                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          <span className="text-sm text-gray-400 line-through capitalize flex-1 min-w-0 truncate">
+                            {displayName}
+                          </span>
+                          {displayAmount && (
+                            <span className="text-xs text-gray-300 flex-shrink-0">
+                              {displayAmount}{displayUnit ? ` ${displayUnit}` : ""}
+                            </span>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggle(item.id, false); }}
+                            className="text-[10px] font-semibold text-orange-400 hover:text-orange-600 flex-shrink-0 px-1"
+                          >
+                            Need
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Cost estimate result */}
           {filter === "to_buy" && costEstimate && (
