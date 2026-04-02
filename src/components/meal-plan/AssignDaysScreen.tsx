@@ -148,21 +148,23 @@ export default function AssignDaysScreen({
     <div className="flex flex-col min-h-screen" style={{ background: "#f6f6f4" }}>
       {/* Header */}
       <div className="px-4 pt-5 pb-4 border-b sticky top-0 z-10" style={{ background: "#f6f6f4", borderColor: "#eaeae8" }}>
-        <button
-          onClick={onBack}
-          className="w-8 h-8 flex items-center justify-center rounded-full mb-4 active:scale-90 transition-transform"
-          style={{ background: "white", color: "#888", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h1 className="text-xl font-bold tracking-tight" style={{ color: "#1a1a1a" }}>Place on calendar</h1>
-        <p className="text-sm mt-0.5" style={{ color: "#888" }}>Choose days and meal types for each recipe</p>
+        <div className="max-w-2xl mx-auto">
+          <button
+            onClick={onBack}
+            className="w-8 h-8 flex items-center justify-center rounded-full mb-4 active:scale-90 transition-transform"
+            style={{ background: "white", color: "#888", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: "#1a1a1a" }}>Place on calendar</h1>
+          <p className="text-sm mt-0.5" style={{ color: "#888" }}>Choose days and meal types for each recipe</p>
+        </div>
       </div>
 
       {/* Meal cards */}
-      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto pb-32">
+      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto pb-32 max-w-2xl mx-auto w-full">
         {selectedRecipes.map((recipe, i) => {
           const a = assignments[recipe.id];
           const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
@@ -251,6 +253,7 @@ export default function AssignDaysScreen({
 
       {/* Schedule CTA */}
       <div className="fixed bottom-20 left-0 right-0 px-4 z-20">
+        <div className="max-w-2xl mx-auto">
         <button
           onClick={handleSchedulePress}
           disabled={readyCount === 0 || saving}
@@ -274,6 +277,7 @@ export default function AssignDaysScreen({
             </>
           )}
         </button>
+        </div>
       </div>
 
       {/* Conflict modal — calm copy */}

@@ -24,11 +24,13 @@ export default function ReviewMealsScreen({
   onRemove,
   onBack,
   onBuild,
+  onAddMore,
 }: {
   selectedRecipes: Recipe[];
   onRemove: (id: string) => void;
   onBack: () => void;
   onBuild: () => void;
+  onAddMore?: () => void;
 }) {
   // Group by meal type
   const grouped: Record<string, Recipe[]> = {};
@@ -43,20 +45,36 @@ export default function ReviewMealsScreen({
     <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
       {/* Header */}
       <div className="px-4 pt-5 pb-4 border-b" style={{ background: "#faf9f7", borderColor: "#ede8e0" }}>
-        <button
-          onClick={onBack}
-          className="w-8 h-8 flex items-center justify-center rounded-full transition-colors mb-4 active:scale-90"
-          style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <h1 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>Review your meals</h1>
+        <div className="max-w-2xl mx-auto">
+          <button
+            onClick={onBack}
+            className="w-8 h-8 flex items-center justify-center rounded-full transition-colors mb-4 active:scale-90"
+            style={{ background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>Review your meals</h1>
+            {onAddMore && (
+              <button
+                onClick={onAddMore}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all active:scale-95"
+                style={{ background: "#fff4ed", color: "#ea580c" }}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Add more
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {/* Recipe groups */}
-      <div className="flex-1 px-4 py-4 space-y-5 overflow-y-auto pb-28">
+      <div className="flex-1 px-4 py-4 space-y-5 overflow-y-auto pb-28 max-w-2xl mx-auto w-full">
         {orderedMealTypes.length === 0 ? (
           <div className="text-center py-16 text-sm" style={{ color: "#a09890" }}>
             No meals selected
@@ -125,6 +143,7 @@ export default function ReviewMealsScreen({
 
       {/* Build CTA */}
       <div className="fixed bottom-20 left-0 right-0 px-4 z-20">
+        <div className="max-w-2xl mx-auto">
         <button
           onClick={onBuild}
           disabled={selectedRecipes.length === 0}
@@ -136,6 +155,7 @@ export default function ReviewMealsScreen({
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>
+        </div>
       </div>
     </div>
   );

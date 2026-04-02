@@ -226,6 +226,7 @@ function MealPlanInner() {
         }
         onBack={() => setStep(1)}
         onBuild={handleBuildSchedule}
+        onAddMore={() => setStep(1)}
       />
     );
   }
