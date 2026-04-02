@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { UserProfile } from "@/types";
 
 interface FriendCardProps {
@@ -44,8 +45,18 @@ export default function FriendCard({
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3">
-      <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
-        {initials}
+      <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+        {profile?.avatar_url ? (
+          <Image
+            src={profile.avatar_url}
+            alt={name}
+            width={40}
+            height={40}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          initials
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-medium text-gray-900 truncate">{name}</p>

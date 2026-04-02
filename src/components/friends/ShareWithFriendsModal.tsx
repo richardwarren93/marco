@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import type { Friendship } from "@/types";
 
 interface ShareWithFriendsModalProps {
@@ -125,8 +126,18 @@ export default function ShareWithFriendsModal({
                     key={f.id}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50"
                   >
-                    <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0">
-                      {initials}
+                    <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-sm shrink-0 overflow-hidden">
+                      {f.profile?.avatar_url ? (
+                        <Image
+                          src={f.profile.avatar_url}
+                          alt={name}
+                          width={40}
+                          height={40}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        initials
+                      )}
                     </div>
                     <span className="flex-1 font-medium text-gray-900 truncate">
                       {name}
