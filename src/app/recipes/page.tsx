@@ -98,11 +98,26 @@ function RecipesInner() {
 
   return (
     <>
-      {/* ── Header ───────────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 px-4 pt-4 pb-0" style={{ background: "#faf9f7" }}>
-        <div className="max-w-5xl mx-auto">
-          {/* ── Folder tab bar ──────────────────────────────────────── */}
-          <div className="flex gap-0 overflow-x-auto scrollbar-hide pb-0 -mb-px">
+      {/* ── Banner + Folder Tabs ──────────────────────────────────── */}
+      <div className="sticky top-0 z-10" style={{ background: "#faf9f7" }}>
+        {/* Banner area */}
+        <div
+          className="w-full h-20 sm:h-28"
+          style={{
+            background: "linear-gradient(135deg, #fef3c7 0%, #fed7aa 40%, #fdba74 70%, #fb923c 100%)",
+          }}
+        >
+          <div className="max-w-5xl mx-auto h-full px-4 flex items-end">
+            {/* Optional: subtle brand text in the banner */}
+            <div className="pb-3">
+              <h1 className="text-lg sm:text-xl font-black text-white/90 drop-shadow-sm tracking-tight">Marco</h1>
+            </div>
+          </div>
+        </div>
+
+        {/* Folder tabs — overlapping the banner bottom edge */}
+        <div className="max-w-5xl mx-auto px-4" style={{ marginTop: -1 }}>
+          <div className="flex gap-0 overflow-x-auto scrollbar-hide">
             {TAB_CONFIG.map((tab) => {
               const active = activeTab === tab.key;
               return (
@@ -110,43 +125,32 @@ function RecipesInner() {
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   className="flex-shrink-0 relative group"
+                  style={{ marginRight: -1 }}
                 >
-                  {/* Gradient border wrapper */}
                   <div
-                    className="rounded-t-2xl p-[1.5px] transition-all duration-200"
+                    className="rounded-t-xl px-4 sm:px-5 py-2 sm:py-2.5 flex items-center gap-1.5 transition-all duration-200 border border-b-0"
                     style={{
-                      background: active
-                        ? "linear-gradient(135deg, #f97316, #fb923c, #fbbf24)"
-                        : "transparent",
+                      background: active ? "#fff" : "#f5f0eb",
+                      borderColor: active ? "#e8a050" : "#ddd5cc",
+                      position: "relative",
+                      zIndex: active ? 2 : 1,
+                      boxShadow: active ? "0 -2px 8px rgba(249,115,22,0.08)" : "none",
                     }}
                   >
-                    <div
-                      className="rounded-t-[14px] px-4 py-2.5 flex items-center gap-1.5 transition-all duration-200"
-                      style={{
-                        background: active ? "#fff" : "transparent",
-                      }}
+                    <span className="text-xs sm:text-sm">{tab.emoji}</span>
+                    <span
+                      className="text-xs sm:text-sm font-bold transition-colors duration-200"
+                      style={{ color: active ? "#ea580c" : "#a09080" }}
                     >
-                      <span className="text-xs">{tab.emoji}</span>
-                      <span
-                        className="text-sm font-bold transition-colors duration-200"
-                        style={{ color: active ? "#f97316" : "#a09890" }}
-                      >
-                        {tab.label}
-                      </span>
-                    </div>
+                      {tab.label}
+                    </span>
                   </div>
-
-                  {/* Inactive hover underline hint */}
-                  {!active && (
-                    <div className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
                 </button>
               );
             })}
+            {/* Filler to extend the bottom border across remaining width */}
+            <div className="flex-1 border-b" style={{ borderColor: "#e8a050" }} />
           </div>
-
-          {/* Active tab bottom border line */}
-          <div className="h-[1.5px]" style={{ background: "linear-gradient(90deg, #f97316, #fb923c, #fbbf24)" }} />
         </div>
       </div>
 
