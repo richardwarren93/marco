@@ -30,13 +30,6 @@ function formatDateKey(d: Date): string {
 
 type ActiveTab = "recipes" | "discover" | "grocery" | "meal-plan";
 
-const TAB_CONFIG: { key: ActiveTab; label: string; emoji: string }[] = [
-  { key: "recipes", label: "My Recipes", emoji: "📖" },
-  { key: "discover", label: "Discover", emoji: "🔍" },
-  { key: "meal-plan", label: "Meal Plan", emoji: "📅" },
-  { key: "grocery", label: "Grocery", emoji: "🛒" },
-];
-
 export default function RecipesPage() {
   return (
     <Suspense>
@@ -56,9 +49,7 @@ function RecipesInner() {
   const loading = recipesLoading || collectionsLoading;
 
   const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState<ActiveTab>(
-    (["recipes", "discover", "grocery", "meal-plan"].includes(tabParam ?? "") ? tabParam : "recipes") as ActiveTab
-  );
+  const activeTab: ActiveTab = (["recipes", "discover", "grocery", "meal-plan"].includes(tabParam ?? "") ? tabParam : "recipes") as ActiveTab;
 
   // Quick-add sheet state
   const [addSheetOpen, setAddSheetOpen] = useState(false);
@@ -90,57 +81,14 @@ function RecipesInner() {
           })
         )
       );
-      // After adding, switch to meal plan tab and set date
-      setActiveTab("meal-plan");
+      // After adding, switch to meal plan tab
+      router.push("/recipes?tab=meal-plan");
     },
-    [supabase]
+    [supabase, router]
   );
 
   return (
     <>
-      {/* ── Spacer (scrolls away) ────────────────────────────────── */}
-      <div className="hidden sm:block pt-5" style={{ background: "#faf9f7" }} />
-
-      {/* ── Folder tabs (sticky on desktop) ──────────────────────── */}
-      <div className="hidden sm:block px-4" style={{ background: "#faf9f7" }}>
-        <div className="max-w-5xl mx-auto">
-          <div className="flex gap-0 overflow-x-auto scrollbar-hide">
-            {TAB_CONFIG.map((tab) => {
-              const active = activeTab === tab.key;
-              return (
-                <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  className="flex-shrink-0 relative group"
-                  style={{ marginRight: -1 }}
-                >
-                  <div
-                    className="rounded-t-xl px-5 py-2.5 flex items-center gap-1.5 transition-all duration-200 border border-b-0"
-                    style={{
-                      background: active ? "#fff" : "#f0ece7",
-                      borderColor: active ? "#e8a050" : "#ddd5cc",
-                      position: "relative",
-                      zIndex: active ? 2 : 1,
-                      boxShadow: active ? "0 -2px 8px rgba(249,115,22,0.08)" : "none",
-                    }}
-                  >
-                    <span className="text-sm">{tab.emoji}</span>
-                    <span
-                      className="text-sm font-bold transition-colors duration-200"
-                      style={{ color: active ? "#ea580c" : "#a09080" }}
-                    >
-                      {tab.label}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-            {/* Filler to extend the bottom border */}
-            <div className="flex-1 border-b" style={{ borderColor: "#e8a050" }} />
-          </div>
-        </div>
-      </div>
-
       {/* ── Tab content ────────────────────────────────────────────── */}
 
       {/* Recipes tab */}

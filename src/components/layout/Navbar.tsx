@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   FriendsIcon,
@@ -12,7 +12,13 @@ import {
 import NotificationSheet from "@/components/notifications/NotificationSheet";
 import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
 
-// Desktop nav links removed — all navigation lives in the folder tabs on the recipes page
+// ── Tab config for the recipes page (rendered in navbar on desktop) ───────────
+const TAB_CONFIG: { key: string; label: string; emoji: string }[] = [
+  { key: "recipes", label: "My Recipes", emoji: "📖" },
+  { key: "discover", label: "Discover", emoji: "🔍" },
+  { key: "meal-plan", label: "Meal Plan", emoji: "📅" },
+  { key: "grocery", label: "Grocery", emoji: "🛒" },
+];
 
 const menuItems: { href: string; label: string; icon: React.ReactNode }[] = [
   {
@@ -32,6 +38,14 @@ const menuItems: { href: string; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function Navbar() {
+  return (
+    <Suspense>
+      <NavbarInner />
+    </Suspense>
+  );
+}
+
+function NavbarInner() {
   const [user, setUser] = useState<User | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
@@ -41,9 +55,12 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const supabase = createClient();
 
   const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding");
+  const isRecipesPage = pathname === "/recipes" || pathname.startsWith("/recipes");
+  const activeTab = searchParams.get("tab") || "recipes";
 
   const fetchUnreadCount = useCallback(async () => {
     try {
@@ -138,6 +155,29 @@ export default function Navbar() {
               <Image src="/marco-icon.svg" alt="Marco" width={24} height={24} className="rounded-full sm:w-8 sm:h-8" />
               Marco
             </Link>
+
+            {/* Center: Page tabs (desktop only, on recipes page) */}
+            {isRecipesPage && user && (
+              <div className="hidden sm:flex items-center gap-1">
+                {TAB_CONFIG.map((tab) => {
+                  const isActive = activeTab === tab.key;
+                  return (
+                    <Link
+                      key={tab.key}
+                      href={tab.key === "recipes" ? "/recipes" : `/recipes?tab=${tab.key}`}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all duration-200"
+                      style={{
+                        background: isActive ? "#fff4ed" : "transparent",
+                        color: isActive ? "#ea580c" : "#9a918a",
+                      }}
+                    >
+                      <span className="text-xs">{tab.emoji}</span>
+                      {tab.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Right: Actions */}
             <div className="flex items-center gap-2 sm:gap-3 ml-auto sm:ml-0">

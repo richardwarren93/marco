@@ -331,7 +331,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   return (
     <div className="flex flex-col" style={{ background: "#faf9f7" }}>
       {/* ── Sticky header ─────────────────────────────────────────── */}
-      <div className="bg-white border-b border-orange-50">
+      <div>
         <div className="max-w-5xl mx-auto">
 
         {/* Pick mode: back button + title */}
@@ -377,7 +377,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, ingredient, tag…"
               className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-sm outline-none transition-all"
-              style={{ background: "#ffffff", border: "1.5px solid #e8e4df" }}
+              style={{ background: "#fff", border: "1.5px solid #e8e4df" }}
               onFocus={e => (e.target.style.borderColor = "#f97316")}
               onBlur={e => (e.target.style.borderColor = "transparent")}
               autoComplete="off"
