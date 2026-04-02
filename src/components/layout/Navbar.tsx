@@ -59,7 +59,7 @@ function NavbarInner() {
   const supabase = createClient();
 
   const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding");
-  const isRecipesPage = pathname === "/recipes" || pathname.startsWith("/recipes");
+  const isRecipesPage = pathname === "/recipes" || pathname.startsWith("/recipes") || pathname.startsWith("/collections");
   const activeTab = searchParams.get("tab") || "recipes";
 
   const fetchUnreadCount = useCallback(async () => {
