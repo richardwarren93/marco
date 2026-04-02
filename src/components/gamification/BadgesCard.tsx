@@ -389,11 +389,13 @@ export default function BadgesCard() {
   const [showAll, setShowAll] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<BadgeProgress | null>(null);
   useEffect(() => {
+    let cancelled = false;
     async function fetchBadges() {
       try {
         const res = await fetch("/api/badges");
-        if (!res.ok) return;
+        if (!res.ok || cancelled) return;
         const data = await res.json();
+        if (cancelled) return;
         const badgeProgress: BadgeProgress[] = data.progress || [];
         setProgress(badgeProgress);
         setEarned(data.earned || 0);
@@ -401,10 +403,11 @@ export default function BadgesCard() {
       } catch {
         // ignore
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     fetchBadges();
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) {
