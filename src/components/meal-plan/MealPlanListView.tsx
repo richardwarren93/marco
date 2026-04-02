@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import AddMealSheet from "./AddMealSheet";
@@ -165,8 +166,10 @@ export default function MealPlanListView({
   onWeekChange: (w: Date) => void;
   onPlanThisWeek?: () => void;
 }) {
+  const router = useRouter();
+
   // ─── View mode ──────────────────────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<"daily" | "weekly">("weekly");
+  const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
   const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
 
   // ─── Week & day state ────────────────────────────────────────────────────────
@@ -329,6 +332,18 @@ export default function MealPlanListView({
     const offset = new Date(selectedDate).getDay();
     return [...available.slice(offset), ...available.slice(0, offset)].slice(0, 6);
   }, [recipeLibrary, selectedDate, byDate]);
+
+  // ─── Suggested recipes for weekly view (not planned this week) ──────────────
+  const weeklySuggestedRecipes = useMemo(() => {
+    if (recipeLibrary.length === 0) return [];
+    const allPlannedIds = new Set(
+      Object.values(byDate).flat().map((p) => p.recipe_id).filter(Boolean)
+    );
+    const available = recipeLibrary.filter((r) => !allPlannedIds.has(r.id) && r.image_url);
+    // Stable shuffle based on week start
+    const offset = weekStart.getDate() % available.length;
+    return [...available.slice(offset), ...available.slice(0, offset)].slice(0, 6);
+  }, [recipeLibrary, byDate, weekStart]);
 
   function handleReplace(plan: MealPlan) {
     setAddDate(plan.planned_date);
@@ -562,6 +577,77 @@ export default function MealPlanListView({
             </div>
           );
         })}
+
+        {/* ── Suggested recipes (large cards) ───────────────────────────────── */}
+        {weeklySuggestedRecipes.length > 0 && (
+          <div className="mt-4">
+            <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#c0c0be" }}>
+              Try this week
+            </p>
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+              {weeklySuggestedRecipes.map((recipe) => {
+                const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
+                return (
+                  <div
+                    key={recipe.id}
+                    className="relative flex-shrink-0 snap-start rounded-2xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+                    style={{ width: 180, boxShadow: CARD_SHADOW }}
+                    onClick={() => openAddSheetWithRecipe(today, recipe.id)}
+                  >
+                    <div className="relative w-full aspect-[4/3] bg-gray-100">
+                      {recipe.image_url ? (
+                        <Image
+                          src={recipe.image_url}
+                          alt={recipe.title}
+                          fill
+                          className="object-cover"
+                          sizes="180px"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-orange-50 to-amber-50">
+                          {MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "🍳"}
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                      {totalTime > 0 && (
+                        <span className="absolute bottom-2 left-2 flex items-center gap-1 text-[10px] font-semibold text-white/90 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <circle cx="12" cy="12" r="10" />
+                            <path strokeLinecap="round" d="M12 6v6l4 2" />
+                          </svg>
+                          {totalTime} min
+                        </span>
+                      )}
+                      {recipe.meal_type && (
+                        <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-green-500/90 text-white backdrop-blur-sm">
+                          {recipe.meal_type}
+                        </span>
+                      )}
+                    </div>
+                    <div className="bg-white px-3 py-2.5">
+                      <p className="text-[13px] font-semibold leading-tight line-clamp-2" style={{ color: TEXT_1 }}>
+                        {recipe.title}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Discover more card */}
+              <button
+                onClick={() => router.push("/recipes?tab=discover")}
+                className="flex-shrink-0 snap-start rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2.5 transition-colors hover:bg-gray-100 active:scale-[0.98]"
+                style={{ width: 180, minHeight: 180, background: "#f9f7f5", border: "2px dashed #e0dbd6" }}
+              >
+                <div className="w-11 h-11 rounded-full flex items-center justify-center" style={{ background: ACCENT_LIGHT }}>
+                  <svg className="w-5 h-5" style={{ color: ACCENT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                  </svg>
+                </div>
+                <span className="text-xs font-semibold" style={{ color: ACCENT }}>Discover more</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
