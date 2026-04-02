@@ -493,104 +493,105 @@ export default function GroceryList() {
   return (
     <div className="pb-24" style={{ background: "#faf9f7" }}>
 
-      {/* ── Header: week navigation bar ──────────────────────────────────── */}
-      <div className="sticky top-0 z-10 px-4 pt-3 pb-2" style={{ background: "#faf9f7" }}>
-        <div className="flex items-center justify-between max-w-3xl mx-auto">
-          {/* Left: prev arrow + week label + next arrow */}
+      {/* ── Header: week navigation bar (matches Meal Plan) ────────────── */}
+      <div className="sticky top-0 z-10 pt-3 pb-2" style={{ background: "#faf9f7" }}>
+        <div className="flex items-center justify-between mb-2">
+          {/* Left: prev arrow + week label + next arrow + calendar icon */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => navigateWeek(-7)}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
-              style={{ color: "#a09890" }}
+              style={{ color: "#888" }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>
-              {weekLabel}
-            </span>
+            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{weekLabel}</span>
             <button
               onClick={() => navigateWeek(7)}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
-              style={{ color: "#a09890" }}
+              style={{ color: "#888" }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
-          </div>
 
-          {/* Right: calendar icon with dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setRangePickerOpen((v) => !v)}
-              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
-              style={{ color: rangePickerOpen ? "#e8590c" : "#a09890" }}
-              aria-label="Select date range"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
-              </svg>
-            </button>
+            {/* Calendar icon with dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setRangePickerOpen((v) => !v)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
+                style={{ color: rangePickerOpen ? "#e8590c" : "#888", background: rangePickerOpen ? "#ebebea" : "transparent" }}
+                aria-label="Select date range"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+              </button>
 
-            {rangePickerOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setRangePickerOpen(false)} />
-                <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden py-1">
-                  {(["this_week", "next_week", "custom"] as RangePreset[]).map((preset) => (
-                    <button
-                      key={preset}
-                      onClick={() => {
-                        setRangePreset(preset);
-                        if (preset !== "custom") setRangePickerOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
-                        rangePreset === preset
-                          ? "text-orange-600 bg-orange-50 font-medium"
-                          : "text-gray-700 hover:bg-gray-50"
-                      }`}
-                    >
-                      {preset === "this_week" ? "This week" : preset === "next_week" ? "Next week" : "Custom range"}
-                    </button>
-                  ))}
-
-                  {rangePreset === "custom" && (
-                    <div className="px-4 pb-3 pt-1 border-t border-gray-100 space-y-2">
-                      <div>
-                        <label className="block text-[11px] text-gray-400 mb-1">From</label>
-                        <input
-                          type="date"
-                          value={customRange.start}
-                          onChange={(e) => {
-                            const start = e.target.value;
-                            setCustomRange((r) => ({ start, end: r.end < start ? addDays(start, 6) : r.end }));
-                          }}
-                          className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-gray-400 mb-1">To</label>
-                        <input
-                          type="date"
-                          value={customRange.end}
-                          min={customRange.start}
-                          onChange={(e) => setCustomRange((r) => ({ ...r, end: e.target.value }))}
-                          className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
-                        />
-                      </div>
+              {rangePickerOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setRangePickerOpen(false)} />
+                  <div
+                    className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl overflow-hidden z-50 py-1"
+                    style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)" }}
+                  >
+                    {(["this_week", "next_week", "custom"] as RangePreset[]).map((preset) => (
                       <button
-                        onClick={() => setRangePickerOpen(false)}
-                        className="w-full text-xs font-medium text-white bg-orange-500 rounded-lg py-1.5"
+                        key={preset}
+                        onClick={() => {
+                          setRangePreset(preset);
+                          if (preset !== "custom") setRangePickerOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
+                          rangePreset === preset
+                            ? "text-orange-600 bg-orange-50 font-medium"
+                            : "text-gray-700 hover:bg-gray-50"
+                        }`}
                       >
-                        Apply
+                        {preset === "this_week" ? "This week" : preset === "next_week" ? "Next week" : "Custom range"}
                       </button>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+                    ))}
+
+                    {rangePreset === "custom" && (
+                      <div className="px-4 pb-3 pt-1 border-t border-gray-100 space-y-2">
+                        <div>
+                          <label className="block text-[11px] text-gray-400 mb-1">From</label>
+                          <input
+                            type="date"
+                            value={customRange.start}
+                            onChange={(e) => {
+                              const start = e.target.value;
+                              setCustomRange((r) => ({ start, end: r.end < start ? addDays(start, 6) : r.end }));
+                            }}
+                            className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-gray-400 mb-1">To</label>
+                          <input
+                            type="date"
+                            value={customRange.end}
+                            min={customRange.start}
+                            onChange={(e) => setCustomRange((r) => ({ ...r, end: e.target.value }))}
+                            className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
+                          />
+                        </div>
+                        <button
+                          onClick={() => setRangePickerOpen(false)}
+                          className="w-full text-xs font-medium text-white bg-orange-500 rounded-lg py-1.5"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>
