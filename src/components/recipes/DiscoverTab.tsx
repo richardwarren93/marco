@@ -435,14 +435,6 @@ export default function DiscoverTab({
   return (
     <div className="max-w-3xl mx-auto px-4 pb-28 pt-5" style={{ background: "#faf9f7" }}>
 
-      {/* ── Hero: Find your next meal ─────────────────────────────── */}
-      <div className="mb-6 animate-fade-slide-up">
-        <h2 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Discover</h2>
-        <p className="text-sm mt-1" style={{ color: "#a09890" }}>
-          {showRawInput ? "Describe what you\u2019re craving" : "Find your next meal"}
-        </p>
-      </div>
-
       {/* Raw text input */}
       {showRawInput && (
         <div className="bg-white rounded-3xl p-4 mb-5 animate-fade-slide-up" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}>

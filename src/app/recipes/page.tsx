@@ -101,20 +101,6 @@ function RecipesInner() {
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="sticky top-0 z-10 px-4 pt-4 pb-0" style={{ background: "#faf9f7" }}>
         <div className="max-w-5xl mx-auto">
-          {/* Title row */}
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>
-                Recipes
-              </h1>
-              {!loading && recipes.length > 0 && (
-                <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>
-                  {recipes.length} saved
-                </p>
-              )}
-            </div>
-          </div>
-
           {/* ── Folder tab bar ──────────────────────────────────────── */}
           <div className="flex gap-0 overflow-x-auto scrollbar-hide pb-0 -mb-px">
             {TAB_CONFIG.map((tab) => {
