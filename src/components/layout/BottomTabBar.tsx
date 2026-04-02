@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
   RecipesIcon,
   GroceryIcon,
@@ -18,8 +18,17 @@ const leftTabs = [
 ];
 
 export default function BottomTabBar() {
+  return (
+    <Suspense>
+      <BottomTabBarInner />
+    </Suspense>
+  );
+}
+
+function BottomTabBarInner() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [fabOpen, setFabOpen] = useState(false);
   const [importExpanded, setImportExpanded] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
@@ -41,7 +50,7 @@ export default function BottomTabBar() {
 
   const isGroceryActive = pathname.startsWith("/grocery");
   const isOnMealPlan = pathname.startsWith("/meal-plan");
-  const isDiscoverActive = pathname === "/recipes" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "discover";
+  const isDiscoverActive = pathname.startsWith("/recipes") && searchParams.get("tab") === "discover";
 
   function closeFab() {
     setFabOpen(false);
@@ -246,7 +255,9 @@ export default function BottomTabBar() {
       >
         <div className="flex justify-around items-end h-16 px-1">
           {leftTabs.map((tab) => {
-            const isActive = pathname.startsWith(tab.href);
+            const isActive = tab.href === "/recipes"
+              ? pathname.startsWith("/recipes") && !isDiscoverActive
+              : pathname.startsWith(tab.href);
             return (
               <Link
                 key={tab.href}

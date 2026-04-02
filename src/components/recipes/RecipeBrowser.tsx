@@ -171,7 +171,9 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const [search, setSearch] = useState("");
   const [activeMealType, setActiveMealType] = useState<MealType | "all">("all");
   const [sort, setSort] = useState<"newest" | "prep_time">("newest");
+  const [showSortMenu, setShowSortMenu] = useState(false);
   const [showMealMenu, setShowMealMenu] = useState(false);
+  const sortMenuRef = useRef<HTMLDivElement>(null);
   const mealMenuRef = useRef<HTMLDivElement>(null);
 
   // Collections dropdown state
@@ -193,31 +195,35 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   // Pick mode: which card is mid-selection
   const [selectingId, setSelectingId] = useState<string | null>(null);
 
-  // Close meal menu on outside click
-  useEffect(() => {
-    if (!showMealMenu) return;
-    function onDown(e: MouseEvent) {
-      if (mealMenuRef.current && !mealMenuRef.current.contains(e.target as Node)) {
-        setShowMealMenu(false);
-      }
-    }
-    document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [showMealMenu]);
+  // Close any open dropdown on outside click/touch
+  function closeAllMenus() {
+    setShowSortMenu(false);
+    setShowMealMenu(false);
+    setShowCollMenu(false);
+    setShowCollSub(false);
+    setShowCollCreate(false);
+  }
 
-  // Close collections menu on outside click
   useEffect(() => {
-    if (!showCollMenu) return;
-    function onDown(e: MouseEvent) {
-      if (collMenuRef.current && !collMenuRef.current.contains(e.target as Node)) {
+    const anyOpen = showSortMenu || showMealMenu || showCollMenu;
+    if (!anyOpen) return;
+    function onDown(e: MouseEvent | TouchEvent) {
+      const target = e.target as Node;
+      if (showSortMenu && sortMenuRef.current && !sortMenuRef.current.contains(target)) setShowSortMenu(false);
+      if (showMealMenu && mealMenuRef.current && !mealMenuRef.current.contains(target)) setShowMealMenu(false);
+      if (showCollMenu && collMenuRef.current && !collMenuRef.current.contains(target)) {
         setShowCollMenu(false);
         setShowCollSub(false);
         setShowCollCreate(false);
       }
     }
     document.addEventListener("mousedown", onDown);
-    return () => document.removeEventListener("mousedown", onDown);
-  }, [showCollMenu]);
+    document.addEventListener("touchstart", onDown);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("touchstart", onDown);
+    };
+  }, [showSortMenu, showMealMenu, showCollMenu]);
 
   // Fetch collection recipes when a collection is selected
   useEffect(() => {
@@ -400,37 +406,57 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         </div>
 
         {/* Sort + meal type filters */}
-        <div className="flex items-center gap-2 px-4 pb-2.5 relative z-30 overflow-x-auto scrollbar-hide">
-          {/* Sort pills */}
-          {(["newest", "prep_time"] as const).map((s) => (
+        <div className="flex items-center gap-2 px-4 pb-2.5 relative z-30">
+          {/* Sort dropdown */}
+          <div className="relative flex-shrink-0" ref={sortMenuRef}>
             <button
-              key={s}
-              onClick={() => setSort(s)}
-              className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95"
-              style={sort === s
-                ? { background: "#1a1410", color: "#fff" }
-                : { background: "#ede9e3", color: "#6b6560" }}
+              onClick={() => { setShowSortMenu((v) => !v); setShowMealMenu(false); setShowCollMenu(false); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
+              style={{ background: "#1a1410", color: "#fff" }}
             >
-              {s === "newest" ? "Newest" : "Prep time"}
+              {sort === "newest" ? "Newest" : "Prep time"}
+              <svg className={`w-3 h-3 opacity-60 transition-transform ${showSortMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-          ))}
+            {showSortMenu && (
+              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[140px] overflow-hidden"
+                style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
+                {([["newest", "Newest"], ["prep_time", "Prep time"]] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => { setSort(value); setShowSortMenu(false); }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-gray-50"
+                    style={{ color: sort === value ? "#1a1410" : "#6b6560" }}
+                  >
+                    <span>{label}</span>
+                    {sort === value && (
+                      <svg className="w-3.5 h-3.5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Meal type dropdown */}
           <div className="relative flex-shrink-0" ref={mealMenuRef}>
             <button
-              onClick={() => setShowMealMenu((v) => !v)}
+              onClick={() => { setShowMealMenu((v) => !v); setShowSortMenu(false); setShowCollMenu(false); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
               style={activeMealType !== "all"
                 ? { background: "#f97316", color: "#fff" }
                 : { background: "#ede9e3", color: "#6b6560" }}
             >
               {activeMealType !== "all" ? MEAL_TYPE_LABELS[activeMealType] : "Meal type"}
-              <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className={`w-3 h-3 opacity-60 transition-transform ${showMealMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             {showMealMenu && (
-              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-orange-50 z-50 py-1.5 min-w-[150px] overflow-hidden"
+              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[150px] overflow-hidden"
                 style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
                 {([["all", "All"], ...MEAL_TYPES.map((mt) => [mt, MEAL_TYPE_LABELS[mt]])] as [string, string][]).map(([value, label]) => (
                   <button
@@ -450,11 +476,12 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               </div>
             )}
           </div>
+
           {/* Collections dropdown */}
           {props.mode === "library" && collections.length > 0 && (
             <div className="relative flex-shrink-0" ref={collMenuRef}>
               <button
-                onClick={() => { setShowCollMenu((v) => !v); setShowCollSub(false); setShowCollCreate(false); setShowMealMenu(false); }}
+                onClick={() => { setShowCollMenu((v) => !v); setShowCollSub(false); setShowCollCreate(false); setShowSortMenu(false); setShowMealMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
                 style={activeCollectionId
                   ? { background: "#f97316", color: "#fff" }
@@ -467,7 +494,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               </button>
 
               {showCollMenu && (
-                <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-orange-50 z-50 py-1.5 min-w-[200px] overflow-visible"
+                <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[200px] overflow-visible"
                   style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
 
                   {/* All recipes (clear filter) */}
@@ -592,11 +619,16 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
 
           {/* Clear filters */}
           {hasFilters && (
-            <button onClick={() => { setActiveMealType("all"); setActiveCollectionId(null); setSearch(""); }} className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+            <button onClick={() => { setActiveMealType("all"); setActiveCollectionId(null); setSearch(""); closeAllMenus(); }} className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap">
               Clear
             </button>
           )}
         </div>
+
+        {/* Backdrop overlay when any dropdown is open (mobile touch dismiss) */}
+        {(showSortMenu || showMealMenu || showCollMenu) && (
+          <div className="fixed inset-0 z-20 sm:hidden" onClick={closeAllMenus} />
+        )}
         </div>{/* close max-w-5xl */}
       </div>
 
