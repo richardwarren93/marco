@@ -71,31 +71,52 @@ function Confetti() {
   );
 }
 
-// ─── Badge tile (shared) ───────────────────────────────────────────────────────
-function BadgeTile({ item, onClick }: { item: BadgeProgress; onClick: () => void }) {
-  const colors = TIER_COLORS[item.badge.tier];
+// ─── Rarity colors for earned badges ──────────────────────────────────────────
+const RARITY_STYLES: Record<string, { bg: string; border: string; glow: string; label: string; labelBg: string }> = {
+  bronze: { bg: "bg-sky-50", border: "border-sky-200", glow: "shadow-sky-100", label: "text-sky-600", labelBg: "bg-sky-100" },
+  silver: { bg: "bg-indigo-50", border: "border-indigo-200", glow: "shadow-indigo-100", label: "text-indigo-600", labelBg: "bg-indigo-100" },
+  gold:   { bg: "bg-amber-50", border: "border-amber-300", glow: "shadow-amber-100", label: "text-amber-700", labelBg: "bg-amber-100" },
+};
+
+// ─── Badge tile — showcase size ───────────────────────────────────────────────
+function BadgeTile({ item, onClick, size = "normal" }: { item: BadgeProgress; onClick: () => void; size?: "normal" | "small" }) {
   const pct = Math.min(100, Math.round((item.current / item.badge.threshold) * 100));
+  const rarity = RARITY_STYLES[item.badge.tier];
+  const iconSize = size === "small" ? "text-xl" : "text-2xl";
 
   return (
     <button
       onClick={onClick}
-      className={`relative aspect-square rounded-xl border-2 flex flex-col items-center justify-center transition-all active:scale-95 ${
+      className={`relative aspect-square rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-200 active:scale-90 ${
         item.earned
-          ? `${colors.bg} ${colors.border} hover:shadow-md`
-          : "bg-gray-50 border-gray-100 opacity-40 hover:opacity-60"
+          ? `${rarity.bg} ${rarity.border} hover:shadow-lg hover:-translate-y-1 ${rarity.glow}`
+          : "bg-gray-50 border-gray-200/60 hover:bg-gray-100/50"
       }`}
     >
-      <span className={`text-xl ${item.earned ? "" : "grayscale"}`}>{item.badge.icon}</span>
+      <span className={`${iconSize} transition-transform duration-200 ${item.earned ? "" : "grayscale opacity-20"}`}>
+        {item.badge.icon}
+      </span>
 
+      {/* Badge name under icon for earned */}
+      {item.earned && size === "normal" && (
+        <span className="text-[9px] font-semibold text-gray-500 mt-0.5 px-1 truncate max-w-full leading-tight">
+          {item.badge.name}
+        </span>
+      )}
+
+      {/* Progress for unearned */}
       {!item.earned && pct > 0 && (
-        <div className="absolute bottom-1 left-1/2 -translate-x-1/2">
-          <span className="text-[8px] font-bold text-gray-400">{pct}%</span>
+        <div className="absolute bottom-1.5 inset-x-2">
+          <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
+            <div className="h-full bg-gray-400 rounded-full" style={{ width: `${pct}%` }} />
+          </div>
         </div>
       )}
 
+      {/* Tier indicator */}
       {item.earned && (
-        <div className={`absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full border border-white shadow-sm flex items-center justify-center ${
-          item.badge.tier === "gold" ? "bg-yellow-400" : item.badge.tier === "silver" ? "bg-gray-300" : "bg-amber-500"
+        <div className={`absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${
+          item.badge.tier === "gold" ? "bg-amber-400" : item.badge.tier === "silver" ? "bg-indigo-400" : "bg-sky-400"
         }`}>
           <span className="text-[7px] text-white font-bold">
             {item.badge.tier === "gold" ? "★" : item.badge.tier === "silver" ? "◆" : "●"}
@@ -343,9 +364,9 @@ function AllBadgesModal({
 
           {/* Grid */}
           <div className="flex-1 overflow-y-auto px-4 pb-6">
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 gap-2.5">
               {sorted.map((item) => (
-                <BadgeTile key={item.badge.id} item={item} onClick={() => setSelectedBadge(item)} />
+                <BadgeTile key={item.badge.id} item={item} onClick={() => setSelectedBadge(item)} size="small" />
               ))}
             </div>
           </div>
@@ -388,68 +409,73 @@ export default function BadgesCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-5 animate-pulse">
-        <div className="h-5 bg-gray-200 rounded w-24 mb-4" />
-        <div className="grid grid-cols-5 gap-2">
-          {[...Array(10)].map((_, i) => (
-            <div key={i} className="w-full aspect-square bg-gray-100 rounded-xl" />
+      <div className="bg-white rounded-2xl p-5 animate-pulse" style={{ boxShadow: "0 2px 20px rgba(234,88,12,0.06)" }}>
+        <div className="h-5 bg-gray-100 rounded w-28 mb-4" />
+        <div className="grid grid-cols-4 gap-3">
+          {[...Array(12)].map((_, i) => (
+            <div key={i} className="w-full aspect-square bg-gray-50 rounded-2xl" />
           ))}
         </div>
       </div>
     );
   }
 
-  // Sort earned first, then by tier
+  // Sort earned first, then by tier (gold first)
   const tierOrder = { gold: 0, silver: 1, bronze: 2 };
   const sorted = [...progress].sort((a, b) => {
     if (a.earned !== b.earned) return a.earned ? -1 : 1;
     return tierOrder[a.badge.tier] - tierOrder[b.badge.tier];
   });
 
-  // Show 2 rows of 5 = 10 badges in compact view
-  const preview = sorted.slice(0, 10);
+  // Show 3 rows of 4 = 12 badges — larger tiles to showcase art
+  const preview = sorted.slice(0, 12);
   const progressPct = total > 0 ? Math.round((earned / total) * 100) : 0;
 
   return (
     <>
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 20px rgba(234,88,12,0.06)" }}>
         {/* Header */}
-        <div className="px-4 pt-4 pb-3">
+        <div className="px-4 pt-4 pb-2">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              <span className="text-lg">🏅</span> Badges
+            <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
+              <span>🏅</span> Badges
             </h3>
-            <span className="text-xs font-semibold text-gray-500">{earned}/{total}</span>
+            <div className="flex items-center gap-1.5 bg-orange-50 px-2.5 py-1 rounded-full">
+              <span className="text-xs">🔥</span>
+              <span className="text-xs font-bold text-orange-600">{earned}/{total}</span>
+            </div>
           </div>
 
           {/* Progress bar */}
           <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-500"
+              className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all duration-700"
               style={{ width: `${progressPct}%` }}
             />
           </div>
         </div>
 
-        {/* 2-row compact grid */}
-        <div className="px-4 pb-3">
-          <div className="grid grid-cols-5 gap-2">
+        {/* Badge showcase — 4-column grid, larger tiles */}
+        <div className="px-3.5 py-3">
+          <div className="grid grid-cols-4 gap-2.5">
             {preview.map((item) => (
               <BadgeTile key={item.badge.id} item={item} onClick={() => setSelectedBadge(item)} />
             ))}
           </div>
         </div>
 
-        {/* See all button */}
-        <button
-          onClick={() => setShowAll(true)}
-          className="w-full py-3 border-t border-gray-100 text-sm font-semibold text-orange-600 hover:bg-orange-50 transition-colors flex items-center justify-center gap-1.5"
-        >
-          See all {total} badges
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
+        {/* CTA Button */}
+        <div className="px-4 pb-4 pt-1">
+          <button
+            onClick={() => setShowAll(true)}
+            className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-xl transition-colors active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
+          >
+            View All Badges
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* All badges modal */}

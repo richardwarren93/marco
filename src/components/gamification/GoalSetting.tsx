@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { GoalIcon } from "@/components/icons/HandDrawnIcons";
 
 interface GoalSettingProps {
   currentTarget: number | null;
   onSaved?: (target: number) => void;
 }
+
+const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
 export default function GoalSetting({ currentTarget, onSaved }: GoalSettingProps) {
   const [target, setTarget] = useState(currentTarget || 0);
@@ -35,35 +36,51 @@ export default function GoalSetting({ currentTarget, onSaved }: GoalSettingProps
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-5">
-      <div className="flex items-center gap-2 mb-3">
-        <GoalIcon className="w-5 h-5 text-orange-600" />
-        <h3 className="font-semibold text-gray-900 text-sm">Weekly Cooking Goal</h3>
+    <div
+      className="bg-white rounded-2xl p-4 overflow-hidden"
+      style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.04)" }}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🔥</span>
+          <h3 className="font-bold text-gray-900 text-sm">Weekly Goal</h3>
+        </div>
+        {target > 0 && (
+          <div className="flex items-center gap-1 bg-green-50 px-2 py-0.5 rounded-full">
+            <span className="text-[10px]">🍅</span>
+            <span className="text-[10px] font-bold text-green-600">+25 bonus</span>
+          </div>
+        )}
       </div>
-      <p className="text-xs text-gray-400 mb-3">
-        How many times do you want to cook per week?
-      </p>
 
-      <div className="flex gap-2">
-        {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-          <button
-            key={n}
-            onClick={() => handleSelect(n)}
-            disabled={saving}
-            className={`w-9 h-9 rounded-full text-sm font-semibold transition-all ${
-              n === target
-                ? "bg-orange-600 text-white shadow-sm"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            {n}
-          </button>
-        ))}
+      {/* Day-style streak selector */}
+      <div className="flex gap-1.5 justify-between">
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+          const isActive = n <= target;
+          const isExact = n === target;
+          return (
+            <button
+              key={n}
+              onClick={() => handleSelect(n)}
+              disabled={saving}
+              className={`flex-1 aspect-square max-w-[42px] rounded-xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 active:scale-90 ${
+                isActive
+                  ? isExact
+                    ? "bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-md shadow-orange-200"
+                    : "bg-orange-100 text-orange-600"
+                  : "bg-gray-50 text-gray-400 hover:bg-gray-100"
+              }`}
+            >
+              <span className="text-[10px] font-semibold leading-none">{DAY_LABELS[n - 1]}</span>
+              <span className={`text-sm font-black leading-none ${isActive && !isExact ? "text-orange-500" : ""}`}>{n}</span>
+            </button>
+          );
+        })}
       </div>
 
       {target > 0 && (
-        <p className="text-xs text-gray-500 mt-2">
-          Cook {target} time{target !== 1 ? "s" : ""} per week to earn a 25 tomato bonus!
+        <p className="text-[11px] text-gray-400 mt-2.5 text-center">
+          Cook <span className="font-semibold text-gray-600">{target}x</span> per week to earn your tomato bonus
         </p>
       )}
     </div>
