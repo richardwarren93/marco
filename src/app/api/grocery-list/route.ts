@@ -45,114 +45,98 @@ export async function GET(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  const { data: list } = await admin
-    .from("grocery_lists")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("week_start", dateStart)
-    .single();
+  // ── Parallel batch 1: grocery list + household membership ─────────────────
+  const [listRes, membershipRes] = await Promise.all([
+    admin.from("grocery_lists").select("*").eq("user_id", user.id).eq("week_start", dateStart).single(),
+    admin.from("household_members").select("household_id").eq("user_id", user.id).single(),
+  ]);
 
-  const ownItems = list ? await fetchItems(admin, list.id) : [];
+  const list = listRes.data;
+  const membership = membershipRes.data;
 
-  // Household membership
-  const { data: membership } = await admin
-    .from("household_members")
-    .select("household_id")
-    .eq("user_id", user.id)
-    .single();
+  // Resolve all household user IDs + profiles in one go
+  let allUserIds = [user.id];
+  let profileMap = new Map<string, string>();
 
-  // Detect meal plan changes since last generation (own + household)
-  let meal_plan_changed = false;
-  if (list?.generated_at) {
-    const changeCheckIds = [user.id];
-    if (membership) {
-      const { data: allMembers } = await admin
-        .from("household_members")
-        .select("user_id")
-        .eq("household_id", membership.household_id);
-      if (allMembers) {
-        for (const m of allMembers) {
-          if (!changeCheckIds.includes(m.user_id)) changeCheckIds.push(m.user_id);
-        }
-      }
-    }
-    const { data: latestPlan } = await admin
-      .from("meal_plans")
-      .select("created_at")
-      .in("user_id", changeCheckIds)
-      .gte("planned_date", dateStart)
-      .lte("planned_date", dateEnd)
-      .gt("created_at", list.generated_at)
-      .limit(1)
-      .maybeSingle();
-    if (latestPlan) meal_plan_changed = true;
-  }
-
-  let householdItems: any[] = [];
-  let householdMembers: any[] = [];
-
-  if (membership) {
-    const { data: members } = await admin
-      .from("household_members")
-      .select("user_id")
-      .eq("household_id", membership.household_id)
-      .neq("user_id", user.id);
-
-    if (members && members.length > 0) {
-      const memberIds = members.map((m: any) => m.user_id);
-      const { data: profiles } = await admin
-        .from("user_profiles")
-        .select("user_id, display_name")
-        .in("user_id", memberIds);
-      householdMembers = profiles || [];
-
-      const { data: memberLists } = await admin
-        .from("grocery_lists")
-        .select("*")
-        .in("user_id", memberIds)
-        .eq("week_start", dateStart);
-
-      if (memberLists && memberLists.length > 0) {
-        const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p.display_name]));
-        const listOwnerMap = new Map(memberLists.map((l: any) => [l.id, l.user_id]));
-        const allMemberItems: any[] = [];
-        for (const ml of memberLists) {
-          const mlItems = await fetchItems(admin, ml.id);
-          for (const item of mlItems) {
-            allMemberItems.push({
-              ...item,
-              owner_name: profileMap.get(listOwnerMap.get(item.list_id)) || "Housemate",
-            });
-          }
-        }
-        householdItems = allMemberItems;
-      }
-    }
-  }
-
-  // Fetch this week's meal plans with recipe details for the grocery page summary
-  const planUserIds = [user.id];
   if (membership) {
     const { data: allMembers } = await admin
       .from("household_members")
-      .select("user_id")
+      .select("user_id, profiles:user_profiles(display_name)")
       .eq("household_id", membership.household_id);
     if (allMembers) {
-      for (const m of allMembers) {
-        if (!planUserIds.includes(m.user_id)) planUserIds.push(m.user_id);
+      for (const m of allMembers as any[]) {
+        if (!allUserIds.includes(m.user_id)) allUserIds.push(m.user_id);
+        if (m.user_id !== user.id) {
+          profileMap.set(m.user_id, m.profiles?.display_name || "Housemate");
+        }
       }
     }
   }
-  const { data: meals } = await admin
+
+  // ── Parallel batch 2: items + meals + change detection ────────────────────
+  const itemsPromise = list ? fetchItems(admin, list.id) : Promise.resolve([]);
+
+  const mealsPromise = admin
     .from("meal_plans")
-    .select("id, planned_date, meal_type, servings, recipe:recipes(id, title, image_url, prep_time_minutes, cook_time_minutes)")
-    .in("user_id", planUserIds)
+    .select("id, user_id, planned_date, meal_type, servings, recipe:recipes(id, title, image_url, prep_time_minutes, cook_time_minutes)")
+    .in("user_id", allUserIds)
     .gte("planned_date", dateStart)
-    .lte("planned_date", dateEnd ?? dateStart)
+    .lte("planned_date", dateEnd)
     .not("recipe_id", "is", null)
     .order("planned_date", { ascending: true });
 
-  return NextResponse.json({ list, items: ownItems, householdItems, householdMembers, meal_plan_changed, meals: meals ?? [] });
+  const changePromise = (list?.generated_at)
+    ? admin.from("meal_plans").select("created_at").in("user_id", allUserIds)
+        .gte("planned_date", dateStart).lte("planned_date", dateEnd)
+        .gt("created_at", list.generated_at).limit(1).maybeSingle()
+    : Promise.resolve({ data: null });
+
+  // Household grocery lists (parallel)
+  const householdListsPromise = (membership && allUserIds.length > 1)
+    ? admin.from("grocery_lists").select("*")
+        .in("user_id", allUserIds.filter(id => id !== user.id))
+        .eq("week_start", dateStart)
+    : Promise.resolve({ data: [] });
+
+  const [ownItems, mealsRes, changeRes, householdListsRes] = await Promise.all([
+    itemsPromise, mealsPromise, changePromise, householdListsPromise,
+  ]);
+
+  const meal_plan_changed = !!changeRes.data;
+
+  // Fetch household grocery items (parallel for all household lists)
+  let householdItems: any[] = [];
+  const memberLists = householdListsRes.data || [];
+  if (memberLists.length > 0) {
+    const listOwnerMap = new Map(memberLists.map((l: any) => [l.id, l.user_id]));
+    const allHouseholdItems = await Promise.all(
+      memberLists.map((ml: any) => fetchItems(admin, ml.id))
+    );
+    for (let i = 0; i < memberLists.length; i++) {
+      for (const item of allHouseholdItems[i]) {
+        householdItems.push({
+          ...item,
+          owner_name: profileMap.get(listOwnerMap.get(item.list_id) ?? "") || "Housemate",
+        });
+      }
+    }
+  }
+
+  // Annotate meals with owner info
+  const meals = (mealsRes.data ?? []).map((m: any) => ({
+    ...m,
+    is_household: m.user_id !== user.id,
+    owner_name: m.user_id !== user.id ? (profileMap.get(m.user_id) || "Housemate") : null,
+  }));
+
+  return NextResponse.json({
+    list,
+    items: ownItems,
+    householdItems,
+    householdMembers: [...profileMap.entries()].map(([user_id, display_name]) => ({ user_id, display_name })),
+    meal_plan_changed,
+    meals,
+  });
 }
 
 // ─── POST (generate / regenerate) ────────────────────────────────────────────

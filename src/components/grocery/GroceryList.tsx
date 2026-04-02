@@ -118,6 +118,8 @@ interface MealPlanSummaryItem {
   planned_date: string;
   meal_type: string;
   servings: number;
+  is_household?: boolean;
+  owner_name?: string | null;
   recipe: {
     id: string;
     title: string;
@@ -151,6 +153,7 @@ export default function GroceryList() {
 
   // Meal plan summary
   const [mealsExpanded, setMealsExpanded] = useState(true);
+  const [excludedMealIds, setExcludedMealIds] = useState<Set<string>>(new Set());
 
   // Data (SWR-cached)
   const [generating, setGenerating] = useState(false);
@@ -335,15 +338,38 @@ export default function GroceryList() {
   }
 
   // ── Derived display data ───────────────────────────────────────────────────
+  // Build set of recipe titles from excluded meals
+  const excludedRecipeTitles = useMemo(() => {
+    const titles = new Set<string>();
+    for (const meal of meals) {
+      if (excludedMealIds.has(meal.id) && meal.recipe?.title) {
+        // Only exclude if ALL meals for this recipe are excluded
+        const otherMeals = meals.filter(
+          (m) => m.recipe?.title === meal.recipe?.title && !excludedMealIds.has(m.id)
+        );
+        if (otherMeals.length === 0) titles.add(meal.recipe.title);
+      }
+    }
+    return titles;
+  }, [meals, excludedMealIds]);
+
+  // Active meals (non-excluded) for display and stats
+  const activeMeals = useMemo(() => meals.filter((m) => !excludedMealIds.has(m.id)), [meals, excludedMealIds]);
+
   const allItems: HouseholdGroceryItem[] = [...items, ...householdItems];
 
   const filteredItems = useMemo(() => {
     return allItems.filter((item) => {
+      // Filter out items whose ONLY recipe sources are excluded
+      if (excludedRecipeTitles.size > 0 && item.recipe_sources?.length) {
+        const hasActiveSource = item.recipe_sources.some((s: string) => !excludedRecipeTitles.has(s));
+        if (!hasActiveSource) return false;
+      }
       if (filter === "to_buy") return !item.checked;
       if (filter === "checked") return item.checked;
       return true;
     });
-  }, [allItems, filter]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allItems, filter, excludedRecipeTitles]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Group by category
   const groupedByCategory = useMemo(() => {
@@ -386,15 +412,15 @@ export default function GroceryList() {
   const hasItems = allItems.length > 0;
 
   // Plan health stats
-  const mealCount = meals.length;
+  const mealCount = activeMeals.length;
   const ingredientCount = toBuyCount;
   const totalCookTime = useMemo(() => {
-    return meals.reduce((sum, m) => {
+    return activeMeals.reduce((sum, m) => {
       const prep = m.recipe?.prep_time_minutes ?? 0;
       const cook = m.recipe?.cook_time_minutes ?? 0;
       return sum + prep + cook;
     }, 0);
-  }, [meals]);
+  }, [activeMeals]);
 
   const rangeLabel = (() => {
     if (rangePreset === "this_week") return "This week";
@@ -511,7 +537,7 @@ export default function GroceryList() {
             className="flex items-center gap-2 w-full text-left py-2"
           >
             <h2 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
-              Meals ({meals.length})
+              Meals ({activeMeals.length})
             </h2>
             <svg
               className={`w-3.5 h-3.5 transition-transform ${mealsExpanded ? "rotate-180" : ""}`}
@@ -524,36 +550,68 @@ export default function GroceryList() {
 
           {mealsExpanded && (
             <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-              {meals.map((meal, i) => (
-                <div
-                  key={meal.id}
-                  className="flex items-center gap-3 px-3.5 py-2.5"
-                  style={i < meals.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
-                >
-                  <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                    {meal.recipe?.image_url ? (
-                      <Image src={meal.recipe.image_url} alt="" width={36} height={36} className="w-full h-full object-cover" />
+              {meals.map((meal, i) => {
+                const isExcluded = excludedMealIds.has(meal.id);
+                return (
+                  <div
+                    key={meal.id}
+                    className={`flex items-center gap-3 px-3.5 py-2.5 transition-opacity ${isExcluded ? "opacity-40" : ""}`}
+                    style={i < meals.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
+                  >
+                    <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                      {meal.recipe?.image_url ? (
+                        <Image src={meal.recipe.image_url} alt="" width={36} height={36} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-sm">🍽</div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <p className={`text-sm font-medium truncate ${isExcluded ? "line-through text-gray-400" : "text-gray-800"}`}>
+                          {meal.recipe?.title}
+                        </p>
+                        {meal.is_household && meal.owner_name && (
+                          <span className="text-[9px] px-1.5 py-0.5 bg-purple-50 text-purple-500 rounded-full font-medium flex-shrink-0">
+                            {meal.owner_name}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-gray-400">
+                        {getDayLabel(meal.planned_date)} &middot; {meal.meal_type}
+                      </p>
+                    </div>
+                    {/* Toggle: exclude (household) or remove (own) */}
+                    {isExcluded ? (
+                      <button
+                        onClick={() => setExcludedMealIds((prev) => { const n = new Set(prev); n.delete(meal.id); return n; })}
+                        className="text-[10px] font-semibold text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full hover:bg-orange-100 transition-colors flex-shrink-0"
+                      >
+                        Add back
+                      </button>
+                    ) : meal.is_household ? (
+                      <button
+                        onClick={() => setExcludedMealIds((prev) => new Set(prev).add(meal.id))}
+                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
+                        aria-label={`Exclude ${meal.recipe?.title}`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm">🍽</div>
+                      <button
+                        onClick={() => handleRemoveMeal(meal.id)}
+                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
+                        aria-label={`Remove ${meal.recipe?.title}`}
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{meal.recipe?.title}</p>
-                    <p className="text-[11px] text-gray-400">
-                      {getDayLabel(meal.planned_date)} &middot; {meal.meal_type}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleRemoveMeal(meal.id)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 disabled:opacity-50"
-                    aria-label={`Remove ${meal.recipe?.title}`}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
+                );
+              })}
               {/* + Add meal */}
               <button
                 onClick={() => router.push("/recipes?tab=meal-plan")}
