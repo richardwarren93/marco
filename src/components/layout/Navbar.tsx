@@ -40,6 +40,7 @@ const menuItems: { href: string; label: string; icon: React.ReactNode }[] = [
 
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showMenu, setShowMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showImport, setShowImport] = useState(false);
@@ -62,19 +63,36 @@ export default function Navbar() {
     }
   }, []);
 
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await fetch("/api/profile");
+      if (!res.ok) return;
+      const data = await res.json();
+      setAvatarUrl(data.profile?.avatar_url || null);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   // All hooks must be called unconditionally — guard with isAuthPage inside
   useEffect(() => {
     if (isAuthPage) return;
     supabase.auth.getUser().then(({ data: { user: u } }: { data: { user: User | null } }) => {
       setUser(u);
-      if (u) fetchUnreadCount();
+      if (u) {
+        fetchUnreadCount();
+        fetchProfile();
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event: string, session: { user: User | null } | null) => {
       setUser(session?.user ?? null);
-      if (session?.user) fetchUnreadCount();
+      if (session?.user) {
+        fetchUnreadCount();
+        fetchProfile();
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -162,9 +180,13 @@ export default function Navbar() {
                   {/* Profile avatar — desktop only */}
                   <Link
                     href="/profile"
-                    className="hidden sm:flex w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white items-center justify-center font-bold text-xs hover:shadow-md transition-all"
+                    className="hidden sm:flex w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white items-center justify-center font-bold text-xs hover:shadow-md transition-all overflow-hidden"
                   >
-                    {initials}
+                    {avatarUrl ? (
+                      <Image src={avatarUrl} alt="Profile" width={36} height={36} className="w-full h-full object-cover" />
+                    ) : (
+                      initials
+                    )}
                   </Link>
 
                   {/* Notification bell */}
