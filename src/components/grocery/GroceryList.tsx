@@ -625,7 +625,16 @@ export default function GroceryList() {
       {hasItems && (
         <div className="mx-4 mt-3 space-y-2">
           <div className="flex items-center gap-2">
-            <div className="flex flex-1 bg-gray-100 rounded-xl p-1 gap-1">
+            {/* Sliding pill toggle — matches Discover tab style */}
+            <div className="flex flex-1 bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
+              {/* Sliding indicator */}
+              <div
+                className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
+                style={{
+                  width: "calc(50% - 4px)",
+                  left: filter === "to_buy" ? 4 : "calc(50% + 0px)",
+                }}
+              />
               {([
                 { key: "to_buy",  label: `Buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
                 { key: "checked", label: `Have${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
@@ -633,10 +642,8 @@ export default function GroceryList() {
                 <button
                   key={key}
                   onClick={() => setFilter(key)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    filter === key
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
+                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors duration-200 relative z-10 ${
+                    filter === key ? "text-gray-900" : "text-gray-400"
                   }`}
                 >
                   {label}
