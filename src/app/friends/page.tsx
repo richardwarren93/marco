@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { UserProfile, Friendship } from "@/types";
 import FriendCodeCard from "@/components/friends/FriendCodeCard";
 import AddFriendForm from "@/components/friends/AddFriendForm";
@@ -9,6 +10,7 @@ import PendingRequestCard from "@/components/friends/PendingRequestCard";
 import { FriendsIcon } from "@/components/icons/HandDrawnIcons";
 
 export default function FriendsPage() {
+  const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [friends, setFriends] = useState<Friendship[]>([]);
   const [incoming, setIncoming] = useState<Friendship[]>([]);
@@ -59,9 +61,20 @@ export default function FriendsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 animate-fade-slide-up" style={{ background: "#faf9f7", minHeight: "100vh" }}>
-      <div>
-        <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Friends</h1>
-        <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Cook & share with friends</p>
+      <div className="flex items-center gap-3">
+        <button
+          onClick={() => router.back()}
+          className="w-8 h-8 rounded-full flex items-center justify-center transition-colors -ml-1"
+          style={{ background: "rgba(0,0,0,0.05)" }}
+        >
+          <svg className="w-4 h-4" style={{ color: "#1a1410" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <div>
+          <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Friends</h1>
+          <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Cook & share with friends</p>
+        </div>
       </div>
 
       {/* Your Code */}

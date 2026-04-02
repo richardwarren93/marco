@@ -12,28 +12,32 @@ export default function CommunityPage() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      {/* Sticky header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10 px-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
+    <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
+      {/* Header */}
+      <div className="px-4 pt-6 pb-2">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex items-center gap-3 mb-1">
             <button
               onClick={() => router.back()}
-              className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors -ml-1"
+              className="w-8 h-8 rounded-full flex items-center justify-center transition-colors -ml-1"
+              style={{ background: "rgba(0,0,0,0.05)" }}
             >
-              <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4" style={{ color: "#1a1410" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1 className="text-xl font-bold text-gray-900">Community</h1>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Community</h1>
+              <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Discover & connect</p>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Tab switcher */}
-      <div className="px-4 pt-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="flex bg-gray-100 rounded-xl p-1 max-w-[280px] mx-auto">
+      <div className="px-4 pt-3">
+        <div className="max-w-2xl mx-auto">
+          <div className="flex rounded-xl p-1 max-w-[280px] mx-auto" style={{ background: "rgba(0,0,0,0.05)" }}>
             {(
               [
                 { key: "playlists" as Tab, label: "Playlists", icon: "🎵" },
@@ -45,9 +49,12 @@ export default function CommunityPage() {
                 onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                   activeTab === tab.key
-                    ? "bg-white text-gray-900 shadow-sm"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "bg-white shadow-sm"
+                    : "hover:opacity-80"
                 }`}
+                style={{
+                  color: activeTab === tab.key ? "#1a1410" : "#a09890",
+                }}
               >
                 <span>{tab.icon}</span>
                 {tab.label}
@@ -59,7 +66,7 @@ export default function CommunityPage() {
 
       {/* Content */}
       <div className="flex-1 px-4 py-4">
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-2xl mx-auto">
           {activeTab === "join" && <JoinTab />}
           {activeTab === "playlists" && <PlaylistsTab />}
         </div>
