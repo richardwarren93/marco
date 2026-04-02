@@ -9,8 +9,7 @@ import { useRecipes, useCollections } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
 
 // ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
-const ExploreTab = dynamic(() => import("@/components/recipes/ExploreTab"));
-const FriendsRecipeTable = dynamic(() => import("@/components/recipes/FriendsRecipeTable"));
+const DiscoverTab = dynamic(() => import("@/components/recipes/DiscoverTab"));
 const ImportRecipeSheet = dynamic(() => import("@/components/recipes/ImportRecipeSheet"), { ssr: false });
 const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
 const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
@@ -27,7 +26,7 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-type ActiveTab = "recipes" | "table" | "explore";
+type ActiveTab = "recipes" | "discover";
 
 export default function RecipesPage() {
   return (
@@ -48,11 +47,7 @@ function RecipesInner() {
   const loading = recipesLoading || collectionsLoading;
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(
-    searchParams.get("tab") === "table"
-      ? "table"
-      : searchParams.get("tab") === "explore"
-      ? "explore"
-      : "recipes"
+    searchParams.get("tab") === "discover" ? "discover" : "recipes"
   );
   // Quick-add sheet state
   const [addSheetOpen, setAddSheetOpen] = useState(false);
@@ -112,8 +107,8 @@ function RecipesInner() {
 
           {/* Tab bar */}
           <div className="flex gap-1 overflow-x-auto scrollbar-hide pb-0">
-            {(["recipes", "table", "explore"] as ActiveTab[]).map((tab) => {
-              const labels: Record<ActiveTab, string> = { recipes: "My Recipes", table: "Friends", explore: "Explore" };
+            {(["recipes", "discover"] as ActiveTab[]).map((tab) => {
+              const labels: Record<ActiveTab, string> = { recipes: "My Recipes", discover: "Discover" };
               const active = activeTab === tab;
               return (
                 <button
@@ -150,26 +145,17 @@ function RecipesInner() {
         />
       )}
 
-      {/* Explore tab — AI recipe discovery */}
-      {activeTab === "explore" && (
-        <div style={{ background: "#faf9f7", minHeight: "100%" }}>
-          <ExploreTab />
-        </div>
-      )}
-
-      {/* Table tab — friends' recipes */}
-      {activeTab === "table" && (
-        <div className="max-w-5xl mx-auto">
-          <FriendsRecipeTable
-            onAddToMealPlan={(id) => {
-              const recipe = recipes.find((r) => r.id === id);
-              setAddSheetRecipeId(id);
-              setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
-              setAddSheetOpen(true);
-            }}
-            onAddToCollection={(id) => setCollectionRecipeId(id)}
-          />
-        </div>
+      {/* Discover tab — AI discovery + friends + community feed */}
+      {activeTab === "discover" && (
+        <DiscoverTab
+          onAddToMealPlan={(id) => {
+            const recipe = recipes.find((r) => r.id === id);
+            setAddSheetRecipeId(id);
+            setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
+            setAddSheetOpen(true);
+          }}
+          onAddToCollection={(id) => setCollectionRecipeId(id)}
+        />
       )}
 
       <AddMealSheet

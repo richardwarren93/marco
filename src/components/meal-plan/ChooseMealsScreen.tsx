@@ -297,7 +297,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         {/* Explore CTA card — build mode, no search active */}
         {props.mode === "build" && !search && aiResults === null && (
           <button
-            onClick={() => router.push("/recipes?tab=explore")}
+            onClick={() => router.push("/recipes?tab=discover")}
             className="w-full mb-4 flex items-center gap-3 px-4 py-3.5 bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl border border-orange-100 hover:border-orange-200 hover:shadow-sm transition-all text-left group"
           >
             <div className="w-10 h-10 rounded-xl bg-orange-500 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
