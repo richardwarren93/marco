@@ -145,6 +145,9 @@ export default function GroceryList() {
   // Filter & grouping
   const [filter, setFilter] = useState<FilterMode>("to_buy");
   const [groupMode, setGroupMode] = useState<GroupMode>("category");
+  const [groupMenuOpen, setGroupMenuOpen] = useState(false);
+  const groupMenuRef = useRef<HTMLDivElement>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Meal plan summary
   const [mealsExpanded, setMealsExpanded] = useState(true);
@@ -300,26 +303,6 @@ export default function GroceryList() {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id }),
-      });
-    } catch {
-      await mutateGrocery();
-    }
-  }
-
-  // ── Clear all items (optimistic) ──────────────────────────────────────────
-  const [clearConfirm, setClearConfirm] = useState(false);
-
-  async function handleClearAll() {
-    if (!list) return;
-    const optimistic = groceryData ? { ...groceryData, items: [], householdItems: [] } : undefined;
-    mutateGrocery(optimistic, false);
-    setClearConfirm(false);
-
-    try {
-      await fetch("/api/grocery-list/items", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ list_id: list.id }),
       });
     } catch {
       await mutateGrocery();
@@ -621,12 +604,12 @@ export default function GroceryList() {
         </div>
       )}
 
-      {/* ── Filter + group toggle + clear ────────────────────────────────── */}
+      {/* ── Filter + view toggle ────────────────────────────────────────── */}
       {hasItems && (
-        <div className="mx-4 mt-3 space-y-2.5">
-          {/* Centered sliding pill toggle */}
-          <div className="max-w-[280px] mx-auto">
-            <div className="flex bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
+        <div className="mx-4 mt-3">
+          <div className="flex items-center gap-2">
+            {/* Full-width sliding pill toggle */}
+            <div className="flex flex-1 bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
               <div
                 className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
                 style={{
@@ -649,71 +632,46 @@ export default function GroceryList() {
                 </button>
               ))}
             </div>
-          </div>
-
-          {/* Group by + clear all row */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-gray-400">Group by:</span>
-              <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
-                {([
-                  { key: "category", label: "Category" },
-                  { key: "meal", label: "Meal" },
-                ] as { key: GroupMode; label: string }[]).map(({ key, label }) => (
-                  <button
-                    key={key}
-                    onClick={() => setGroupMode(key)}
-                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                      groupMode === key
-                        ? "bg-white text-gray-900 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Clear all — right-aligned */}
-            {!clearConfirm ? (
+            {/* View mode dropdown */}
+            <div className="relative flex-shrink-0" ref={groupMenuRef}>
               <button
-                onClick={() => setClearConfirm(true)}
-                className="text-[11px] text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
+                onClick={() => setGroupMenuOpen((v) => !v)}
+                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full transition-colors"
+                style={{ background: "#f0ede8", color: "#7a7068" }}
               >
-                Clear all
+                {groupMode === "category" ? "Category" : "Meal"}
+                <svg className={`w-3 h-3 opacity-60 transition-transform ${groupMenuOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
-            ) : (
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={handleClearAll}
-                  className="text-[11px] font-semibold text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded-lg transition-colors whitespace-nowrap"
-                >
-                  Confirm
-                </button>
-                <button
-                  onClick={() => setClearConfirm(false)}
-                  className="text-[11px] text-gray-400 hover:text-gray-600 px-1.5 py-1 rounded-lg transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
+              {groupMenuOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setGroupMenuOpen(false)} />
+                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 overflow-hidden"
+                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
+                    {([
+                      { key: "category", label: "By Category" },
+                      { key: "meal", label: "By Meal" },
+                    ] as { key: GroupMode; label: string }[]).map(({ key, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => { setGroupMode(key); setGroupMenuOpen(false); }}
+                        className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-gray-50"
+                        style={{ color: groupMode === key ? "#1a1410" : "#6b6560" }}
+                      >
+                        <span>{label}</span>
+                        {groupMode === key && (
+                          <svg className="w-3.5 h-3.5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
-
-      {/* ── Order online button ─────────────────────────────────────────────── */}
-      {hasItems && toBuyCount > 0 && !loading && (
-        <div className="mx-4 mt-3">
-          <button
-            onClick={() => setOrderOnlineOpen(true)}
-            className="w-full flex items-center justify-center gap-2.5 py-3 bg-white rounded-2xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors shadow-sm"
-          >
-            <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
-            </svg>
-            <span className="text-sm font-semibold text-gray-700">Order online</span>
-          </button>
         </div>
       )}
 
@@ -786,65 +744,94 @@ export default function GroceryList() {
       ) : (
         /* Grouped list */
         <div className="mx-4 mt-3 space-y-3">
-          {grouped.map(([groupKey, groupItems], gi) => (
-            <div
-              key={groupKey}
-              className="bg-white rounded-3xl overflow-hidden"
-              style={{
-                boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
-                animation: `fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) ${gi * 60}ms both`,
-              }}
-            >
-              {/* Section header */}
-              <div className="px-4 pt-3.5 pb-1">
-                <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
-                  {groupMode === "category"
-                    ? categoryLabel(groupKey)
-                    : groupKey === "__custom__"
-                      ? "📦 Custom & Added"
-                      : `🍽 ${groupKey}`
-                  }
-                </h3>
-              </div>
-              {/* Items */}
-              <div className="px-3 pb-2 space-y-0.5">
-                {groupItems.map((item) => (
-                  <GroceryItem
-                    key={item.id}
-                    item={item}
-                    onToggle={handleToggle}
-                    onEdit={setEditItem}
-                    onDelete={handleDelete}
-                    ownerName={item.owner_name}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
+          {grouped.map(([groupKey, groupItems], gi) => {
+            const isExpanded = expandedGroups.has(groupKey);
+            const toggleGroup = () => setExpandedGroups((prev) => {
+              const next = new Set(prev);
+              if (next.has(groupKey)) next.delete(groupKey);
+              else next.add(groupKey);
+              return next;
+            });
 
-          {/* + Add item row */}
-          <button
-            onClick={() => setAddSheetOpen(true)}
-            className="w-full flex items-center gap-3 px-4 py-4 rounded-3xl border-2 border-dashed transition-all active:scale-[0.98]"
-            style={{ borderColor: "#e8e2d8", background: "transparent" }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = "#f97316")}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = "#e8e2d8")}
-          >
-            <span className="w-6 h-6 rounded-xl flex items-center justify-center text-sm font-black" style={{ background: "#f0ede8", color: "#a09890" }}>+</span>
-            <span className="text-sm font-medium" style={{ color: "#a09890" }}>Add item</span>
-          </button>
-        </div>
-      )}
+            return (
+              <div
+                key={groupKey}
+                className="bg-white rounded-3xl overflow-hidden"
+                style={{
+                  boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+                  animation: `fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) ${gi * 60}ms both`,
+                }}
+              >
+                {/* Section header — tap to expand/collapse */}
+                <button
+                  onClick={toggleGroup}
+                  className="w-full flex items-center justify-between px-4 pt-3.5 pb-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+                      {groupMode === "category"
+                        ? categoryLabel(groupKey)
+                        : groupKey === "__custom__"
+                          ? "📦 Custom & Added"
+                          : `🍽 ${groupKey}`
+                      }
+                    </h3>
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#a09890" }}>
+                      {groupItems.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    {/* + Add item to this category */}
+                    <span
+                      role="button"
+                      onClick={(e) => { e.stopPropagation(); setAddSheetOpen(true); }}
+                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                      style={{ color: "#a09890" }}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </span>
+                    {/* Chevron */}
+                    <svg
+                      className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                      style={{ color: "#c0b8b0" }}
+                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </button>
+                {/* Items — collapsible */}
+                {isExpanded && (
+                  <div className="px-3 pb-2 space-y-0.5">
+                    {groupItems.map((item) => (
+                      <GroceryItem
+                        key={item.id}
+                        item={item}
+                        onToggle={handleToggle}
+                        onEdit={setEditItem}
+                        onDelete={handleDelete}
+                        ownerName={item.owner_name}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
-      {/* + Add item button when list is empty */}
-      {!loading && list && (
-        <div className="mx-4 mt-3">
-          {grouped.length === 0 && (
+          {/* Order online — bottom of list */}
+          {toBuyCount > 0 && (
             <button
-              onClick={() => setAddSheetOpen(true)}
-              className="w-full flex items-center gap-2.5 px-4 py-3.5 bg-white rounded-2xl border border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors"
+              onClick={() => setOrderOnlineOpen(true)}
+              className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-white rounded-3xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors"
+              style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
             >
-              <span className="text-sm text-gray-400">+ Add item</span>
+              <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
+              </svg>
+              <span className="text-sm font-semibold text-gray-700">Order online</span>
             </button>
           )}
         </div>
