@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useTrending } from "@/lib/hooks/use-data";
 import type { PromptRecipeResult } from "@/lib/claude";
@@ -44,6 +44,18 @@ interface FriendRecipe {
 }
 
 type FeedMode = "friends" | "community";
+
+// ─── Context menu types ─────────────────────────────────────────────────────
+
+interface ContextMenuState {
+  visible: boolean;
+  x: number;
+  y: number;
+  recipeId: string;
+  recipeTitle: string;
+  /** For friend recipes that need save-by-copy */
+  friendRecipe?: FriendRecipe;
+}
 
 // ─── Questionnaire steps ────────────────────────────────────────────────────
 
@@ -155,6 +167,20 @@ export default function DiscoverTab({
   const [showRawInput, setShowRawInput] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // ── Swipe toggle state ──
+  const feedAreaRef = useRef<HTMLDivElement>(null);
+  const swipeStartX = useRef(0);
+  const swipeStartY = useRef(0);
+  const swiping = useRef(false);
+
+  // ── Context menu state ──
+  const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
+    visible: false, x: 0, y: 0, recipeId: "", recipeTitle: "",
+  });
+  const ctxMenuRef = useRef<HTMLDivElement>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+
   // Persist feed mode
   useEffect(() => {
     localStorage.setItem("marco-feed-mode", feedMode);
@@ -187,6 +213,88 @@ export default function DiscoverTab({
       el.style.height = `${Math.min(el.scrollHeight, 96)}px`;
     }
   }, [prompt]);
+
+  // Close context menu on outside click / scroll
+  useEffect(() => {
+    if (!ctxMenu.visible) return;
+    function close() { setCtxMenu((prev) => ({ ...prev, visible: false })); }
+    document.addEventListener("click", close);
+    document.addEventListener("scroll", close, true);
+    return () => {
+      document.removeEventListener("click", close);
+      document.removeEventListener("scroll", close, true);
+    };
+  }, [ctxMenu.visible]);
+
+  // ── Swipe handlers for feed toggle ──
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    swipeStartX.current = e.touches[0].clientX;
+    swipeStartY.current = e.touches[0].clientY;
+    swiping.current = false;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (longPressTriggered.current) return; // don't swipe if long press fired
+    const dx = e.changedTouches[0].clientX - swipeStartX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY.current);
+    if (Math.abs(dx) > 60 && dy < 80) {
+      if (dx < 0 && feedMode === "friends") setFeedMode("community");
+      if (dx > 0 && feedMode === "community") setFeedMode("friends");
+    }
+  }, [feedMode]);
+
+  // ── Context menu helpers ──
+  const openCtxMenu = useCallback((x: number, y: number, recipeId: string, recipeTitle: string, friendRecipe?: FriendRecipe) => {
+    // Clamp to viewport
+    const menuW = 180, menuH = 100;
+    const cx = Math.min(x, window.innerWidth - menuW - 8);
+    const cy = Math.min(y, window.innerHeight - menuH - 8);
+    setCtxMenu({ visible: true, x: cx, y: cy, recipeId, recipeTitle, friendRecipe });
+  }, []);
+
+  const handleCtxSave = useCallback(async () => {
+    const { recipeId, friendRecipe } = ctxMenu;
+    setCtxMenu((prev) => ({ ...prev, visible: false }));
+    if (friendRecipe) {
+      await handleSaveFriendRecipe(friendRecipe);
+    }
+    // After save, prompt collection selection
+    onAddToCollection?.(recipeId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctxMenu, onAddToCollection]);
+
+  const handleCtxPlan = useCallback(() => {
+    const { recipeId } = ctxMenu;
+    setCtxMenu((prev) => ({ ...prev, visible: false }));
+    onAddToMealPlan?.(recipeId);
+  }, [ctxMenu, onAddToMealPlan]);
+
+  // ── Long press handlers ──
+  const startLongPress = useCallback((recipeId: string, recipeTitle: string, friendRecipe?: FriendRecipe) => (e: React.TouchEvent) => {
+    longPressTriggered.current = false;
+    const touch = e.touches[0];
+    const x = touch.clientX;
+    const y = touch.clientY;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      // Haptic feedback if available
+      if (navigator.vibrate) navigator.vibrate(30);
+      openCtxMenu(x, y, recipeId, recipeTitle, friendRecipe);
+    }, 500);
+  }, [openCtxMenu]);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  // ── Right-click handler (desktop) ──
+  const handleRightClick = useCallback((recipeId: string, recipeTitle: string, friendRecipe?: FriendRecipe) => (e: React.MouseEvent) => {
+    e.preventDefault();
+    openCtxMenu(e.clientX, e.clientY, recipeId, recipeTitle, friendRecipe);
+  }, [openCtxMenu]);
 
   // ── Explore handlers ──
 
@@ -464,308 +572,404 @@ export default function DiscoverTab({
       {/* ── Divider ──────────────────────────────────────────────── */}
       <div className="h-px bg-gray-200/70 my-1 mb-5" />
 
-      {/* ── Feed toggle: For You / Community ─────────────────────── */}
-      <div className="flex items-center gap-1 mb-5 bg-gray-100 rounded-2xl p-1 max-w-[260px]">
-        <button
-          onClick={() => setFeedMode("friends")}
-          className={`flex-1 py-2 px-4 rounded-xl text-xs font-bold transition-all ${
-            feedMode === "friends"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-400 hover:text-gray-600"
-          }`}
-        >
-          For You
-        </button>
-        <button
-          onClick={() => setFeedMode("community")}
-          className={`flex-1 py-2 px-4 rounded-xl text-xs font-bold transition-all ${
-            feedMode === "community"
-              ? "bg-white text-gray-900 shadow-sm"
-              : "text-gray-400 hover:text-gray-600"
-          }`}
-        >
-          Community
-        </button>
+      {/* ── Feed toggle: swipeable pill ──────────────────────────── */}
+      <div className="relative mb-5 max-w-[280px] mx-auto">
+        <div className="flex bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
+          {/* Sliding indicator */}
+          <div
+            className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
+            style={{
+              width: "calc(50% - 4px)",
+              left: feedMode === "friends" ? 4 : "calc(50% + 0px)",
+            }}
+          />
+          <button
+            onClick={() => setFeedMode("friends")}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors duration-200 relative z-10 ${
+              feedMode === "friends" ? "text-gray-900" : "text-gray-400"
+            }`}
+          >
+            For You
+          </button>
+          <button
+            onClick={() => setFeedMode("community")}
+            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors duration-200 relative z-10 ${
+              feedMode === "community" ? "text-gray-900" : "text-gray-400"
+            }`}
+          >
+            Community
+          </button>
+        </div>
+        <p className="text-center text-[10px] text-gray-300 mt-1.5 select-none">Swipe to switch</p>
       </div>
 
-      {/* ── For You feed (friends activity) ───────────────────────── */}
-      {feedMode === "friends" && (
-        <div className="animate-fade-slide-up">
-          {friendsLoading ? (
-            <div className="space-y-3">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="bg-white rounded-2xl p-3 shadow-sm animate-pulse">
-                  <div className="flex gap-3">
-                    <div className="w-20 h-20 bg-gray-100 rounded-xl flex-shrink-0" />
-                    <div className="flex-1 space-y-2 py-1">
-                      <div className="h-3 bg-gray-100 rounded-full w-3/4" />
-                      <div className="h-2.5 bg-gray-100 rounded-full w-1/2" />
-                      <div className="h-2.5 bg-gray-100 rounded-full w-1/3" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : friendsError ? (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-              <span className="text-3xl mb-3 block">😕</span>
-              <p className="text-sm text-gray-500">{friendsError}</p>
-            </div>
-          ) : friendRecipes.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-              <span className="text-4xl mb-3 block">👋</span>
-              <p className="text-base font-semibold text-gray-800 mb-1">No friend activity yet</p>
-              <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
-                When your friends save or plan recipes, they&apos;ll show up here
-              </p>
-              <button
-                onClick={() => router.push("/friends")}
-                className="mt-4 px-5 py-2 bg-orange-500 text-white text-sm font-semibold rounded-full hover:bg-orange-600 transition-colors shadow-sm"
-              >
-                Find friends
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {/* Friends are cooking */}
-              {friendRecipes.some((r) => r.is_planned) && (
-                <>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider pt-1">
-                    🔥 Friends are cooking
-                  </p>
-                  {friendRecipes.filter((r) => r.is_planned).map((recipe, i) => (
-                    <div key={recipe.id} style={{ animation: `fadeSlideUp 0.35s ease ${i * 60}ms both` }}>
-                      <FriendRecipeCard
-                        recipe={recipe}
-                        onTap={() => router.push(`/recipes/${recipe.id}`)}
-                        onSave={() => handleSaveFriendRecipe(recipe)}
-                        onAddToMealPlan={onAddToMealPlan ? () => onAddToMealPlan(recipe.id) : undefined}
-                        onAddToCollection={onAddToCollection ? () => onAddToCollection(recipe.id) : undefined}
-                        isSaving={savingIds.has(recipe.id)}
-                        isSaved={savedIds.has(recipe.id)}
-                      />
-                    </div>
-                  ))}
-                </>
-              )}
+      {/* ── Feed area (swipeable) ─────────────────────────────────── */}
+      <div
+        ref={feedAreaRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="min-h-[200px]"
+      >
 
-              {/* Recently saved by friends */}
-              {friendRecipes.some((r) => !r.is_planned) && (
-                <>
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider pt-3">
-                    📚 Recently saved by friends
-                  </p>
-                  {friendRecipes.filter((r) => !r.is_planned).map((recipe, i) => (
-                    <div key={recipe.id} style={{ animation: `fadeSlideUp 0.35s ease ${(i + (friendRecipes.filter(r => r.is_planned).length)) * 60}ms both` }}>
-                      <FriendRecipeCard
-                        recipe={recipe}
-                        onTap={() => router.push(`/recipes/${recipe.id}`)}
-                        onSave={() => handleSaveFriendRecipe(recipe)}
-                        onAddToMealPlan={onAddToMealPlan ? () => onAddToMealPlan(recipe.id) : undefined}
-                        onAddToCollection={onAddToCollection ? () => onAddToCollection(recipe.id) : undefined}
-                        isSaving={savingIds.has(recipe.id)}
-                        isSaved={savedIds.has(recipe.id)}
-                      />
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ── Community feed (trending/popular) ─────────────────────── */}
-      {feedMode === "community" && (
-        <div className="animate-fade-slide-up">
-          {trendingLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-40 skeleton-warm rounded-3xl" />)}
-            </div>
-          ) : trending.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-              <span className="text-4xl mb-3 block">🌎</span>
-              <p className="text-base font-semibold text-gray-800 mb-1">Nothing trending yet</p>
-              <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
-                As more people use Marco, popular recipes will appear here
-              </p>
-            </div>
-          ) : (
-            <>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                🔥 Popular right now
-              </p>
+        {/* ── For You feed (friends activity) ───────────────────── */}
+        {feedMode === "friends" && (
+          <div className="animate-fade-slide-up">
+            {friendsLoading ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {trending.map((recipe, i) => (
-                  <div key={recipe.recipeId} style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}>
-                    <TrendingCard recipe={recipe} />
-                  </div>
-                ))}
+                {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-48 skeleton-warm rounded-3xl" />)}
               </div>
-            </>
-          )}
+            ) : friendsError ? (
+              <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+                <span className="text-3xl mb-3 block">😕</span>
+                <p className="text-sm text-gray-500">{friendsError}</p>
+              </div>
+            ) : friendRecipes.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+                <span className="text-4xl mb-3 block">👋</span>
+                <p className="text-base font-semibold text-gray-800 mb-1">No friend activity yet</p>
+                <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
+                  When your friends save or plan recipes, they&apos;ll show up here
+                </p>
+                <button
+                  onClick={() => router.push("/friends")}
+                  className="mt-4 px-5 py-2 bg-orange-500 text-white text-sm font-semibold rounded-full hover:bg-orange-600 transition-colors shadow-sm"
+                >
+                  Find friends
+                </button>
+              </div>
+            ) : (
+              <>
+                {/* Friends are cooking section */}
+                {friendRecipes.some((r) => r.is_planned) && (
+                  <>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                      🔥 Friends are cooking
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
+                      {friendRecipes.filter((r) => r.is_planned).map((recipe, i) => (
+                        <div
+                          key={recipe.id}
+                          style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}
+                          onContextMenu={handleRightClick(recipe.id, recipe.title, recipe)}
+                          onTouchStart={(e) => {
+                            startLongPress(recipe.id, recipe.title, recipe)(e);
+                            handleTouchStart(e);
+                          }}
+                          onTouchMove={cancelLongPress}
+                          onTouchEnd={(e) => {
+                            cancelLongPress();
+                            if (!longPressTriggered.current) handleTouchEnd(e);
+                          }}
+                        >
+                          <FeedCard
+                            title={recipe.title}
+                            imageUrl={recipe.image_url}
+                            mealType={recipe.meal_type}
+                            prepTime={recipe.prep_time_minutes}
+                            cookTime={recipe.cook_time_minutes}
+                            ownerName={recipe.owner_name}
+                            ownerAvatar={recipe.owner_avatar}
+                            subtitle={recipe.next_planned_date ? `cooking ${formatPlannedDate(recipe.next_planned_date)}` : undefined}
+                            subtitleColor="#16a34a"
+                            badge={recipe.is_planned ? "COOKING" : undefined}
+                            badgeColor="#22c55e"
+                            tags={recipe.tags}
+                            onTap={() => {
+                              if (!longPressTriggered.current) router.push(`/recipes/${recipe.id}`);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Recently saved by friends */}
+                {friendRecipes.some((r) => !r.is_planned) && (
+                  <>
+                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                      📚 Recently saved by friends
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {friendRecipes.filter((r) => !r.is_planned).map((recipe, i) => (
+                        <div
+                          key={recipe.id}
+                          style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}
+                          onContextMenu={handleRightClick(recipe.id, recipe.title, recipe)}
+                          onTouchStart={(e) => {
+                            startLongPress(recipe.id, recipe.title, recipe)(e);
+                            handleTouchStart(e);
+                          }}
+                          onTouchMove={cancelLongPress}
+                          onTouchEnd={(e) => {
+                            cancelLongPress();
+                            if (!longPressTriggered.current) handleTouchEnd(e);
+                          }}
+                        >
+                          <FeedCard
+                            title={recipe.title}
+                            imageUrl={recipe.image_url}
+                            mealType={recipe.meal_type}
+                            prepTime={recipe.prep_time_minutes}
+                            cookTime={recipe.cook_time_minutes}
+                            ownerName={recipe.owner_name}
+                            ownerAvatar={recipe.owner_avatar}
+                            subtitle={timeAgo(recipe.created_at)}
+                            tags={recipe.tags}
+                            onTap={() => {
+                              if (!longPressTriggered.current) router.push(`/recipes/${recipe.id}`);
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ── Community feed (trending/popular) ─────────────────── */}
+        {feedMode === "community" && (
+          <div className="animate-fade-slide-up">
+            {trendingLoading ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-48 skeleton-warm rounded-3xl" />)}
+              </div>
+            ) : trending.length === 0 ? (
+              <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+                <span className="text-4xl mb-3 block">🌎</span>
+                <p className="text-base font-semibold text-gray-800 mb-1">Nothing trending yet</p>
+                <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
+                  As more people use Marco, popular recipes will appear here
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
+                  🔥 Popular right now
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {trending.map((recipe, i) => (
+                    <div
+                      key={recipe.recipeId}
+                      style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}
+                      onContextMenu={handleRightClick(recipe.recipeId, recipe.title)}
+                      onTouchStart={(e) => {
+                        startLongPress(recipe.recipeId, recipe.title)(e);
+                        handleTouchStart(e);
+                      }}
+                      onTouchMove={cancelLongPress}
+                      onTouchEnd={(e) => {
+                        cancelLongPress();
+                        if (!longPressTriggered.current) handleTouchEnd(e);
+                      }}
+                    >
+                      <FeedCard
+                        title={recipe.title}
+                        imageUrl={recipe.image_url}
+                        mealType={recipe.meal_type}
+                        prepTime={recipe.prep_time_minutes}
+                        cookTime={recipe.cook_time_minutes}
+                        saves={recipe.userCount > 1 ? recipe.userCount : undefined}
+                        servings={recipe.servings}
+                        tags={recipe.tags}
+                        onTap={() => {
+                          if (!longPressTriggered.current) router.push(`/recipes/${recipe.recipeId}`);
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* ── Context menu (right-click / long-press) ──────────────── */}
+      {ctxMenu.visible && (
+        <div
+          ref={ctxMenuRef}
+          className="fixed z-50"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden min-w-[180px]"
+            style={{
+              boxShadow: "0 12px 40px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08)",
+              animation: "ctxMenuPop 0.15s ease both",
+            }}
+          >
+            {/* Recipe title */}
+            <div className="px-4 py-2.5 border-b border-gray-50">
+              <p className="text-xs font-bold text-gray-900 line-clamp-1">{ctxMenu.recipeTitle}</p>
+            </div>
+
+            {/* Save */}
+            <button
+              onClick={handleCtxSave}
+              className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 transition-colors active:bg-orange-100"
+            >
+              <svg className="w-4.5 h-4.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              <span>Save to Collection</span>
+            </button>
+
+            {/* Plan */}
+            {onAddToMealPlan && (
+              <button
+                onClick={handleCtxPlan}
+                className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 transition-colors active:bg-orange-100 border-t border-gray-50"
+              >
+                <svg className="w-4.5 h-4.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span>Add to Meal Plan</span>
+              </button>
+            )}
+          </div>
         </div>
       )}
+
+      {/* Context menu animation */}
+      <style jsx>{`
+        @keyframes ctxMenuPop {
+          from { opacity: 0; transform: scale(0.9); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
     </div>
   );
 }
 
-// ─── Friend recipe card ─────────────────────────────────────────────────────
+// ─── Unified feed card (used by both For You and Community) ─────────────────
 
-function FriendRecipeCard({
-  recipe,
+function FeedCard({
+  title,
+  imageUrl,
+  mealType,
+  prepTime,
+  cookTime,
+  ownerName,
+  ownerAvatar,
+  subtitle,
+  subtitleColor,
+  badge,
+  badgeColor,
+  saves,
+  servings,
+  tags,
   onTap,
-  onSave,
-  onAddToMealPlan,
-  onAddToCollection,
-  isSaving,
-  isSaved,
 }: {
-  recipe: FriendRecipe;
+  title: string;
+  imageUrl: string | null;
+  mealType: string;
+  prepTime: number | null;
+  cookTime: number | null;
+  ownerName?: string;
+  ownerAvatar?: string | null;
+  subtitle?: string;
+  subtitleColor?: string;
+  badge?: string;
+  badgeColor?: string;
+  saves?: number;
+  servings?: number | null;
+  tags?: string[];
   onTap: () => void;
-  onSave: () => void;
-  onAddToMealPlan?: () => void;
-  onAddToCollection?: () => void;
-  isSaving: boolean;
-  isSaved: boolean;
 }) {
-  const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
-  const emoji = MEAL_EMOJIS[recipe.meal_type] ?? "🍳";
+  const totalTime = (prepTime ?? 0) + (cookTime ?? 0);
+  const emoji = MEAL_EMOJIS[mealType] ?? "🍳";
 
   return (
     <div
-      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden active:scale-[0.99] transition-transform cursor-pointer"
+      className="bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform select-none"
+      style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
       onClick={onTap}
     >
-      <div className="flex gap-3 p-3">
-        {/* Thumbnail */}
-        <div className="relative w-20 h-20 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl flex-shrink-0 flex items-center justify-center overflow-hidden">
-          {recipe.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          ) : (
-            <span className="text-2xl">{emoji}</span>
-          )}
-          {recipe.is_planned && (
-            <div className="absolute top-1 left-1 bg-green-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full shadow-sm">
-              COOKING
-            </div>
-          )}
-        </div>
+      {/* Image */}
+      <div className="relative h-32 sm:h-36 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt={title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+        ) : (
+          <span className="text-3xl opacity-70">{emoji}</span>
+        )}
 
-        {/* Content */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-          <div>
-            <p className="text-sm font-semibold text-gray-900 line-clamp-2 leading-snug">{recipe.title}</p>
-            <div className="flex items-center gap-1.5 mt-1">
-              {recipe.owner_avatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={recipe.owner_avatar} alt="" className="w-4 h-4 rounded-full object-cover" />
-              ) : (
-                <div className="w-4 h-4 rounded-full bg-orange-100 flex items-center justify-center">
-                  <span className="text-[8px]">👤</span>
-                </div>
-              )}
-              <span className="text-xs text-gray-500 truncate">
-                {recipe.owner_name}
-                {recipe.is_planned && recipe.next_planned_date && (
-                  <span className="text-green-600 font-medium">{" · cooking "}{formatPlannedDate(recipe.next_planned_date)}</span>
-                )}
-                {!recipe.is_planned && (
-                  <span className="text-gray-400"> · {timeAgo(recipe.created_at)}</span>
-                )}
-              </span>
-            </div>
+        {/* Badge (e.g. COOKING) */}
+        {badge && (
+          <div className="absolute top-2 left-2">
+            <span
+              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow-sm"
+              style={{ background: badgeColor || "#f97316" }}
+            >
+              {badge}
+            </span>
           </div>
-          <div className="flex items-center gap-2 mt-1.5">
-            {totalTime > 0 && (
-              <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
-                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                {totalTime}m
-              </span>
-            )}
-            {recipe.tags?.slice(0, 2).map((tag) => (
-              <span key={tag} className="text-[10px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">{tag}</span>
-            ))}
+        )}
+
+        {/* Save count */}
+        {saves && saves > 1 && (
+          <div className="absolute top-2 left-2">
+            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500 text-white">{saves} saves</span>
           </div>
-        </div>
+        )}
+
+        {/* Time badge */}
+        {totalTime > 0 && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
+            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {totalTime} min
+          </div>
+        )}
       </div>
 
-      {/* Action buttons */}
-      <div className="flex items-center border-t border-gray-50 divide-x divide-gray-50">
-        <button
-          onClick={(e) => { e.stopPropagation(); onSave(); }}
-          disabled={isSaving || isSaved}
-          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors ${
-            isSaved ? "text-green-600 bg-green-50/50" : isSaving ? "text-gray-400" : "text-gray-500 hover:text-orange-600 hover:bg-orange-50/50"
-          }`}
-        >
-          {isSaved ? (
-            <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>Saved</>
-          ) : isSaving ? (
-            <><div className="w-3 h-3 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" />Saving…</>
-          ) : (
-            <><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Save</>
-          )}
-        </button>
-        {onAddToCollection && (
-          <button onClick={(e) => { e.stopPropagation(); onAddToCollection(); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-gray-500 hover:text-orange-600 hover:bg-orange-50/50 transition-colors">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" /></svg>
-            Collect
-          </button>
+      {/* Content */}
+      <div className="p-3">
+        <h4 className="font-semibold text-gray-900 text-xs leading-tight line-clamp-2 mb-1.5">{title}</h4>
+
+        {/* Owner row */}
+        {ownerName && (
+          <div className="flex items-center gap-1.5 mb-1">
+            {ownerAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={ownerAvatar} alt="" className="w-4 h-4 rounded-full object-cover" />
+            ) : (
+              <div className="w-4 h-4 rounded-full bg-orange-100 flex items-center justify-center">
+                <span className="text-[7px]">👤</span>
+              </div>
+            )}
+            <span className="text-[10px] text-gray-500 truncate">
+              {ownerName}
+              {subtitle && (
+                <span style={{ color: subtitleColor || "#9ca3af" }}>{" · "}{subtitle}</span>
+              )}
+            </span>
+          </div>
         )}
-        {onAddToMealPlan && (
-          <button onClick={(e) => { e.stopPropagation(); onAddToMealPlan(); }} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium text-gray-500 hover:text-orange-600 hover:bg-orange-50/50 transition-colors">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            Plan
-          </button>
+
+        {/* Meta row (no owner) */}
+        {!ownerName && (
+          <div className="flex items-center gap-2 text-[10px] text-gray-400">
+            {servings && <span>Serves {servings}</span>}
+          </div>
+        )}
+
+        {/* Tags */}
+        {tags && tags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {tags.slice(0, 2).map((tag) => (
+              <span key={tag} className="text-[9px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">{tag}</span>
+            ))}
+          </div>
         )}
       </div>
     </div>
-  );
-}
-
-// ─── Trending card ──────────────────────────────────────────────────────────
-
-function TrendingCard({ recipe }: { recipe: TrendingRecipe }) {
-  const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
-
-  return (
-    <a
-      href={`/recipes/${recipe.recipeId}`}
-      className="bg-white rounded-3xl overflow-hidden block active:scale-[0.97] transition-transform"
-      style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
-    >
-      {recipe.image_url ? (
-        <div className="h-28 sm:h-32 bg-gray-100 overflow-hidden relative">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
-          {recipe.userCount > 1 && (
-            <div className="absolute top-2 left-2">
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500 text-white">{recipe.userCount} saves</span>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="h-20 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center relative">
-          <span className="text-2xl">{recipe.meal_type === "breakfast" ? "🌅" : recipe.meal_type === "lunch" ? "☀️" : recipe.meal_type === "snack" ? "🍎" : "🍽️"}</span>
-          {recipe.userCount > 1 && (
-            <div className="absolute top-2 left-2">
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500 text-white">{recipe.userCount} saves</span>
-            </div>
-          )}
-        </div>
-      )}
-      <div className="p-3">
-        <h4 className="font-semibold text-gray-900 text-xs leading-tight line-clamp-2 mb-1">{recipe.title}</h4>
-        <div className="flex items-center gap-2 text-[10px] text-gray-400">
-          {totalTime > 0 && <span>{totalTime}m</span>}
-          {recipe.servings && <span>Serves {recipe.servings}</span>}
-        </div>
-      </div>
-    </a>
   );
 }
 
