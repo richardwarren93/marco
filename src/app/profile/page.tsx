@@ -139,7 +139,7 @@ export default function ProfilePage() {
       <div className="relative">
         <div
           className="h-36 rounded-b-[2rem] bg-cover bg-center"
-          style={{ backgroundImage: "url('https://cdn.midjourney.com/c298197d-b07e-440a-9524-f90b7577ceb1/0_0.png')" }}
+          style={{ backgroundImage: "url('/default-banner.webp')" }}
         />
 
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-10 z-10">
