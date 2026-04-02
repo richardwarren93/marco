@@ -562,81 +562,90 @@ export default function GroceryList() {
           </button>
 
           {mealsExpanded && (
-            <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-              {meals.map((meal, i) => {
+            <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+              {meals.map((meal) => {
                 const isExcluded = excludedMealIds.has(meal.id);
                 return (
                   <div
                     key={meal.id}
-                    className={`flex items-center gap-3 px-3.5 py-2.5 transition-opacity ${isExcluded ? "opacity-40" : ""}`}
-                    style={i < meals.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
+                    className={`relative flex-shrink-0 snap-start rounded-2xl overflow-hidden transition-all duration-200 ${isExcluded ? "opacity-40 grayscale" : ""}`}
+                    style={{ width: 152, boxShadow: "0 2px 16px rgba(0,0,0,0.08)" }}
                   >
-                    <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    {/* Image */}
+                    <div className="relative w-full aspect-[4/3] bg-gray-100">
                       {meal.recipe?.image_url ? (
-                        <Image src={meal.recipe.image_url} alt="" width={36} height={36} className="w-full h-full object-cover" />
+                        <Image
+                          src={meal.recipe.image_url}
+                          alt={meal.recipe?.title ?? ""}
+                          fill
+                          className="object-cover"
+                          sizes="152px"
+                        />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-sm">🍽</div>
+                        <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-orange-50 to-amber-50">🍽</div>
+                      )}
+                      {/* Gradient overlay for text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+                      {/* Day badge */}
+                      <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/90 text-gray-700 backdrop-blur-sm">
+                        {getDayLabel(meal.planned_date)}
+                      </span>
+                      {/* Household badge */}
+                      {meal.is_household && meal.owner_name && (
+                        <span className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-purple-500/90 text-white backdrop-blur-sm">
+                          {meal.owner_name}
+                        </span>
+                      )}
+                      {/* Remove / exclude button */}
+                      {!isExcluded && (
+                        <button
+                          onClick={() => meal.is_household
+                            ? setExcludedMealIds((prev) => new Set(prev).add(meal.id))
+                            : handleRemoveMeal(meal.id)
+                          }
+                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-black/30 text-white/80 hover:bg-black/50 hover:text-white backdrop-blur-sm transition-colors"
+                          style={meal.is_household && meal.owner_name ? { top: "auto", bottom: 42, right: 8 } : undefined}
+                          aria-label={`Remove ${meal.recipe?.title}`}
+                        >
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className={`text-sm font-medium truncate ${isExcluded ? "line-through text-gray-400" : "text-gray-800"}`}>
-                          {meal.recipe?.title}
-                        </p>
-                        {meal.is_household && meal.owner_name && (
-                          <span className="text-[9px] px-1.5 py-0.5 bg-purple-50 text-purple-500 rounded-full font-medium flex-shrink-0">
-                            {meal.owner_name}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-gray-400">
-                        {getDayLabel(meal.planned_date)} &middot; {meal.meal_type}
+                    {/* Info */}
+                    <div className="bg-white px-2.5 py-2">
+                      <p className={`text-[13px] font-semibold leading-tight line-clamp-2 ${isExcluded ? "line-through text-gray-400" : "text-gray-800"}`}>
+                        {meal.recipe?.title}
                       </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5 capitalize">{meal.meal_type}</p>
                     </div>
-                    {/* Toggle: exclude (household) or remove (own) */}
-                    {isExcluded ? (
+                    {/* Add back overlay for excluded */}
+                    {isExcluded && (
                       <button
                         onClick={() => setExcludedMealIds((prev) => { const n = new Set(prev); n.delete(meal.id); return n; })}
-                        className="text-[10px] font-semibold text-orange-500 bg-orange-50 px-2.5 py-1 rounded-full hover:bg-orange-100 transition-colors flex-shrink-0"
+                        className="absolute inset-0 flex items-center justify-center"
                       >
-                        Add back
-                      </button>
-                    ) : meal.is_household ? (
-                      <button
-                        onClick={() => setExcludedMealIds((prev) => new Set(prev).add(meal.id))}
-                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
-                        aria-label={`Exclude ${meal.recipe?.title}`}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleRemoveMeal(meal.id)}
-                        className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-50 text-gray-300 hover:text-red-400 transition-colors flex-shrink-0"
-                        aria-label={`Remove ${meal.recipe?.title}`}
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+                        <span className="text-[11px] font-bold text-orange-600 bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+                          Add back
+                        </span>
                       </button>
                     )}
                   </div>
                 );
               })}
-              {/* + Add meal */}
+              {/* + Add meal card */}
               <button
                 onClick={() => router.push("/recipes?tab=meal-plan")}
-                className="flex items-center gap-2.5 px-3.5 py-2.5 w-full hover:bg-gray-50 transition-colors"
-                style={{ borderTop: "1px solid #f5f3f0" }}
+                className="flex-shrink-0 snap-start rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 transition-colors hover:bg-gray-100"
+                style={{ width: 152, minHeight: 152, background: "#f9f7f5", border: "2px dashed #e0dbd6" }}
               >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#f5f3f0" }}>
-                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#eee9e3" }}>
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <span className="text-sm font-medium text-gray-400">Add meal</span>
+                <span className="text-xs font-medium text-gray-400">Add meal</span>
               </button>
             </div>
           )}
