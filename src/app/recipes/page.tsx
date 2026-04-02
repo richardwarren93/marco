@@ -98,20 +98,11 @@ function RecipesInner() {
 
   return (
     <>
-      {/* ── Banner (scrolls away) ────────────────────────────────── */}
-      <div className="hidden sm:block px-4 pt-3" style={{ background: "#faf9f7" }}>
-        <div className="max-w-5xl mx-auto">
-          <div
-            className="rounded-2xl h-20"
-            style={{
-              background: "linear-gradient(135deg, #fef3c7 0%, #fed7aa 40%, #fdba74 70%, #fb923c 100%)",
-            }}
-          />
-        </div>
-      </div>
+      {/* ── Spacer (scrolls away) ────────────────────────────────── */}
+      <div className="hidden sm:block pt-5" style={{ background: "#faf9f7" }} />
 
       {/* ── Folder tabs (sticky on desktop) ──────────────────────── */}
-      <div className="hidden sm:block sticky top-16 z-20 px-4" style={{ background: "#faf9f7" }}>
+      <div className="hidden sm:block px-4" style={{ background: "#faf9f7" }}>
         <div className="max-w-5xl mx-auto">
           <div className="flex gap-0 overflow-x-auto scrollbar-hide">
             {TAB_CONFIG.map((tab) => {
