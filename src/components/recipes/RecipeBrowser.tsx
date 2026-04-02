@@ -400,7 +400,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         </div>
 
         {/* Sort + meal type filters */}
-        <div className="flex items-center gap-2 px-4 pb-2.5">
+        <div className="flex items-center gap-2 px-4 pb-2.5 relative z-30">
           {/* Sort pills */}
           {(["newest", "prep_time"] as const).map((s) => (
             <button
@@ -430,7 +430,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               </svg>
             </button>
             {showMealMenu && (
-              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-orange-50 z-20 py-1.5 min-w-[150px] overflow-hidden"
+              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-orange-50 z-50 py-1.5 min-w-[150px] overflow-hidden"
                 style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
                 {([["all", "All"], ...MEAL_TYPES.map((mt) => [mt, MEAL_TYPE_LABELS[mt]])] as [string, string][]).map(([value, label]) => (
                   <button
@@ -467,7 +467,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               </button>
 
               {showCollMenu && (
-                <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-orange-50 z-30 py-1.5 min-w-[200px] overflow-visible"
+                <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-orange-50 z-50 py-1.5 min-w-[200px] overflow-visible"
                   style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
 
                   {/* All recipes (clear filter) */}
