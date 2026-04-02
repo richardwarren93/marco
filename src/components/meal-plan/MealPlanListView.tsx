@@ -786,24 +786,24 @@ export default function MealPlanListView({
               >
                 <span
                   className="text-[9px] font-semibold tracking-wide"
-                  style={{ color: isSelected ? ACCENT : isToday ? ACCENT : "#c0c0be" }}
+                  style={{ color: (viewMode === "daily" && isSelected) ? ACCENT : isToday ? "#1a1410" : "#c0c0be" }}
                 >
                   {abbr.slice(0, 3)}
                 </span>
                 <div
-                  className="rounded-full flex items-center justify-center transition-all duration-150"
+                  className="rounded-full flex items-center justify-center transition-all duration-150 relative"
                   style={{
                     width: 38, height: 38,
                     ...(viewMode === "daily" && isSelected
                       ? { background: ACCENT }
                       : isToday
-                        ? { background: ACCENT, boxShadow: "none" }
+                        ? { background: "rgba(234,88,12,0.1)", border: "2px solid " + ACCENT }
                         : { background: "transparent" }),
                   }}
                 >
                   <span
                     className="text-[14px] font-semibold"
-                    style={{ color: (viewMode === "daily" && isSelected) || isToday ? "white" : "#888" }}
+                    style={{ color: viewMode === "daily" && isSelected ? "white" : isToday ? ACCENT : "#888" }}
                   >
                     {num}
                   </span>
