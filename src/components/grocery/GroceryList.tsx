@@ -400,21 +400,11 @@ export default function GroceryList() {
             <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>
               {formatRangeLabel(dateRange.start, dateRange.end)}
             </p>
-            {/* Plan health stats */}
+            {/* Plan health stats — single line */}
             {!loading && mealCount > 0 && (
-              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#7a7068" }}>
-                  {mealCount} {mealCount === 1 ? "meal" : "meals"}
-                </span>
-                <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#7a7068" }}>
-                  {ingredientCount} to buy
-                </span>
-                {totalCookTime > 0 && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#7a7068" }}>
-                    ~{formatCookTime(totalCookTime)} cook time
-                  </span>
-                )}
-              </div>
+              <p className="text-[11px] font-medium mt-1" style={{ color: "#a09890" }}>
+                {mealCount} {mealCount === 1 ? "meal" : "meals"} &middot; {ingredientCount} to buy{totalCookTime > 0 ? ` \u00b7 ~${formatCookTime(totalCookTime)}` : ""}
+              </p>
             )}
           </div>
           {/* Range selector */}
@@ -499,7 +489,7 @@ export default function GroceryList() {
       )}
 
       {/* ── Meal Plan Summary ──────────────────────────────────────────────── */}
-      {!loading && meals.length > 0 && (
+      {!loading && (
         <div className="mx-4 mt-2">
           <button
             onClick={() => setMealsExpanded((v) => !v)}
@@ -525,7 +515,6 @@ export default function GroceryList() {
                   className={`flex items-center gap-3 px-3.5 py-2.5 transition-opacity ${removingMealId === meal.id ? "opacity-40" : ""}`}
                   style={i < meals.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
                 >
-                  {/* Recipe thumbnail */}
                   <div className="w-9 h-9 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                     {meal.recipe?.image_url ? (
                       <Image src={meal.recipe.image_url} alt="" width={36} height={36} className="w-full h-full object-cover" />
@@ -533,14 +522,12 @@ export default function GroceryList() {
                       <div className="w-full h-full flex items-center justify-center text-sm">🍽</div>
                     )}
                   </div>
-                  {/* Details */}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-800 truncate">{meal.recipe?.title}</p>
                     <p className="text-[11px] text-gray-400">
                       {getDayLabel(meal.planned_date)} &middot; {meal.meal_type}
                     </p>
                   </div>
-                  {/* Remove button */}
                   <button
                     onClick={() => handleRemoveMeal(meal.id)}
                     disabled={!!removingMealId}
@@ -576,35 +563,26 @@ export default function GroceryList() {
         <div className="mx-4 mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium text-amber-800">Meal plan updated</p>
-            <p className="text-xs text-amber-600 mt-0.5">Sync to reflect your latest meals</p>
+            <p className="text-xs text-amber-600 mt-0.5">Tap to update your grocery list</p>
           </div>
           <button
             onClick={handleGenerate}
             disabled={generating}
             className="text-xs font-semibold text-orange-600 bg-white border border-orange-200 px-3 py-1.5 rounded-full hover:bg-orange-50 transition-colors whitespace-nowrap disabled:opacity-50"
           >
-            Sync with Plan
+            Update List
           </button>
         </div>
       )}
 
-      {/* ── Sync button ────────────────────────────────────────────────────── */}
-      {list && !loading && !mealPlanChanged && (
-        <div className="mx-4 mt-3 flex justify-end">
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-orange-600 bg-gray-100 hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors disabled:opacity-50"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182" />
-            </svg>
-            {generating ? "Syncing\u2026" : allItems.length === 0 ? "Generate from plan" : "Sync with Plan"}
-          </button>
+      {/* ── List header + filter + view toggle ─────────────────────────── */}
+      {hasItems && (
+        <div className="mx-4 mt-4 mb-1">
+          <h2 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+            List ({toBuyCount})
+          </h2>
         </div>
       )}
-
-      {/* ── Filter + view toggle ────────────────────────────────────────── */}
       {hasItems && (
         <div className="mx-4 mt-3">
           <div className="flex items-center gap-2">
@@ -721,7 +699,7 @@ export default function GroceryList() {
               <p className="text-4xl mb-4">✨</p>
               <p className="text-gray-800 font-semibold text-base mb-1">List cleared</p>
               <p className="text-gray-400 text-sm mb-1">
-                Tap &quot;Sync with Plan&quot; above to rebuild from your meal plan.
+                Add meals to your plan, then tap generate to build your list.
               </p>
             </div>
           ) : filter === "to_buy" ? (
