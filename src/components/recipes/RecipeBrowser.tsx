@@ -325,7 +325,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   return (
     <div className="flex flex-col" style={{ background: "#faf9f7" }}>
       {/* ── Sticky header ─────────────────────────────────────────── */}
-      <div className="bg-white/95 backdrop-blur-sm border-b border-orange-50">
+      <div className="bg-white/95 backdrop-blur-sm border-b border-orange-50 relative z-20">
         <div className="max-w-5xl mx-auto">
 
         {/* Pick mode: back button + title */}
