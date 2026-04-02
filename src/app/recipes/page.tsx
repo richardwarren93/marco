@@ -101,16 +101,16 @@ function RecipesInner() {
       {/* ── Banner + Folder Tabs ──────────────────────────────────── */}
       <div className="sticky top-0 z-10 px-4 pt-3 pb-0" style={{ background: "#faf9f7" }}>
         <div className="max-w-5xl mx-auto">
-          {/* Banner */}
+          {/* Banner — desktop only */}
           <div
-            className="rounded-2xl h-16 sm:h-20 mb-2"
+            className="hidden sm:block rounded-2xl h-20 mb-2"
             style={{
               background: "linear-gradient(135deg, #fef3c7 0%, #fed7aa 40%, #fdba74 70%, #fb923c 100%)",
             }}
           />
 
-          {/* Folder tabs */}
-          <div className="flex gap-0 overflow-x-auto scrollbar-hide">
+          {/* Folder tabs — desktop only, mobile uses bottom tab bar */}
+          <div className="hidden sm:flex gap-0 overflow-x-auto scrollbar-hide">
             {TAB_CONFIG.map((tab) => {
               const active = activeTab === tab.key;
               return (

@@ -400,7 +400,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         </div>
 
         {/* Sort + meal type filters */}
-        <div className="flex items-center gap-2 px-4 pb-2.5 relative z-30">
+        <div className="flex items-center gap-2 px-4 pb-2.5 relative z-30 overflow-x-auto scrollbar-hide">
           {/* Sort pills */}
           {(["newest", "prep_time"] as const).map((s) => (
             <button
@@ -416,10 +416,10 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           ))}
 
           {/* Meal type dropdown */}
-          <div className="relative" ref={mealMenuRef}>
+          <div className="relative flex-shrink-0" ref={mealMenuRef}>
             <button
               onClick={() => setShowMealMenu((v) => !v)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
               style={activeMealType !== "all"
                 ? { background: "#f97316", color: "#fff" }
                 : { background: "#ede9e3", color: "#6b6560" }}
@@ -452,10 +452,10 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
           {/* Collections dropdown */}
           {props.mode === "library" && collections.length > 0 && (
-            <div className="relative" ref={collMenuRef}>
+            <div className="relative flex-shrink-0" ref={collMenuRef}>
               <button
                 onClick={() => { setShowCollMenu((v) => !v); setShowCollSub(false); setShowCollCreate(false); setShowMealMenu(false); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
                 style={activeCollectionId
                   ? { background: "#f97316", color: "#fff" }
                   : { background: "#ede9e3", color: "#6b6560" }}

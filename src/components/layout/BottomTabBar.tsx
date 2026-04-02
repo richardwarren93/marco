@@ -7,6 +7,7 @@ import {
   RecipesIcon,
   GroceryIcon,
   MealPlanIcon,
+  SearchIcon,
 } from "@/components/icons/HandDrawnIcons";
 
 const ACCENT = "#ea580c";
@@ -38,9 +39,9 @@ export default function BottomTabBar() {
     return null;
   }
 
-  const isProfileActive = pathname.startsWith("/profile");
   const isGroceryActive = pathname.startsWith("/grocery");
   const isOnMealPlan = pathname.startsWith("/meal-plan");
+  const isDiscoverActive = pathname === "/recipes" && typeof window !== "undefined" && new URLSearchParams(window.location.search).get("tab") === "discover";
 
   function closeFab() {
     setFabOpen(false);
@@ -300,22 +301,14 @@ export default function BottomTabBar() {
             <span className="text-[10px] font-medium leading-tight">Grocery</span>
           </Link>
 
-          {/* Profile */}
+          {/* Discover */}
           <Link
-            href="/profile"
+            href="/recipes?tab=discover"
             className="flex flex-col items-center justify-center gap-0.5 flex-1 pb-2 pt-1 transition-colors"
-            style={{ color: isProfileActive ? ACCENT : "#b0b0b0" }}
+            style={{ color: isDiscoverActive ? ACCENT : "#b0b0b0" }}
           >
-            <svg
-              className="w-6 h-6"
-              fill={isProfileActive ? "currentColor" : "none"}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-            </svg>
-            <span className="text-[10px] font-medium leading-tight">Profile</span>
+            <SearchIcon className="w-6 h-6" />
+            <span className="text-[10px] font-medium leading-tight">Discover</span>
           </Link>
         </div>
       </nav>
