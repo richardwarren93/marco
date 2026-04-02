@@ -83,26 +83,6 @@ function getPresetRange(preset: RangePreset, customRange: { start: string; end: 
   return customRange;
 }
 
-function formatRangeLabel(start: string, end: string): string {
-  const s = new Date(start + "T12:00:00");
-  const e = new Date(end + "T12:00:00");
-  const monthFmt = (d: Date) => d.toLocaleString("en-US", { month: "short" });
-  const dayFmt = (d: Date) => d.getDate();
-  if (s.getMonth() === e.getMonth()) {
-    return `${monthFmt(s)} ${dayFmt(s)}\u2013${dayFmt(e)}`;
-  }
-  return `${monthFmt(s)} ${dayFmt(s)} \u2013 ${monthFmt(e)} ${dayFmt(e)}`;
-}
-
-function formatCookTime(minutes: number): string {
-  if (minutes >= 60) {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return m > 0 ? `${h}h ${m}m` : `${h}h`;
-  }
-  return `${minutes}m`;
-}
-
 function getDayLabel(dateStr: string): string {
   const d = new Date(dateStr + "T12:00:00");
   return d.toLocaleDateString("en-US", { weekday: "short" });
@@ -484,52 +464,74 @@ export default function GroceryList() {
   const checkedCount = allItems.filter((i) => i.checked).length;
   const hasItems = allItems.length > 0;
 
-  // Plan health stats
-  const mealCount = activeMeals.length;
-  const ingredientCount = toBuyCount;
-  const totalCookTime = useMemo(() => {
-    return activeMeals.reduce((sum, m) => {
-      const prep = m.recipe?.prep_time_minutes ?? 0;
-      const cook = m.recipe?.cook_time_minutes ?? 0;
-      return sum + prep + cook;
-    }, 0);
-  }, [activeMeals]);
+  // Navigate week with smart preset detection
+  function navigateWeek(days: number) {
+    const newStart = addDays(dateRange.start, days);
+    const thisWeekStart = getMonday(new Date());
+    const nextWeekStart = addDays(thisWeekStart, 7);
+    if (newStart === thisWeekStart) {
+      setRangePreset("this_week");
+    } else if (newStart === nextWeekStart) {
+      setRangePreset("next_week");
+    } else {
+      setRangePreset("custom");
+      setCustomRange({ start: newStart, end: addDays(newStart, 6) });
+    }
+  }
 
-  const rangeLabel = (() => {
-    if (rangePreset === "this_week") return "This week";
-    if (rangePreset === "next_week") return "Next week";
-    return formatRangeLabel(dateRange.start, dateRange.end);
-  })();
+  // Week label for nav bar (e.g. "Mar 30 – Apr 5")
+  const weekLabel = useMemo(() => {
+    const s = new Date(dateRange.start + "T12:00:00");
+    const e = new Date(dateRange.end + "T12:00:00");
+    const sm = s.toLocaleDateString("en-US", { month: "short" });
+    const em = e.toLocaleDateString("en-US", { month: "short" });
+    return s.getMonth() === e.getMonth()
+      ? `${sm} ${s.getDate()}\u2013${e.getDate()}`
+      : `${sm} ${s.getDate()} \u2013 ${em} ${e.getDate()}`;
+  }, [dateRange.start, dateRange.end]);
 
   return (
     <div className="pb-24" style={{ background: "#faf9f7" }}>
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="px-4 sticky top-0 z-10" style={{ background: "#faf9f7" }}>
-        <div className="flex items-start justify-between max-w-5xl mx-auto pt-3 pb-3">
-          <div>
-            <h1 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>
-              {rangePreset === "this_week" ? "This Week\u2019s Plan" : rangePreset === "next_week" ? "Next Week\u2019s Plan" : "Grocery Plan"}
-            </h1>
-            <p className="text-xs font-medium mt-0.5" style={{ color: "#a09890" }}>
-              {formatRangeLabel(dateRange.start, dateRange.end)}
-            </p>
-            {/* Plan health stats — single line */}
-            {!loading && mealCount > 0 && (
-              <p className="text-[11px] font-medium mt-1" style={{ color: "#a09890" }}>
-                {mealCount} {mealCount === 1 ? "meal" : "meals"} &middot; {ingredientCount} to buy{totalCookTime > 0 ? ` \u00b7 ~${formatCookTime(totalCookTime)}` : ""}
-              </p>
-            )}
+      {/* ── Header: week navigation bar ──────────────────────────────────── */}
+      <div className="sticky top-0 z-10 px-4 pt-3 pb-2" style={{ background: "#faf9f7" }}>
+        <div className="flex items-center justify-between max-w-3xl mx-auto">
+          {/* Left: prev arrow + week label + next arrow */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => navigateWeek(-7)}
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              style={{ color: "#a09890" }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>
+              {weekLabel}
+            </span>
+            <button
+              onClick={() => navigateWeek(7)}
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              style={{ color: "#a09890" }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           </div>
-          {/* Range selector */}
-          <div className="relative flex-shrink-0">
+
+          {/* Right: calendar icon with dropdown */}
+          <div className="relative">
             <button
               onClick={() => setRangePickerOpen((v) => !v)}
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-full transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
+              style={{ color: rangePickerOpen ? "#e8590c" : "#a09890" }}
+              aria-label="Select date range"
             >
-              {rangeLabel}
-              <svg className={`w-3.5 h-3.5 text-gray-500 transition-transform ${rangePickerOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
               </svg>
             </button>
 
@@ -817,7 +819,7 @@ export default function GroceryList() {
             <p className="text-5xl mb-4">🛒</p>
             <p className="font-black text-lg mb-1" style={{ color: "#1a1410" }}>No grocery list yet</p>
             <p className="text-sm mb-7" style={{ color: "#a09890" }}>
-              Add meals to your {rangeLabel.toLowerCase()} plan, then generate your list.
+              Add meals to your plan, then generate your list.
             </p>
             <button
               onClick={handleGenerate}
