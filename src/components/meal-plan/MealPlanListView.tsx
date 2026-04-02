@@ -166,7 +166,7 @@ export default function MealPlanListView({
   onPlanThisWeek?: () => void;
 }) {
   // ─── View mode ──────────────────────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
+  const [viewMode, setViewMode] = useState<"daily" | "weekly">("weekly");
   const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
 
   // ─── Week & day state ────────────────────────────────────────────────────────
@@ -652,54 +652,60 @@ export default function MealPlanListView({
 
         </div>
 
-        {/* Row 2 (daily only): day strip */}
-        {viewMode === "daily" && (
-          <div className="flex justify-between items-center w-full mb-2">
-            {sortedDates.map((dateKey) => {
-              const d = new Date(dateKey + "T12:00:00");
-              const abbr = d.toLocaleDateString("en-US", { weekday: "short" });
-              const num = d.getDate();
-              const isSelected = dateKey === selectedDate;
-              const isToday = dateKey === today;
-              return (
-                <button
-                  key={dateKey}
-                  onClick={() => navigateToDate(dateKey)}
-                  className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform touch-manipulation"
-                  style={{ minWidth: 36 }}
+        {/* Row 2: day strip (both daily and weekly views) */}
+        <div className="flex justify-between items-center w-full mb-2">
+          {sortedDates.map((dateKey) => {
+            const d = new Date(dateKey + "T12:00:00");
+            const abbr = d.toLocaleDateString("en-US", { weekday: "short" });
+            const num = d.getDate();
+            const isSelected = dateKey === selectedDate;
+            const isToday = dateKey === today;
+            return (
+              <button
+                key={dateKey}
+                onClick={() => {
+                  if (viewMode === "daily") {
+                    navigateToDate(dateKey);
+                  } else {
+                    // Weekly view: scroll the day card into view
+                    const el = document.getElementById(`day-${dateKey}`);
+                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }
+                }}
+                className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform touch-manipulation"
+                style={{ minWidth: 36 }}
+              >
+                <span
+                  className="text-[9px] font-semibold tracking-wide"
+                  style={{ color: isSelected ? ACCENT : isToday ? ACCENT : "#c0c0be" }}
+                >
+                  {abbr.slice(0, 3)}
+                </span>
+                <div
+                  className="rounded-full flex items-center justify-center transition-all duration-150"
+                  style={{
+                    width: 38, height: 38,
+                    ...(viewMode === "daily" && isSelected
+                      ? { background: ACCENT }
+                      : isToday
+                        ? { background: ACCENT, boxShadow: "none" }
+                        : { background: "transparent" }),
+                  }}
                 >
                   <span
-                    className="text-[9px] font-semibold tracking-wide"
-                    style={{ color: isSelected ? ACCENT : isToday ? ACCENT : "#c0c0be" }}
+                    className="text-[14px] font-semibold"
+                    style={{ color: (viewMode === "daily" && isSelected) || isToday ? "white" : "#888" }}
                   >
-                    {abbr.slice(0, 3)}
+                    {num}
                   </span>
-                  <div
-                    className="rounded-full flex items-center justify-center transition-all duration-150"
-                    style={{
-                      width: 38, height: 38,
-                      ...(isSelected
-                        ? { background: ACCENT }
-                        : isToday
-                          ? { background: "transparent", boxShadow: `0 0 0 1.5px ${ACCENT}` }
-                          : { background: "transparent" }),
-                    }}
-                  >
-                    <span
-                      className="text-[14px] font-semibold"
-                      style={{ color: isSelected ? "white" : isToday ? ACCENT : "#888" }}
-                    >
-                      {num}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
 
-        {/* Row 3: weekly-only extras — Insights only (Today label lives on the day card) */}
-        {viewMode === "weekly" && onShowInsights && (
+        {/* Insights button */}
+        {onShowInsights && (
           <div className="flex justify-end mt-1">
             <button
               onClick={onShowInsights}
