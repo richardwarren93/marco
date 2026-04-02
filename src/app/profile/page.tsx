@@ -8,6 +8,7 @@ import type { UserProfile, CookingGoal } from "@/types";
 import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
 import { RecipesIcon, CollectionsIcon, FriendsIcon } from "@/components/icons/HandDrawnIcons";
 import BadgesCard from "@/components/gamification/BadgesCard";
+import TasteProfileCard from "@/components/gamification/TasteProfileCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
 
 export default function ProfilePage() {
@@ -271,8 +272,13 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* ── Badges — Showcase ── */}
+      {/* ── Taste Profile ── */}
       <div className="px-4 pt-1">
+        <TasteProfileCard />
+      </div>
+
+      {/* ── Badges — Showcase ── */}
+      <div className="px-4 pt-4">
         <BadgesCard />
       </div>
 
@@ -281,32 +287,6 @@ export default function ProfilePage() {
         <HouseholdCard />
       </div>
 
-      {/* ── Friend Code ── */}
-      {profile && (
-        <div className="px-4 pt-4">
-          <div className="rounded-2xl p-4 flex items-center justify-between" style={{ background: "linear-gradient(135deg, #fff8f0 0%, #fef3e2 100%)", boxShadow: "0 2px 16px rgba(0,0,0,0.04)" }}>
-            <div>
-              <p className="text-[10px] uppercase tracking-wider font-semibold text-gray-400 mb-0.5">Friend Code</p>
-              <p className="text-lg font-black text-orange-600 tracking-widest">{profile.friend_code}</p>
-            </div>
-            <div className="flex gap-2">
-              <button onClick={handleCopyCode} className="px-3.5 py-2 bg-white rounded-xl text-xs font-semibold shadow-sm hover:shadow transition-all active:scale-95">
-                {copied ? "Copied!" : "Copy"}
-              </button>
-              <button
-                onClick={async () => {
-                  if (navigator.share) {
-                    await navigator.share({ title: "Add me on Marco!", text: `Add me on Marco! My code is ${profile.friend_code}`, url: `${window.location.origin}/add/${profile.friend_code}` }).catch(() => {});
-                  }
-                }}
-                className="px-3.5 py-2 bg-orange-600 text-white rounded-xl text-xs font-semibold shadow-sm hover:bg-orange-700 transition-colors active:scale-95"
-              >
-                Share
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );

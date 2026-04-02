@@ -83,8 +83,8 @@ function isRankingStable(ratings: Map<string, number>) {
   return thirdRating - fourthRating >= 40;
 }
 
-const MAX_MATCHES = 8;
-const MIN_MATCHES = 6;
+const MAX_MATCHES = 12;
+const MIN_MATCHES = 10;
 
 /* ── Component ───────────────────────────────────────────────── */
 

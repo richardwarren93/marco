@@ -5,18 +5,77 @@ import { useRouter } from "next/navigation";
 import { TASTE_DIMENSIONS } from "./data/taste-dimensions";
 import type { RankingRecipe } from "./data/ranking-recipes";
 
+interface TasteScores {
+  sweet: number;
+  savory: number;
+  richness: number;
+  tangy: number;
+}
+
 interface Props {
   rankedIds: string[];
   rankedRecipes: RankingRecipe[];
   signatureDish: string;
-  onComplete: () => void;
+  onComplete: (tasteScores?: TasteScores, cuisinePreferences?: string[]) => void;
 }
 
 const CUISINE_FLAGS: Record<string, string> = {
   italian: "\u{1F1EE}\u{1F1F9}", thai: "\u{1F1F9}\u{1F1ED}", japanese: "\u{1F1EF}\u{1F1F5}",
   mexican: "\u{1F1F2}\u{1F1FD}", mediterranean: "\u{1F1EC}\u{1F1F7}", american: "\u{1F1FA}\u{1F1F8}",
   fusion: "\u{1F30D}", chinese: "\u{1F1E8}\u{1F1F3}", latin: "\u{1F1F5}\u{1F1EA}",
+  asian: "\u{1F30F}",
 };
+
+const CUISINE_LABELS: Record<string, string> = {
+  asian: "Asian", latin: "Latin", mediterranean: "Mediterranean",
+  italian: "Italian", american: "American", chinese: "Chinese",
+  japanese: "Japanese", thai: "Thai", mexican: "Mexican", fusion: "Fusion",
+};
+
+const FLAVOR_DIMENSIONS = [
+  { key: "sweet" as const, label: "Sweet", color: "#ea580c" },
+  { key: "savory" as const, label: "Savory", color: "#d97706" },
+  { key: "tangy" as const, label: "Tangy", color: "#c2410c" },
+  { key: "richness" as const, label: "Richness", color: "#b45309" },
+];
+
+function computeFlavorScores(rankedRecipes: RankingRecipe[]) {
+  const scores = { sweet: 0, savory: 0, richness: 0, tangy: 0 };
+  rankedRecipes.forEach((recipe, idx) => {
+    const weight = rankedRecipes.length - idx; // higher rank = more weight
+    if (!recipe.flavorWeights) return;
+    scores.sweet += recipe.flavorWeights.sweet * weight;
+    scores.savory += recipe.flavorWeights.savory * weight;
+    scores.richness += recipe.flavorWeights.richness * weight;
+    scores.tangy += recipe.flavorWeights.tangy * weight;
+  });
+  // Normalize to 0–100
+  const max = Math.max(scores.sweet, scores.savory, scores.richness, scores.tangy, 1);
+  return {
+    sweet: Math.round((scores.sweet / max) * 100),
+    savory: Math.round((scores.savory / max) * 100),
+    richness: Math.round((scores.richness / max) * 100),
+    tangy: Math.round((scores.tangy / max) * 100),
+  };
+}
+
+function computeCuisineScores(rankedRecipes: RankingRecipe[]) {
+  const scores: Record<string, number> = {};
+  rankedRecipes.forEach((recipe, idx) => {
+    const weight = rankedRecipes.length - idx;
+    const c = recipe.cuisine;
+    if (c) scores[c] = (scores[c] || 0) + weight;
+  });
+  return Object.entries(scores)
+    .filter(([, s]) => s > 0)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 3)
+    .map(([id]) => ({
+      id,
+      label: CUISINE_LABELS[id] || id.charAt(0).toUpperCase() + id.slice(1),
+      flag: CUISINE_FLAGS[id] || "\u{1F30D}",
+    }));
+}
 
 const STYLE_EMOJIS: Record<string, string> = {
   quick_meals: "\u{23F1}\uFE0F", one_pan: "\u{1F373}", baked: "\u{1F36A}", grilled: "\u{1F525}",
@@ -115,25 +174,14 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
   const [showShare, setShowShare] = useState(false);
   const scores = useMemo(() => inferProfile(rankedRecipes), [rankedRecipes]);
   const topTraits = useMemo(() => getTopTraits(scores), [scores]);
-  const maxScore = Math.max(...topTraits.map((t) => t.score), 1);
   const chefMatch = useMemo(() => matchChef(topTraits), [topTraits]);
   const insights = useMemo(() => generateInsights(topTraits), [topTraits]);
 
-  const topCuisines = useMemo(() => {
-    return Object.entries(scores.cuisine || {}).filter(([, s]) => s > 0).sort(([, a], [, b]) => b - a).slice(0, 4)
-      .map(([id]) => ({
-        id, label: TASTE_DIMENSIONS.find((d) => d.key === "cuisine")?.values.find((v) => v.id === id)?.label || id,
-        flag: CUISINE_FLAGS[id] || "\u{1F30D}",
-      }));
-  }, [scores]);
+  // New 4-dimension flavor scores
+  const flavorScores = useMemo(() => computeFlavorScores(rankedRecipes), [rankedRecipes]);
 
-  const flavorBars = useMemo(() => {
-    return Object.entries(scores.flavor || {}).filter(([, s]) => s > 0).sort(([, a], [, b]) => b - a).slice(0, 5)
-      .map(([id, score]) => ({
-        label: TASTE_DIMENSIONS.find((d) => d.key === "flavor")?.values.find((v) => v.id === id)?.label || id,
-        pct: Math.max((score / maxScore) * 100, 10),
-      }));
-  }, [scores, maxScore]);
+  // Cuisine preferences from recipe.cuisine field
+  const topCuisines = useMemo(() => computeCuisineScores(rankedRecipes), [rankedRecipes]);
 
   const topStyles = useMemo(() => {
     return Object.entries(scores.cookingStyle || {}).filter(([, s]) => s > 0).sort(([, a], [, b]) => b - a).slice(0, 4)
@@ -177,13 +225,13 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
           <h2 className="text-2xl font-black mb-2" style={{ color: "#1a1410" }}>You&apos;re all set!</h2>
           <p className="text-sm mb-6" style={{ color: "#a09890" }}>Import your first recipe to get started</p>
           <button
-            onClick={() => { onComplete(); router.replace("/recipes"); setTimeout(() => { window.dispatchEvent(new CustomEvent("openFabImport")); }, 800); }}
+            onClick={() => { onComplete(flavorScores, topCuisines.map((c) => c.id)); router.replace("/recipes"); setTimeout(() => { window.dispatchEvent(new CustomEvent("openFabImport")); }, 800); }}
             className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98] mb-3"
             style={{ background: "#ea580c" }}
           >
             Import my first recipe
           </button>
-          <button onClick={() => { onComplete(); router.replace("/recipes"); }} className="w-full py-3 text-sm font-semibold" style={{ color: "#a09890" }}>
+          <button onClick={() => { onComplete(flavorScores, topCuisines.map((c) => c.id)); router.replace("/recipes"); }} className="w-full py-3 text-sm font-semibold" style={{ color: "#a09890" }}>
             Skip for now
           </button>
         </div>
@@ -237,15 +285,15 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
             </div>
           </div>
 
-          {/* Flavor profile */}
+          {/* Flavor profile — 4 unified dimensions */}
           <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.2s", background: "white", border: "1px solid #eae7e2" }}>
             <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#ea580c" }}>Flavor Profile</p>
             <div className="space-y-2.5">
-              {flavorBars.map((bar) => (
-                <div key={bar.label}>
-                  <span className="text-[10px] font-medium" style={{ color: "#1a1410" }}>{bar.label}</span>
-                  <div className="h-1.5 rounded-full overflow-hidden mt-0.5" style={{ background: "#efede8" }}>
-                    <div className="h-full rounded-full animate-bar-fill" style={{ width: `${bar.pct}%`, background: "#ea580c", opacity: 0.6 + (bar.pct / 250) }} />
+              {FLAVOR_DIMENSIONS.map((dim) => (
+                <div key={dim.key}>
+                  <span className="text-[10px] font-medium" style={{ color: "#1a1410" }}>{dim.label}</span>
+                  <div className="h-2 rounded-full overflow-hidden mt-0.5" style={{ background: "#efede8" }}>
+                    <div className="h-full rounded-full animate-bar-fill" style={{ width: `${Math.max(flavorScores[dim.key], 8)}%`, background: dim.color }} />
                   </div>
                 </div>
               ))}
