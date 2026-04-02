@@ -179,7 +179,6 @@ export default function GroceryList() {
   const list: GroceryListType | null = groceryData?.list ?? null;
   const items: GroceryItemType[] = groceryData?.items ?? [];
   const householdItems: HouseholdGroceryItem[] = groceryData?.householdItems ?? [];
-  const mealPlanChanged: boolean = groceryData?.meal_plan_changed ?? false;
   const meals: MealPlanSummaryItem[] = groceryData?.meals ?? [];
 
   // ── Auto-generate when there's no list yet ────────────────────────────────
@@ -238,7 +237,6 @@ export default function GroceryList() {
     const optimistic = groceryData ? {
       ...groceryData,
       meals: (groceryData.meals ?? []).filter((m: MealPlanSummaryItem) => m.id !== planId),
-      meal_plan_changed: true,
       // If this was the only meal using a recipe, remove those grocery items too
       ...(removedRecipeTitle ? {
         items: (groceryData.items ?? []).map((item: GroceryItemType) => {
@@ -630,22 +628,6 @@ export default function GroceryList() {
         </div>
       )}
 
-      {/* ── Meal plan changed notice ────────────────────────────────────────── */}
-      {mealPlanChanged && !generating && (
-        <div className="mx-4 mt-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-medium text-amber-800">Meal plan updated</p>
-            <p className="text-xs text-amber-600 mt-0.5">Tap to update your grocery list</p>
-          </div>
-          <button
-            onClick={handleGenerate}
-            disabled={generating}
-            className="text-xs font-semibold text-orange-600 bg-white border border-orange-200 px-3 py-1.5 rounded-full hover:bg-orange-50 transition-colors whitespace-nowrap disabled:opacity-50"
-          >
-            Update List
-          </button>
-        </div>
-      )}
 
       {/* ── List header + filter + view toggle ─────────────────────────── */}
       {hasItems && (
