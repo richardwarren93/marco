@@ -164,7 +164,7 @@ export default function AssignDaysScreen({
       </div>
 
       {/* Meal cards */}
-      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto pb-32 max-w-2xl mx-auto w-full">
+      <div className="flex-1 px-4 py-4 space-y-3 overflow-y-auto max-w-2xl mx-auto w-full" style={{ paddingBottom: "160px" }}>
         {selectedRecipes.map((recipe, i) => {
           const a = assignments[recipe.id];
           const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
@@ -252,7 +252,7 @@ export default function AssignDaysScreen({
       </div>
 
       {/* Schedule CTA */}
-      <div className="fixed bottom-20 left-0 right-0 px-4 z-20">
+      <div className="fixed left-0 right-0 px-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:bottom-6">
         <div className="max-w-2xl mx-auto">
         <button
           onClick={handleSchedulePress}

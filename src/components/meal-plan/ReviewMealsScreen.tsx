@@ -74,7 +74,7 @@ export default function ReviewMealsScreen({
       </div>
 
       {/* Recipe groups */}
-      <div className="flex-1 px-4 py-4 space-y-5 overflow-y-auto pb-28 max-w-2xl mx-auto w-full">
+      <div className="flex-1 px-4 py-4 space-y-5 overflow-y-auto max-w-2xl mx-auto w-full" style={{ paddingBottom: "160px" }}>
         {orderedMealTypes.length === 0 ? (
           <div className="text-center py-16 text-sm" style={{ color: "#a09890" }}>
             No meals selected
@@ -142,7 +142,7 @@ export default function ReviewMealsScreen({
       </div>
 
       {/* Build CTA */}
-      <div className="fixed bottom-20 left-0 right-0 px-4 z-20">
+      <div className="fixed left-0 right-0 px-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom,0px))] sm:bottom-6">
         <div className="max-w-2xl mx-auto">
         <button
           onClick={onBuild}
