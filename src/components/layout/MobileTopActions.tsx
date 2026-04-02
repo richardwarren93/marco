@@ -84,13 +84,18 @@ export default function MobileTopActions() {
           className="relative w-9 h-9 rounded-full flex items-center justify-center transition-colors active:bg-black/5"
           aria-label="Notifications"
         >
-          <svg className="w-5 h-5" style={{ color: "#888" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg
+            className={`w-5 h-5 transition-colors ${unreadCount > 0 ? "text-red-500 fill-red-500 animate-bell-ring" : ""}`}
+            style={unreadCount > 0 ? undefined : { color: "#888" }}
+            fill={unreadCount > 0 ? "currentColor" : "none"}
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={unreadCount > 0 ? 1.5 : 2}
+          >
             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
           </svg>
           {unreadCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
+            <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-[#faf9f7]" />
           )}
         </button>
 
