@@ -158,6 +158,11 @@ export default function GroceryItem({ item, onToggle, onEdit, onDelete, ownerNam
               </span>
             )}
           </div>
+          {!item.checked && item.recipe_sources && item.recipe_sources.length > 0 && (
+            <p className="text-[10px] text-gray-400 mt-0.5 truncate">
+              {item.recipe_sources.join(" · ")}
+            </p>
+          )}
           {justChecked && (
             <p className="text-[10px] text-green-500 font-medium mt-0.5 animate-slide-up">
               Got it!

@@ -81,8 +81,9 @@ function RecipesInner() {
           })
         )
       );
-      // After adding, switch to meal plan tab
-      router.push("/recipes?tab=meal-plan");
+      // After adding, switch to meal plan tab — navigate to the first selected date
+      const firstDate = dates.sort()[0] || "";
+      router.push(`/recipes?tab=meal-plan${firstDate ? `&date=${firstDate}` : ""}`);
     },
     [supabase, router]
   );

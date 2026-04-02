@@ -78,15 +78,24 @@ function MealPlanInner() {
   const loading = recipesLoading || plansLoading;
   const [error, setError] = useState("");
 
-  const scrollTargetDate = searchParams.get("date");
+  // Sync calendar week when date param changes (e.g. after adding a meal from another tab)
+  const dateParam = searchParams.get("date");
   useEffect(() => {
-    if (!scrollTargetDate || loading) return;
+    if (!dateParam) return;
+    const d = new Date(dateParam + "T12:00:00");
+    if (!isNaN(d.getTime())) {
+      setCalendarWeek(getMonday(d));
+    }
+  }, [dateParam]);
+
+  useEffect(() => {
+    if (!dateParam || loading) return;
     const rafId = requestAnimationFrame(() => {
-      document.getElementById(`day-${scrollTargetDate}`)
+      document.getElementById(`day-${dateParam}`)
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
     return () => cancelAnimationFrame(rafId);
-  }, [loading, scrollTargetDate]);
+  }, [loading, dateParam]);
 
   const supabase = createClient();
 
