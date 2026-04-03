@@ -849,13 +849,13 @@ export default function GroceryList() {
               </p>
             </div>
 
-            {/* Annual savings — big number */}
+            {/* Savings — this run on left, annual on right */}
             <div className="flex items-baseline justify-between mb-1.5">
-              <p className="text-sm font-bold text-green-600">
-                ${Math.round(annualSavings).toLocaleString()}<span className="text-xs font-semibold text-green-500">/year</span>
-              </p>
               <p className="text-xs font-semibold text-green-500 tabular-nums">
                 +${thisRunSavings.toFixed(2)} this run
+              </p>
+              <p className="text-sm font-bold text-green-600">
+                ${Math.round(annualSavings).toLocaleString()}<span className="text-xs font-semibold text-green-500">/year</span>
               </p>
             </div>
 
