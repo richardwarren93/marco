@@ -148,6 +148,12 @@ export default function GroceryList() {
     total_high: number;
     notes: string;
   } | null>(null);
+  const [costSummary, setCostSummary] = useState<{
+    total_low: number;
+    total_high: number;
+    annual_cashback: number;
+  } | null>(null);
+  const [costLoading, setCostLoading] = useState(false);
 
   // Sheets
   const [addSheetOpen, setAddSheetOpen] = useState(false);
@@ -423,6 +429,39 @@ export default function GroceryList() {
     if (filter !== "to_buy") return [];
     return activeItems.filter((i) => i.checked);
   }, [activeItems, filter]);
+
+  // Auto-fetch cost summary when items change
+  const toBuyItems = useMemo(() => activeItems.filter((i) => !i.checked), [activeItems]);
+  useEffect(() => {
+    if (toBuyItems.length === 0) { setCostSummary(null); return; }
+    let cancelled = false;
+    setCostLoading(true);
+    fetch("/api/grocery-list/cost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: toBuyItems.map((i) => ({
+          name: i.name_override ?? i.name,
+          amount: i.amount_override ?? i.amount,
+          unit: i.unit_override ?? i.unit,
+          category: i.category_override ?? i.category,
+        })),
+      }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && data.total_low != null) {
+          setCostSummary({
+            total_low: data.total_low,
+            total_high: data.total_high,
+            annual_cashback: data.annual_cashback,
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setCostLoading(false); });
+    return () => { cancelled = true; };
+  }, [toBuyItems.length]); // Re-fetch when item count changes
 
   // Group by category
   const groupedByCategory = useMemo(() => {
@@ -794,6 +833,33 @@ export default function GroceryList() {
         </div>
       )}
 
+      {/* ── Cost + Cashback Bar ─────────────────────────────────────────────── */}
+      {costSummary && toBuyItems.length > 0 && (
+        <div className="mx-4 mt-3 mb-2 p-3.5 rounded-2xl bg-white border border-gray-100" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">Estimated cost</p>
+              <p className="text-lg font-bold text-gray-900 tabular-nums">
+                ${Math.round(costSummary.total_low)}&ndash;${Math.round(costSummary.total_high)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600 mb-0.5">Est. annual savings</p>
+              <p className="text-lg font-bold text-green-600 tabular-nums">
+                ${Math.round(costSummary.annual_cashback).toLocaleString()}
+              </p>
+            </div>
+          </div>
+          <p className="text-[10px] text-gray-400 mt-1.5">Based on your meal plan &middot; Updates as you plan</p>
+        </div>
+      )}
+      {costLoading && toBuyItems.length > 0 && !costSummary && (
+        <div className="mx-4 mt-3 mb-2 p-3.5 rounded-2xl bg-white border border-gray-100 flex items-center justify-center gap-2" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="w-3.5 h-3.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-gray-400 font-medium">Calculating cost...</span>
+        </div>
+      )}
+
       {/* ── Content ─────────────────────────────────────────────────────────── */}
       {loading ? (
         <div className="mx-4 mt-3 space-y-3">
@@ -1053,31 +1119,8 @@ export default function GroceryList() {
             </div>
           )}
 
-          {/* Bottom action — Estimate Cost (Buy tab, hidden when estimate shown) or Add Item (Have tab) */}
-          {filter === "to_buy" ? (
-            toBuyCount > 0 && !costEstimate && (
-              <button
-                onClick={handleEstimateCost}
-                disabled={estimating}
-                className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-white rounded-3xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors disabled:opacity-60"
-                style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
-              >
-                {estimating ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="text-sm font-semibold text-gray-500">Estimating...</span>
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-sm font-semibold text-gray-700">Estimate cost</span>
-                  </>
-                )}
-              </button>
-            )
-          ) : filter === "checked" && (
+          {/* Bottom action — Add Item (Have tab) */}
+          {filter === "checked" && (
             <button
               onClick={() => setAddSheetOpen(true)}
               className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-white rounded-3xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors"
