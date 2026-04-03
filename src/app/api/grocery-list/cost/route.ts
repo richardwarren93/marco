@@ -27,10 +27,21 @@ function normalize(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
-/** Convert amount + unit into a multiplier relative to the cached unit price.
- *  e.g., if cache says $3/lb and item is "2 lbs", multiplier = 2. */
-function quantityMultiplier(amount?: string): number {
+/** For cached prices, we store price per standard grocery purchase unit.
+ *  Most grocery items are bought as whole units (1 can, 1 bunch, 1 lb).
+ *  Only multiply for clearly large quantities (e.g., "3 lbs", "2 cans").
+ *  Small cooking measurements (tsp, cloves, pinch) should NOT multiply. */
+const COOKING_UNITS = new Set([
+  "tsp", "teaspoon", "teaspoons", "tbsp", "tablespoon", "tablespoons",
+  "clove", "cloves", "pinch", "dash", "splash", "to taste",
+  "slice", "slices", "piece", "pieces", "sprig", "sprigs",
+  "leaf", "leaves", "stalk", "stalks",
+]);
+
+function quantityMultiplier(amount?: string, unit?: string): number {
   if (!amount) return 1;
+  // Don't multiply for cooking-measurement units — you buy the whole item
+  if (unit && COOKING_UNITS.has(unit.toLowerCase().trim())) return 1;
   const num = parseFloat(amount);
   return isNaN(num) || num <= 0 ? 1 : num;
 }
@@ -69,7 +80,7 @@ export async function POST(request: Request) {
     for (const item of items) {
       const cached = priceMap.get(normalize(item.name));
       if (cached) {
-        const mult = quantityMultiplier(item.amount);
+        const mult = quantityMultiplier(item.amount, item.unit);
         pricedItems.push({
           name: item.name,
           amount: item.amount,
@@ -125,7 +136,7 @@ Round to nearest $0.25.`,
             const estimated = estimatedItems[i];
             if (!estimated) continue;
 
-            const mult = quantityMultiplier(original.amount);
+            const mult = quantityMultiplier(original.amount, original.unit);
             pricedItems.push({
               name: original.name,
               amount: original.amount,
@@ -169,10 +180,12 @@ Round to nearest $0.25.`,
     }
 
     // Step 4: Calculate totals
+    // total_low/high = cost for this grocery list (typically one week)
     const totalLow = pricedItems.reduce((sum, i) => sum + i.price_low, 0);
     const totalHigh = pricedItems.reduce((sum, i) => sum + i.price_high, 0);
-    const avgCost = (totalLow + totalHigh) / 2;
-    const annualCashback = Math.round(avgCost * 0.02 * 52 * 100) / 100;
+    // Annual cashback = 2% of weekly average cost × 52 weeks
+    const weeklyAvg = (totalLow + totalHigh) / 2;
+    const annualCashback = Math.round(weeklyAvg * 0.02 * 52 * 100) / 100;
 
     return NextResponse.json({
       items: pricedItems,
