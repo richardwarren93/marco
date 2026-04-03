@@ -99,10 +99,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               } ${variantClass(toast.variant)}`}
               style={variantStyle(toast.variant)}
             >
-              {toast.icon ? (
+              {toast.icon && (
                 <span className="text-base flex-shrink-0">{toast.icon}</span>
-              ) : (
-                <DefaultIcon variant={toast.variant} />
               )}
               <span className="flex-1 text-[13px] font-medium leading-snug line-clamp-2">
                 {toast.message}
