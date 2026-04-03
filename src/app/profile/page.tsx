@@ -137,9 +137,9 @@ export default function ProfilePage() {
     <div className="max-w-lg mx-auto pb-8" style={{ background: "#faf9f7", minHeight: "100vh" }}>
 
       {/* ── Banner + Avatar ── */}
-      <div className="relative">
+      <div className="relative -mt-11 sm:-mt-16">
         <div
-          className="h-36 rounded-b-[2rem] bg-cover bg-center"
+          className="h-48 sm:h-52 rounded-b-[2rem] bg-cover bg-center"
           style={{ backgroundImage: "url('/default-banner.webp')" }}
         />
 
