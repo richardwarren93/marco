@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useRecipes, useMealPlans } from "@/lib/hooks/use-data";
 import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
@@ -35,10 +35,16 @@ export default function MealPlanPage() {
 
 function MealPlanInner() {
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // ─── Step flow ───────────────────────────────────────────────────────────────
   // Default: step 3 (Schedule) — the app's main surface
-  const [step, setStep] = useState<1 | 2 | "assign" | 3 | "insights">(3);
+  // If ?step=build, start in build mode (e.g. returning from recipe detail)
+  const [step, setStep] = useState<1 | 2 | "assign" | 3 | "insights">(() => {
+    const stepParam = searchParams.get("step");
+    if (stepParam === "build") return 1;
+    return 3;
+  });
 
   // Which week the calendar is currently showing — jump to ?date= param if present
   const [calendarWeek, setCalendarWeek] = useState<Date>(() => {
@@ -141,7 +147,12 @@ function MealPlanInner() {
     setStep(3);
     // Fire toast after step transition settles
     setTimeout(() => {
-      showToast(`🎉 ${totalSlots} meal${totalSlots !== 1 ? "s" : ""} scheduled for this week!`);
+      showToast(`🎉 ${totalSlots} meal${totalSlots !== 1 ? "s" : ""} scheduled for this week!`, {
+        action: {
+          label: "View grocery list",
+          onClick: () => router.push("/grocery"),
+        },
+      });
     }, 400);
   }
 

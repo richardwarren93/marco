@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
@@ -113,6 +114,7 @@ export default function AddMealSheet({
   onPlanMultiple?: (preSelectedRecipeId?: string) => void;
 }) {
   const { showToast } = useToast();
+  const router = useRouter();
   const [selectedMealTypes, setSelectedMealTypes] = useState<Set<MealType>>(new Set<MealType>(["dinner"]));
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set([defaultDate]));
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
@@ -262,7 +264,12 @@ export default function AddMealSheet({
       // Close sheet first, then show toast
       onClose();
       setTimeout(() => {
-        showToast(`${title} added to ${dayStr} ${mealLabel}`);
+        showToast(`${title} added to ${dayStr} ${mealLabel}`, {
+          action: {
+            label: "View grocery list",
+            onClick: () => router.push("/grocery"),
+          },
+        });
       }, 300);
     } finally { setSaving(false); }
   }

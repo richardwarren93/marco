@@ -143,7 +143,15 @@ export default function RecipeForm({
       }
 
       const recipeId = data.recipe?.id;
-      showToast(isEditing ? "Recipe updated!" : "Recipe saved!", { variant: "success" });
+      showToast(isEditing ? "Recipe updated!" : "Recipe saved!", {
+        variant: "success",
+        ...(!isEditing && recipeId ? {
+          action: {
+            label: "Add to meal plan",
+            onClick: () => router.push(`/recipes/${recipeId}?openMealSheet=true`),
+          },
+        } : {}),
+      });
       if (onSaved) {
         onSaved();
       } else if (recipeId) {

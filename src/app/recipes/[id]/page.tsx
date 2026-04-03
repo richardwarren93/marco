@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -220,6 +220,13 @@ export default function RecipeDetailPage() {
   const supabase = createClient();
   const { showToast } = useToast();
 
+  // Auto-open AddMealSheet if directed from save toast
+  useEffect(() => {
+    if (searchParams?.get("openMealSheet") === "true") {
+      setShowAddMealSheet(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── SWR data ────────────────────────────────────────────────────────────────
   const { data: recipeData, isLoading: loading, mutate: mutateRecipe } = useRecipe(id as string);
   const recipe = recipeData ?? null;
@@ -352,7 +359,14 @@ export default function RecipeDetailPage() {
         {/* Overlaid nav */}
         <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-3 z-10">
           <button
-            onClick={() => router.back()}
+            onClick={() => {
+              const from = searchParams?.get("from");
+              if (from === "build") {
+                router.push("/meal-plan?step=build");
+              } else {
+                router.back();
+              }
+            }}
             className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
           >
             <svg className="w-4.5 h-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
