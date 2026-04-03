@@ -10,6 +10,7 @@ import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
 import AnalyzeScreen from "@/components/meal-plan/AnalyzeScreen";
 import AssignDaysScreen, { type DayAssignment } from "@/components/meal-plan/AssignDaysScreen";
 import type { MealPlan, Recipe } from "@/types";
+import { useToast } from "@/components/ui/Toast";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -59,6 +60,7 @@ function MealPlanInner() {
 
   // Recipes selected during the current Build flow pass
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const { showToast } = useToast();
 
   // ─── Data (SWR-cached) ───────────────────────────────────────────────────────
   const dateRange = useMemo(() => {
@@ -113,10 +115,13 @@ function MealPlanInner() {
     });
   }
 
-  function handlePlanThisWeek() {
+  function handlePlanThisWeek(preSelectedRecipeId?: string) {
     const weekKey = formatDateKey(calendarWeek);
     setPlanningWeek(weekKey);
-    setSelectedIds(new Set(weekPicks[weekKey] || []));
+    const existing = new Set(weekPicks[weekKey] || []);
+    // If a recipe was pre-selected from AddMealSheet, include it
+    if (preSelectedRecipeId) existing.add(preSelectedRecipeId);
+    setSelectedIds(existing);
     setStep(1);
   }
 
@@ -130,15 +135,21 @@ function MealPlanInner() {
         a.mealTypes.map((mt) => handleCalendarAdd(a.recipeId, a.dates, mt, a.servings))
       )
     );
+    // Count total meal slots scheduled
+    const totalSlots = assignments.reduce((sum, a) => sum + a.dates.length * a.mealTypes.length, 0);
     setSelectedIds(new Set());
     setStep(3);
+    // Fire toast after step transition settles
+    setTimeout(() => {
+      showToast(`🎉 ${totalSlots} meal${totalSlots !== 1 ? "s" : ""} scheduled for this week!`);
+    }, 400);
   }
 
   async function handleCalendarAdd(
     recipeId: string,
     dates: string[],
     mealType: string,
-    servings?: number
+    servings?: number,
   ) {
     const {
       data: { user },
@@ -156,6 +167,7 @@ function MealPlanInner() {
     const { error: insertError } = await supabase.from("meal_plans").insert(rows);
     if (insertError) { setError(insertError.message); return; }
     await mutateMealPlans();
+    // Single-add toast is handled by AddMealSheet
   }
 
   async function handleEditMealSave(
@@ -245,6 +257,7 @@ function MealPlanInner() {
         existingMealPlans={mealPlans}
         onBack={() => setStep(2)}
         onDone={handleAssignDone}
+        onRemoveMeal={handleCalendarRemove}
       />
     );
   }

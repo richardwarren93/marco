@@ -164,7 +164,7 @@ export default function MealPlanListView({
   weekPickIds?: string[];
   weekStart: Date;
   onWeekChange: (w: Date) => void;
-  onPlanThisWeek?: () => void;
+  onPlanThisWeek?: (preSelectedRecipeId?: string) => void;
 }) {
   const router = useRouter();
 
@@ -486,7 +486,7 @@ export default function MealPlanListView({
           <div className="flex flex-col items-center py-8 space-y-3">
             <p className="text-sm font-medium" style={{ color: TEXT_2 }}>No meals planned this week</p>
             <button
-              onClick={onPlanThisWeek}
+              onClick={() => onPlanThisWeek?.()}
               className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all active:scale-[0.97]"
               style={{ background: ACCENT, color: "white" }}
             >
@@ -510,7 +510,7 @@ export default function MealPlanListView({
             <p className="text-sm font-semibold" style={{ color: TEXT_2 }}>No meals planned this week</p>
             {onPlanThisWeek && (
               <button
-                onClick={onPlanThisWeek}
+                onClick={() => onPlanThisWeek?.()}
                 className="mt-1 px-5 py-2.5 rounded-full text-sm font-semibold transition-all active:scale-[0.97]"
                 style={{ background: ACCENT, color: "white" }}
               >
@@ -833,7 +833,7 @@ export default function MealPlanListView({
         onClose={() => setAddSheetOpen(false)}
         onAdd={handleAdd}
         onRemove={onRemove}
-        onPlanMultiple={onPlanThisWeek}
+        onPlanMultiple={(preSelectedId) => onPlanThisWeek?.(preSelectedId)}
       />
 
       {/* ── RecipePreviewSheet ───────────────────────────────────────────────── */}

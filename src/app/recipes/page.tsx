@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import type { Recipe, Collection } from "@/types";
 import { useRecipes, useCollections } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
+import { useToast } from "@/components/ui/Toast";
 
 // ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
 const DiscoverTab = dynamic(() => import("@/components/recipes/DiscoverTab"));
@@ -61,13 +62,16 @@ function RecipesInner() {
   const [showImport, setShowImport] = useState(false);
 
   const supabase = createClient();
+  const { showToast } = useToast();
 
   const today = useMemo(() => formatDateKey(new Date()), []);
   const weekStart = useMemo(() => getMonday(new Date()), []);
 
   const handleAddToMealPlan = useCallback(
     async (recipeId: string, dates: string[], mealType: string, servings?: number) => {
+      console.log("[MealAdd] handleAddToMealPlan called", { recipeId, dates, mealType });
       const { data: { user } } = await supabase.auth.getUser();
+      console.log("[MealAdd] user:", user?.id || "NO USER");
       if (!user) return;
       await Promise.all(
         dates.map((date) =>
@@ -81,11 +85,10 @@ function RecipesInner() {
           })
         )
       );
-      // After adding, switch to meal plan tab — navigate to the first selected date
-      const firstDate = dates.sort()[0] || "";
-      router.push(`/recipes?tab=meal-plan${firstDate ? `&date=${firstDate}` : ""}`);
+
+      // Sheet handles toast + closing via AddMealSheet
     },
-    [supabase, router]
+    [supabase]
   );
 
   return (
