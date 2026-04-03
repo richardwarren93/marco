@@ -55,6 +55,7 @@ export default function AssignDaysScreen({
   onBack,
   onDone,
   onRemoveMeal,
+  defaultServings,
 }: {
   selectedRecipes: Recipe[];
   planningWeek: string;
@@ -62,13 +63,14 @@ export default function AssignDaysScreen({
   onBack: () => void;
   onDone: (assignments: DayAssignment[]) => Promise<void>;
   onRemoveMeal?: (planId: string) => void | Promise<void>;
+  defaultServings?: number;
 }) {
   const weekDates = useMemo(() => getWeekDates(planningWeek), [planningWeek]);
 
   const [assignments, setAssignments] = useState<Record<string, DayAssignment>>(() => {
     const init: Record<string, DayAssignment> = {};
     for (const r of selectedRecipes) {
-      init[r.id] = { recipeId: r.id, mealTypes: [(r.meal_type as MealType) || "dinner"], dates: [], servings: 2 };
+      init[r.id] = { recipeId: r.id, mealTypes: [(r.meal_type as MealType) || "dinner"], dates: [], servings: defaultServings || 2 };
     }
     return init;
   });

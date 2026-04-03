@@ -81,6 +81,15 @@ function MealPlanInner() {
     };
   }, []);
 
+  // Household size for default servings
+  const [householdSize, setHouseholdSize] = useState(2);
+  useEffect(() => {
+    const sb = createClient();
+    sb.from("user_preferences").select("household_size").single().then(({ data }: { data: { household_size?: number } | null }) => {
+      if (data?.household_size) setHouseholdSize(data.household_size);
+    });
+  }, []);
+
   const { data: recipesData = [], isLoading: recipesLoading } = useRecipes();
   const recipes: Recipe[] = recipesData;
   const {
@@ -269,6 +278,7 @@ function MealPlanInner() {
         onBack={() => setStep(2)}
         onDone={handleAssignDone}
         onRemoveMeal={handleCalendarRemove}
+        defaultServings={householdSize}
       />
     );
   }
