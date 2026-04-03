@@ -50,12 +50,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const showToast = useCallback(
     (message: string, options?: ToastOptions) => {
       const id = nextId++;
+      // Toasts with actions get more time (5s) so user can read + tap
+      const defaultDuration = options?.action ? 5000 : 3000;
       const toast: Toast = {
         id,
         message,
         icon: options?.icon,
         variant: options?.variant ?? "success",
-        duration: options?.duration ?? 3000,
+        duration: options?.duration ?? defaultDuration,
         action: options?.action,
       };
 
@@ -89,7 +91,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           {toasts.map((toast) => (
             <div
               key={toast.id}
-              onClick={() => removeToast(toast.id)}
+              onClick={toast.action ? undefined : () => removeToast(toast.id)}
               className={`pointer-events-auto w-full px-4 py-3.5 rounded-2xl flex items-center gap-3 transition-all duration-400 ${
                 toast.exiting
                   ? "opacity-0 translate-y-3 scale-95"
@@ -97,18 +99,17 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               } ${variantClass(toast.variant)}`}
               style={variantStyle(toast.variant)}
             >
-              {toast.icon ? (
+              {toast.icon && (
                 <span className="text-base flex-shrink-0">{toast.icon}</span>
-              ) : (
-                <DefaultIcon variant={toast.variant} />
               )}
               <span className="flex-1 text-[13px] font-medium leading-snug line-clamp-2">
                 {toast.message}
               </span>
               {toast.action && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); toast.action!.onClick(); removeToast(toast.id); }}
-                  className="text-orange-600 font-semibold text-xs whitespace-nowrap ml-1 hover:text-orange-700 transition-colors"
+                  onClick={() => { toast.action!.onClick(); removeToast(toast.id); }}
+                  className="text-orange-600 font-bold text-sm whitespace-nowrap ml-2 px-3 py-2 -my-1 rounded-xl active:bg-orange-50 transition-colors touch-manipulation"
+                  style={{ minHeight: 44, minWidth: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
                 >
                   {toast.action.label}
                 </button>
