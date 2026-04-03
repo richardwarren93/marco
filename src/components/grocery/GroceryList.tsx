@@ -833,26 +833,46 @@ export default function GroceryList() {
         </div>
       )}
 
-      {/* ── Cost + Cashback Bar ─────────────────────────────────────────────── */}
-      {costSummary && toBuyItems.length > 0 && (
-        <div className="mx-4 mt-3 mb-2 p-3.5 rounded-2xl bg-white border border-gray-100" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400 mb-0.5">Estimated cost</p>
-              <p className="text-lg font-bold text-gray-900 tabular-nums">
+      {/* ── Cost + Savings Bar ─────────────────────────────────────────────── */}
+      {costSummary && toBuyItems.length > 0 && (() => {
+        const weeklyAvg = (costSummary.total_low + costSummary.total_high) / 2;
+        const thisRunSavings = Math.round(weeklyAvg * 0.02 * 100) / 100;
+        const annualSavings = costSummary.annual_cashback;
+        const progressPct = Math.min((thisRunSavings / annualSavings) * 100, 100);
+        return (
+          <div className="mx-4 mt-3 mb-2 p-4 rounded-2xl bg-white border border-gray-100" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+            {/* Estimated cost */}
+            <div className="flex items-baseline justify-between mb-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">This week&apos;s groceries</p>
+              <p className="text-base font-bold text-gray-900 tabular-nums">
                 ${Math.round(costSummary.total_low)}&ndash;${Math.round(costSummary.total_high)}
               </p>
             </div>
-            <div className="text-right">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-green-600 mb-0.5">Est. annual savings</p>
-              <p className="text-lg font-bold text-green-600 tabular-nums">
-                ${Math.round(costSummary.annual_cashback).toLocaleString()}
+
+            {/* Annual savings — big number */}
+            <div className="flex items-baseline justify-between mb-1.5">
+              <p className="text-sm font-bold text-green-600">
+                ${Math.round(annualSavings).toLocaleString()}<span className="text-xs font-semibold text-green-500">/year</span>
+              </p>
+              <p className="text-xs font-semibold text-green-500 tabular-nums">
+                +${thisRunSavings.toFixed(2)} this run
               </p>
             </div>
+
+            {/* Progress bar */}
+            <div className="w-full h-2 rounded-full bg-green-100 overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700 ease-out"
+                style={{
+                  width: `${progressPct}%`,
+                  background: "linear-gradient(90deg, #22c55e, #16a34a)",
+                }}
+              />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-1.5">Earn back on every grocery run &middot; Updates as you plan</p>
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5">Based on your meal plan &middot; Updates as you plan</p>
-        </div>
-      )}
+        );
+      })()}
       {costLoading && toBuyItems.length > 0 && !costSummary && (
         <div className="mx-4 mt-3 mb-2 p-3.5 rounded-2xl bg-white border border-gray-100 flex items-center justify-center gap-2" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
           <div className="w-3.5 h-3.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
