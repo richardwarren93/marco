@@ -78,7 +78,7 @@ export async function POST() {
 
       try {
         const response = await anthropic.messages.create({
-          model: "claude-haiku-4-20250414",
+          model: "claude-sonnet-4-20250514",
           max_tokens: 2048,
           system: `You are a grocery pricing expert. Estimate per-unit prices in USD for typical US grocery stores (2025 prices).
 Return ONLY valid JSON:
