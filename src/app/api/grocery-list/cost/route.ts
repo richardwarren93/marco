@@ -27,23 +27,26 @@ function normalize(name: string): string {
   return name.toLowerCase().trim().replace(/\s+/g, " ");
 }
 
-/** For cached prices, we store price per standard grocery purchase unit.
- *  Most grocery items are bought as whole units (1 can, 1 bunch, 1 lb).
- *  Only multiply for clearly large quantities (e.g., "3 lbs", "2 cans").
- *  Small cooking measurements (tsp, cloves, pinch) should NOT multiply. */
-const COOKING_UNITS = new Set([
-  "tsp", "teaspoon", "teaspoons", "tbsp", "tablespoon", "tablespoons",
-  "clove", "cloves", "pinch", "dash", "splash", "to taste",
-  "slice", "slices", "piece", "pieces", "sprig", "sprigs",
-  "leaf", "leaves", "stalk", "stalks",
+/** Each grocery list item = one store purchase.
+ *  The cached price already represents what you'd pay at the store.
+ *  Only multiply for bulk weight/volume units where the amount clearly
+ *  means "buy this many pounds/cans" (e.g., "3 lbs" or "2 cans"). */
+const BULK_UNITS = new Set([
+  "lb", "lbs", "pound", "pounds",
+  "kg", "kilogram", "kilograms",
+  "can", "cans", "jar", "jars", "bottle", "bottles",
+  "bag", "bags", "box", "boxes", "package", "packages", "pack", "packs",
+  "dozen", "dozen",
 ]);
 
 function quantityMultiplier(amount?: string, unit?: string): number {
   if (!amount) return 1;
-  // Don't multiply for cooking-measurement units — you buy the whole item
-  if (unit && COOKING_UNITS.has(unit.toLowerCase().trim())) return 1;
   const num = parseFloat(amount);
-  return isNaN(num) || num <= 0 ? 1 : num;
+  if (isNaN(num) || num <= 0) return 1;
+  // Only multiply for bulk purchasing units
+  if (unit && BULK_UNITS.has(unit.toLowerCase().trim())) return num;
+  // Everything else (cups, tsp, cloves, medium, etc.) = 1 purchase
+  return 1;
 }
 
 export async function POST(request: Request) {
