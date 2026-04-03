@@ -19,6 +19,10 @@ function normalize(name: string): string {
  *
  * Protected: requires authenticated user (admin use only).
  */
+export async function GET() {
+  return POST();
+}
+
 export async function POST() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
