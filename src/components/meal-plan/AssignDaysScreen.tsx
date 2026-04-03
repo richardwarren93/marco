@@ -30,7 +30,7 @@ export type DayAssignment = {
 type ConflictItem = {
   date: string;
   mealType: MealType;
-  existingTitle: string;
+  existingMeals: { id: string; title: string }[];
   incomingTitle: string;
 };
 
@@ -54,12 +54,14 @@ export default function AssignDaysScreen({
   existingMealPlans,
   onBack,
   onDone,
+  onRemoveMeal,
 }: {
   selectedRecipes: Recipe[];
   planningWeek: string;
   existingMealPlans: MealPlan[];
   onBack: () => void;
   onDone: (assignments: DayAssignment[]) => Promise<void>;
+  onRemoveMeal?: (planId: string) => void | Promise<void>;
 }) {
   const weekDates = useMemo(() => getWeekDates(planningWeek), [planningWeek]);
 
@@ -109,8 +111,13 @@ export default function AssignDaysScreen({
   const readyCount = Object.values(assignments).filter((a) => a.dates.length > 0).length;
 
   const existingLookup = useMemo(() => {
-    const map = new Map<string, MealPlan>();
-    for (const mp of existingMealPlans) map.set(`${mp.planned_date}|${mp.meal_type}`, mp);
+    const map = new Map<string, MealPlan[]>();
+    for (const mp of existingMealPlans) {
+      const key = `${mp.planned_date}|${mp.meal_type}`;
+      const arr = map.get(key) || [];
+      arr.push(mp);
+      map.set(key, arr);
+    }
     return map;
   }, [existingMealPlans]);
 
@@ -120,9 +127,16 @@ export default function AssignDaysScreen({
       const recipe = selectedRecipes.find((r) => r.id === a.recipeId);
       for (const date of a.dates) {
         for (const mt of a.mealTypes) {
-          const existing = existingLookup.get(`${date}|${mt}`);
-          if (existing && existing.recipe) {
-            found.push({ date, mealType: mt, existingTitle: (existing.recipe as Recipe).title, incomingTitle: recipe?.title ?? "New meal" });
+          const existingList = existingLookup.get(`${date}|${mt}`) || [];
+          if (existingList.length > 0) {
+            found.push({
+              date,
+              mealType: mt,
+              existingMeals: existingList
+                .filter((mp) => mp.recipe)
+                .map((mp) => ({ id: mp.id, title: (mp.recipe as Recipe).title })),
+              incomingTitle: recipe?.title ?? "New meal",
+            });
           }
         }
       }
@@ -190,11 +204,6 @@ export default function AssignDaysScreen({
                   <p className="text-sm font-semibold line-clamp-1" style={{ color: "#1a1a1a" }}>{recipe.title}</p>
                   {totalTime > 0 && <p className="text-xs mt-0.5" style={{ color: "#888" }}>{totalTime} min</p>}
                 </div>
-                {slotCount > 0 && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: ACCENT_LIGHT, color: ACCENT }}>
-                    {slotCount}×
-                  </span>
-                )}
               </div>
 
               {/* Days */}
@@ -280,15 +289,30 @@ export default function AssignDaysScreen({
         </div>
       </div>
 
-      {/* Conflict modal — calm copy */}
+      {/* Conflict modal */}
       {showConflictModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: "rgba(0,0,0,0.35)" }}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          style={{ background: "rgba(0,0,0,0.35)" }}
+          onClick={() => setShowConflictModal(false)}
+        >
           <div
-            className="w-full max-w-sm bg-white rounded-3xl overflow-hidden"
+            className="w-full max-w-sm bg-white rounded-3xl overflow-hidden relative"
             style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)", animation: "fadeSlideUp 0.3s ease both" }}
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* X close button */}
+            <button
+              onClick={() => setShowConflictModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+            >
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
             {/* Header */}
-            <div className="px-5 pt-5 pb-3">
+            <div className="px-5 pt-5 pb-3 pr-12">
               <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3" style={{ background: "#f3f3f1" }}>
                 <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -296,7 +320,7 @@ export default function AssignDaysScreen({
               </div>
               <h2 className="text-base font-bold" style={{ color: "#1a1a1a" }}>Some meals already exist</h2>
               <p className="text-sm mt-1" style={{ color: "#888" }}>
-                Add alongside them, or go back to adjust your plan.
+                Choose how to handle the conflicts below.
               </p>
             </div>
 
@@ -306,27 +330,45 @@ export default function AssignDaysScreen({
                 <div key={i} className="rounded-xl px-3 py-2.5" style={{ background: "#f6f6f4" }}>
                   <p className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>
                     {formatDate(c.date)} · {MEAL_LABELS[c.mealType]}
+                    {c.existingMeals.length > 1 && (
+                      <span className="text-gray-400 font-normal"> ({c.existingMeals.length} meals)</span>
+                    )}
                   </p>
-                  <p className="text-xs mt-0.5" style={{ color: "#888" }}>
-                    Already has: <span style={{ color: "#1a1a1a" }}>{c.existingTitle}</span>
-                  </p>
+                  {c.existingMeals.map((m, j) => (
+                    <p key={j} className="text-xs mt-0.5" style={{ color: "#888" }}>
+                      {c.existingMeals.length > 1 ? `${j + 1}. ` : "Already has: "}
+                      <span style={{ color: "#1a1a1a" }}>{m.title}</span>
+                    </p>
+                  ))}
                 </div>
               ))}
             </div>
 
             {/* Actions */}
-            <div className="px-5 pb-5 flex gap-2 pt-2">
-              <button
-                onClick={() => setShowConflictModal(false)}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm transition-all active:scale-95"
-                style={{ background: "#f3f3f1", color: "#1a1a1a" }}
-              >
-                Go back
-              </button>
+            <div className="px-5 pb-5 space-y-2 pt-2">
+              {onRemoveMeal && (
+                <button
+                  onClick={async () => {
+                    setShowConflictModal(false);
+                    // Remove ALL conflicting meals first, then add new ones
+                    const removePromises = conflicts.flatMap((c) =>
+                      c.existingMeals.map((m) => Promise.resolve(onRemoveMeal!(m.id)))
+                    );
+                    await Promise.all(removePromises);
+                    // Small delay to let DB sync
+                    await new Promise((r) => setTimeout(r, 300));
+                    await save(pendingAssignments);
+                  }}
+                  className="w-full py-3 rounded-2xl font-semibold text-sm text-white transition-all active:scale-95"
+                  style={{ background: "#ea580c" }}
+                >
+                  Replace existing meals
+                </button>
+              )}
               <button
                 onClick={async () => { setShowConflictModal(false); await save(pendingAssignments); }}
-                className="flex-1 py-3 rounded-2xl font-semibold text-sm text-white transition-all active:scale-95"
-                style={{ background: "#1a1a1a" }}
+                className="w-full py-3 rounded-2xl font-semibold text-sm transition-all active:scale-95"
+                style={{ background: "#f3f3f1", color: "#1a1a1a" }}
               >
                 Add anyway
               </button>

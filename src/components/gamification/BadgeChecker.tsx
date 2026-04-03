@@ -16,6 +16,11 @@ export default function BadgeChecker() {
 
   async function checkBadges() {
     if (checking.current) return;
+
+    // Don't check badges on landing/onboarding pages (user may not be logged in)
+    const path = window.location.pathname;
+    if (path === "/" || path.startsWith("/onboarding") || path.startsWith("/auth")) return;
+
     checking.current = true;
 
     try {

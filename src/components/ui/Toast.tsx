@@ -5,6 +5,11 @@ import { createContext, useContext, useState, useCallback, useEffect, useRef } f
 // ─── Types ───────────────────────────────────────────────────────────────────
 type ToastVariant = "success" | "badge" | "info";
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: number;
   message: string;
@@ -12,12 +17,14 @@ interface Toast {
   variant: ToastVariant;
   duration: number;
   exiting?: boolean;
+  action?: ToastAction;
 }
 
 interface ToastOptions {
   icon?: string;
   variant?: ToastVariant;
   duration?: number;
+  action?: ToastAction;
 }
 
 interface ToastContextValue {
@@ -34,12 +41,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const timers = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
   const removeToast = useCallback((id: number) => {
-    // Start exit animation
     setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)));
-    // Remove after animation
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 300);
+    }, 400);
   }, []);
 
   const showToast = useCallback(
@@ -51,10 +56,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         icon: options?.icon,
         variant: options?.variant ?? "success",
         duration: options?.duration ?? 3000,
+        action: options?.action,
       };
 
       setToasts((prev) => {
-        // Max 2 visible — remove oldest if needed
         const next = prev.length >= 2 ? prev.slice(1) : prev;
         return [...next, toast];
       });
@@ -68,7 +73,6 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [removeToast],
   );
 
-  // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       timers.current.forEach((t) => clearTimeout(t));
@@ -79,25 +83,36 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
 
-      {/* Toast container — fixed top center */}
+      {/* Toast container — fixed bottom center, above tab bar */}
       {toasts.length > 0 && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-center gap-2 pointer-events-none">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col-reverse items-center gap-2.5 pointer-events-none w-[calc(100%-2rem)] max-w-sm">
           {toasts.map((toast) => (
             <div
               key={toast.id}
-              className={`pointer-events-auto px-5 py-3 rounded-2xl shadow-lg flex items-center gap-2.5 text-sm font-semibold transition-all duration-300 ${
-                toast.exiting
-                  ? "opacity-0 -translate-y-2"
-                  : "opacity-100 translate-y-0 animate-toast-in"
-              } ${variantStyles(toast.variant)}`}
               onClick={() => removeToast(toast.id)}
+              className={`pointer-events-auto w-full px-4 py-3.5 rounded-2xl flex items-center gap-3 transition-all duration-400 ${
+                toast.exiting
+                  ? "opacity-0 translate-y-3 scale-95"
+                  : "opacity-100 translate-y-0 scale-100 animate-toast-in"
+              } ${variantClass(toast.variant)}`}
+              style={variantStyle(toast.variant)}
             >
               {toast.icon ? (
-                <span className="text-base">{toast.icon}</span>
+                <span className="text-base flex-shrink-0">{toast.icon}</span>
               ) : (
-                defaultIcon(toast.variant)
+                <DefaultIcon variant={toast.variant} />
               )}
-              <span>{toast.message}</span>
+              <span className="flex-1 text-[13px] font-medium leading-snug line-clamp-2">
+                {toast.message}
+              </span>
+              {toast.action && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); toast.action!.onClick(); removeToast(toast.id); }}
+                  className="text-orange-600 font-semibold text-xs whitespace-nowrap ml-1 hover:text-orange-700 transition-colors"
+                >
+                  {toast.action.label}
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -110,41 +125,55 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 export function useToast(): ToastContextValue {
   const ctx = useContext(ToastContext);
   if (!ctx) {
-    // Return a no-op if used outside provider (SSR safety)
     return { showToast: () => {} };
   }
   return ctx;
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function variantStyles(variant: ToastVariant): string {
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+function variantClass(variant: ToastVariant): string {
   switch (variant) {
     case "success":
-      return "bg-white text-[#1a1410] border border-green-200";
+      return "bg-white/95 backdrop-blur-xl border border-gray-100/80";
     case "badge":
-      return "bg-gradient-to-r from-amber-50 to-yellow-50 text-[#1a1410] border border-amber-200 shadow-amber-100/50";
+      return "bg-gradient-to-r from-amber-50/95 to-orange-50/95 backdrop-blur-xl border border-amber-200/60";
     case "info":
-      return "bg-white text-[#1a1410] border border-gray-200";
+      return "bg-white/95 backdrop-blur-xl border border-gray-100/80";
   }
 }
 
-function defaultIcon(variant: ToastVariant) {
+function variantStyle(variant: ToastVariant): React.CSSProperties {
+  const base: React.CSSProperties = {
+    boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)",
+  };
+  if (variant === "badge") {
+    base.boxShadow = "0 8px 32px rgba(234,88,12,0.10), 0 2px 8px rgba(0,0,0,0.04)";
+  }
+  return base;
+}
+
+function DefaultIcon({ variant }: { variant: ToastVariant }) {
   switch (variant) {
     case "success":
       return (
-        <span className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0">
-          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+        <span className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0"
+          style={{ boxShadow: "0 2px 8px rgba(232,83,10,0.3)" }}
+        >
+          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         </span>
       );
     case "badge":
-      return <span className="text-base">🏆</span>;
+      return <span className="text-lg flex-shrink-0">🏆</span>;
     case "info":
       return (
-        <span className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-          <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20 10 10 0 000-20z" />
+        <span className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center flex-shrink-0"
+          style={{ boxShadow: "0 2px 8px rgba(234,88,12,0.25)" }}
+        >
+          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
           </svg>
         </span>
       );

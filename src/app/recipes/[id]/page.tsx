@@ -7,15 +7,17 @@ import Link from "next/link";
 import useSWR from "swr";
 import dynamic from "next/dynamic";
 import type { Recipe, Ingredient } from "@/types";
-import { useRecipe, apiFetcher } from "@/lib/hooks/use-data";
+import { useRecipe, useRecipes, apiFetcher } from "@/lib/hooks/use-data";
 import SocialEmbed from "@/components/recipes/SocialEmbed";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
+import { useToast } from "@/components/ui/Toast";
 
 // ── Lazy-load heavy/conditional components ──────────────────────────────────
 const RecipeForm = dynamic(() => import("@/components/recipes/RecipeForm"), { ssr: false });
 const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
 const ShareWithFriendsModal = dynamic(() => import("@/components/friends/ShareWithFriendsModal"), { ssr: false });
+const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
 const CommunitySection = dynamic(() => import("@/components/community/CommunitySection"));
 const CookPhotosGallery = dynamic(() => import("@/components/recipes/CookPhotosGallery"));
 const NutritionCard = dynamic(() => import("@/components/recipes/NutritionCard"));
@@ -211,14 +213,29 @@ export default function RecipeDetailPage() {
     !isNaN(servingsParam) && servingsParam > 0 ? servingsParam : null
   );
   const [showMealPlanPrompt, setShowMealPlanPrompt] = useState(false);
+  const [showAddMealSheet, setShowAddMealSheet] = useState(false);
   const [unitSystem, setUnitSystem] = useState<UnitSystem | null>(null); // null = original
   const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
   const router = useRouter();
   const supabase = createClient();
+  const { showToast } = useToast();
 
   // ── SWR data ────────────────────────────────────────────────────────────────
   const { data: recipeData, isLoading: loading, mutate: mutateRecipe } = useRecipe(id as string);
   const recipe = recipeData ?? null;
+  const { data: allRecipesData = [] } = useRecipes();
+
+  // Compute current week start (Monday) and today's date for AddMealSheet
+  const today = new Date();
+  const todayStr = today.toISOString().split("T")[0];
+  const weekStart = (() => {
+    const d = new Date(today);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  })();
 
   const { data: collectionsData, mutate: mutateCollections } = useSWR(
     id ? `/api/recipes/${id}/collections` : null,
@@ -232,6 +249,23 @@ export default function RecipeDetailPage() {
     setDeleting(true);
     await supabase.from("recipes").delete().eq("id", id);
     router.push("/recipes");
+  }
+
+  async function handleMealSheetAdd(recipeId: string, dates: string[], mealType: string, servings?: number) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const rows = dates.map((planned_date) => ({
+      user_id: user.id,
+      recipe_id: recipeId,
+      planned_date,
+      meal_type: mealType,
+      ...(servings ? { servings } : {}),
+    }));
+
+    const { error: insertError } = await supabase.from("meal_plans").insert(rows);
+    if (insertError) return;
+    // Sheet handles toast + closing via AddMealSheet
   }
 
   if (loading) {
@@ -456,7 +490,7 @@ export default function RecipeDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                 </svg>
               ),
-              onClick: () => router.push("/meal-plan"),
+              onClick: () => setShowAddMealSheet(true),
             },
             {
               label: "Share",
@@ -589,7 +623,7 @@ export default function RecipeDetailPage() {
                     </p>
                     <div className="flex gap-2">
                       <button
-                        onClick={() => router.push("/meal-plan")}
+                        onClick={() => { setShowMealPlanPrompt(false); setShowAddMealSheet(true); }}
                         className="flex-1 py-1.5 bg-orange-500 text-white rounded-lg text-xs font-semibold hover:bg-orange-600 active:scale-[0.98] transition-all"
                       >
                         Add to Meal Plan
@@ -743,6 +777,17 @@ export default function RecipeDetailPage() {
         itemType="recipe"
         itemId={recipe.id}
         itemTitle={recipe.title}
+      />
+
+      <AddMealSheet
+        isOpen={showAddMealSheet}
+        onClose={() => setShowAddMealSheet(false)}
+        defaultDate={todayStr}
+        weekStart={weekStart}
+        allRecipes={allRecipesData}
+        defaultRecipeId={recipe.id}
+        defaultServings={currentServings || undefined}
+        onAdd={handleMealSheetAdd}
       />
     </div>
   );

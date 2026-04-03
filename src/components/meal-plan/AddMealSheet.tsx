@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
+import { useToast } from "@/components/ui/Toast";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
 const ACCENT = "#ea580c";
@@ -109,8 +110,9 @@ export default function AddMealSheet({
   onClose: () => void;
   onAdd: (recipeId: string, dates: string[], mealType: string, servings?: number) => Promise<void>;
   onRemove?: (planId: string) => void;
-  onPlanMultiple?: () => void;
+  onPlanMultiple?: (preSelectedRecipeId?: string) => void;
 }) {
+  const { showToast } = useToast();
   const [selectedMealTypes, setSelectedMealTypes] = useState<Set<MealType>>(new Set<MealType>(["dinner"]));
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set([defaultDate]));
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
@@ -118,6 +120,8 @@ export default function AddMealSheet({
   const [recipeSearch, setRecipeSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [searchMode, setSearchMode] = useState(false);
+  // Track if user has manually interacted with days (for "first tap swaps default" behavior)
+  const [hasManuallyTappedDay, setHasManuallyTappedDay] = useState(false);
 
   const scrollBodyRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -153,6 +157,7 @@ export default function AddMealSheet({
     setServings(defaultServings ?? 1);
     setRecipeSearch("");
     setSearchMode(false);
+    setHasManuallyTappedDay(false);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const weekDates = useMemo(
@@ -200,19 +205,18 @@ export default function AddMealSheet({
   }, [recipeSearch, allRecipes]);
 
   function toggleMealType(mt: MealType) {
-    setSelectedMealTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(mt)) { if (next.size > 1) next.delete(mt); }
-      else next.add(mt);
-      return next;
-    });
+    // Single-select: just replace
+    setSelectedMealTypes(new Set([mt]));
   }
 
   function toggleDate(key: string) {
     setSelectedDates((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) { if (next.size > 1) next.delete(key); }
-      else next.add(key);
+      if (next.has(key)) {
+        if (next.size > 1) next.delete(key); // Don't allow empty
+      } else {
+        next.add(key);
+      }
       return next;
     });
   }
@@ -239,9 +243,27 @@ export default function AddMealSheet({
     setSaving(true);
     try {
       const dates = [...selectedDates].sort();
-      for (const mt of selectedMealTypes) await onAdd(selectedRecipeId, dates, mt, servings);
+      const mealTypes = [...selectedMealTypes];
+      for (const mt of mealTypes) await onAdd(selectedRecipeId, dates, mt, servings);
       if (replacePlanId && onRemove) onRemove(replacePlanId);
+
+      // Build toast message
+      const recipe = allRecipes.find((r) => r.id === selectedRecipeId);
+      const title = recipe?.title || "Meal";
+      const dayNames = dates.map((d) => {
+        const date = new Date(d + "T12:00:00");
+        return date.toLocaleDateString("en-US", { weekday: "short" });
+      });
+      const dayStr = dayNames.length === 1 ? dayNames[0] : `${dayNames.length} days`;
+      const mealLabel = mealTypes.length === 1
+        ? mealTypes[0].charAt(0).toUpperCase() + mealTypes[0].slice(1)
+        : `${mealTypes.length} meals`;
+
+      // Close sheet first, then show toast
       onClose();
+      setTimeout(() => {
+        showToast(`${title} added to ${dayStr} ${mealLabel}`);
+      }, 300);
     } finally { setSaving(false); }
   }
 
@@ -379,7 +401,7 @@ export default function AddMealSheet({
           {onPlanMultiple && (
             <div className="px-4 pb-4 flex-shrink-0" style={{ borderTop: "1px solid #f0f0ee", paddingTop: 12 }}>
               <button
-                onClick={() => { onClose(); onPlanMultiple(); }}
+                onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}
                 className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors"
                 style={{ background: "#f3f3f1" }}
               >
@@ -462,7 +484,7 @@ export default function AddMealSheet({
             <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Recipe</p>
             {selectedRecipe ? (
               <div className="space-y-1.5">
-                <RecipeRow recipe={selectedRecipe} isSelected badge={getBadge(selectedRecipe)} onClick={() => setSelectedRecipeId(null)} />
+                <RecipeRow recipe={selectedRecipe} isSelected onClick={() => setSelectedRecipeId(null)} />
                 <button onClick={enterSearchMode} className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium transition-colors" style={{ color: "#888" }}>
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
@@ -501,7 +523,7 @@ export default function AddMealSheet({
           {/* Plan multiple meals — secondary CTA */}
           {onPlanMultiple && (
             <button
-              onClick={() => { onClose(); onPlanMultiple(); }}
+              onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}
               className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-colors"
               style={{ background: "#f3f3f1" }}
             >

@@ -25,7 +25,7 @@ export default function ScheduleScreen({
   onAddMeal: (recipeId: string, dates: string[], mealType: string, servings?: number) => Promise<void>;
   onRemoveMeal: (planId: string) => void;
   onEditMeal?: (planId: string, updates: { meal_type?: string; recipe_id?: string; servings?: number }) => Promise<void>;
-  onPlanThisWeek: () => void;
+  onPlanThisWeek: (preSelectedRecipeId?: string) => void;
   onShowInsights: () => void;
   calendarWeek: Date;
   onCalendarWeekChange: (w: Date) => void;

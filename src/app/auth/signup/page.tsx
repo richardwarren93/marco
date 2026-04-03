@@ -206,6 +206,30 @@ export default function SignupPage() {
           <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm text-center">{error}</div>
         )}
 
+        {/* Terms checkbox — above buttons */}
+        <div className="flex items-start gap-3">
+          <button
+            onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }}
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
+              agreedToTerms
+                ? "bg-orange-500 border-orange-500"
+                : "border-gray-300 bg-white"
+            }`}
+          >
+            {agreedToTerms && (
+              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            I&apos;ve read and agree with the{" "}
+            <span className="underline text-gray-700 font-medium">Terms</span>
+            {" "}and{" "}
+            <span className="underline text-gray-700 font-medium">Privacy Policy</span>
+          </p>
+        </div>
+
         {/* Continue with Email */}
         <button
           onClick={() => {
@@ -252,30 +276,6 @@ export default function SignupPage() {
             Continue with Apple
           </button>
         )}
-
-        {/* Terms checkbox */}
-        <div className="flex items-start gap-3 pt-2">
-          <button
-            onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }}
-            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
-              agreedToTerms
-                ? "bg-orange-500 border-orange-500"
-                : "border-gray-300 bg-white"
-            }`}
-          >
-            {agreedToTerms && (
-              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            I&apos;ve read and agree with the{" "}
-            <span className="underline text-gray-700 font-medium">Terms</span>
-            {" "}and{" "}
-            <span className="underline text-gray-700 font-medium">Privacy Policy</span>
-          </p>
-        </div>
 
         {/* Sign in link */}
         <p className="text-center text-sm text-gray-500 pt-1">
