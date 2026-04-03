@@ -34,12 +34,12 @@ type ConflictItem = {
   incomingTitle: string;
 };
 
-function getWeekDates(mondayStr: string): { label: string; iso: string }[] {
+function getWeekDates(mondayStr: string): { label: string; dayNum: number; iso: string }[] {
   const monday = new Date(mondayStr + "T12:00:00");
   return DAY_SHORT.map((label, i) => {
     const d = new Date(monday);
     d.setDate(d.getDate() + i);
-    return { label, iso: d.toISOString().split("T")[0] };
+    return { label, dayNum: d.getDate(), iso: d.toISOString().split("T")[0] };
   });
 }
 
@@ -210,16 +210,17 @@ export default function AssignDaysScreen({
               <div className="px-3.5 pt-3 pb-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#bbb" }}>Days</p>
                 <div className="flex gap-1.5 flex-wrap">
-                  {weekDates.map(({ label, iso }) => {
+                  {weekDates.map(({ label, dayNum, iso }) => {
                     const selected = a.dates.includes(iso);
                     return (
                       <button
                         key={iso}
                         onClick={() => toggleDay(recipe.id, iso)}
-                        className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-95"
+                        className="flex flex-col items-center px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 min-w-[40px]"
                         style={selected ? { background: "#1a1a1a", color: "white" } : { background: "#f3f3f1", color: "#888" }}
                       >
-                        {label}
+                        <span className="text-[10px] font-semibold">{label}</span>
+                        <span className="text-sm font-bold leading-tight">{dayNum}</span>
                       </button>
                     );
                   })}

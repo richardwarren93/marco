@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import type { Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
+import RecipeDetailSheet from "./RecipeDetailSheet";
 
 const MEAL_TABS = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealTab = (typeof MEAL_TABS)[number];
@@ -63,6 +64,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("dinner");
   const [search, setSearch] = useState("");
   const [browsing, setBrowsing] = useState<string | null>(null); // recipeId being assigned in browse mode
+  const [previewRecipe, setPreviewRecipe] = useState<Recipe | null>(null);
 
   // AI search state (build mode only)
   const [aiResults, setAiResults] = useState<Recipe[] | null>(null);
@@ -393,7 +395,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                         setBrowsing(null);
                       }
                     } else {
-                      router.push(`/recipes/${recipe.id}`);
+                      router.push(`/recipes/${recipe.id}?from=build`);
                     }
                   }}
                 >
@@ -478,6 +480,11 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
           </button>
         </div>
       )}
+      <RecipeDetailSheet
+        isOpen={!!previewRecipe}
+        recipe={previewRecipe}
+        onClose={() => setPreviewRecipe(null)}
+      />
     </div>
   );
 }
