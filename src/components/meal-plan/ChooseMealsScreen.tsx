@@ -80,7 +80,16 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
     });
   }, [recipes, activeTab, search]);
 
-  const displayRecipes = aiResults ?? filtered;
+  // Sort selected recipes to the top so carried-over picks are immediately visible
+  const displayRecipes = useMemo(() => {
+    const list = aiResults ?? filtered;
+    if (props.mode !== "build" || props.selectedIds.size === 0) return list;
+    return [...list].sort((a, b) => {
+      const aSelected = props.selectedIds.has(a.id) ? 0 : 1;
+      const bSelected = props.selectedIds.has(b.id) ? 0 : 1;
+      return aSelected - bSelected;
+    });
+  }, [aiResults, filtered, props.mode, props.mode === "build" ? props.selectedIds : null]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSearchChange(val: string) {
     setSearch(val);
