@@ -16,10 +16,14 @@ export default function SignupPage() {
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms and Privacy Policy");
+      return;
+    }
     setError("");
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -29,6 +33,10 @@ export default function SignupPage() {
 
     if (error) {
       setError(error.message);
+      setLoading(false);
+    } else if (data.user && data.user.identities?.length === 0) {
+      // Email already exists — Supabase returns empty identities
+      setError("This email already has an account. Please sign in instead.");
       setLoading(false);
     } else {
       setSuccess(true);
@@ -73,7 +81,7 @@ export default function SignupPage() {
     );
   }
 
-  // Email form
+  // Email + password form
   if (mode === "email") {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
@@ -140,6 +148,31 @@ export default function SignupPage() {
               />
             </div>
 
+            {/* Terms checkbox */}
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }}
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
+                  agreedToTerms
+                    ? "bg-orange-500 border-orange-500"
+                    : "border-gray-300 bg-white"
+                }`}
+              >
+                {agreedToTerms && (
+                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                I&apos;ve read and agree with the{" "}
+                <span className="underline text-gray-700 font-medium">Terms</span>
+                {" "}and{" "}
+                <span className="underline text-gray-700 font-medium">Privacy Policy</span>
+              </p>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -162,81 +195,61 @@ export default function SignupPage() {
 
   // Main choose screen
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
+    <div className="flex flex-col" style={{ background: "#faf9f7", minHeight: "100dvh" }}>
       {/* Hero illustration area */}
-      <div className="relative flex-1 min-h-[55vh] bg-gradient-to-b from-[#fff4e8] via-[#fdf5ec] to-[#faf9f7] flex flex-col items-center justify-center overflow-hidden">
+      <div className="relative flex-1 bg-gradient-to-b from-[#fff4e8] via-[#fdf5ec] to-[#faf9f7] flex flex-col items-center justify-center overflow-hidden py-6">
         <div className="absolute inset-0 opacity-[0.07]">
-          <svg className="w-full h-full" viewBox="0 0 400 600" fill="none">
-            <circle cx="50" cy="80" r="30" fill="currentColor" className="text-orange-500" />
-            <circle cx="350" cy="120" r="20" fill="currentColor" className="text-green-500" />
-            <circle cx="100" cy="250" r="15" fill="currentColor" className="text-red-500" />
-            <circle cx="300" cy="300" r="25" fill="currentColor" className="text-yellow-500" />
-            <circle cx="200" cy="450" r="18" fill="currentColor" className="text-orange-500" />
-            <circle cx="80" cy="400" r="22" fill="currentColor" className="text-green-500" />
-            <circle cx="320" cy="500" r="16" fill="currentColor" className="text-red-500" />
+          <svg className="w-full h-full" viewBox="0 0 400 400" fill="none">
+            <circle cx="50" cy="60" r="30" fill="currentColor" className="text-orange-500" />
+            <circle cx="350" cy="90" r="20" fill="currentColor" className="text-green-500" />
+            <circle cx="80" cy="300" r="22" fill="currentColor" className="text-green-500" />
+            <circle cx="300" cy="250" r="25" fill="currentColor" className="text-yellow-500" />
+            <circle cx="350" cy="350" r="16" fill="currentColor" className="text-red-500" />
           </svg>
         </div>
 
         <div className="relative z-10 text-center px-8">
-          <div className="relative w-64 h-64 mx-auto mb-4">
-            <div className="absolute inset-4 rounded-full border-2 border-dashed border-orange-200/60" />
+          <div className="relative w-48 h-48 mx-auto mb-3">
+            <div className="absolute inset-3 rounded-full border-2 border-dashed border-orange-200/60" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-8xl drop-shadow-sm">🧑‍🍳</span>
+              <span className="text-7xl drop-shadow-sm">🧑‍🍳</span>
             </div>
-            <span className="absolute top-1 left-1/2 -translate-x-1/2 text-4xl animate-bounce" style={{ animationDuration: "3s" }}>🍅</span>
-            <span className="absolute bottom-1 left-1/2 -translate-x-1/2 text-4xl animate-bounce" style={{ animationDuration: "3.5s" }}>🧀</span>
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-4xl animate-bounce" style={{ animationDuration: "2.8s" }}>🥑</span>
-            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-4xl animate-bounce" style={{ animationDuration: "3.2s" }}>🍋</span>
-            <span className="absolute top-8 left-4 text-3xl animate-bounce" style={{ animationDuration: "3.7s" }}>🌿</span>
-            <span className="absolute top-8 right-4 text-3xl animate-bounce" style={{ animationDuration: "2.5s" }}>🫑</span>
-            <span className="absolute bottom-8 left-6 text-3xl animate-bounce" style={{ animationDuration: "3.3s" }}>🍊</span>
-            <span className="absolute bottom-8 right-6 text-3xl animate-bounce" style={{ animationDuration: "2.9s" }}>🥕</span>
+            <span className="absolute top-0 left-1/2 -translate-x-1/2 text-3xl animate-bounce" style={{ animationDuration: "3s" }}>🍅</span>
+            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-3xl animate-bounce" style={{ animationDuration: "3.5s" }}>🧀</span>
+            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-3xl animate-bounce" style={{ animationDuration: "2.8s" }}>🥑</span>
+            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-3xl animate-bounce" style={{ animationDuration: "3.2s" }}>🍋</span>
+            <span className="absolute top-5 left-2 text-2xl animate-bounce" style={{ animationDuration: "3.7s" }}>🌿</span>
+            <span className="absolute top-5 right-2 text-2xl animate-bounce" style={{ animationDuration: "2.5s" }}>🫑</span>
+            <span className="absolute bottom-5 left-3 text-2xl animate-bounce" style={{ animationDuration: "3.3s" }}>🍊</span>
+            <span className="absolute bottom-5 right-3 text-2xl animate-bounce" style={{ animationDuration: "2.9s" }}>🥕</span>
           </div>
 
-          <h1 className="text-3xl font-black text-gray-900 mb-1">Marco</h1>
-          <p className="text-sm text-gray-500 leading-relaxed max-w-[240px] mx-auto">
-            Save recipes, plan meals, cook with friends
-          </p>
+          <h1 className="text-3xl font-black text-gray-900 mb-4">Marco</h1>
+
+          {/* Value props */}
+          <div className="space-y-0.5">
+            <p className="text-[15px] font-bold" style={{ color: "#1a1410" }}>
+              Save recipes from <span style={{ color: "#ea580c" }}>anywhere</span>
+            </p>
+            <p className="text-[15px] font-bold" style={{ color: "#1a1410" }}>
+              Plan meals in <span style={{ color: "#ea580c" }}>seconds</span>
+            </p>
+            <p className="text-[15px] font-bold" style={{ color: "#1a1410" }}>
+              Shop and <span style={{ color: "#ea580c" }}>earn back</span>
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Bottom action area */}
-      <div className="px-6 pb-10 pt-2 space-y-3">
+      <div className="px-6 pb-8 pt-4 space-y-3 flex-shrink-0">
         {error && (
           <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm text-center">{error}</div>
         )}
 
-        {/* Terms checkbox — above buttons */}
-        <div className="flex items-start gap-3">
-          <button
-            onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }}
-            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
-              agreedToTerms
-                ? "bg-orange-500 border-orange-500"
-                : "border-gray-300 bg-white"
-            }`}
-          >
-            {agreedToTerms && (
-              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </button>
-          <p className="text-xs text-gray-500 leading-relaxed">
-            I&apos;ve read and agree with the{" "}
-            <span className="underline text-gray-700 font-medium">Terms</span>
-            {" "}and{" "}
-            <span className="underline text-gray-700 font-medium">Privacy Policy</span>
-          </p>
-        </div>
-
         {/* Continue with Email */}
         <button
           onClick={() => {
-            if (!agreedToTerms) {
-              setError("Please agree to the Terms and Privacy Policy");
-              return;
-            }
             setError("");
             setMode("email");
           }}
@@ -248,7 +261,7 @@ export default function SignupPage() {
           Continue with Email
         </button>
 
-        {/* Continue with Google — enable in Supabase Dashboard first */}
+        {/* Continue with Google */}
         {GOOGLE_ENABLED && (
           <button
             onClick={() => handleOAuth("google")}
@@ -264,7 +277,7 @@ export default function SignupPage() {
           </button>
         )}
 
-        {/* Continue with Apple — enable in Supabase Dashboard first */}
+        {/* Continue with Apple */}
         {APPLE_ENABLED && (
           <button
             onClick={() => handleOAuth("apple")}
