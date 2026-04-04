@@ -138,6 +138,15 @@ export async function GET(request: NextRequest) {
     householdMembers: [...profileMap.entries()].map(([user_id, display_name]) => ({ user_id, display_name })),
     meal_plan_changed,
     meals,
+    _debug: {
+      userId: user.id,
+      allUserIds,
+      hasMembership: !!membership,
+      householdId: membership?.household_id ?? null,
+      mealsCount: (mealsRes.data ?? []).length,
+      mealsError: mealsRes.error?.message ?? null,
+      membershipError: membershipRes.error?.message ?? null,
+    },
   });
 }
 
