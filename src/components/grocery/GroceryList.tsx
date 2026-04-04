@@ -403,7 +403,37 @@ export default function GroceryList() {
   // Active meals (non-excluded) for display and stats
   const activeMeals = useMemo(() => meals.filter((m) => !excludedMealIds.has(m.id)), [meals, excludedMealIds]);
 
-  const allItems: HouseholdGroceryItem[] = [...items, ...householdItems];
+  // Merge own + household items, deduplicating by name+category
+  const allItems: HouseholdGroceryItem[] = useMemo(() => {
+    if (householdItems.length === 0) return items;
+
+    // Index own items by normalized name+category for fast lookup
+    const ownByKey = new Map<string, number>();
+    const merged: HouseholdGroceryItem[] = items.map((item, idx) => {
+      const key = `${(item.name || "").toLowerCase().trim()}||${(item.category || "").toLowerCase().trim()}`;
+      ownByKey.set(key, idx);
+      return { ...item };
+    });
+
+    for (const hItem of householdItems) {
+      const key = `${(hItem.name || "").toLowerCase().trim()}||${(hItem.category || "").toLowerCase().trim()}`;
+      const existingIdx = ownByKey.get(key);
+      if (existingIdx !== undefined) {
+        // Already have this item — merge: keep own item, combine recipe_sources
+        const existing = merged[existingIdx];
+        const ownSources: string[] = existing.recipe_sources ?? [];
+        const hSources: string[] = hItem.recipe_sources ?? [];
+        const combinedSources = [...new Set([...ownSources, ...hSources])];
+        merged[existingIdx] = { ...existing, recipe_sources: combinedSources };
+      } else {
+        // New household-only item — add it
+        merged.push(hItem);
+        ownByKey.set(key, merged.length - 1);
+      }
+    }
+
+    return merged;
+  }, [items, householdItems]);
 
   // Items filtered by exclusions only (not by checked state — tabs handle display)
   const activeItems = useMemo(() => {
