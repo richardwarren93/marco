@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
 
   // ── Parallel batch 1: grocery list + household membership ─────────────────
   const [listRes, membershipRes] = await Promise.all([
-    admin.from("grocery_lists").select("*").eq("user_id", user.id).eq("week_start", dateStart).single(),
-    admin.from("household_members").select("household_id").eq("user_id", user.id).single(),
+    admin.from("grocery_lists").select("*").eq("user_id", user.id).eq("week_start", dateStart).maybeSingle(),
+    admin.from("household_members").select("household_id").eq("user_id", user.id).maybeSingle(),
   ]);
 
   const list = listRes.data;
@@ -166,7 +166,7 @@ export async function POST(request: Request) {
       .from("household_members")
       .select("household_id")
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
 
     if (membership) {
       const { data: members } = await admin
