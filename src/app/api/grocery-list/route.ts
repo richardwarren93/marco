@@ -58,16 +58,32 @@ export async function GET(request: NextRequest) {
   let allUserIds = [user.id];
   let profileMap = new Map<string, string>();
 
+  let _membersDebug: any = null;
   if (membership) {
-    const { data: allMembers } = await admin
+    // Step 1: Get all user IDs in the household (no join — reliable)
+    const { data: allMembers, error: membersError } = await admin
       .from("household_members")
-      .select("user_id, profiles:user_profiles(display_name)")
+      .select("user_id")
       .eq("household_id", membership.household_id);
+
+    _membersDebug = { allMembers, membersError: membersError?.message ?? null };
+
     if (allMembers) {
-      for (const m of allMembers as any[]) {
+      for (const m of allMembers) {
         if (!allUserIds.includes(m.user_id)) allUserIds.push(m.user_id);
-        if (m.user_id !== user.id) {
-          profileMap.set(m.user_id, m.profiles?.display_name || "Housemate");
+      }
+
+      // Step 2: Get display names for household members (separate query)
+      const otherIds = allUserIds.filter(id => id !== user.id);
+      if (otherIds.length > 0) {
+        const { data: profiles } = await admin
+          .from("user_profiles")
+          .select("id, display_name")
+          .in("id", otherIds);
+        if (profiles) {
+          for (const p of profiles) {
+            profileMap.set(p.id, p.display_name || "Housemate");
+          }
         }
       }
     }
@@ -143,6 +159,7 @@ export async function GET(request: NextRequest) {
       allUserIds,
       hasMembership: !!membership,
       householdId: membership?.household_id ?? null,
+      membersQuery: _membersDebug,
       mealsCount: (mealsRes.data ?? []).length,
       mealsError: mealsRes.error?.message ?? null,
       membershipError: membershipRes.error?.message ?? null,
