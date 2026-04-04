@@ -58,15 +58,12 @@ export async function GET(request: NextRequest) {
   let allUserIds = [user.id];
   let profileMap = new Map<string, string>();
 
-  let _membersDebug: any = null;
   if (membership) {
     // Step 1: Get all user IDs in the household (no join — reliable)
-    const { data: allMembers, error: membersError } = await admin
+    const { data: allMembers } = await admin
       .from("household_members")
       .select("user_id")
       .eq("household_id", membership.household_id);
-
-    _membersDebug = { allMembers, membersError: membersError?.message ?? null };
 
     if (allMembers) {
       for (const m of allMembers) {
@@ -154,16 +151,6 @@ export async function GET(request: NextRequest) {
     householdMembers: [...profileMap.entries()].map(([user_id, display_name]) => ({ user_id, display_name })),
     meal_plan_changed,
     meals,
-    _debug: {
-      userId: user.id,
-      allUserIds,
-      hasMembership: !!membership,
-      householdId: membership?.household_id ?? null,
-      membersQuery: _membersDebug,
-      mealsCount: (mealsRes.data ?? []).length,
-      mealsError: mealsRes.error?.message ?? null,
-      membershipError: membershipRes.error?.message ?? null,
-    },
   });
 }
 
