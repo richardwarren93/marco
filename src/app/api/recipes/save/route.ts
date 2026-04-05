@@ -48,6 +48,11 @@ export async function POST(request: Request) {
       source_platform: body.source_platform || null,
       image_url: body.image_url || null,
       notes: body.notes || null,
+      calories: body.calories || null,
+      protein_g: body.protein_g || null,
+      carbs_g: body.carbs_g || null,
+      fat_g: body.fat_g || null,
+      fiber_g: body.fiber_g || null,
     }).select().single();
 
     if (error) throw error;

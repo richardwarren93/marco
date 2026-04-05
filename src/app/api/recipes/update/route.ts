@@ -32,6 +32,11 @@ export async function PUT(request: Request) {
         meal_type: body.meal_type || "dinner",
         notes: body.notes || null,
         image_url: body.image_url || null,
+        ...(body.calories !== undefined && { calories: body.calories || null }),
+        ...(body.protein_g !== undefined && { protein_g: body.protein_g || null }),
+        ...(body.carbs_g !== undefined && { carbs_g: body.carbs_g || null }),
+        ...(body.fat_g !== undefined && { fat_g: body.fat_g || null }),
+        ...(body.fiber_g !== undefined && { fiber_g: body.fiber_g || null }),
       })
       .eq("id", body.id)
       .eq("user_id", user.id)

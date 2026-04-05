@@ -36,6 +36,11 @@ export interface Recipe {
   meal_type: "breakfast" | "lunch" | "dinner" | "snack";
   image_url: string | null;
   notes: string | null;
+  calories?: number;
+  protein_g?: number;
+  carbs_g?: number;
+  fat_g?: number;
+  fiber_g?: number;
   created_at: string;
   updated_at: string;
 }
