@@ -111,6 +111,11 @@ export async function POST(request: Request) {
             source_platform: "document",
             image_url: null,
             notes: null,
+            calories: recipe.calories || null,
+            protein_g: recipe.protein_g || null,
+            carbs_g: recipe.carbs_g || null,
+            fat_g: recipe.fat_g || null,
+            fiber_g: recipe.fiber_g || null,
           })
           .select("id, title")
           .single();

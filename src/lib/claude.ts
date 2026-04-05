@@ -40,6 +40,11 @@ Return a JSON object with these fields:
 - cook_time_minutes (number or null): Cook time if mentioned, or estimate based on the dish
 - tags (array of strings): Relevant tags like "vegan", "quick", "dessert" — infer from context, hashtags, and the dish type
 - meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack". Infer from the dish itself. A pasta is "dinner". Oatmeal is "breakfast". A sandwich is "lunch". Nachos might be "snack" or "dinner". If it fits multiple, pick the most common one. Never leave this null or empty — always choose.
+- calories (number): Estimated calories per serving based on the ingredients
+- protein_g (number): Estimated grams of protein per serving
+- carbs_g (number): Estimated grams of carbohydrates per serving
+- fat_g (number): Estimated grams of fat per serving
+- fiber_g (number): Estimated grams of fiber per serving
 
 IMPORTANT: Even if the content is very limited, use your knowledge to fill in reasonable details for the identified dish. A helpful guess is much better than empty fields. Do NOT refuse or explain — just output the JSON.`,
       },
@@ -153,6 +158,11 @@ Extract the complete recipe from these carousel slides. Return a JSON object wit
 - cook_time_minutes (number or null): Cook time if mentioned or estimate
 - tags (array of strings): Relevant tags from hashtags, cuisine type, dietary info
 - meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack"
+- calories (number): Estimated calories per serving based on the ingredients
+- protein_g (number): Estimated grams of protein per serving
+- carbs_g (number): Estimated grams of carbohydrates per serving
+- fat_g (number): Estimated grams of fat per serving
+- fiber_g (number): Estimated grams of fiber per serving
 
 Return ONLY valid JSON. No markdown, no code blocks.`,
           },
@@ -226,6 +236,11 @@ Extract everything you can see — ingredients with amounts, all steps, timing, 
 - cook_time_minutes (number or null): Cook time
 - tags (array of strings): Relevant tags like cuisine type, dietary info
 - meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack". Infer from the dish. Never leave this null or empty — always choose the most appropriate one.
+- calories (number): Estimated calories per serving based on the ingredients
+- protein_g (number): Estimated grams of protein per serving
+- carbs_g (number): Estimated grams of carbohydrates per serving
+- fat_g (number): Estimated grams of fat per serving
+- fiber_g (number): Estimated grams of fiber per serving
 
 Return ONLY valid JSON. No markdown, no code blocks.`,
           },
@@ -514,6 +529,11 @@ For each recipe, return an object with:
 - cook_time_minutes (number or null): Cook time
 - tags (array of strings): Relevant tags like cuisine type, dietary info, "dessert", etc.
 - meal_type (string): REQUIRED — must be one of "breakfast", "lunch", "dinner", "snack". Infer from the dish. Never leave this null or empty.
+- calories (number): Estimated calories per serving based on the ingredients
+- protein_g (number): Estimated grams of protein per serving
+- carbs_g (number): Estimated grams of carbohydrates per serving
+- fat_g (number): Estimated grams of fat per serving
+- fiber_g (number): Estimated grams of fiber per serving
 
 If the document contains only one recipe, return an array with one element.
 If you find no recipes, return an empty array [].
