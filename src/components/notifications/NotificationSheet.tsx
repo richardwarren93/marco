@@ -77,10 +77,10 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
   const [respondingId, setRespondingId] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-  // Suggested follows state
+  // Suggested befriend state
   const [suggested, setSuggested] = useState<SuggestedUser[]>([]);
-  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set());
-  const [followingInProgress, setFollowingInProgress] = useState<string | null>(null);
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  const [befriendingInProgress, setBefriendingInProgress] = useState<string | null>(null);
   const [dismissedSuggested, setDismissedSuggested] = useState<Set<string>>(new Set());
 
   const fetchNotifications = useCallback(async () => {
@@ -149,8 +149,8 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
     }
   }
 
-  async function handleFollow(profile: SuggestedUser) {
-    setFollowingInProgress(profile.user_id);
+  async function handleBefriend(profile: SuggestedUser) {
+    setBefriendingInProgress(profile.user_id);
     try {
       const res = await fetch("/api/friends/follow", {
         method: "POST",
@@ -158,10 +158,10 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
         body: JSON.stringify({ friend_user_id: profile.user_id }),
       });
       if (res.ok) {
-        setFollowingIds((prev) => new Set([...prev, profile.user_id]));
+        setPendingIds((prev) => new Set([...prev, profile.user_id]));
       }
     } finally {
-      setFollowingInProgress(null);
+      setBefriendingInProgress(null);
     }
   }
 
@@ -305,8 +305,8 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                   </p>
                   <div className="divide-y divide-gray-50 pb-4">
                     {visibleSuggested.map((profile) => {
-                      const isFollowing = followingIds.has(profile.user_id);
-                      const inProgress = followingInProgress === profile.user_id;
+                      const isPending = pendingIds.has(profile.user_id);
+                      const inProgress = befriendingInProgress === profile.user_id;
                       return (
                         <div
                           key={profile.user_id}
@@ -319,24 +319,24 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                             </p>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
-                            {isFollowing ? (
+                            {isPending ? (
                               <span
                                 className="px-4 py-1.5 rounded-full text-xs font-bold border"
                                 style={{ borderColor: "#e5e7eb", color: "#6b7280" }}
                               >
-                                Following
+                                Pending
                               </span>
                             ) : (
                               <button
-                                onClick={() => handleFollow(profile)}
+                                onClick={() => handleBefriend(profile)}
                                 disabled={inProgress}
                                 className="px-4 py-1.5 rounded-full text-xs font-bold text-white active:scale-95 transition-all disabled:opacity-50"
                                 style={{ background: "#1a1410" }}
                               >
-                                {inProgress ? "..." : "Follow"}
+                                {inProgress ? "..." : "Befriend"}
                               </button>
                             )}
-                            {!isFollowing && (
+                            {!isPending && (
                               <button
                                 onClick={() =>
                                   setDismissedSuggested(

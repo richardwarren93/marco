@@ -3,8 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // POST /api/friends/follow
-// Instantly creates an accepted friendship (one-way follow, no acceptance needed).
-// Used by the "Suggested members" section in the notification sheet.
+// Sends a pending friend request (befriend). The recipient must accept before
+// the friendship is active.  Used by the "Suggested members" section in the
+// notification sheet.
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
 
     if (friend_user_id === user.id) {
       return NextResponse.json(
-        { error: "You can't follow yourself" },
+        { error: "You can't befriend yourself" },
         { status: 400 }
       );
     }
@@ -47,26 +48,54 @@ export async function POST(request: Request) {
 
     if (existing) {
       if (existing.status === "accepted") {
-        return NextResponse.json({ already_following: true });
+        return NextResponse.json({ already_friends: true });
       }
-      // Remove any pending/declined row and replace with accepted
+      if (existing.status === "pending") {
+        return NextResponse.json({ already_pending: true });
+      }
+      // Remove any declined row and replace with a fresh pending request
       await admin.from("friendships").delete().eq("id", existing.id);
     }
 
-    // Insert immediately as accepted — no approval needed
-    const { error } = await admin.from("friendships").insert({
-      user_id: user.id,
-      friend_id: friend_user_id,
-      status: "accepted",
-    });
+    // Insert as pending — recipient must accept
+    const { data: friendship, error } = await admin
+      .from("friendships")
+      .insert({
+        user_id: user.id,
+        friend_id: friend_user_id,
+        status: "pending",
+      })
+      .select()
+      .single();
 
     if (error) throw error;
 
+    // Get the sender's profile for the notification
+    const { data: senderProfile } = await admin
+      .from("user_profiles")
+      .select("display_name, avatar_url")
+      .eq("user_id", user.id)
+      .single();
+
+    // Notify the recipient about the friend request
+    try {
+      await admin.from("notifications").insert({
+        user_id: friend_user_id,
+        type: "friend_request",
+        actor_id: user.id,
+        actor_name: senderProfile?.display_name ?? null,
+        actor_avatar: senderProfile?.avatar_url ?? null,
+        reference_id: friendship.id,
+      });
+    } catch {
+      // Non-critical — don't fail the request if notification insert fails
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("Follow error:", error);
+    console.error("Befriend error:", error);
     return NextResponse.json(
-      { error: "Failed to follow user" },
+      { error: "Failed to send friend request" },
       { status: 500 }
     );
   }
