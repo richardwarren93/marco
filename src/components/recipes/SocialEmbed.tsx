@@ -68,10 +68,7 @@ export default function SocialEmbed({
   const tiktokVideoId = extractTikTokVideoId(sourceUrl);
 
   return (
-    <div className="mt-8">
-      <h2 className="text-xl font-semibold text-gray-900 mb-3">
-        Original Post
-      </h2>
+    <div>
       <div ref={containerRef} className="flex justify-center">
         {sourcePlatform === "instagram" && (
           <blockquote
