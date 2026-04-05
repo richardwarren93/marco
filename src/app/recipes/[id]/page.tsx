@@ -870,7 +870,7 @@ export default function RecipeDetailPage() {
       />
 
       {/* ── Sticky bottom bar ─────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-sm border-t border-gray-100" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+      <div className="fixed bottom-0 left-0 right-0 z-40" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)", background: "#ffffff", boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}>
         <div className="max-w-3xl mx-auto px-4 py-3 space-y-2">
           <button
             onClick={() => setShowAddMealSheet(true)}
