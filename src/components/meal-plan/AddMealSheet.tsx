@@ -445,7 +445,7 @@ export default function AddMealSheet({
                   className="flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border"
                   style={
                     selectedMealTypes.has(mt)
-                      ? { background: ACCENT, color: "white", borderColor: ACCENT }
+                      ? { background: "#1a1410", color: "white", borderColor: "#1a1410" }
                       : { background: "#f3f3f1", color: "#888", borderColor: "#f3f3f1" }
                   }
                 >
@@ -468,7 +468,7 @@ export default function AddMealSheet({
                     className="flex-1 flex flex-col items-center py-1.5 rounded-xl transition-colors"
                     style={
                       isSelected
-                        ? { background: ACCENT, color: "white" }
+                        ? { background: "#1a1410", color: "white" }
                         : { background: "#f3f3f1", color: "#888" }
                     }
                   >
