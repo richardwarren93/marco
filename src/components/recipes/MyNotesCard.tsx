@@ -75,23 +75,22 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
   if (!loaded) return null;
 
   return (
-    <div className="bg-amber-50/50 border border-amber-200/50 rounded-2xl p-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-1.5">
-          <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-bold text-[#1a1410]">My Notes</h3>
+        <div className="flex items-center gap-1">
+          {lastSaved && (
+            <span className="text-[10px] text-gray-400 mr-2">{lastSaved}</span>
+          )}
+          <span className="text-[10px] text-gray-400">private</span>
+          <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
           </svg>
-          My Notes
-          <span className="text-[10px] text-gray-400 font-normal">(private)</span>
-        </h3>
-        {lastSaved && (
-          <span className="text-[10px] text-gray-400 animate-pulse">{lastSaved}</span>
-        )}
+        </div>
       </div>
 
-      {/* Personal Rating */}
-      <div className="flex items-center gap-2 mb-3">
-        <span className="text-xs text-gray-500">My rating:</span>
+      {/* Rating */}
+      <div className="flex items-center gap-3 mb-4">
         <div className="flex items-center gap-0.5">
           {[1, 2, 3, 4, 5].map((star) => {
             const filled = hovering ? star <= hovering : star <= rating;
@@ -102,9 +101,9 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
                 onMouseEnter={() => setHovering(star)}
                 onMouseLeave={() => setHovering(0)}
                 disabled={saving}
-                className={`text-lg transition-colors ${
-                  filled ? "text-amber-400" : "text-gray-300"
-                } hover:text-amber-400 disabled:opacity-50`}
+                className={`text-xl transition-colors ${
+                  filled ? "text-[#e8530a]" : "text-gray-200"
+                } hover:text-[#e8530a] disabled:opacity-50`}
               >
                 &#9733;
               </button>
@@ -112,17 +111,17 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
           })}
         </div>
         {rating > 0 && (
-          <span className="text-xs text-gray-400">{rating}/5</span>
+          <span className="text-xs text-gray-400 font-medium">{rating}/5</span>
         )}
       </div>
 
-      {/* Private Note */}
+      {/* Note */}
       <textarea
         value={note}
         onChange={(e) => handleNoteChange(e.target.value)}
-        placeholder="Add your private notes, tips, modifications..."
+        placeholder="Add notes, tips, modifications..."
         rows={3}
-        className="w-full px-3 py-2 bg-white border border-amber-200/50 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:ring-2 focus:ring-amber-300 focus:border-transparent outline-none resize-none"
+        className="w-full px-4 py-3 bg-[#faf9f7] border border-gray-100 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:ring-gray-200 focus:border-gray-200 outline-none resize-none"
       />
     </div>
   );

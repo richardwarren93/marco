@@ -48,6 +48,11 @@ function BottomTabBarInner() {
     return null;
   }
 
+  // Hide on individual recipe detail pages (they have their own sticky bar)
+  if (/^\/recipes\/[^/]+$/.test(pathname)) {
+    return null;
+  }
+
   const isGroceryActive = pathname.startsWith("/grocery");
   const isOnMealPlan = pathname.startsWith("/meal-plan");
   const isDiscoverActive = pathname.startsWith("/recipes") && searchParams.get("tab") === "discover";
