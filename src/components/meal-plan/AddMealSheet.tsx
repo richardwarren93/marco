@@ -404,18 +404,12 @@ export default function AddMealSheet({
             )}
           </div>
 
-          {/* Plan multiple meals CTA */}
+          {/* Plan multiple — subtle text link */}
           {onPlanMultiple && (
-            <div className="px-4 pb-4 flex-shrink-0" style={{ borderTop: "1px solid #f0f0ee", paddingTop: 12 }}>
-              <button
-                onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}
-                className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors"
-                style={{ background: "#f3f3f1" }}
-              >
-                <span className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>Plan multiple meals</span>
-                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                </svg>
+            <div className="px-4 pb-4 flex-shrink-0 text-center" style={{ borderTop: "1px solid #f0f0ee", paddingTop: 12 }}>
+              <button onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}>
+                <span className="text-xs" style={{ color: "#a09890" }}>Or </span>
+                <span className="text-xs font-medium" style={{ color: "#c4642d" }}>plan multiple meals →</span>
               </button>
             </div>
           )}
@@ -524,23 +518,9 @@ export default function AddMealSheet({
 
         {/* Footer */}
         <div
-          className="px-4 pt-3 pb-3 border-t border-gray-100 flex-shrink-0 space-y-2"
+          className="px-4 pt-3 pb-3 border-t border-gray-100 flex-shrink-0"
           style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
         >
-          {/* Plan multiple meals — secondary CTA */}
-          {onPlanMultiple && (
-            <button
-              onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}
-              className="w-full flex items-center justify-between px-4 py-2.5 rounded-xl transition-colors"
-              style={{ background: "#f3f3f1" }}
-            >
-              <span className="text-sm font-semibold" style={{ color: "#1a1a1a" }}>Plan multiple meals</span>
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-
           {/* Primary CTA */}
           <button
             onClick={handleAdd}
@@ -550,6 +530,17 @@ export default function AddMealSheet({
           >
             {saving ? "Adding…" : isReplacing ? "Replace meal" : "Add to plan"}
           </button>
+
+          {/* Plan multiple — subtle text link */}
+          {onPlanMultiple && (
+            <button
+              onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}
+              className="w-full pt-3 pb-1 text-center"
+            >
+              <span className="text-xs" style={{ color: "#a09890" }}>Or </span>
+              <span className="text-xs font-medium" style={{ color: "#c4642d" }}>plan multiple meals →</span>
+            </button>
+          )}
         </div>
       </div>
     </div>
