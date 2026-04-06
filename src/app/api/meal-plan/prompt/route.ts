@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { promptRecipes } from "@/lib/claude";
 import { checkRateLimit } from "@/lib/rate-limit";
 import type { PantryItem, Recipe } from "@/types";
@@ -111,7 +112,35 @@ export async function POST(request: Request) {
       };
     }
 
-    const results = await promptRecipes(prompt, context, kitchenContext);
+    // Fetch cached taste profile for personalization
+    const admin = createAdminClient();
+    const { data: prefsData } = await admin
+      .from("user_preferences")
+      .select("taste_profile")
+      .eq("user_id", user.id)
+      .single();
+
+    let tasteProfile: Parameters<typeof promptRecipes>[3] | undefined;
+    const tp = prefsData?.taste_profile as Record<string, unknown> | null;
+    const cached = tp?.cached_profile as {
+      all?: Record<string, number>;
+      cuisines?: { id: string }[];
+      cookingStyles?: { id: string }[];
+    } | undefined;
+
+    if (cached?.all) {
+      tasteProfile = {
+        sweet: cached.all.sweet ?? 50,
+        savory: cached.all.savory ?? 50,
+        spicy: cached.all.spicy ?? 50,
+        tangy: cached.all.tangy ?? 50,
+        richness: cached.all.richness ?? 50,
+        topCuisines: cached.cuisines?.map((c) => c.id),
+        cookingStyles: cached.cookingStyles?.map((s) => s.id),
+      };
+    }
+
+    const results = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
 
     // Enrich results with images by fetching OG images from source URLs
     const enriched = await Promise.all(

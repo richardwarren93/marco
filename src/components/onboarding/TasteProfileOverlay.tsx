@@ -316,10 +316,10 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
           </div>
         )}
 
-        {/* Signature Dish */}
+        {/* Dream Meal */}
         {signatureDish && (
           <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.35s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#ea580c" }}>Signature Dish</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#ea580c" }}>Dream Meal</p>
             <div className="flex items-center gap-3">
               <span className="text-2xl">{"\u{1F451}"}</span>
               <p className="text-base font-bold" style={{ color: "#1a1410" }}>{signatureDish}</p>
