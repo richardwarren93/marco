@@ -46,28 +46,51 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // Logged in on auth pages → redirect to onboarding or recipes
-  if (user && pathname.startsWith("/auth/")) {
-    const onboarded = request.cookies.get("marco_onboarded")?.value === "1";
-    return NextResponse.redirect(
-      new URL(onboarded ? "/recipes" : "/onboarding", request.url)
-    );
-  }
+  // For logged-in users, check onboarding status (cookie first, then DB fallback)
+  if (user && (isProtected || isOnboarding || pathname.startsWith("/auth/"))) {
+    let onboarded = request.cookies.get("marco_onboarded")?.value === "1";
 
-  // Logged in on protected pages → check if onboarding is completed
-  if (user && isProtected && !isPublicPath) {
-    const onboarded = request.cookies.get("marco_onboarded")?.value === "1";
+    // If no cookie, check the database and set cookie for future requests
     if (!onboarded) {
-      // Redirect to onboarding if not completed
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .single();
+
+      onboarded = profile?.onboarding_completed === true;
+
+      if (onboarded) {
+        // Set cookie so we don't hit DB again
+        response.cookies.set("marco_onboarded", "1", {
+          path: "/",
+          maxAge: 31536000,
+          sameSite: "lax",
+        });
+      }
+    }
+
+    // Logged in on auth pages → redirect away
+    if (pathname.startsWith("/auth/")) {
+      return NextResponse.redirect(
+        new URL(onboarded ? "/recipes" : "/onboarding", request.url)
+      );
+    }
+
+    // Logged in on protected pages → check onboarding
+    if (isProtected && !isPublicPath && !onboarded) {
       return NextResponse.redirect(new URL("/onboarding", request.url));
     }
-  }
 
-  // Logged in on onboarding page → check if already onboarded
-  if (user && isOnboarding) {
-    const onboarded = request.cookies.get("marco_onboarded")?.value === "1";
-    if (onboarded) {
-      return NextResponse.redirect(new URL("/recipes", request.url));
+    // Logged in on onboarding but already done → go to recipes
+    if (isOnboarding && onboarded) {
+      const res = NextResponse.redirect(new URL("/recipes", request.url));
+      res.cookies.set("marco_onboarded", "1", {
+        path: "/",
+        maxAge: 31536000,
+        sameSite: "lax",
+      });
+      return res;
     }
   }
 
