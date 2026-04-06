@@ -16,12 +16,9 @@ interface CookWithMarcoChatProps {
 }
 
 const QUICK_CHIPS = [
-  "Make it healthier",
-  "Make it easier",
   "Substitute ingredients",
-  "What tools do I need?",
-  "Make it taste even better",
-  "Walk me through step by step",
+  "Make it healthier",
+  "Make it more delicious",
 ];
 
 export default function CookWithMarcoChat({

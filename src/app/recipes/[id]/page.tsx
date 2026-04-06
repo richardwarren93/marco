@@ -887,6 +887,7 @@ export default function RecipeDetailPage() {
             style={{ borderColor: "#e0e0de", color: "#1a1410", background: "white" }}
           >
             {"\u{1F9D1}\u200D\u{1F373}"} Cook with Marco
+            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-400 font-medium align-middle">beta</span>
           </button>
         </div>
       </div>
