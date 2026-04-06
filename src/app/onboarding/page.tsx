@@ -128,6 +128,8 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      // Set cookie so middleware knows onboarding is done
+      document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
     } catch { /* continue anyway */ }
     localStorage.removeItem(STORAGE_KEY);
   }, [data]);

@@ -27,6 +27,18 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
+      // Check if onboarding is completed and set cookie for middleware
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("user_profiles")
+          .select("onboarding_completed")
+          .eq("user_id", user.id)
+          .single();
+        if (profile?.onboarding_completed) {
+          document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
+        }
+      }
       router.push("/recipes");
       router.refresh();
     }
