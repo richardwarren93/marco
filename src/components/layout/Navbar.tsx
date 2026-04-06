@@ -59,6 +59,7 @@ function NavbarInner() {
   const supabase = createClient();
 
   const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding");
+  const isProfilePage = pathname === "/profile";
   const isRecipesPage = pathname === "/recipes" || pathname.startsWith("/recipes") || pathname.startsWith("/collections");
   const activeTab = searchParams.get("tab") || "recipes";
 
@@ -147,11 +148,11 @@ function NavbarInner() {
 
   return (
     <>
-      <nav className="bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40">
+      <nav className={`${isProfilePage ? "bg-transparent border-b border-transparent" : "bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0]"} sticky top-0 z-40`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-11 sm:h-16 items-center">
             {/* Left: Logo */}
-            <Link href={user ? "/recipes" : "/"} className="flex items-center gap-1.5 sm:gap-2 text-lg sm:text-2xl font-bold text-orange-600">
+            <Link href={user ? "/recipes" : "/"} className={`flex items-center gap-1.5 sm:gap-2 text-lg sm:text-2xl font-bold ${isProfilePage ? "text-white" : "text-orange-600"}`}>
               <Image src="/marco-icon.svg" alt="Marco" width={24} height={24} className="rounded-full sm:w-8 sm:h-8" />
               Marco
             </Link>
@@ -219,7 +220,7 @@ function NavbarInner() {
                     aria-label="Notifications"
                   >
                     <svg
-                      className={`w-5 h-5 transition-colors ${unreadCount > 0 ? "text-red-500 fill-red-500 animate-bell-ring" : "text-gray-600"}`}
+                      className={`w-5 h-5 transition-colors ${unreadCount > 0 ? "text-red-500 fill-red-500 animate-bell-ring" : isProfilePage ? "text-white" : "text-gray-600"}`}
                       fill={unreadCount > 0 ? "currentColor" : "none"}
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -240,11 +241,11 @@ function NavbarInner() {
                       aria-label="Menu"
                     >
                       {showMenu ? (
-                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className={`w-5 h-5 ${isProfilePage ? "text-white" : "text-gray-600"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       ) : (
-                        <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <svg className={`w-5 h-5 ${isProfilePage ? "text-white" : "text-gray-600"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                         </svg>
                       )}
