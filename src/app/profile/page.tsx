@@ -137,10 +137,10 @@ export default function ProfilePage() {
     <div className="max-w-lg mx-auto pb-8" style={{ background: "#faf9f7", minHeight: "100vh" }}>
 
       {/* ── Banner + Avatar ── */}
-      <div className="relative -mt-11 sm:-mt-16">
+      <div className="relative" style={{ marginTop: "calc(-2.75rem - env(safe-area-inset-top, 0px))" }}>
         <div
-          className="h-48 sm:h-52 rounded-b-[2rem] bg-cover bg-center"
-          style={{ backgroundImage: "url('/default-banner.webp')" }}
+          className="sm:h-52 rounded-b-[2rem] bg-cover bg-center"
+          style={{ backgroundImage: "url('/default-banner.webp')", height: "calc(12rem + env(safe-area-inset-top, 0px))", paddingTop: "env(safe-area-inset-top, 0px)" }}
         />
 
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-10 z-10">
