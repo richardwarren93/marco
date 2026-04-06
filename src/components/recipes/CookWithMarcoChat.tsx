@@ -68,9 +68,9 @@ export default function CookWithMarcoChat({
   }, []);
 
   const buildConversationHistory = useCallback(() => {
-    // Skip the welcome message and only include actual conversation
+    // Skip welcome message and empty assistant placeholders (from failed streams)
     return messages
-      .filter((m) => m.id !== "welcome")
+      .filter((m) => m.id !== "welcome" && !(m.role === "assistant" && !m.content))
       .map((m) => ({
         role: m.role,
         content: m.content,
