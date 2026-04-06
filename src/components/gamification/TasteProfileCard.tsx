@@ -7,11 +7,13 @@ interface TasteScores {
   savory: number;
   richness: number;
   tangy: number;
+  spicy: number;
 }
 
 const DIMENSIONS = [
   { key: "sweet" as const, label: "Sweet", color: "#ea580c" },
   { key: "savory" as const, label: "Savory", color: "#d97706" },
+  { key: "spicy" as const, label: "Spicy", color: "#dc2626" },
   { key: "tangy" as const, label: "Tangy", color: "#c2410c" },
   { key: "richness" as const, label: "Richness", color: "#b45309" },
 ];
