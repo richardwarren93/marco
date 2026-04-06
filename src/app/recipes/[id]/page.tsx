@@ -45,6 +45,7 @@ const ShareWithFriendsModal = dynamic(() => import("@/components/friends/ShareWi
 const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
 const CommunitySection = dynamic(() => import("@/components/community/CommunitySection"));
 const CookPhotosGallery = dynamic(() => import("@/components/recipes/CookPhotosGallery"));
+const CookWithMarcoChat = dynamic(() => import("@/components/recipes/CookWithMarcoChat"), { ssr: false });
 
 const MEAL_ICONS: Record<string, string> = {
   breakfast: "🌅",
@@ -240,6 +241,7 @@ export default function RecipeDetailPage() {
   const [showAddMealSheet, setShowAddMealSheet] = useState(false);
   const [unitSystem, setUnitSystem] = useState<UnitSystem | null>(null); // null = original
   const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
+  const [showMarcoChat, setShowMarcoChat] = useState(false);
   const [cameraUploading, setCameraUploading] = useState(false);
   const cameraFileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -880,15 +882,22 @@ export default function RecipeDetailPage() {
             Add to Meal Plan
           </button>
           <button
-            onClick={() => showToast("Cook with Marco coming soon!")}
+            onClick={() => setShowMarcoChat(true)}
             className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border"
             style={{ borderColor: "#e0e0de", color: "#1a1410", background: "white" }}
           >
-            👨‍🍳 Cook with Marco
-            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-400 font-medium align-middle">soon</span>
+            {"\u{1F9D1}\u200D\u{1F373}"} Cook with Marco
           </button>
         </div>
       </div>
+
+      {/* Cook with Marco Chat */}
+      {showMarcoChat && recipe && (
+        <CookWithMarcoChat
+          recipe={recipe}
+          onClose={() => setShowMarcoChat(false)}
+        />
+      )}
     </div>
   );
 }
