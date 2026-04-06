@@ -28,12 +28,11 @@ export async function GET() {
     connectedIds.add(f.friend_id);
   }
 
-  // Get all profiles not in the connected set
+  // Get ALL profiles then filter out connected ones
   const { data: profiles } = await admin
     .from("user_profiles")
     .select("user_id, display_name, avatar_url, friend_code")
-    .order("created_at", { ascending: false })
-    .limit(15);
+    .order("created_at", { ascending: false });
 
   const suggested = (profiles || []).filter((p) => !connectedIds.has(p.user_id));
 
