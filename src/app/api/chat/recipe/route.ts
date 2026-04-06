@@ -253,47 +253,24 @@ RULES:
       });
     }
 
-    // Stream the response
-    console.log("[CookWithMarco] Starting stream with model claude-haiku-4-5-20251001");
-    console.log("[CookWithMarco] System prompt length:", systemPrompt.length);
-    console.log("[CookWithMarco] Messages count:", claudeMessages.length);
-    const stream = await anthropic.messages.stream({
+    // Non-streaming response (reliable)
+    const response = await anthropic.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
       system: systemPrompt,
       messages: claudeMessages as Anthropic.MessageParam[],
     });
 
-    // Create a ReadableStream that sends chunks as they arrive
-    const encoder = new TextEncoder();
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const event of stream) {
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
-              const chunk = `data: ${JSON.stringify({ text: event.delta.text })}\n\n`;
-              controller.enqueue(encoder.encode(chunk));
-            }
-          }
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-          controller.close();
-        } catch (err) {
-          console.error("Stream error:", err);
-          const errorChunk = `data: ${JSON.stringify({ error: "Stream interrupted" })}\n\n`;
-          controller.enqueue(encoder.encode(errorChunk));
-          controller.close();
-        }
-      },
-    });
+    const text = response.content[0].type === "text" ? response.content[0].text : "";
 
-    return new Response(readable, {
+    // Return as SSE format so the client reader still works
+    const encoder = new TextEncoder();
+    const sseData = `data: ${JSON.stringify({ text })}\n\ndata: [DONE]\n\n`;
+
+    return new Response(encoder.encode(sseData), {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        Connection: "keep-alive",
       },
     });
   } catch (err) {
