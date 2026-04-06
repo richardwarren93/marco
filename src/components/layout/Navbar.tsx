@@ -148,7 +148,7 @@ function NavbarInner() {
 
   return (
     <>
-      <nav className="bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40">
+      <nav className="bg-[#faf9f7]/95 backdrop-blur-lg border-b border-[#ede8e0] sticky top-0 z-40" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-11 sm:h-16 items-center">
             {/* Left: Logo */}
