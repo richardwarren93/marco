@@ -7,6 +7,7 @@ import type { MealPlan, Recipe } from "@/types";
 import AddMealSheet from "./AddMealSheet";
 import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
+import SwipeToDelete from "@/components/ui/SwipeToDelete";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const ACCENT = "#e8530a";          // slightly calmer orange
@@ -68,73 +69,77 @@ function MealRow({
 }) {
   return compact ? (
     /* ── Compact layout (weekly view): small left thumbnail ── */
-    <div
-      onClick={onTap}
-      className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-gray-50/40"
-      style={{ background: SURFACE }}
-    >
-      <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#f0f0ee" }}>
-        {plan.recipe?.image_url
-          ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
-          : <span className="text-sm">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
-          {plan.recipe?.title || "Untitled"}
-        </p>
-        <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b8" }}>
-          {plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type}
-        </p>
-      </div>
-      {/* Desktop: trash on hover */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
-        className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity"
-        aria-label="Remove meal"
+    <SwipeToDelete onDelete={() => onRemove(plan.id)}>
+      <div
+        onClick={onTap}
+        className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-gray-50/40"
+        style={{ background: SURFACE }}
       >
-        <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
-    </div>
+        <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#f0f0ee" }}>
+          {plan.recipe?.image_url
+            ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
+            : <span className="text-sm">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+            {plan.recipe?.title || "Untitled"}
+          </p>
+          <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b8" }}>
+            {plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type}
+          </p>
+        </div>
+        {/* Desktop: trash on hover */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
+          className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity"
+          aria-label="Remove meal"
+        >
+          <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+      </div>
+    </SwipeToDelete>
   ) : (
     /* ── Full layout (daily view): large left image ── */
-    <div
-      onClick={onTap}
-      className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-gray-50/30"
-      style={{ background: SURFACE }}
-    >
+    <SwipeToDelete onDelete={() => onRemove(plan.id)}>
       <div
-        className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
-        style={{ background: "#eeecea" }}
+        onClick={onTap}
+        className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-gray-50/30"
+        style={{ background: SURFACE }}
       >
-        {plan.recipe?.image_url
-          ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
-          : <span className="text-2xl opacity-50 select-none">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
+        <div
+          className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+          style={{ background: "#eeecea" }}
+        >
+          {plan.recipe?.image_url
+            ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
+            : <span className="text-2xl opacity-50 select-none">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-[13.5px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+            {plan.recipe?.title || "Untitled"}
+          </p>
+          <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
+            {(() => {
+              const base = plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type;
+              const t = (plan.recipe?.prep_time_minutes ?? 0) + (plan.recipe?.cook_time_minutes ?? 0);
+              return t > 0 ? `${base} · ${t} min` : base;
+            })()}
+          </p>
+        </div>
+        {/* Desktop: trash on hover */}
+        <button
+          onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
+          className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity"
+          aria-label="Remove meal"
+        >
+          <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[13.5px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
-          {plan.recipe?.title || "Untitled"}
-        </p>
-        <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
-          {(() => {
-            const base = plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type;
-            const t = (plan.recipe?.prep_time_minutes ?? 0) + (plan.recipe?.cook_time_minutes ?? 0);
-            return t > 0 ? `${base} · ${t} min` : base;
-          })()}
-        </p>
-      </div>
-      {/* Desktop: trash on hover */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onRemove(plan.id); }}
-        className="hidden sm:flex opacity-0 group-hover:opacity-100 w-7 h-7 rounded-full hover:bg-red-50 items-center justify-center flex-shrink-0 transition-opacity"
-        aria-label="Remove meal"
-      >
-        <svg className="w-3.5 h-3.5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-      </button>
-    </div>
+    </SwipeToDelete>
   );
 }
 
