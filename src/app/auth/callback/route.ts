@@ -19,7 +19,9 @@ export async function GET(request: Request) {
         .single();
 
       if (profile?.onboarding_completed) {
-        return NextResponse.redirect(`${origin}/recipes`);
+        const res = NextResponse.redirect(`${origin}/recipes`);
+        res.cookies.set("marco_onboarded", "1", { path: "/", maxAge: 31536000, sameSite: "lax" });
+        return res;
       }
       return NextResponse.redirect(`${origin}/onboarding`);
     }
