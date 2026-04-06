@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -7,8 +8,19 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
+    const { error, data } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error && data?.user) {
+      // Check if user has already completed onboarding
+      const admin = createAdminClient();
+      const { data: profile } = await admin
+        .from("user_profiles")
+        .select("onboarding_completed")
+        .eq("user_id", data.user.id)
+        .single();
+
+      if (profile?.onboarding_completed) {
+        return NextResponse.redirect(`${origin}/recipes`);
+      }
       return NextResponse.redirect(`${origin}/onboarding`);
     }
   }
