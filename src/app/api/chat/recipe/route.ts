@@ -2,9 +2,16 @@ import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+// Lazy init to ensure env vars are loaded
+let _anthropic: Anthropic | null = null;
+function getAnthropic() {
+  if (!_anthropic) {
+    _anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY!,
+    });
+  }
+  return _anthropic;
+}
 
 export const runtime = "nodejs";
 
@@ -254,7 +261,7 @@ RULES:
     }
 
     // Non-streaming response (reliable)
-    const response = await anthropic.messages.create({
+    const response = await getAnthropic().messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
       system: systemPrompt,
@@ -275,8 +282,9 @@ RULES:
     });
   } catch (err) {
     console.error("Chat API error:", err);
+    const errorMsg = err instanceof Error ? err.message : String(err);
     return new Response(
-      JSON.stringify({ error: "Failed to process chat message" }),
+      JSON.stringify({ error: "Failed to process chat message", details: errorMsg }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
