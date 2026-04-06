@@ -20,6 +20,7 @@ interface TrendingRecipe {
   source_url: string | null;
   saveCount: number;
   userCount: number;
+  tasteMatch?: number;
 }
 
 interface FriendRecipe {
@@ -767,6 +768,8 @@ export default function DiscoverTab({
                         saves={recipe.userCount > 1 ? recipe.userCount : undefined}
                         servings={recipe.servings}
                         tags={recipe.tags}
+                        badge={recipe.tasteMatch && recipe.tasteMatch >= 70 ? "Matches your taste" : undefined}
+                        badgeColor={recipe.tasteMatch && recipe.tasteMatch >= 70 ? "#ea580c" : undefined}
                         onTap={() => {
                           if (!longPressTriggered.current) router.push(`/recipes/${recipe.recipeId}`);
                         }}

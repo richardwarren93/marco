@@ -31,14 +31,14 @@ export default function SignatureDishStep({ value, onNext }: Props) {
           style={{ color: "#1a1410", animationDelay: "0.15s" }}
         >
           What&apos;s your{" "}
-          <span style={{ color: "#ea580c" }}>signature dish</span>?
+          <span style={{ color: "#ea580c" }}>Dream Meal</span>?
         </h1>
 
         <p
           className="text-sm text-center mb-8 animate-stagger-in"
           style={{ color: "#a09890", animationDelay: "0.2s" }}
         >
-          The one dish everyone asks you to make
+          If you could eat one meal for the rest of your life, what would it be?
         </p>
 
         {/* Input */}

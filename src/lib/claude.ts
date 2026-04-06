@@ -357,6 +357,15 @@ export async function promptRecipes(
     pantryItems?: PantryItem[];
     equipment?: string[];
     recipes?: Recipe[];
+  },
+  tasteProfile?: {
+    sweet: number;
+    savory: number;
+    spicy: number;
+    tangy: number;
+    richness: number;
+    topCuisines?: string[];
+    cookingStyles?: string[];
   }
 ): Promise<PromptRecipeResult[]> {
   let systemContext = "";
@@ -382,6 +391,17 @@ export async function promptRecipes(
     systemContext = parts.join("\n\n");
   }
 
+  // Build taste profile context string
+  let tasteContext = "";
+  if (tasteProfile) {
+    const parts: string[] = [];
+    parts.push(`The user's taste profile: Sweet ${tasteProfile.sweet}/100, Savory ${tasteProfile.savory}/100, Spicy ${tasteProfile.spicy}/100, Tangy ${tasteProfile.tangy}/100, Richness ${tasteProfile.richness}/100.`);
+    if (tasteProfile.topCuisines?.length) parts.push(`Top cuisines: ${tasteProfile.topCuisines.join(", ")}.`);
+    if (tasteProfile.cookingStyles?.length) parts.push(`Preferred cooking styles: ${tasteProfile.cookingStyles.join(", ")}.`);
+    parts.push("Weight 3 of your 4 recommendations toward their preferences. Make the 4th recommendation something outside their usual taste profile to help them discover new flavors.");
+    tasteContext = "\n\n" + parts.join(" ");
+  }
+
   const systemPrompt =
     context === "my_kitchen"
       ? `You are a creative home chef AI for the Marco cooking app. You help users find recipes based on what they have in their kitchen. You ALWAYS respond with valid JSON only — no explanations, no markdown. Never refuse.
@@ -389,12 +409,12 @@ export async function promptRecipes(
 The user has this kitchen context:
 ${systemContext}
 
-When possible, suggest recipes from their saved collection (set source to "saved" and include the recipeId). Fill remaining slots with new generated recipes (source: "generated"). Prioritize what they can make with their pantry and equipment.`
+When possible, suggest recipes from their saved collection (set source to "saved" and include the recipeId). Fill remaining slots with new generated recipes (source: "generated"). Prioritize what they can make with their pantry and equipment.${tasteContext}`
       : `You are a creative home chef AI for the Marco cooking app. You suggest trending, delicious recipes from across the internet — think popular TikTok recipes, Instagram food creator staples, and classic crowd-pleasers. You ALWAYS respond with valid JSON only — no explanations, no markdown. Never refuse.
 
 For each recipe, include a sourceHint like "Popular on TikTok", "Instagram favorite", "Classic comfort food", "Trending recipe", or "Food creator staple".
 
-IMPORTANT: When suggesting real, well-known recipes, include the source_url — the actual URL of the original recipe page (e.g. from allrecipes.com, budgetbytes.com, seriouseats.com, bonappetit.com, halfbakedharvest.com, etc.). Only include real URLs you are confident exist. If you are not sure of the exact URL, omit it.`;
+IMPORTANT: When suggesting real, well-known recipes, include the source_url — the actual URL of the original recipe page (e.g. from allrecipes.com, budgetbytes.com, seriouseats.com, bonappetit.com, halfbakedharvest.com, etc.). Only include real URLs you are confident exist. If you are not sure of the exact URL, omit it.${tasteContext}`;
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-20250514",
