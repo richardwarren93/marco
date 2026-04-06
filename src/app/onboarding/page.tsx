@@ -56,8 +56,21 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }: { data: { user: unknown } }) => {
+    supabase.auth.getUser().then(async ({ data: { user } }: { data: { user: any } }) => {
       if (!user) { router.replace("/auth/login"); return; }
+
+      // Check if onboarding already completed — redirect to app
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .single();
+
+      if (profile?.onboarding_completed) {
+        router.replace("/recipes");
+        return;
+      }
+
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
