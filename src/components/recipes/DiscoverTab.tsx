@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTrending } from "@/lib/hooks/use-data";
 import type { PromptRecipeResult } from "@/lib/claude";
@@ -20,31 +20,7 @@ interface TrendingRecipe {
   source_url: string | null;
   saveCount: number;
   userCount: number;
-  tasteMatch?: number;
 }
-
-interface FriendRecipe {
-  id: string;
-  user_id: string;
-  title: string;
-  description: string | null;
-  tags: string[];
-  image_url: string | null;
-  source_platform: string | null;
-  prep_time_minutes: number | null;
-  cook_time_minutes: number | null;
-  servings: number | null;
-  meal_type: string;
-  created_at: string;
-  owner_name: string;
-  owner_avatar: string | null;
-  owner_id: string;
-  is_planned: boolean;
-  planning_friends: { name: string; avatar: string | null }[];
-  next_planned_date: string | null;
-}
-
-type FeedMode = "friends" | "community";
 
 // ─── Context menu types ─────────────────────────────────────────────────────
 
@@ -54,8 +30,6 @@ interface ContextMenuState {
   y: number;
   recipeId: string;
   recipeTitle: string;
-  /** For friend recipes that need save-by-copy */
-  friendRecipe?: FriendRecipe;
 }
 
 // ─── Questionnaire steps ────────────────────────────────────────────────────
@@ -100,30 +74,70 @@ const MEAL_EMOJIS: Record<string, string> = {
   breakfast: "🥞", lunch: "🥗", dinner: "🍽️", snack: "🍎",
 };
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ─── Category definitions (driven by tags) ──────────────────────────────────
 
-function timeAgo(dateStr: string): string {
-  const now = new Date();
-  const d = new Date(dateStr);
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
-  return `${Math.floor(diffDays / 30)}mo ago`;
+interface Category {
+  title: string;
+  emoji: string;
+  tags?: string[]; // Match if any tag matches
+  maxTime?: number; // Match if total time <= this
+  filter?: (r: TrendingRecipe) => boolean;
 }
 
-function formatPlannedDate(dateStr: string): string {
-  const d = new Date(dateStr + "T12:00:00");
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const diffDays = Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "today";
-  if (diffDays === 1) return "tomorrow";
-  if (diffDays > 0 && diffDays < 7) return d.toLocaleDateString("en-US", { weekday: "long" });
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+const CATEGORIES: Category[] = [
+  {
+    title: "Quick Dinners",
+    emoji: "⚡",
+    filter: (r) => {
+      const total = (r.prep_time_minutes || 0) + (r.cook_time_minutes || 0);
+      return total > 0 && total <= 30 && r.meal_type === "dinner";
+    },
+  },
+  {
+    title: "High Protein",
+    emoji: "💪",
+    tags: ["high-protein", "high protein", "protein", "chicken", "beef", "salmon", "tofu", "lamb", "pork"],
+  },
+  {
+    title: "Comfort Food",
+    emoji: "🍲",
+    tags: ["comfort food", "comfort-food", "cozy", "hearty", "creamy"],
+  },
+  {
+    title: "Plant-Based",
+    emoji: "🌱",
+    tags: ["vegetarian", "vegan", "plant-based"],
+  },
+  {
+    title: "Asian-Inspired",
+    emoji: "🥢",
+    tags: ["asian", "chinese", "japanese", "korean", "thai", "vietnamese", "sichuan", "asian-inspired", "korean-inspired"],
+  },
+  {
+    title: "Pasta & Noodles",
+    emoji: "🍝",
+    tags: ["pasta", "noodle", "noodles", "italian"],
+  },
+  {
+    title: "Healthy & Light",
+    emoji: "🥗",
+    tags: ["healthy", "salad", "light", "fresh", "low-carb"],
+  },
+];
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function matchesCategory(recipe: TrendingRecipe, cat: Category): boolean {
+  if (cat.filter) return cat.filter(recipe);
+  if (cat.tags && recipe.tags) {
+    const lowerTags = recipe.tags.map((t) => t.toLowerCase());
+    return cat.tags.some((catTag) => lowerTags.some((t) => t.includes(catTag)));
+  }
+  if (cat.maxTime) {
+    const total = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
+    return total > 0 && total <= cat.maxTime;
+  }
+  return false;
 }
 
 // ─── Main component ─────────────────────────────────────────────────────────
@@ -137,22 +151,7 @@ export default function DiscoverTab({
 }) {
   const router = useRouter();
 
-  // ── Feed state ──
-  const [feedMode, setFeedMode] = useState<FeedMode>(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("marco-feed-mode") as FeedMode) || "friends";
-    }
-    return "friends";
-  });
-
-  // ── Friends feed state ──
-  const [friendRecipes, setFriendRecipes] = useState<FriendRecipe[]>([]);
-  const [friendsLoading, setFriendsLoading] = useState(true);
-  const [friendsError, setFriendsError] = useState("");
-  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
-
-  // ── Community feed state ──
+  // ── Trending recipes ──
   const { data: trendingData, isLoading: trendingLoading } = useTrending();
   const trending: TrendingRecipe[] = trendingData?.trending ?? [];
 
@@ -165,14 +164,8 @@ export default function DiscoverTab({
   const [exploreSavedIds, setExploreSavedIds] = useState<Set<number>>(new Set());
   const [questionStep, setQuestionStep] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [showRawInput, setShowRawInput] = useState(false);
+  const [showQuestionnaireModal, setShowQuestionnaireModal] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // ── Swipe toggle state ──
-  const feedAreaRef = useRef<HTMLDivElement>(null);
-  const swipeStartX = useRef(0);
-  const swipeStartY = useRef(0);
-  const swiping = useRef(false);
 
   // ── Context menu state ──
   const [ctxMenu, setCtxMenu] = useState<ContextMenuState>({
@@ -182,29 +175,16 @@ export default function DiscoverTab({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
-  // Persist feed mode
-  useEffect(() => {
-    localStorage.setItem("marco-feed-mode", feedMode);
-  }, [feedMode]);
+  // ── Computed: hero recipe + categorized rows ──
+  const heroRecipe = useMemo(() => trending[0] || null, [trending]);
 
-  // Fetch friends activity
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchFriendsActivity() {
-      try {
-        const res = await fetch("/api/recipes/friends-activity");
-        if (!res.ok) throw new Error("Failed to load");
-        const data = await res.json();
-        if (!cancelled) setFriendRecipes(data.recipes || []);
-      } catch (err) {
-        if (!cancelled) setFriendsError(err instanceof Error ? err.message : "Failed to load");
-      } finally {
-        if (!cancelled) setFriendsLoading(false);
-      }
-    }
-    fetchFriendsActivity();
-    return () => { cancelled = true; };
-  }, []);
+  const categorizedRows = useMemo(() => {
+    if (!trending.length) return [];
+    return CATEGORIES.map((cat) => ({
+      ...cat,
+      recipes: trending.filter((r) => matchesCategory(r, cat)).slice(0, 10),
+    })).filter((row) => row.recipes.length > 0);
+  }, [trending]);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -227,41 +207,26 @@ export default function DiscoverTab({
     };
   }, [ctxMenu.visible]);
 
-  // ── Swipe handlers for feed toggle ──
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    swipeStartX.current = e.touches[0].clientX;
-    swipeStartY.current = e.touches[0].clientY;
-    swiping.current = false;
-  }, []);
-
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (longPressTriggered.current) return; // don't swipe if long press fired
-    const dx = e.changedTouches[0].clientX - swipeStartX.current;
-    const dy = Math.abs(e.changedTouches[0].clientY - swipeStartY.current);
-    if (Math.abs(dx) > 60 && dy < 80) {
-      if (dx < 0 && feedMode === "friends") setFeedMode("community");
-      if (dx > 0 && feedMode === "community") setFeedMode("friends");
+  // Lock body scroll when modal open
+  useEffect(() => {
+    if (showQuestionnaireModal) {
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = ""; };
     }
-  }, [feedMode]);
+  }, [showQuestionnaireModal]);
 
   // ── Context menu helpers ──
-  const openCtxMenu = useCallback((x: number, y: number, recipeId: string, recipeTitle: string, friendRecipe?: FriendRecipe) => {
-    // Clamp to viewport
+  const openCtxMenu = useCallback((x: number, y: number, recipeId: string, recipeTitle: string) => {
     const menuW = 180, menuH = 100;
     const cx = Math.min(x, window.innerWidth - menuW - 8);
     const cy = Math.min(y, window.innerHeight - menuH - 8);
-    setCtxMenu({ visible: true, x: cx, y: cy, recipeId, recipeTitle, friendRecipe });
+    setCtxMenu({ visible: true, x: cx, y: cy, recipeId, recipeTitle });
   }, []);
 
-  const handleCtxSave = useCallback(async () => {
-    const { recipeId, friendRecipe } = ctxMenu;
+  const handleCtxSave = useCallback(() => {
+    const { recipeId } = ctxMenu;
     setCtxMenu((prev) => ({ ...prev, visible: false }));
-    if (friendRecipe) {
-      await handleSaveFriendRecipe(friendRecipe);
-    }
-    // After save, prompt collection selection
     onAddToCollection?.(recipeId);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ctxMenu, onAddToCollection]);
 
   const handleCtxPlan = useCallback(() => {
@@ -270,17 +235,15 @@ export default function DiscoverTab({
     onAddToMealPlan?.(recipeId);
   }, [ctxMenu, onAddToMealPlan]);
 
-  // ── Long press handlers ──
-  const startLongPress = useCallback((recipeId: string, recipeTitle: string, friendRecipe?: FriendRecipe) => (e: React.TouchEvent) => {
+  const startLongPress = useCallback((recipeId: string, recipeTitle: string) => (e: React.TouchEvent) => {
     longPressTriggered.current = false;
     const touch = e.touches[0];
     const x = touch.clientX;
     const y = touch.clientY;
     longPressTimer.current = setTimeout(() => {
       longPressTriggered.current = true;
-      // Haptic feedback if available
       if (navigator.vibrate) navigator.vibrate(30);
-      openCtxMenu(x, y, recipeId, recipeTitle, friendRecipe);
+      openCtxMenu(x, y, recipeId, recipeTitle);
     }, 500);
   }, [openCtxMenu]);
 
@@ -291,10 +254,9 @@ export default function DiscoverTab({
     }
   }, []);
 
-  // ── Right-click handler (desktop) ──
-  const handleRightClick = useCallback((recipeId: string, recipeTitle: string, friendRecipe?: FriendRecipe) => (e: React.MouseEvent) => {
+  const handleRightClick = useCallback((recipeId: string, recipeTitle: string) => (e: React.MouseEvent) => {
     e.preventDefault();
-    openCtxMenu(e.clientX, e.clientY, recipeId, recipeTitle, friendRecipe);
+    openCtxMenu(e.clientX, e.clientY, recipeId, recipeTitle);
   }, [openCtxMenu]);
 
   // ── Explore handlers ──
@@ -334,6 +296,7 @@ export default function DiscoverTab({
       if (newAnswers.vibe) parts.push(`that is ${newAnswers.vibe}`);
       const builtPrompt = `Find me ${parts.join(" ")}`;
       setPrompt(builtPrompt);
+      setShowQuestionnaireModal(false);
       handleSearch(builtPrompt);
     }
   }
@@ -344,7 +307,12 @@ export default function DiscoverTab({
     setResults([]);
     setPrompt("");
     setExploreError("");
-    setShowRawInput(false);
+  }
+
+  function openQuestionnaire() {
+    setQuestionStep(0);
+    setAnswers({});
+    setShowQuestionnaireModal(true);
   }
 
   function handleSubmit() {
@@ -395,40 +363,6 @@ export default function DiscoverTab({
     }
   }
 
-  // ── Friends feed handlers ──
-
-  async function handleSaveFriendRecipe(recipe: FriendRecipe) {
-    if (savingIds.has(recipe.id) || savedIds.has(recipe.id)) return;
-    setSavingIds((prev) => new Set(prev).add(recipe.id));
-    try {
-      const detailRes = await fetch(`/api/recipes/${recipe.id}`);
-      if (!detailRes.ok) throw new Error("Could not load recipe");
-      const detail = await detailRes.json();
-      const r = detail.recipe || detail;
-      const res = await fetch("/api/recipes/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: r.title, description: r.description, ingredients: r.ingredients,
-          steps: r.steps, servings: r.servings, prep_time_minutes: r.prep_time_minutes,
-          cook_time_minutes: r.cook_time_minutes, tags: r.tags, meal_type: r.meal_type,
-          source_url: r.source_url, source_platform: r.source_platform, image_url: r.image_url,
-          notes: r.notes ? `${r.notes}\n\nSaved from ${recipe.owner_name}` : `Saved from ${recipe.owner_name}`,
-        }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        if (data.duplicate) { setSavedIds((prev) => new Set(prev).add(recipe.id)); return; }
-        throw new Error(data.error || "Failed to save");
-      }
-      setSavedIds((prev) => new Set(prev).add(recipe.id));
-    } catch (err) {
-      console.error("Save recipe error:", err);
-    } finally {
-      setSavingIds((prev) => { const next = new Set(prev); next.delete(recipe.id); return next; });
-    }
-  }
-
   // ── Render ──
 
   const showLanding = results.length === 0 && !searching && !exploreError;
@@ -436,29 +370,46 @@ export default function DiscoverTab({
   return (
     <div className="max-w-3xl mx-auto px-4 pb-28 pt-5" style={{ background: "#faf9f7" }}>
 
-      {/* Raw text input */}
-      {showRawInput && (
-        <div className="bg-white rounded-3xl p-4 mb-5 animate-fade-slide-up" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}>
-          <div className="flex items-end gap-3">
-            <textarea
-              ref={textareaRef}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="What do you want to cook?"
-              rows={1}
-              disabled={searching}
-              className="flex-1 resize-none text-sm outline-none bg-transparent py-1 min-h-[36px] max-h-[96px] font-medium"
-              style={{ color: "#1a1410" }}
-            />
+      {/* AI Prompt Input — always visible at top */}
+      <div className="mb-6">
+        <div
+          className="bg-white rounded-3xl p-4"
+          style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
+        >
+          <div className="flex items-start gap-3 mb-2">
+            <div
+              className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
+              style={{
+                background: "linear-gradient(135deg, #ffe4d3 0%, #ffd4b3 100%)",
+              }}
+            >
+              <span className="text-lg">{"\u2728"}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "#a09890" }}>
+                Ask Marco
+              </p>
+              <textarea
+                ref={textareaRef}
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="What are you in the mood for?"
+                rows={1}
+                disabled={searching}
+                className="w-full resize-none text-sm outline-none bg-transparent min-h-[24px] max-h-[96px] font-medium placeholder:text-gray-300"
+                style={{ color: "#1a1410" }}
+              />
+            </div>
             <button
               onClick={handleSubmit}
               disabled={!prompt.trim() || searching}
-              className="w-10 h-10 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all active:scale-90 disabled:opacity-40"
+              className="w-9 h-9 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all active:scale-90 disabled:opacity-30"
               style={{ background: "#1a1410" }}
+              aria-label="Send"
             >
               {searching ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 12h14M12 5l7 7-7 7" />
@@ -466,56 +417,18 @@ export default function DiscoverTab({
               )}
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Questionnaire flow */}
-      {showLanding && !showRawInput && (
-        <div className="mb-6">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            {QUESTIONS.map((_, i) => (
-              <div
-                key={i}
-                className="h-1.5 rounded-full transition-all duration-300"
-                style={{ width: i === questionStep ? 24 : 8, background: i <= questionStep ? "#f97316" : "#ede9e3" }}
-              />
-            ))}
-          </div>
-          <div key={QUESTIONS[questionStep].id} className="bg-white rounded-3xl p-5 animate-fade-slide-up" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}>
-            <h3 className="text-base font-bold mb-4" style={{ color: "#1a1410" }}>
-              {QUESTIONS[questionStep].question}
-            </h3>
-            <div className="grid grid-cols-2 gap-2.5">
-              {QUESTIONS[questionStep].options.map((opt, i) => (
-                <button
-                  key={opt.label}
-                  onClick={() => handleQuestionAnswer(QUESTIONS[questionStep].id, opt.value)}
-                  className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.97]"
-                  style={{
-                    background: answers[QUESTIONS[questionStep].id] === opt.value ? "#fff3e8" : "#fff",
-                    border: `1.5px solid ${answers[QUESTIONS[questionStep].id] === opt.value ? "#f97316" : "#ede9e3"}`,
-                    boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
-                    animation: `fadeSlideUp 0.3s ease ${i * 40}ms both`,
-                  }}
-                >
-                  <span className="text-xl">{opt.emoji}</span>
-                  <span className="text-xs font-bold" style={{ color: "#1a1410" }}>{opt.label}</span>
-                </button>
-              ))}
-            </div>
-            {questionStep > 0 && (
-              <button onClick={() => setQuestionStep(questionStep - 1)} className="mt-3 text-xs font-semibold transition-colors" style={{ color: "#a09890" }}>
-                ← Back
-              </button>
-            )}
-          </div>
-          <div className="text-center mt-4">
-            <button onClick={() => setShowRawInput(true)} className="text-xs font-semibold transition-colors" style={{ color: "#a09890" }}>
-              Or just type what you want
+          <div className="flex items-center justify-between pt-2 border-t border-gray-50">
+            <button
+              onClick={openQuestionnaire}
+              className="text-[11px] font-bold transition-colors flex items-center gap-1"
+              style={{ color: "#f97316" }}
+            >
+              <span>{"\u{1F4DD}"}</span>
+              <span>Need ideas? Take a 30-sec quiz</span>
             </button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Explore error */}
       {exploreError && (
@@ -530,7 +443,7 @@ export default function DiscoverTab({
               <circle cx="50" cy="50" r="42" fill="none" stroke="#f3f4f6" strokeWidth="6" />
               <circle cx="50" cy="50" r="42" fill="none" stroke="#f97316" strokeWidth="6" strokeDasharray="264" strokeDashoffset="198" strokeLinecap="round" />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center"><span className="text-xl">🍳</span></div>
+            <div className="absolute inset-0 flex items-center justify-center"><span className="text-xl">{"\u{1F373}"}</span></div>
           </div>
           <p className="text-sm font-medium text-gray-700 mb-1">Cooking up ideas...</p>
           <p className="text-xs text-gray-400">Finding the perfect recipes for you</p>
@@ -562,226 +475,195 @@ export default function DiscoverTab({
         </div>
       )}
 
-      {/* ── Divider ──────────────────────────────────────────────── */}
-      <div className="h-px bg-gray-200/70 my-1 mb-5" />
-
-      {/* ── Feed toggle: swipeable pill ──────────────────────────── */}
-      <div className="relative mb-5 max-w-[280px] mx-auto">
-        <div className="flex bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
-          {/* Sliding indicator */}
-          <div
-            className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
-            style={{
-              width: "calc(50% - 4px)",
-              left: feedMode === "friends" ? 4 : "calc(50% + 0px)",
-            }}
-          />
-          <button
-            onClick={() => setFeedMode("friends")}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors duration-200 relative z-10 ${
-              feedMode === "friends" ? "text-gray-900" : "text-gray-400"
-            }`}
-          >
-            For You
-          </button>
-          <button
-            onClick={() => setFeedMode("community")}
-            className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors duration-200 relative z-10 ${
-              feedMode === "community" ? "text-gray-900" : "text-gray-400"
-            }`}
-          >
-            Community
-          </button>
-        </div>
-        <p className="text-center text-[10px] text-gray-300 mt-1.5 select-none">Swipe to switch</p>
-      </div>
-
-      {/* ── Feed area (swipeable) ─────────────────────────────────── */}
-      <div
-        ref={feedAreaRef}
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-        className="min-h-[200px]"
-      >
-
-        {/* ── For You feed (friends activity) ───────────────────── */}
-        {feedMode === "friends" && (
-          <div className="animate-fade-slide-up">
-            {friendsLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-48 skeleton-warm rounded-3xl" />)}
+      {/* Categorized landing layout */}
+      {showLanding && (
+        <div className="animate-fade-slide-up">
+          {trendingLoading ? (
+            <>
+              <div className="h-72 skeleton-warm rounded-3xl mb-6" />
+              <div className="space-y-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i}>
+                    <div className="h-4 w-32 skeleton-warm rounded-full mb-3" />
+                    <div className="flex gap-3 overflow-hidden">
+                      {[1, 2, 3].map((j) => <div key={j} className="h-44 w-40 skeleton-warm rounded-2xl flex-shrink-0" />)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : friendsError ? (
-              <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-                <span className="text-3xl mb-3 block">😕</span>
-                <p className="text-sm text-gray-500">{friendsError}</p>
-              </div>
-            ) : friendRecipes.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-                <span className="text-4xl mb-3 block">👋</span>
-                <p className="text-base font-semibold text-gray-800 mb-1">No friend activity yet</p>
-                <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
-                  When your friends save or plan recipes, they&apos;ll show up here
-                </p>
-                <button
-                  onClick={() => router.push("/friends")}
-                  className="mt-4 px-5 py-2 bg-orange-500 text-white text-sm font-semibold rounded-full hover:bg-orange-600 transition-colors shadow-sm"
+            </>
+          ) : trending.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
+              <span className="text-4xl mb-3 block">{"\u{1F30E}"}</span>
+              <p className="text-base font-semibold text-gray-800 mb-1">Nothing trending yet</p>
+              <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
+                As more people use Marco, popular recipes will appear here
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Hero card — featured trending recipe */}
+              {heroRecipe && (
+                <div
+                  className="mb-7 relative rounded-3xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+                  style={{
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+                    height: "320px",
+                  }}
+                  onClick={() => router.push(`/recipes/${heroRecipe.recipeId}`)}
+                  onContextMenu={handleRightClick(heroRecipe.recipeId, heroRecipe.title)}
+                  onTouchStart={startLongPress(heroRecipe.recipeId, heroRecipe.title)}
+                  onTouchMove={cancelLongPress}
+                  onTouchEnd={cancelLongPress}
                 >
-                  Find friends
-                </button>
-              </div>
-            ) : (
-              <>
-                {/* Friends are cooking section */}
-                {friendRecipes.some((r) => r.is_planned) && (
-                  <>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                      🔥 Friends are cooking
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-5">
-                      {friendRecipes.filter((r) => r.is_planned).map((recipe, i) => (
-                        <div
-                          key={recipe.id}
-                          style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}
-                          onContextMenu={handleRightClick(recipe.id, recipe.title, recipe)}
-                          onTouchStart={(e) => {
-                            startLongPress(recipe.id, recipe.title, recipe)(e);
-                            handleTouchStart(e);
-                          }}
-                          onTouchMove={cancelLongPress}
-                          onTouchEnd={(e) => {
-                            cancelLongPress();
-                            if (!longPressTriggered.current) handleTouchEnd(e);
-                          }}
-                        >
-                          <FeedCard
-                            title={recipe.title}
-                            imageUrl={recipe.image_url}
-                            mealType={recipe.meal_type}
-                            prepTime={recipe.prep_time_minutes}
-                            cookTime={recipe.cook_time_minutes}
-                            ownerName={recipe.owner_name}
-                            ownerAvatar={recipe.owner_avatar}
-                            subtitle={recipe.next_planned_date ? `cooking ${formatPlannedDate(recipe.next_planned_date)}` : undefined}
-                            subtitleColor="#16a34a"
-                            badge={recipe.is_planned ? "COOKING" : undefined}
-                            badgeColor="#22c55e"
-                            tags={recipe.tags}
-                            onTap={() => {
-                              if (!longPressTriggered.current) router.push(`/recipes/${recipe.id}`);
-                            }}
-                          />
-                        </div>
-                      ))}
+                  {heroRecipe.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={heroRecipe.image_url}
+                      alt={heroRecipe.title}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
+                      <span className="text-6xl">{MEAL_EMOJIS[heroRecipe.meal_type] ?? "🍳"}</span>
                     </div>
-                  </>
-                )}
-
-                {/* Recently saved by friends */}
-                {friendRecipes.some((r) => !r.is_planned) && (
-                  <>
-                    <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                      📚 Recently saved by friends
-                    </p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {friendRecipes.filter((r) => !r.is_planned).map((recipe, i) => (
-                        <div
-                          key={recipe.id}
-                          style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}
-                          onContextMenu={handleRightClick(recipe.id, recipe.title, recipe)}
-                          onTouchStart={(e) => {
-                            startLongPress(recipe.id, recipe.title, recipe)(e);
-                            handleTouchStart(e);
-                          }}
-                          onTouchMove={cancelLongPress}
-                          onTouchEnd={(e) => {
-                            cancelLongPress();
-                            if (!longPressTriggered.current) handleTouchEnd(e);
-                          }}
-                        >
-                          <FeedCard
-                            title={recipe.title}
-                            imageUrl={recipe.image_url}
-                            mealType={recipe.meal_type}
-                            prepTime={recipe.prep_time_minutes}
-                            cookTime={recipe.cook_time_minutes}
-                            ownerName={recipe.owner_name}
-                            ownerAvatar={recipe.owner_avatar}
-                            subtitle={timeAgo(recipe.created_at)}
-                            tags={recipe.tags}
-                            onTap={() => {
-                              if (!longPressTriggered.current) router.push(`/recipes/${recipe.id}`);
-                            }}
-                          />
-                        </div>
-                      ))}
+                  )}
+                  {/* Dark gradient overlay */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%)",
+                    }}
+                  />
+                  {/* Trending pill */}
+                  <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm">
+                    <span className="text-sm">{"\u{1F525}"}</span>
+                    <span className="text-[11px] font-bold" style={{ color: "#1a1410" }}>Trending Tonight</span>
+                  </div>
+                  {/* Title and meta */}
+                  <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                    <h2 className="text-2xl font-black leading-tight mb-2 line-clamp-2">{heroRecipe.title}</h2>
+                    <div className="flex items-center gap-3 text-xs font-semibold">
+                      {((heroRecipe.prep_time_minutes || 0) + (heroRecipe.cook_time_minutes || 0)) > 0 && (
+                        <span className="flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {(heroRecipe.prep_time_minutes || 0) + (heroRecipe.cook_time_minutes || 0)} min
+                        </span>
+                      )}
+                      {heroRecipe.userCount > 1 && (
+                        <span>{"\u00B7"} {heroRecipe.userCount} cooks loved it</span>
+                      )}
                     </div>
-                  </>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ── Community feed (trending/popular) ─────────────────── */}
-        {feedMode === "community" && (
-          <div className="animate-fade-slide-up">
-            {trendingLoading ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-48 skeleton-warm rounded-3xl" />)}
-              </div>
-            ) : trending.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-2xl shadow-sm">
-                <span className="text-4xl mb-3 block">🌎</span>
-                <p className="text-base font-semibold text-gray-800 mb-1">Nothing trending yet</p>
-                <p className="text-sm text-gray-400 max-w-[260px] mx-auto leading-relaxed">
-                  As more people use Marco, popular recipes will appear here
-                </p>
-              </div>
-            ) : (
-              <>
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                  🔥 Popular right now
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {trending.map((recipe, i) => (
-                    <div
-                      key={recipe.recipeId}
-                      style={{ animation: `cardPop 0.4s ease ${i * 50}ms both` }}
-                      onContextMenu={handleRightClick(recipe.recipeId, recipe.title)}
-                      onTouchStart={(e) => {
-                        startLongPress(recipe.recipeId, recipe.title)(e);
-                        handleTouchStart(e);
-                      }}
-                      onTouchMove={cancelLongPress}
-                      onTouchEnd={(e) => {
-                        cancelLongPress();
-                        if (!longPressTriggered.current) handleTouchEnd(e);
-                      }}
-                    >
-                      <FeedCard
-                        title={recipe.title}
-                        imageUrl={recipe.image_url}
-                        mealType={recipe.meal_type}
-                        prepTime={recipe.prep_time_minutes}
-                        cookTime={recipe.cook_time_minutes}
-                        saves={recipe.userCount > 1 ? recipe.userCount : undefined}
-                        servings={recipe.servings}
-                        tags={recipe.tags}
-                        badge={recipe.tasteMatch && recipe.tasteMatch >= 70 ? "Matches your taste" : undefined}
-                        badgeColor={recipe.tasteMatch && recipe.tasteMatch >= 70 ? "#ea580c" : undefined}
-                        onTap={() => {
-                          if (!longPressTriggered.current) router.push(`/recipes/${recipe.recipeId}`);
-                        }}
-                      />
-                    </div>
-                  ))}
+                  </div>
                 </div>
-              </>
-            )}
+              )}
+
+              {/* Categorized rows */}
+              <div className="space-y-7">
+                {categorizedRows.map((row) => (
+                  <CategoryRow
+                    key={row.title}
+                    title={row.title}
+                    emoji={row.emoji}
+                    recipes={row.recipes}
+                    onTap={(id) => router.push(`/recipes/${id}`)}
+                    onLongPress={(id, title, e) => {
+                      longPressTriggered.current = false;
+                      const touch = e.touches[0];
+                      longPressTimer.current = setTimeout(() => {
+                        longPressTriggered.current = true;
+                        if (navigator.vibrate) navigator.vibrate(30);
+                        openCtxMenu(touch.clientX, touch.clientY, id, title);
+                      }, 500);
+                    }}
+                    onLongPressCancel={cancelLongPress}
+                    onContextMenu={handleRightClick}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ── Questionnaire Modal ──────────────────────────────────────── */}
+      {showQuestionnaireModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowQuestionnaireModal(false)}
+        >
+          <div
+            className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 animate-slide-up"
+            style={{ maxHeight: "90vh", overflowY: "auto" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-black" style={{ color: "#1a1410" }}>
+                Find me a recipe
+              </h2>
+              <button
+                onClick={() => setShowQuestionnaireModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
+                aria-label="Close"
+              >
+                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Progress bar */}
+            <div className="flex items-center justify-center gap-2 mb-5">
+              {QUESTIONS.map((_, i) => (
+                <div
+                  key={i}
+                  className="h-1.5 rounded-full transition-all duration-300"
+                  style={{ width: i === questionStep ? 24 : 8, background: i <= questionStep ? "#f97316" : "#ede9e3" }}
+                />
+              ))}
+            </div>
+
+            {/* Question */}
+            <div key={QUESTIONS[questionStep].id}>
+              <h3 className="text-base font-bold mb-4" style={{ color: "#1a1410" }}>
+                {QUESTIONS[questionStep].question}
+              </h3>
+              <div className="grid grid-cols-2 gap-2.5">
+                {QUESTIONS[questionStep].options.map((opt, i) => (
+                  <button
+                    key={opt.label}
+                    onClick={() => handleQuestionAnswer(QUESTIONS[questionStep].id, opt.value)}
+                    className="flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all active:scale-[0.97]"
+                    style={{
+                      background: answers[QUESTIONS[questionStep].id] === opt.value ? "#fff3e8" : "#fff",
+                      border: `1.5px solid ${answers[QUESTIONS[questionStep].id] === opt.value ? "#f97316" : "#ede9e3"}`,
+                      boxShadow: "0 1px 8px rgba(0,0,0,0.05)",
+                      animation: `fadeSlideUp 0.3s ease ${i * 40}ms both`,
+                    }}
+                  >
+                    <span className="text-xl">{opt.emoji}</span>
+                    <span className="text-xs font-bold" style={{ color: "#1a1410" }}>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+              {questionStep > 0 && (
+                <button
+                  onClick={() => setQuestionStep(questionStep - 1)}
+                  className="mt-4 text-xs font-semibold transition-colors"
+                  style={{ color: "#a09890" }}
+                >
+                  ← Back
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* ── Context menu (right-click / long-press) ──────────────── */}
       {ctxMenu.visible && (
@@ -798,29 +680,24 @@ export default function DiscoverTab({
               animation: "ctxMenuPop 0.15s ease both",
             }}
           >
-            {/* Recipe title */}
             <div className="px-4 py-2.5 border-b border-gray-50">
               <p className="text-xs font-bold text-gray-900 line-clamp-1">{ctxMenu.recipeTitle}</p>
             </div>
-
-            {/* Save */}
             <button
               onClick={handleCtxSave}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 transition-colors active:bg-orange-100"
             >
-              <svg className="w-4.5 h-4.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
               <span>Save to Collection</span>
             </button>
-
-            {/* Plan */}
             {onAddToMealPlan && (
               <button
                 onClick={handleCtxPlan}
                 className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 transition-colors active:bg-orange-100 border-t border-gray-50"
               >
-                <svg className="w-4.5 h-4.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span>Add to Meal Plan</span>
@@ -830,90 +707,99 @@ export default function DiscoverTab({
         </div>
       )}
 
-      {/* Context menu animation */}
+      {/* Animations */}
       <style jsx>{`
         @keyframes ctxMenuPop {
           from { opacity: 0; transform: scale(0.9); }
           to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up {
+          animation: slideUp 0.3s ease-out;
         }
       `}</style>
     </div>
   );
 }
 
-// ─── Unified feed card (used by both For You and Community) ─────────────────
+// ─── Category Row (horizontal scroll) ──────────────────────────────────────
 
-function FeedCard({
+function CategoryRow({
   title,
-  imageUrl,
-  mealType,
-  prepTime,
-  cookTime,
-  ownerName,
-  ownerAvatar,
-  subtitle,
-  subtitleColor,
-  badge,
-  badgeColor,
-  saves,
-  servings,
-  tags,
+  emoji,
+  recipes,
   onTap,
+  onLongPress,
+  onLongPressCancel,
+  onContextMenu,
 }: {
   title: string;
-  imageUrl: string | null;
-  mealType: string;
-  prepTime: number | null;
-  cookTime: number | null;
-  ownerName?: string;
-  ownerAvatar?: string | null;
-  subtitle?: string;
-  subtitleColor?: string;
-  badge?: string;
-  badgeColor?: string;
-  saves?: number;
-  servings?: number | null;
-  tags?: string[];
+  emoji: string;
+  recipes: TrendingRecipe[];
+  onTap: (id: string) => void;
+  onLongPress: (id: string, title: string, e: React.TouchEvent) => void;
+  onLongPressCancel: () => void;
+  onContextMenu: (id: string, title: string) => (e: React.MouseEvent) => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-3 px-1">
+        <div className="flex items-center gap-2">
+          <span className="text-base">{emoji}</span>
+          <h3 className="text-base font-black" style={{ color: "#1a1410" }}>
+            {title}
+          </h3>
+        </div>
+      </div>
+      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
+        {recipes.map((recipe) => (
+          <div
+            key={recipe.recipeId}
+            className="flex-shrink-0 w-40 sm:w-44"
+            style={{ scrollSnapAlign: "start" }}
+            onContextMenu={onContextMenu(recipe.recipeId, recipe.title)}
+            onTouchStart={(e) => onLongPress(recipe.recipeId, recipe.title, e)}
+            onTouchMove={onLongPressCancel}
+            onTouchEnd={onLongPressCancel}
+          >
+            <CategoryCard recipe={recipe} onTap={() => onTap(recipe.recipeId)} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function CategoryCard({
+  recipe,
+  onTap,
+}: {
+  recipe: TrendingRecipe;
   onTap: () => void;
 }) {
-  const totalTime = (prepTime ?? 0) + (cookTime ?? 0);
-  const emoji = MEAL_EMOJIS[mealType] ?? "🍳";
+  const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
   return (
     <div
-      className="bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform select-none"
+      className="bg-white rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform select-none"
       style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
       onClick={onTap}
     >
-      {/* Image */}
-      <div className="relative h-32 sm:h-36 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
-        {imageUrl ? (
+      <div className="relative h-32 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
+        {recipe.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt={title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <img
+            src={recipe.image_url}
+            alt={recipe.title}
+            className="w-full h-full object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+          />
         ) : (
-          <span className="text-3xl opacity-70">{emoji}</span>
+          <span className="text-3xl opacity-70">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
         )}
-
-        {/* Badge (e.g. COOKING) */}
-        {badge && (
-          <div className="absolute top-2 left-2">
-            <span
-              className="text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white shadow-sm"
-              style={{ background: badgeColor || "#f97316" }}
-            >
-              {badge}
-            </span>
-          </div>
-        )}
-
-        {/* Save count */}
-        {saves && saves > 1 && (
-          <div className="absolute top-2 left-2">
-            <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-orange-500 text-white">{saves} saves</span>
-          </div>
-        )}
-
-        {/* Time badge */}
         {totalTime > 0 && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
             <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -923,46 +809,8 @@ function FeedCard({
           </div>
         )}
       </div>
-
-      {/* Content */}
       <div className="p-3">
-        <h4 className="font-semibold text-gray-900 text-xs leading-tight line-clamp-2 mb-1.5">{title}</h4>
-
-        {/* Owner row */}
-        {ownerName && (
-          <div className="flex items-center gap-1.5 mb-1">
-            {ownerAvatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={ownerAvatar} alt="" className="w-4 h-4 rounded-full object-cover" />
-            ) : (
-              <div className="w-4 h-4 rounded-full bg-orange-100 flex items-center justify-center">
-                <span className="text-[7px]">👤</span>
-              </div>
-            )}
-            <span className="text-[10px] text-gray-500 truncate">
-              {ownerName}
-              {subtitle && (
-                <span style={{ color: subtitleColor || "#9ca3af" }}>{" · "}{subtitle}</span>
-              )}
-            </span>
-          </div>
-        )}
-
-        {/* Meta row (no owner) */}
-        {!ownerName && (
-          <div className="flex items-center gap-2 text-[10px] text-gray-400">
-            {servings && <span>Serves {servings}</span>}
-          </div>
-        )}
-
-        {/* Tags */}
-        {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-1.5">
-            {tags.slice(0, 2).map((tag) => (
-              <span key={tag} className="text-[9px] text-gray-400 bg-gray-50 px-1.5 py-0.5 rounded-full">{tag}</span>
-            ))}
-          </div>
-        )}
+        <h4 className="font-bold text-gray-900 text-xs leading-tight line-clamp-2">{recipe.title}</h4>
       </div>
     </div>
   );
@@ -991,7 +839,6 @@ function ExploreResultCard({
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      {/* Image */}
       {result.image_url ? (
         <div className="relative h-36 sm:h-40 bg-gray-100 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1045,7 +892,6 @@ function ExploreResultCard({
         )}
       </div>
 
-      {/* Expandable details */}
       {expanded && (
         <div className="px-4 pb-3 border-t border-gray-50 pt-3 space-y-3">
           <div>
@@ -1080,7 +926,6 @@ function ExploreResultCard({
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex items-center border-t border-gray-50 divide-x divide-gray-50">
         <button
           onClick={() => setExpanded(!expanded)}
