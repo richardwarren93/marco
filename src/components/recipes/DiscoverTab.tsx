@@ -43,7 +43,6 @@ const QUESTIONS = [
       { label: "Lunch", emoji: "🥪", value: "lunch" },
       { label: "Dinner", emoji: "🍽️", value: "dinner" },
       { label: "Snack", emoji: "🍿", value: "snack" },
-      { label: "Any", emoji: "🎲", value: "" },
     ],
   },
   {
@@ -220,6 +219,10 @@ export default function DiscoverTab({
   // ── Hero carousel state ──
   const [heroIndex, setHeroIndex] = useState(0);
   const heroSwipeStartX = useRef(0);
+
+  // ── Trending save state ──
+  const [trendingSavedIds, setTrendingSavedIds] = useState<Set<string>>(new Set());
+  const [trendingSavingIds, setTrendingSavingIds] = useState<Set<string>>(new Set());
 
   // ── Explore / questionnaire state ──
   const [prompt, setPrompt] = useState("");
@@ -446,6 +449,55 @@ export default function DiscoverTab({
     }
   }
 
+  async function handleSaveTrending(recipe: TrendingRecipe) {
+    if (trendingSavedIds.has(recipe.recipeId) || trendingSavingIds.has(recipe.recipeId)) return;
+    setTrendingSavingIds((prev) => new Set(prev).add(recipe.recipeId));
+    try {
+      // Fetch full recipe details first (we only have minimal trending data)
+      const detailRes = await fetch(`/api/recipes/${recipe.recipeId}`);
+      if (!detailRes.ok) throw new Error("Could not load recipe");
+      const detail = await detailRes.json();
+      const r = detail.recipe || detail;
+      const res = await fetch("/api/recipes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: r.title,
+          description: r.description,
+          ingredients: r.ingredients,
+          steps: r.steps,
+          servings: r.servings,
+          prep_time_minutes: r.prep_time_minutes,
+          cook_time_minutes: r.cook_time_minutes,
+          tags: r.tags,
+          meal_type: r.meal_type,
+          source_url: r.source_url,
+          source_platform: r.source_platform,
+          image_url: r.image_url,
+          calories: r.calories,
+          protein_g: r.protein_g,
+          carbs_g: r.carbs_g,
+          fat_g: r.fat_g,
+          fiber_g: r.fiber_g,
+          notes: "Saved from Discover",
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        if (!data.duplicate) throw new Error(data.error || "Failed to save");
+      }
+      setTrendingSavedIds((prev) => new Set(prev).add(recipe.recipeId));
+    } catch (err) {
+      console.error("[Discover] save failed:", err);
+    } finally {
+      setTrendingSavingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(recipe.recipeId);
+        return next;
+      });
+    }
+  }
+
   async function handleExploreSave(result: PromptRecipeResult, index: number) {
     setSavingIndex(index);
     try {
@@ -543,7 +595,7 @@ export default function DiscoverTab({
               style={{ color: "#f97316" }}
             >
               <span>{"\u{1F4DD}"}</span>
-              <span>Need ideas? Take a 30-sec quiz</span>
+              <span>Need ideas? Take a 10 second quiz</span>
             </button>
           </div>
         </div>
@@ -734,6 +786,9 @@ export default function DiscoverTab({
                     }}
                     onLongPressCancel={cancelLongPress}
                     onContextMenu={handleRightClick}
+                    onSave={handleSaveTrending}
+                    savedIds={trendingSavedIds}
+                    savingIds={trendingSavingIds}
                   />
                 ))}
               </div>
@@ -750,15 +805,16 @@ export default function DiscoverTab({
           onClick={() => setShowQuestionnaireModal(false)}
         >
           <div
-            className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 animate-slide-up"
-            style={{ maxHeight: "90vh", overflowY: "auto" }}
+            className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl px-6 pt-4 animate-slide-up"
+            style={{
+              maxHeight: "85dvh",
+              overflowY: "hidden",
+              paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-black" style={{ color: "#1a1410" }}>
-                Find me a recipe
-              </h2>
+            {/* Close button */}
+            <div className="flex items-center justify-end mb-3">
               <button
                 onClick={() => setShowQuestionnaireModal(false)}
                 className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 active:bg-gray-200 transition-colors"
@@ -888,6 +944,9 @@ function CategoryRow({
   onLongPress,
   onLongPressCancel,
   onContextMenu,
+  onSave,
+  savedIds,
+  savingIds,
 }: {
   title: string;
   emoji: string;
@@ -896,29 +955,38 @@ function CategoryRow({
   onLongPress: (id: string, title: string, e: React.TouchEvent) => void;
   onLongPressCancel: () => void;
   onContextMenu: (id: string, title: string) => (e: React.MouseEvent) => void;
+  onSave: (recipe: TrendingRecipe) => void;
+  savedIds: Set<string>;
+  savingIds: Set<string>;
 }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
-          <span className="text-base">{emoji}</span>
-          <h3 className="text-base font-black" style={{ color: "#1a1410" }}>
+          <span className="text-lg">{emoji}</span>
+          <h3 className="text-lg font-black tracking-tight" style={{ color: "#1a1410" }}>
             {title}
           </h3>
         </div>
       </div>
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
-        {recipes.map((recipe) => (
+      <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
+        {recipes.map((recipe, i) => (
           <div
             key={recipe.recipeId}
-            className="flex-shrink-0 w-40 sm:w-44"
-            style={{ scrollSnapAlign: "start" }}
+            className="flex-shrink-0 w-56 sm:w-64"
+            style={{ scrollSnapAlign: "start", animation: `cardPop 0.4s ease ${i * 40}ms both` }}
             onContextMenu={onContextMenu(recipe.recipeId, recipe.title)}
             onTouchStart={(e) => onLongPress(recipe.recipeId, recipe.title, e)}
             onTouchMove={onLongPressCancel}
             onTouchEnd={onLongPressCancel}
           >
-            <CategoryCard recipe={recipe} onTap={() => onTap(recipe.recipeId)} />
+            <CategoryCard
+              recipe={recipe}
+              onTap={() => onTap(recipe.recipeId)}
+              onSave={() => onSave(recipe)}
+              saved={savedIds.has(recipe.recipeId)}
+              saving={savingIds.has(recipe.recipeId)}
+            />
           </div>
         ))}
       </div>
@@ -929,41 +997,107 @@ function CategoryRow({
 function CategoryCard({
   recipe,
   onTap,
+  onSave,
+  saved,
+  saving,
 }: {
   recipe: TrendingRecipe;
   onTap: () => void;
+  onSave: () => void;
+  saved: boolean;
+  saving: boolean;
 }) {
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
   return (
     <div
-      className="bg-white rounded-2xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform select-none"
-      style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
+      className="relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-all duration-200 hover:-translate-y-1 active:scale-[0.98]"
+      style={{
+        boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+        height: "260px",
+      }}
       onClick={onTap}
     >
-      <div className="relative h-32 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center overflow-hidden">
-        {recipe.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={recipe.image_url}
-            alt={recipe.title}
-            className="w-full h-full object-cover"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
+      {/* Image fills entire card */}
+      {recipe.image_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={recipe.image_url}
+          alt={recipe.title}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        />
+      ) : (
+        <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
+          <span className="text-6xl opacity-60">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
+        </div>
+      )}
+
+      {/* Dark gradient overlay — bottom for title, top fade for buttons */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.85) 100%)",
+        }}
+      />
+
+      {/* Save heart button — top right */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!saved && !saving) onSave();
+        }}
+        disabled={saved || saving}
+        className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/95 backdrop-blur-sm transition-all active:scale-90 disabled:opacity-100 z-10"
+        style={{
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        }}
+        aria-label={saved ? "Saved" : "Save recipe"}
+      >
+        {saving ? (
+          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+        ) : saved ? (
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
         ) : (
-          <span className="text-3xl opacity-70">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
+          <svg className="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
         )}
-        {totalTime > 0 && (
-          <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-black/40 backdrop-blur-sm text-white text-[10px] font-medium px-2 py-0.5 rounded-full">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {totalTime} min
-          </div>
-        )}
-      </div>
-      <div className="p-3">
-        <h4 className="font-bold text-gray-900 text-xs leading-tight line-clamp-2">{recipe.title}</h4>
+      </button>
+
+      {/* Community 🔥 badge — top left (only if multiple cooks) */}
+      {recipe.userCount > 1 && (
+        <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/95 backdrop-blur-sm text-[11px] font-bold px-2.5 py-1 rounded-full z-10" style={{ color: "#1a1410", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+          <span>{"\u{1F525}"}</span>
+          <span>{recipe.userCount}</span>
+        </div>
+      )}
+
+      {/* Title overlay at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none z-10">
+        <h4 className="font-black text-white text-base leading-tight line-clamp-2 mb-2 drop-shadow-md">
+          {recipe.title}
+        </h4>
+        <div className="flex items-center gap-2">
+          {totalTime > 0 && (
+            <div className="flex items-center gap-1 text-white text-[11px] font-semibold drop-shadow-md">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {totalTime} min
+            </div>
+          )}
+          {recipe.tags && recipe.tags.length > 0 && totalTime > 0 && (
+            <span className="text-white/70 text-[11px]">{"\u00B7"}</span>
+          )}
+          {recipe.tags && recipe.tags[0] && (
+            <span className="text-white/90 text-[11px] font-semibold drop-shadow-md truncate">
+              {recipe.tags[0]}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
