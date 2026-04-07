@@ -128,16 +128,22 @@ const CATEGORIES: Category[] = [
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function matchesCategory(recipe: TrendingRecipe, cat: Category): boolean {
-  if (cat.filter) return cat.filter(recipe);
-  if (cat.tags && recipe.tags) {
-    const lowerTags = recipe.tags.map((t) => t.toLowerCase());
-    return cat.tags.some((catTag) => lowerTags.some((t) => t.includes(catTag)));
+  try {
+    if (cat.filter) return cat.filter(recipe);
+    if (cat.tags && Array.isArray(recipe.tags)) {
+      const lowerTags = recipe.tags
+        .filter((t): t is string => typeof t === "string")
+        .map((t) => t.toLowerCase());
+      return cat.tags.some((catTag) => lowerTags.some((t) => t.includes(catTag)));
+    }
+    if (cat.maxTime) {
+      const total = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
+      return total > 0 && total <= cat.maxTime;
+    }
+    return false;
+  } catch {
+    return false;
   }
-  if (cat.maxTime) {
-    const total = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
-    return total > 0 && total <= cat.maxTime;
-  }
-  return false;
 }
 
 // ─── Taste profile types & matching ────────────────────────────────────────
@@ -150,38 +156,47 @@ interface TasteProfile {
 
 // Lightweight client-side scoring: how well does this recipe match the user's taste?
 function tasteMatchScore(recipe: TrendingRecipe, profile: TasteProfile | null): number {
-  if (!profile) return (recipe.userCount || 1) * 0.1;
-  let score = 0;
-  const lowerTags = (recipe.tags || []).map((t) => t.toLowerCase());
-  const titleLower = recipe.title.toLowerCase();
+  const popularityBase = (recipe?.userCount || 1) * 0.1;
+  if (!profile || !recipe) return popularityBase;
 
-  // Boost if recipe matches user's top cuisines (top cuisine gets highest weight)
-  if (profile.cuisines) {
-    for (let i = 0; i < profile.cuisines.length; i++) {
-      const cuisine = profile.cuisines[i].cuisine.toLowerCase();
-      const weight = profile.cuisines.length - i;
-      if (lowerTags.some((t) => t.includes(cuisine)) || titleLower.includes(cuisine)) {
-        score += weight * 3;
+  try {
+    let score = 0;
+    const tags = Array.isArray(recipe.tags) ? recipe.tags : [];
+    const lowerTags = tags
+      .filter((t): t is string => typeof t === "string")
+      .map((t) => t.toLowerCase());
+    const titleLower = (recipe.title || "").toLowerCase();
+
+    // Boost if recipe matches user's top cuisines (top cuisine gets highest weight)
+    if (Array.isArray(profile.cuisines)) {
+      for (let i = 0; i < profile.cuisines.length; i++) {
+        const cuisineEntry = profile.cuisines[i];
+        if (!cuisineEntry || typeof cuisineEntry.cuisine !== "string") continue;
+        const cuisine = cuisineEntry.cuisine.toLowerCase();
+        const weight = profile.cuisines.length - i;
+        if (lowerTags.some((t) => t.includes(cuisine)) || titleLower.includes(cuisine)) {
+          score += weight * 3;
+        }
       }
     }
-  }
 
-  // Boost if recipe matches user's top cooking styles
-  if (profile.cookingStyles) {
-    for (let i = 0; i < profile.cookingStyles.length; i++) {
-      const style = profile.cookingStyles[i];
-      const weight = profile.cookingStyles.length - i;
-      const styleKeywords = style.style.split("_");
-      if (styleKeywords.some((kw) => lowerTags.some((t) => t.includes(kw)) || titleLower.includes(kw))) {
-        score += weight * 2;
+    // Boost if recipe matches user's top cooking styles
+    if (Array.isArray(profile.cookingStyles)) {
+      for (let i = 0; i < profile.cookingStyles.length; i++) {
+        const style = profile.cookingStyles[i];
+        if (!style || typeof style.style !== "string") continue;
+        const weight = profile.cookingStyles.length - i;
+        const styleKeywords = style.style.split("_").filter(Boolean);
+        if (styleKeywords.some((kw) => lowerTags.some((t) => t.includes(kw)) || titleLower.includes(kw))) {
+          score += weight * 2;
+        }
       }
     }
+
+    return score + popularityBase;
+  } catch {
+    return popularityBase;
   }
-
-  // Tiny popularity tie-breaker
-  score += (recipe.userCount || 1) * 0.1;
-
-  return score;
 }
 
 // ─── Main component ─────────────────────────────────────────────────────────
@@ -227,28 +242,53 @@ export default function DiscoverTab({
   const longPressTriggered = useRef(false);
 
   // ── Computed: hero recipes (top 5 trending) + categorized rows ──
-  const heroRecipes = useMemo(() => trending.slice(0, 5), [trending]);
+  const heroRecipes = useMemo(() => {
+    if (!Array.isArray(trending)) return [];
+    return trending.filter((r) => r && r.recipeId).slice(0, 5);
+  }, [trending]);
 
   const categorizedRows = useMemo(() => {
-    if (!trending.length) return [];
-    return CATEGORIES.map((cat) => {
-      const matched = trending.filter((r) => matchesCategory(r, cat));
-      // Sort by personal taste match score (descending)
-      const sorted = matched.sort(
-        (a, b) => tasteMatchScore(b, tasteProfile) - tasteMatchScore(a, tasteProfile)
-      );
-      return { ...cat, recipes: sorted.slice(0, 10) };
-    }).filter((row) => row.recipes.length > 0);
+    try {
+      if (!Array.isArray(trending) || trending.length === 0) return [];
+      return CATEGORIES.map((cat) => {
+        const matched = trending.filter((r) => r && matchesCategory(r, cat));
+        // Sort by personal taste match score (descending). Use slice() to avoid mutating.
+        const sorted = matched.slice().sort(
+          (a, b) => tasteMatchScore(b, tasteProfile) - tasteMatchScore(a, tasteProfile)
+        );
+        return { ...cat, recipes: sorted.slice(0, 10) };
+      }).filter((row) => row.recipes.length > 0);
+    } catch (err) {
+      console.error("[Discover] categorizedRows failed:", err);
+      return [];
+    }
   }, [trending, tasteProfile]);
 
   // Fetch taste profile once on mount
   useEffect(() => {
+    let cancelled = false;
     fetch("/api/taste-profile")
       .then((r) => r.json())
       .then((d) => {
-        if (!d.error) setTasteProfile(d);
+        if (cancelled || !d || d.error) return;
+        // Only keep the fields we use, and only if they look right
+        const cleaned: TasteProfile = {};
+        if (Array.isArray(d.cuisines)) {
+          cleaned.cuisines = d.cuisines.filter(
+            (c: unknown): c is { cuisine: string; label: string } =>
+              !!c && typeof c === "object" && typeof (c as { cuisine?: unknown }).cuisine === "string"
+          );
+        }
+        if (Array.isArray(d.cookingStyles)) {
+          cleaned.cookingStyles = d.cookingStyles.filter(
+            (s: unknown): s is { style: string; label: string } =>
+              !!s && typeof s === "object" && typeof (s as { style?: unknown }).style === "string"
+          );
+        }
+        setTasteProfile(cleaned);
       })
       .catch(() => { /* silent — falls back to popularity ordering */ });
+    return () => { cancelled = true; };
   }, []);
 
   // Auto-advance hero carousel every 6 seconds
