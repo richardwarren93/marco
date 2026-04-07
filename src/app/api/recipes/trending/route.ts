@@ -51,23 +51,35 @@ export async function GET() {
 
   const admin = createAdminClient();
 
-  // Fetch trending recipes + user taste profile in parallel
-  const [recipesRes, prefsRes] = await Promise.all([
+  // Fetch all recipes + user taste profile + user's own saved titles in parallel
+  const [recipesRes, prefsRes, myRecipesRes] = await Promise.all([
     admin
       .from("recipes")
       .select("id, title, description, image_url, tags, meal_type, servings, prep_time_minutes, cook_time_minutes, source_url, user_id, created_at, ingredients")
       .order("created_at", { ascending: false })
-      .limit(500),
+      .limit(2000),
     admin
       .from("user_preferences")
       .select("taste_profile")
       .eq("user_id", user.id)
       .single(),
+    admin
+      .from("recipes")
+      .select("title")
+      .eq("user_id", user.id),
   ]);
 
   const recipes = recipesRes.data;
   if (!recipes || recipes.length === 0) {
     return NextResponse.json({ trending: [] });
+  }
+
+  // Build set of normalized titles the user already has saved (so we don't recommend them)
+  const myTitles = new Set<string>();
+  for (const r of myRecipesRes.data || []) {
+    if (r.title) {
+      myTitles.add(r.title.toLowerCase().trim().replace(/[^\w\s]/g, ""));
+    }
   }
 
   // Get user's cached taste scores (from biweekly cache or default neutral)
@@ -101,6 +113,9 @@ export async function GET() {
   for (const recipe of recipes) {
     const normalizedTitle = recipe.title.toLowerCase().trim().replace(/[^\w\s]/g, "");
 
+    // Skip recipes the user has already saved (we want NEW recommendations)
+    if (myTitles.has(normalizedTitle)) continue;
+
     // Build searchable text
     const textParts = [recipe.title, recipe.description || "", ...(recipe.tags || [])];
     if (recipe.ingredients) {
@@ -115,6 +130,7 @@ export async function GET() {
     if (existing) {
       existing.users.add(recipe.user_id);
       existing.saveCount++;
+      // Prefer recipes with images and from other users
       if (!existing.image_url && recipe.image_url) {
         existing.image_url = recipe.image_url;
         existing.recipeId = recipe.id;
@@ -146,15 +162,15 @@ export async function GET() {
     tasteMatch: scoreTasteMatch(r.searchText, userScores),
   }));
 
-  // Trending: taste match (primary), user count (secondary)
+  // Trending: user count (community signal), then taste match, then save count
   const trending = allRecipes
     .filter((r) => r.userCount >= 1)
     .sort((a, b) => {
-      if (b.tasteMatch !== a.tasteMatch) return b.tasteMatch - a.tasteMatch;
       if (b.userCount !== a.userCount) return b.userCount - a.userCount;
+      if (b.tasteMatch !== a.tasteMatch) return b.tasteMatch - a.tasteMatch;
       return b.saveCount - a.saveCount;
     })
-    .slice(0, 12)
+    .slice(0, 60)
     .map((r) => ({
       recipeId: r.recipeId,
       title: r.title,
