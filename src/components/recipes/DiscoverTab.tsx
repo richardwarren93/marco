@@ -140,6 +140,50 @@ function matchesCategory(recipe: TrendingRecipe, cat: Category): boolean {
   return false;
 }
 
+// ─── Taste profile types & matching ────────────────────────────────────────
+
+interface TasteProfile {
+  all?: { sweet: number; savory: number; spicy: number; tangy: number; richness: number };
+  cuisines?: { cuisine: string; label: string }[];
+  cookingStyles?: { style: string; label: string }[];
+}
+
+// Lightweight client-side scoring: how well does this recipe match the user's taste?
+function tasteMatchScore(recipe: TrendingRecipe, profile: TasteProfile | null): number {
+  if (!profile) return (recipe.userCount || 1) * 0.1;
+  let score = 0;
+  const lowerTags = (recipe.tags || []).map((t) => t.toLowerCase());
+  const titleLower = recipe.title.toLowerCase();
+
+  // Boost if recipe matches user's top cuisines (top cuisine gets highest weight)
+  if (profile.cuisines) {
+    for (let i = 0; i < profile.cuisines.length; i++) {
+      const cuisine = profile.cuisines[i].cuisine.toLowerCase();
+      const weight = profile.cuisines.length - i;
+      if (lowerTags.some((t) => t.includes(cuisine)) || titleLower.includes(cuisine)) {
+        score += weight * 3;
+      }
+    }
+  }
+
+  // Boost if recipe matches user's top cooking styles
+  if (profile.cookingStyles) {
+    for (let i = 0; i < profile.cookingStyles.length; i++) {
+      const style = profile.cookingStyles[i];
+      const weight = profile.cookingStyles.length - i;
+      const styleKeywords = style.style.split("_");
+      if (styleKeywords.some((kw) => lowerTags.some((t) => t.includes(kw)) || titleLower.includes(kw))) {
+        score += weight * 2;
+      }
+    }
+  }
+
+  // Tiny popularity tie-breaker
+  score += (recipe.userCount || 1) * 0.1;
+
+  return score;
+}
+
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export default function DiscoverTab({
@@ -154,6 +198,13 @@ export default function DiscoverTab({
   // ── Trending recipes ──
   const { data: trendingData, isLoading: trendingLoading } = useTrending();
   const trending: TrendingRecipe[] = trendingData?.trending ?? [];
+
+  // ── Taste profile (for personalized sorting) ──
+  const [tasteProfile, setTasteProfile] = useState<TasteProfile | null>(null);
+
+  // ── Hero carousel state ──
+  const [heroIndex, setHeroIndex] = useState(0);
+  const heroSwipeStartX = useRef(0);
 
   // ── Explore / questionnaire state ──
   const [prompt, setPrompt] = useState("");
@@ -175,16 +226,44 @@ export default function DiscoverTab({
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
 
-  // ── Computed: hero recipe + categorized rows ──
-  const heroRecipe = useMemo(() => trending[0] || null, [trending]);
+  // ── Computed: hero recipes (top 5 trending) + categorized rows ──
+  const heroRecipes = useMemo(() => trending.slice(0, 5), [trending]);
 
   const categorizedRows = useMemo(() => {
     if (!trending.length) return [];
-    return CATEGORIES.map((cat) => ({
-      ...cat,
-      recipes: trending.filter((r) => matchesCategory(r, cat)).slice(0, 10),
-    })).filter((row) => row.recipes.length > 0);
-  }, [trending]);
+    return CATEGORIES.map((cat) => {
+      const matched = trending.filter((r) => matchesCategory(r, cat));
+      // Sort by personal taste match score (descending)
+      const sorted = matched.sort(
+        (a, b) => tasteMatchScore(b, tasteProfile) - tasteMatchScore(a, tasteProfile)
+      );
+      return { ...cat, recipes: sorted.slice(0, 10) };
+    }).filter((row) => row.recipes.length > 0);
+  }, [trending, tasteProfile]);
+
+  // Fetch taste profile once on mount
+  useEffect(() => {
+    fetch("/api/taste-profile")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.error) setTasteProfile(d);
+      })
+      .catch(() => { /* silent — falls back to popularity ordering */ });
+  }, []);
+
+  // Auto-advance hero carousel every 6 seconds
+  useEffect(() => {
+    if (heroRecipes.length <= 1) return;
+    const interval = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % heroRecipes.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [heroRecipes.length]);
+
+  // Reset hero index if recipes change
+  useEffect(() => {
+    setHeroIndex(0);
+  }, [heroRecipes.length]);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -502,62 +581,96 @@ export default function DiscoverTab({
             </div>
           ) : (
             <>
-              {/* Hero card — featured trending recipe */}
-              {heroRecipe && (
+              {/* Hero carousel — top 5 trending recipes */}
+              {heroRecipes.length > 0 && (
                 <div
-                  className="mb-7 relative rounded-3xl overflow-hidden cursor-pointer active:scale-[0.98] transition-transform"
+                  className="mb-7 relative rounded-3xl overflow-hidden"
                   style={{
                     boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
                     height: "320px",
                   }}
-                  onClick={() => router.push(`/recipes/${heroRecipe.recipeId}`)}
-                  onContextMenu={handleRightClick(heroRecipe.recipeId, heroRecipe.title)}
-                  onTouchStart={startLongPress(heroRecipe.recipeId, heroRecipe.title)}
-                  onTouchMove={cancelLongPress}
-                  onTouchEnd={cancelLongPress}
+                  onTouchStart={(e) => {
+                    heroSwipeStartX.current = e.touches[0].clientX;
+                  }}
+                  onTouchEnd={(e) => {
+                    const dx = e.changedTouches[0].clientX - heroSwipeStartX.current;
+                    if (Math.abs(dx) > 50) {
+                      if (dx < 0) setHeroIndex((heroIndex + 1) % heroRecipes.length);
+                      else setHeroIndex((heroIndex - 1 + heroRecipes.length) % heroRecipes.length);
+                    }
+                  }}
                 >
-                  {heroRecipe.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={heroRecipe.image_url}
-                      alt={heroRecipe.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-                      <span className="text-6xl">{MEAL_EMOJIS[heroRecipe.meal_type] ?? "🍳"}</span>
+                  {/* Slides */}
+                  {heroRecipes.map((recipe, i) => (
+                    <div
+                      key={recipe.recipeId}
+                      className="absolute inset-0 cursor-pointer transition-opacity duration-500"
+                      style={{ opacity: i === heroIndex ? 1 : 0, pointerEvents: i === heroIndex ? "auto" : "none" }}
+                      onClick={() => router.push(`/recipes/${recipe.recipeId}`)}
+                      onContextMenu={handleRightClick(recipe.recipeId, recipe.title)}
+                    >
+                      {recipe.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={recipe.image_url}
+                          alt={recipe.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
+                          <span className="text-6xl">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
+                        </div>
+                      )}
+                      {/* Dark gradient overlay */}
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          background: "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%)",
+                        }}
+                      />
+                      {/* Trending pill */}
+                      <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm">
+                        <span className="text-sm">{"\u{1F525}"}</span>
+                        <span className="text-[11px] font-bold" style={{ color: "#1a1410" }}>Trending Tonight</span>
+                      </div>
+                      {/* Title and meta */}
+                      <div className="absolute bottom-0 left-0 right-0 p-5 pb-9 text-white">
+                        <h2 className="text-2xl font-black leading-tight mb-2 line-clamp-2">{recipe.title}</h2>
+                        <div className="flex items-center gap-3 text-xs font-semibold">
+                          {((recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0)) > 0 && (
+                            <span className="flex items-center gap-1">
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {(recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0)} min
+                            </span>
+                          )}
+                          {recipe.userCount > 1 && (
+                            <span>{"\u00B7"} {recipe.userCount} cooks loved it</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {/* Carousel dots */}
+                  {heroRecipes.length > 1 && (
+                    <div className="absolute bottom-3 left-0 right-0 flex items-center justify-center gap-1.5 z-10">
+                      {heroRecipes.map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={(e) => { e.stopPropagation(); setHeroIndex(i); }}
+                          className="transition-all rounded-full"
+                          style={{
+                            width: i === heroIndex ? 24 : 6,
+                            height: 6,
+                            background: i === heroIndex ? "#ffffff" : "rgba(255,255,255,0.5)",
+                          }}
+                          aria-label={`Go to slide ${i + 1}`}
+                        />
+                      ))}
                     </div>
                   )}
-                  {/* Dark gradient overlay */}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%)",
-                    }}
-                  />
-                  {/* Trending pill */}
-                  <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm">
-                    <span className="text-sm">{"\u{1F525}"}</span>
-                    <span className="text-[11px] font-bold" style={{ color: "#1a1410" }}>Trending Tonight</span>
-                  </div>
-                  {/* Title and meta */}
-                  <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-                    <h2 className="text-2xl font-black leading-tight mb-2 line-clamp-2">{heroRecipe.title}</h2>
-                    <div className="flex items-center gap-3 text-xs font-semibold">
-                      {((heroRecipe.prep_time_minutes || 0) + (heroRecipe.cook_time_minutes || 0)) > 0 && (
-                        <span className="flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          {(heroRecipe.prep_time_minutes || 0) + (heroRecipe.cook_time_minutes || 0)} min
-                        </span>
-                      )}
-                      {heroRecipe.userCount > 1 && (
-                        <span>{"\u00B7"} {heroRecipe.userCount} cooks loved it</span>
-                      )}
-                    </div>
-                  </div>
                 </div>
               )}
 
