@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { scrapeUrl } from "@/lib/scraper";
+import { rehostImage, isExpiringCdn } from "@/lib/image-rehost";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -9,34 +10,27 @@ export const maxDuration = 60;
 /**
  * POST /api/recipes/backfill-images?limit=10
  *
- * Processes a batch of recipes that have:
- *   - no image_url at all, OR
- *   - an expiring CDN image (Instagram, TikTok, Facebook)
+ * Recovers images for recipes with no image OR an expiring CDN image.
  *
- * Re-scrapes their source_url and updates with the persistent image.
+ * Strategy:
+ *   1. Re-scrape source_url to get a (possibly fresh-but-still-temporary)
+ *      image URL.
+ *   2. If we got an expiring CDN URL, immediately download the bytes and
+ *      re-host them in our Supabase Storage `recipe-images` bucket so
+ *      they never expire again.
+ *   3. Save the permanent URL on the recipe row.
  *
- * Batched + timeout-protected so the function returns in ~10–20 seconds
- * even on Vercel hobby plans. Call repeatedly to drain the queue.
+ * Batched + timeout-protected so the function returns within Vercel's
+ * serverless function timeout.
  */
-const SCRAPE_TIMEOUT_MS = 8_000; // give up on a single scrape after 8s
+const SCRAPE_TIMEOUT_MS = 8_000;
 const DEFAULT_BATCH = 10;
 
-function isExpiredCdn(url: string | null): boolean {
-  if (!url) return true;
-  const lower = url.toLowerCase();
-  return (
-    lower.includes("cdninstagram") ||
-    lower.includes("scontent") ||
-    lower.includes("tiktokcdn") ||
-    lower.includes("fbcdn")
-  );
-}
-
-async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
     p,
     new Promise<T>((_resolve, reject) =>
-      setTimeout(() => reject(new Error(`scrape timeout after ${ms}ms`)), ms)
+      setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms)
     ),
   ]);
 }
@@ -55,7 +49,6 @@ export async function POST(request: NextRequest) {
 
   const admin = createAdminClient();
 
-  // Pull recipes with source_url and filter the candidates in memory.
   const { data: recipes, error } = await admin
     .from("recipes")
     .select("id, image_url, source_url")
@@ -66,35 +59,55 @@ export async function POST(request: NextRequest) {
   }
 
   const candidates = (recipes || []).filter(
-    (r) => r.source_url && (!r.image_url || isExpiredCdn(r.image_url))
+    (r) => r.source_url && (!r.image_url || isExpiringCdn(r.image_url))
   );
 
-  // Take only the first `limit` candidates this call
   const batch = candidates.slice(0, limit);
 
   let updated = 0;
+  let rehosted = 0;
+  let savedDirect = 0;
+  let scrapedNothing = 0;
+  let rehostFailed = 0;
   let timedOut = 0;
-  let scraperReturnedNothing = 0;
   let failed = 0;
   const errors: string[] = [];
 
   for (const recipe of batch) {
     if (!recipe.source_url) continue;
     try {
-      const result = await withTimeout(scrapeUrl(recipe.source_url), SCRAPE_TIMEOUT_MS);
-      const newImage = result.image_url;
-      if (!newImage || isExpiredCdn(newImage)) {
-        scraperReturnedNothing++;
+      const result = await withTimeout(scrapeUrl(recipe.source_url), SCRAPE_TIMEOUT_MS, "scrape");
+      const scrapedUrl = result.image_url;
+
+      if (!scrapedUrl) {
+        scrapedNothing++;
         continue;
       }
+
+      // Decide: save directly (already permanent) vs rehost (CDN URL)
+      let finalUrl: string | null;
+      if (isExpiringCdn(scrapedUrl)) {
+        // Try to download bytes WHILE they're still fresh and re-host
+        finalUrl = await rehostImage(scrapedUrl);
+        if (!finalUrl) {
+          rehostFailed++;
+          errors.push(`${recipe.id}: rehost failed (CDN URL fetched but couldn't store)`);
+          continue;
+        }
+        rehosted++;
+      } else {
+        finalUrl = scrapedUrl;
+        savedDirect++;
+      }
+
       const { error: updateError } = await admin
         .from("recipes")
-        .update({ image_url: newImage })
+        .update({ image_url: finalUrl })
         .eq("id", recipe.id);
 
       if (updateError) {
         failed++;
-        errors.push(`${recipe.id}: ${updateError.message}`);
+        errors.push(`${recipe.id}: db update ${updateError.message}`);
       } else {
         updated++;
       }
@@ -113,7 +126,10 @@ export async function POST(request: NextRequest) {
     batch_size: batch.length,
     queue_remaining: candidates.length - batch.length,
     updated,
-    scraper_returned_nothing: scraperReturnedNothing,
+    rehosted_to_storage: rehosted,
+    saved_direct: savedDirect,
+    scraped_nothing: scrapedNothing,
+    rehost_failed: rehostFailed,
     timed_out: timedOut,
     failed,
     errors: errors.slice(0, 5),
