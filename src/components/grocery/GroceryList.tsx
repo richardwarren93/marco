@@ -2,11 +2,11 @@
 
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import type { GroceryItem as GroceryItemType, GroceryList as GroceryListType } from "@/types";
 import GroceryItem from "./GroceryItem";
+import SharedRecipeCard from "@/components/recipes/SharedRecipeCard";
 import AddItemSheet from "./AddItemSheet";
 import EditItemSheet from "./EditItemSheet";
 import OrderOnlineSheet from "./OrderOnlineSheet";
@@ -697,82 +697,56 @@ export default function GroceryList() {
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
               {meals.map((meal) => {
                 const isExcluded = excludedMealIds.has(meal.id);
+                const handleExclude = () => meal.is_household
+                  ? setExcludedMealIds((prev) => new Set(prev).add(meal.id))
+                  : handleRemoveMeal(meal.id);
+                const handleUnExclude = () => setExcludedMealIds((prev) => {
+                  const n = new Set(prev);
+                  n.delete(meal.id);
+                  return n;
+                });
+
+                const dayLabel = getDayLabel(meal.planned_date);
+                const metaText = meal.is_household && meal.owner_name
+                  ? `${meal.meal_type} · ${meal.owner_name}`
+                  : meal.meal_type ?? undefined;
+
                 return (
                   <div
                     key={meal.id}
-                    className={`relative flex-shrink-0 snap-start rounded-2xl overflow-hidden transition-all duration-200 ${isExcluded ? "opacity-40 grayscale" : ""}`}
-                    style={{ width: 152, boxShadow: "0 2px 16px rgba(0,0,0,0.08)" }}
+                    className="flex-shrink-0 snap-start"
+                    style={{ width: 152 }}
                   >
-                    {/* Image */}
-                    <div className="relative w-full aspect-[4/3] bg-gray-100">
-                      {meal.recipe?.image_url ? (
-                        <Image
-                          src={meal.recipe.image_url}
-                          alt={meal.recipe?.title ?? ""}
-                          fill
-                          className="object-cover"
-                          sizes="152px"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-orange-50 to-amber-50">🍽</div>
-                      )}
-                      {/* Gradient overlay for text readability */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                      {/* Day badge */}
-                      <span className="absolute top-2 left-2 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-white/90 text-gray-700 backdrop-blur-sm">
-                        {getDayLabel(meal.planned_date)}
-                      </span>
-                      {/* Household badge */}
-                      {meal.is_household && meal.owner_name && (
-                        <span className="absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full text-white backdrop-blur-sm flex items-center gap-0.5" style={{ background: "rgba(139,92,246,0.9)" }}>
-                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                          </svg>
-                          {meal.owner_name}
-                        </span>
-                      )}
-                      {/* Remove / exclude button */}
-                      {!isExcluded && (
-                        <button
-                          onClick={() => meal.is_household
-                            ? setExcludedMealIds((prev) => new Set(prev).add(meal.id))
-                            : handleRemoveMeal(meal.id)
-                          }
-                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center rounded-full bg-black/30 text-white/80 hover:bg-black/50 hover:text-white backdrop-blur-sm transition-colors"
-                          style={meal.is_household && meal.owner_name ? { top: "auto", bottom: 42, right: 8 } : undefined}
-                          aria-label={`Remove ${meal.recipe?.title}`}
+                    <SharedRecipeCard
+                      title={meal.recipe?.title ?? ""}
+                      imageUrl={meal.recipe?.image_url ?? null}
+                      mealType={meal.meal_type ?? null}
+                      metaText={metaText}
+                      excluded={isExcluded}
+                      onUnExclude={handleUnExclude}
+                      topLeftBadge={
+                        <span
+                          className="text-[9.5px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-black/25 text-white backdrop-blur-md leading-none"
                         >
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                    {/* Info */}
-                    <div className="bg-white px-2.5 py-2">
-                      <p className={`text-[13px] font-semibold leading-tight line-clamp-2 ${isExcluded ? "line-through text-gray-400" : "text-gray-800"}`}>
-                        {meal.recipe?.title}
-                      </p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <p className="text-[10px] text-gray-400 capitalize">{meal.meal_type}</p>
-                        {meal.is_household && meal.owner_name && (
-                          <span className="text-[9px] font-semibold px-1.5 py-px rounded-full" style={{ background: "#f3f0ff", color: "#7c3aed" }}>
-                            {meal.owner_name}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {/* Add back overlay for excluded */}
-                    {isExcluded && (
-                      <button
-                        onClick={() => setExcludedMealIds((prev) => { const n = new Set(prev); n.delete(meal.id); return n; })}
-                        className="absolute inset-0 flex items-center justify-center"
-                      >
-                        <span className="text-[11px] font-bold text-orange-600 bg-white/90 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
-                          Add back
+                          {dayLabel}
                         </span>
-                      </button>
-                    )}
+                      }
+                      actions={
+                        !isExcluded
+                          ? [
+                              {
+                                icon: (
+                                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                ),
+                                onClick: handleExclude,
+                                label: `Remove ${meal.recipe?.title}`,
+                              },
+                            ]
+                          : []
+                      }
+                    />
                   </div>
                 );
               })}
