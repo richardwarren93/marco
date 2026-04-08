@@ -2,10 +2,10 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import type { Recipe, Collection } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
+import SharedRecipeCard from "./SharedRecipeCard";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -44,13 +44,6 @@ const MEAL_TYPE_LABELS: Record<MealType, string> = {
   snack: "Snack",
 };
 
-const MEAL_EMOJIS: Record<MealType, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
-};
-
 // ─── Recipe card ──────────────────────────────────────────────────────────────
 
 function BrowserCard({
@@ -72,7 +65,6 @@ function BrowserCard({
 }) {
   const router = useRouter();
   const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
-  const emoji = MEAL_EMOJIS[(recipe.meal_type as MealType) ?? "dinner"] ?? "🍳";
 
   function handleCardClick() {
     if (mode === "pick") {
@@ -82,84 +74,50 @@ function BrowserCard({
     }
   }
 
-  return (
-    <div
-      className="relative bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
-      style={{
-        boxShadow: "0 2px 16px rgba(0,0,0,0.07)",
-        animation: `cardPop 0.45s cubic-bezier(0.34,1.2,0.64,1) ${index * 40}ms both`,
-      }}
-      onClick={handleCardClick}
-    >
-      {/* Image */}
-      <div className="relative h-36 sm:h-44 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 flex items-center justify-center overflow-hidden">
-        {recipe.image_url ? (
-          <Image
-            src={recipe.image_url}
-            alt={recipe.title}
-            fill
-            className="object-cover"
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
-        ) : (
-          <span className="text-5xl opacity-70 select-none">{emoji}</span>
-        )}
-
-        {/* Bottom gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
-
-        {/* Time pill */}
-        {totalTime > 0 && (
-          <div className="absolute bottom-2 left-2.5 flex items-center gap-1 bg-black/25 backdrop-blur-sm px-2 py-0.5 rounded-full pointer-events-none">
-            <svg className="w-2.5 h-2.5 text-white/80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-white text-[10px] font-semibold">{totalTime} min</span>
-          </div>
-        )}
-
-        {mode === "pick" && isPicking && (
-          <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-            <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          </div>
-        )}
-
-        {mode === "library" && (
-          <div className="absolute top-2 right-2 flex gap-1.5">
-            {onCollection && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onCollection(); }}
-                className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm active:scale-90 transition-transform"
-                aria-label="Add to collection"
-              >
-                <svg className="w-3.5 h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+  const actions = mode === "library"
+    ? [
+        ...(onCollection
+          ? [{
+              icon: (
+                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
-              </button>
-            )}
-            {onAdd && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onAdd(); }}
-                className="w-7 h-7 rounded-full bg-[#e8ddd3] flex items-center justify-center shadow-sm active:scale-90 transition-transform"
-                aria-label="Add to meal plan"
-              >
-                <svg className="w-3.5 h-3.5 text-[#7a6355]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              ),
+              onClick: onCollection,
+              label: "Add to collection",
+            }]
+          : []),
+        ...(onAdd
+          ? [{
+              icon: (
+                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+              ),
+              onClick: onAdd,
+              label: "Add to meal plan",
+            }]
+          : []),
+      ]
+    : [];
 
-      {/* Content */}
-      <div className="px-3 pt-2.5 pb-3">
-        <p className="text-sm font-bold text-gray-900 line-clamp-2 leading-snug tracking-tight">
-          {recipe.title}
-        </p>
-      </div>
-    </div>
+  return (
+    <SharedRecipeCard
+      title={recipe.title}
+      imageUrl={recipe.image_url}
+      mealType={recipe.meal_type}
+      totalTime={totalTime}
+      onClick={handleCardClick}
+      actions={actions}
+      topLeftBadge={
+        mode === "pick" && isPicking ? (
+          <div className="w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md">
+            <div className="w-3.5 h-3.5 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : undefined
+      }
+      index={index}
+    />
   );
 }
 

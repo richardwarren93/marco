@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTrending } from "@/lib/hooks/use-data";
 import type { PromptRecipeResult } from "@/lib/claude";
+import SharedRecipeCard from "./SharedRecipeCard";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -1018,98 +1019,40 @@ function CategoryCard({
   const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
 
   return (
-    <div
-      className="relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-transform duration-200 active:scale-[0.97]"
-      style={{
-        // 4:5 portrait aspect for image-dominant card. Two cards in a 2-col
-        // grid on a 390px screen leaves ~170px width → ~212px tall.
-        aspectRatio: "4 / 5",
-        boxShadow: "0 4px 16px rgba(20,12,5,0.10)",
-      }}
+    <SharedRecipeCard
+      title={recipe.title}
+      imageUrl={recipe.image_url}
+      mealType={recipe.meal_type}
+      totalTime={totalTime}
       onClick={onTap}
-    >
-      {/* Image fills entire card */}
-      {recipe.image_url ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={recipe.image_url}
-          alt={recipe.title}
-          referrerPolicy="no-referrer"
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-        />
-      ) : (
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-          <span className="text-5xl opacity-60">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
-        </div>
-      )}
-
-      {/* Gradient — concentrated at bottom only so food stays vivid */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 55%, rgba(20,12,5,0.40) 80%, rgba(20,12,5,0.72) 100%)",
-        }}
-      />
-
-      {/* Save heart — small, glassy, sits lightly */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!saved && !saving) onSave();
-        }}
-        disabled={saved || saving}
-        className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 disabled:opacity-100 z-10"
-        aria-label={saved ? "Saved" : "Save recipe"}
-      >
-        {saving ? (
-          <div className="w-3 h-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
-        ) : saved ? (
-          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        ) : (
-          <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        )}
-      </button>
-
-      {/* Community 🔥 badge — tiny, glassy */}
-      {recipe.userCount > 1 && (
-        <div
-          className="absolute top-2.5 left-2.5 flex items-center gap-0.5 bg-black/25 backdrop-blur-md text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full z-10 leading-none"
-          style={{ color: "#fff" }}
-        >
-          <span>{"\u{1F525}"}</span>
-          <span>{recipe.userCount}</span>
-        </div>
-      )}
-
-      {/* Title + meta overlay at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-8 pointer-events-none z-10">
-        <h4
-          className="font-bold text-white text-[14px] mb-1 line-clamp-2"
-          style={{
-            lineHeight: "1.22",
-            letterSpacing: "-0.01em",
-            textShadow: "0 1px 4px rgba(0,0,0,0.4)",
-          }}
-        >
-          {recipe.title}
-        </h4>
-        {totalTime > 0 && (
-          <div className="flex items-center gap-1 text-white/85 text-[10px] font-medium">
-            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      actions={[
+        {
+          icon: saved ? (
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
-            <span>{totalTime} min</span>
+          ) : (
+            <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          ),
+          onClick: () => { if (!saved && !saving) onSave(); },
+          label: saved ? "Saved" : "Save recipe",
+          loading: saving,
+        },
+      ]}
+      topLeftBadge={
+        recipe.userCount > 1 ? (
+          <div
+            className="flex items-center gap-0.5 bg-black/25 backdrop-blur-md text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
+            style={{ color: "#fff" }}
+          >
+            <span>{"\u{1F525}"}</span>
+            <span>{recipe.userCount}</span>
           </div>
-        )}
-      </div>
-    </div>
+        ) : undefined
+      }
+    />
   );
 }
 
