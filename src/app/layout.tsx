@@ -44,7 +44,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} font-sans antialiased bg-gray-50 text-gray-900 h-full flex flex-col overscroll-none`}>
+      <body className={`${geistSans.variable} font-sans antialiased bg-[#faf9f7] text-gray-900 h-full flex flex-col overscroll-none`}>
         {/* Prevent pinch-to-zoom and visual-viewport scroll on iOS PWA */}
         <Script id="prevent-zoom" strategy="afterInteractive">{`
           document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });

@@ -546,7 +546,7 @@ export default function DiscoverTab({
   const showLanding = results.length === 0 && !searching && !exploreError;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-28 pt-5" style={{ background: "#faf9f7" }}>
+    <div className="max-w-3xl mx-auto px-4 pb-32 pt-5" style={{ background: "#faf9f7" }}>
 
       {/* AI Prompt Input — always visible at top */}
       <div className="mb-6">
