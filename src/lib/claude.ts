@@ -425,7 +425,7 @@ IMPORTANT: When suggesting real, well-known recipes, include the source_url — 
         role: "user",
         content: `User prompt: "${prompt}"
 
-Return a JSON array of 10 recipe results. (We over-fetch so we can pick the 6 best with images.) Each result should have:
+Return a JSON array of 12 recipe results. (We over-fetch so we can pick the 6 best with images — race-to-6 pattern.) Each result should have:
 - recipe: object with title, description, ingredients (array of {name, amount, unit}), steps (array of strings), servings, prep_time_minutes, cook_time_minutes, tags, matchingPantryItems (array, empty if context is "all"), missingIngredients (array, empty if context is "all")
 - source: "generated" or "saved" (use "saved" only if suggesting from user's saved recipes, with matching recipeId)
 - recipeId: string (only if source is "saved")
