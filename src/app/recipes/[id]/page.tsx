@@ -258,7 +258,15 @@ export default function RecipeDetailPage() {
   // ── SWR data ────────────────────────────────────────────────────────────────
   const { data: recipeData, isLoading: loading, mutate: mutateRecipe } = useRecipe(id as string);
   const recipe = recipeData ?? null;
+  const isPublicView = Boolean((recipe as { is_public_view?: boolean } | null)?.is_public_view);
   const { data: allRecipesData = [] } = useRecipes();
+  const { data: savedRecipesData = [] } = useRecipes();
+  const alreadySaved = isPublicView && Array.isArray(savedRecipesData)
+    ? (savedRecipesData as { title?: string }[]).some(
+        (r) => (r.title || "").trim().toLowerCase() === (recipe?.title || "").trim().toLowerCase()
+      )
+    : false;
+  const [savingPublic, setSavingPublic] = useState(false);
 
   // Compute current week start (Monday) and today's date for AddMealSheet
   const today = new Date();
@@ -273,11 +281,11 @@ export default function RecipeDetailPage() {
   })();
 
   const { data: collectionsData, mutate: mutateCollections } = useSWR(
-    id ? `/api/recipes/${id}/collections` : null,
+    id && !isPublicView ? `/api/recipes/${id}/collections` : null,
     apiFetcher,
     { revalidateOnFocus: false }
   );
-  const recipeCollections: { id: string; name: string }[] = collectionsData?.collections ?? [];
+  const recipeCollections: { id: string; name: string }[] = isPublicView ? [] : (collectionsData?.collections ?? []);
 
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
@@ -435,7 +443,8 @@ export default function RecipeDetailPage() {
               className="w-full h-full object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
-            {/* Camera button — bottom-right overlay */}
+            {/* Camera button — bottom-right overlay (owner only) */}
+            {!isPublicView && (
             <button
               onClick={() => cameraFileRef.current?.click()}
               disabled={cameraUploading}
@@ -454,6 +463,7 @@ export default function RecipeDetailPage() {
                 </>
               )}
             </button>
+            )}
           </div>
         ) : (
           <div className="h-52 sm:h-64 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
@@ -488,13 +498,16 @@ export default function RecipeDetailPage() {
             </svg>
           </button>
           <div className="flex items-center gap-2">
+            {!isPublicView && (
             <button
               onClick={() => setEditing(true)}
               className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-xs font-semibold text-gray-700 shadow-sm hover:bg-white transition-colors"
             >
               Edit
             </button>
+            )}
             <div className="relative">
+              {!isPublicView && (
               <button
                 onClick={() => setShowMore(!showMore)}
                 className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
@@ -503,6 +516,7 @@ export default function RecipeDetailPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                 </svg>
               </button>
+              )}
               {showMore && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowMore(false)} />
@@ -583,26 +597,30 @@ export default function RecipeDetailPage() {
 
           {/* Action buttons with labels */}
           <div className="flex items-center gap-5 pt-2">
-            {/* Collection */}
-            <button
-              onClick={() => setShowAddToCollection(true)}
-              className="flex flex-col items-center gap-1 text-[#a09890] hover:text-[#e8530a] transition-colors touch-manipulation"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-              </svg>
-              <span className="text-[10px] font-medium">Collection</span>
-            </button>
-            {/* Share */}
-            <button
-              onClick={() => setShowShareWithFriends(true)}
-              className="flex flex-col items-center gap-1 text-[#a09890] hover:text-[#e8530a] transition-colors touch-manipulation"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-              </svg>
-              <span className="text-[10px] font-medium">Share</span>
-            </button>
+            {/* Collection (owner only) */}
+            {!isPublicView && (
+              <button
+                onClick={() => setShowAddToCollection(true)}
+                className="flex flex-col items-center gap-1 text-[#a09890] hover:text-[#e8530a] transition-colors touch-manipulation"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
+                </svg>
+                <span className="text-[10px] font-medium">Collection</span>
+              </button>
+            )}
+            {/* Share (owner only) */}
+            {!isPublicView && (
+              <button
+                onClick={() => setShowShareWithFriends(true)}
+                className="flex flex-col items-center gap-1 text-[#a09890] hover:text-[#e8530a] transition-colors touch-manipulation"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
+                </svg>
+                <span className="text-[10px] font-medium">Share</span>
+              </button>
+            )}
             {/* Source */}
             {recipe.source_url && (
               <button
@@ -820,13 +838,17 @@ export default function RecipeDetailPage() {
           </div>
         </div>
 
-        {/* ── Cook Photos ─────────────────────────────────────────────── */}
-        <CookPhotosGallery recipeId={recipe.id} refreshKey={photoRefreshKey} />
+        {/* ── Cook Photos (owner only) ───────────────────────────────── */}
+        {!isPublicView && (
+          <CookPhotosGallery recipeId={recipe.id} refreshKey={photoRefreshKey} />
+        )}
 
-        {/* ── 4. My Notes ──────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm p-5 mt-4">
-          <MyNotesCard recipeId={recipe.id} />
-        </div>
+        {/* ── 4. My Notes (owner only) ─────────────────────────────────── */}
+        {!isPublicView && (
+          <div className="bg-white rounded-2xl shadow-sm p-5 mt-4">
+            <MyNotesCard recipeId={recipe.id} />
+          </div>
+        )}
 
         {/* ── 5. Original Post ────────────────────────────────────────── */}
         {recipe.source_url && recipe.source_platform && recipe.source_platform !== "other" && (
@@ -874,21 +896,71 @@ export default function RecipeDetailPage() {
       {/* ── Sticky bottom bar ─────────────────────────────────────────── */}
       <div className="fixed bottom-0 left-0 right-0 z-40" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)", background: "#ffffff", boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}>
         <div className="max-w-3xl mx-auto px-4 py-3 space-y-2">
-          <button
-            onClick={() => setShowAddMealSheet(true)}
-            className="w-full py-3.5 rounded-xl font-semibold text-sm text-white active:scale-[0.98] transition-all"
-            style={{ background: "#e8530a" }}
-          >
-            Add to Meal Plan
-          </button>
-          <button
-            onClick={() => setShowMarcoChat(true)}
-            className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border"
-            style={{ borderColor: "#e0e0de", color: "#1a1410", background: "white" }}
-          >
-            {"\u{1F9D1}\u200D\u{1F373}"} Cook with Marco
-            <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-400 font-medium align-middle">beta</span>
-          </button>
+          {isPublicView ? (
+            <button
+              onClick={async () => {
+                if (alreadySaved || savingPublic) return;
+                setSavingPublic(true);
+                try {
+                  const r = recipe as unknown as Record<string, unknown>;
+                  const res = await fetch("/api/recipes/save", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      title: r.title,
+                      description: r.description,
+                      image_url: r.image_url,
+                      tags: r.tags || [],
+                      meal_type: r.meal_type,
+                      servings: r.servings,
+                      prep_time_minutes: r.prep_time_minutes,
+                      cook_time_minutes: r.cook_time_minutes,
+                      ingredients: r.ingredients || [],
+                      steps: r.steps || [],
+                      source_url: r.source_url,
+                      calories: r.calories,
+                      protein_g: r.protein_g,
+                      carbs_g: r.carbs_g,
+                      fat_g: r.fat_g,
+                      fiber_g: r.fiber_g,
+                    }),
+                  });
+                  const data = await res.json();
+                  if (data?.recipe?.id) {
+                    showToast("Recipe saved to your library");
+                    router.replace(`/recipes/${data.recipe.id}`);
+                  } else {
+                    showToast("Could not save recipe");
+                  }
+                } finally {
+                  setSavingPublic(false);
+                }
+              }}
+              disabled={alreadySaved || savingPublic}
+              className="w-full py-3.5 rounded-xl font-semibold text-sm text-white active:scale-[0.98] transition-all disabled:opacity-60"
+              style={{ background: alreadySaved ? "#94a394" : "#e8530a" }}
+            >
+              {alreadySaved ? "✓ Already in your library" : savingPublic ? "Saving…" : "Save to my library"}
+            </button>
+          ) : (
+            <>
+              <button
+                onClick={() => setShowAddMealSheet(true)}
+                className="w-full py-3.5 rounded-xl font-semibold text-sm text-white active:scale-[0.98] transition-all"
+                style={{ background: "#e8530a" }}
+              >
+                Add to Meal Plan
+              </button>
+              <button
+                onClick={() => setShowMarcoChat(true)}
+                className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border"
+                style={{ borderColor: "#e0e0de", color: "#1a1410", background: "white" }}
+              >
+                {"\u{1F9D1}\u200D\u{1F373}"} Cook with Marco
+                <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-400 font-medium align-middle">beta</span>
+              </button>
+            </>
+          )}
         </div>
       </div>
 
