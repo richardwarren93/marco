@@ -85,44 +85,37 @@ interface Category {
 
 const CATEGORIES: Category[] = [
   {
-    title: "Quick Dinners",
+    title: "Quick Weeknight",
     emoji: "⚡",
     filter: (r) => {
       const total = (r.prep_time_minutes || 0) + (r.cook_time_minutes || 0);
-      return total > 0 && total <= 30 && r.meal_type === "dinner";
+      return total > 0 && total <= 30;
     },
   },
   {
     title: "High Protein",
     emoji: "💪",
-    tags: ["high-protein", "high protein", "protein", "chicken", "beef", "salmon", "tofu", "lamb", "pork"],
+    tags: ["high-protein", "high protein", "protein", "chicken", "beef", "salmon", "tofu", "lamb", "pork", "shrimp"],
   },
   {
     title: "Comfort Food",
     emoji: "🍲",
-    tags: ["comfort food", "comfort-food", "cozy", "hearty", "creamy"],
+    tags: ["comfort food", "comfort-food", "cozy", "hearty", "creamy", "stew", "soup"],
   },
   {
-    title: "Plant-Based",
-    emoji: "🌱",
-    tags: ["vegetarian", "vegan", "plant-based"],
-  },
-  {
-    title: "Asian-Inspired",
-    emoji: "🥢",
-    tags: ["asian", "chinese", "japanese", "korean", "thai", "vietnamese", "sichuan", "asian-inspired", "korean-inspired"],
-  },
-  {
-    title: "Pasta & Noodles",
-    emoji: "🍝",
-    tags: ["pasta", "noodle", "noodles", "italian"],
-  },
-  {
-    title: "Healthy & Light",
+    title: "Healthy & Fresh",
     emoji: "🥗",
-    tags: ["healthy", "salad", "light", "fresh", "low-carb"],
+    tags: ["healthy", "salad", "light", "fresh", "low-carb", "vegetarian", "vegan", "plant-based"],
+  },
+  {
+    title: "Bold & Global",
+    emoji: "🌶️",
+    tags: ["asian", "chinese", "japanese", "korean", "thai", "vietnamese", "sichuan", "indian", "mexican", "mediterranean"],
   },
 ];
+
+// Minimum recipes per row — anything less feels empty/sparse
+const MIN_ROW_SIZE = 4;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -260,7 +253,7 @@ export default function DiscoverTab({
           (a, b) => tasteMatchScore(b, tasteProfile) - tasteMatchScore(a, tasteProfile)
         );
         return { ...cat, recipes: sorted.slice(0, 10) };
-      }).filter((row) => row.recipes.length > 0);
+      }).filter((row) => row.recipes.length >= MIN_ROW_SIZE);
     } catch (err) {
       console.error("[Discover] categorizedRows failed:", err);
       return [];
@@ -706,6 +699,7 @@ export default function DiscoverTab({
                         <img
                           src={recipe.image_url}
                           alt={recipe.title}
+                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
@@ -1014,7 +1008,7 @@ function CategoryCard({
       className="relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-all duration-200 hover:-translate-y-1 active:scale-[0.98]"
       style={{
         boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-        height: "260px",
+        height: "310px",
       }}
       onClick={onTap}
     >
@@ -1024,6 +1018,8 @@ function CategoryCard({
         <img
           src={recipe.image_url}
           alt={recipe.title}
+          referrerPolicy="no-referrer"
+          loading="lazy"
           className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
@@ -1033,69 +1029,71 @@ function CategoryCard({
         </div>
       )}
 
-      {/* Dark gradient overlay — bottom for title, top fade for buttons */}
+      {/* Softer gradient — lighter at bottom so food still pops */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: "linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 25%, rgba(0,0,0,0) 45%, rgba(0,0,0,0.85) 100%)",
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 50%, rgba(20,12,5,0.55) 82%, rgba(20,12,5,0.78) 100%)",
         }}
       />
 
-      {/* Save heart button — top right */}
+      {/* Save heart button — glassy, smaller */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           if (!saved && !saving) onSave();
         }}
         disabled={saved || saving}
-        className="absolute top-3 right-3 w-9 h-9 flex items-center justify-center rounded-full bg-white/95 backdrop-blur-sm transition-all active:scale-90 disabled:opacity-100 z-10"
-        style={{
-          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        }}
+        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/25 backdrop-blur-md ring-1 ring-white/30 transition-all active:scale-90 disabled:opacity-100 z-10"
         aria-label={saved ? "Saved" : "Save recipe"}
       >
         {saving ? (
-          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
         ) : saved ? (
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         ) : (
-          <svg className="w-5 h-5 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+          <svg className="w-4 h-4 text-white drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         )}
       </button>
 
-      {/* Community 🔥 badge — top left (only if multiple cooks) */}
+      {/* Community 🔥 badge — top left, glassy, tighter */}
       {recipe.userCount > 1 && (
-        <div className="absolute top-3 left-3 flex items-center gap-1 bg-white/95 backdrop-blur-sm text-[11px] font-bold px-2.5 py-1 rounded-full z-10" style={{ color: "#1a1410", boxShadow: "0 2px 8px rgba(0,0,0,0.15)" }}>
+        <div
+          className="absolute top-3 left-3 flex items-center gap-0.5 bg-white/25 backdrop-blur-md ring-1 ring-white/30 text-[10px] font-bold px-2 py-0.5 rounded-full z-10"
+          style={{ color: "#fff" }}
+        >
           <span>{"\u{1F525}"}</span>
           <span>{recipe.userCount}</span>
         </div>
       )}
 
-      {/* Title overlay at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 pointer-events-none z-10">
-        <h4 className="font-black text-white text-base leading-tight line-clamp-2 mb-2 drop-shadow-md">
+      {/* Title + meta overlay at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-6 pointer-events-none z-10">
+        <h4
+          className="font-black text-white text-[17px] mb-1.5 drop-shadow-md line-clamp-2"
+          style={{ lineHeight: "1.18" }}
+        >
           {recipe.title}
         </h4>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 text-white/80 text-[10.5px] font-medium">
           {totalTime > 0 && (
-            <div className="flex items-center gap-1 text-white text-[11px] font-semibold drop-shadow-md">
+            <span className="flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {totalTime} min
-            </div>
+            </span>
           )}
-          {recipe.tags && recipe.tags.length > 0 && totalTime > 0 && (
-            <span className="text-white/70 text-[11px]">{"\u00B7"}</span>
+          {recipe.tags && recipe.tags[0] && totalTime > 0 && (
+            <span className="text-white/40">{"\u00B7"}</span>
           )}
           {recipe.tags && recipe.tags[0] && (
-            <span className="text-white/90 text-[11px] font-semibold drop-shadow-md truncate">
-              {recipe.tags[0]}
-            </span>
+            <span className="truncate">{recipe.tags[0]}</span>
           )}
         </div>
       </div>
@@ -1129,7 +1127,7 @@ function ExploreResultCard({
       {result.image_url ? (
         <div className="relative h-36 sm:h-40 bg-gray-100 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={result.image_url} alt={recipe.title} className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+          <img src={result.image_url} alt={recipe.title} referrerPolicy="no-referrer" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           <div className="absolute top-2 right-2">
             <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-sm text-white whitespace-nowrap">{result.sourceHint || "Explore"}</span>
           </div>

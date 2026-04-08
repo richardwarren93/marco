@@ -162,15 +162,27 @@ export async function GET() {
     tasteMatch: scoreTasteMatch(r.searchText, userScores),
   }));
 
-  // Trending: user count (community signal), then taste match, then save count
+  // Image must exist AND not be from a CDN that expires/blocks hotlinking.
+  // Instagram (cdninstagram, scontent.*) and TikTok (tiktokcdn) URLs expire
+  // after a few hours/days and return 403.
+  const isUsableImage = (url: string | null): boolean => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    if (lower.includes("cdninstagram")) return false;
+    if (lower.includes("scontent")) return false;
+    if (lower.includes("tiktokcdn")) return false;
+    return true;
+  };
+
+  // Trending: filter to recipes with usable images, then sort by community + taste match
   const trending = allRecipes
-    .filter((r) => r.userCount >= 1)
+    .filter((r) => r.userCount >= 1 && isUsableImage(r.image_url))
     .sort((a, b) => {
       if (b.userCount !== a.userCount) return b.userCount - a.userCount;
       if (b.tasteMatch !== a.tasteMatch) return b.tasteMatch - a.tasteMatch;
       return b.saveCount - a.saveCount;
     })
-    .slice(0, 60)
+    .slice(0, 80)
     .map((r) => ({
       recipeId: r.recipeId,
       title: r.title,

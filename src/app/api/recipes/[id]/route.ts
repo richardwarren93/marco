@@ -4,8 +4,38 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * GET /api/recipes/:id
- * Returns a recipe if the current user owns it OR is in the same household as the owner.
+ * - Owner: full recipe (notes, ratings, etc. — fetched separately by their endpoints)
+ * - Non-owner: sanitized public view — only the "on-the-card" fields, no
+ *   private notes, no ownership info, no personal data.
  */
+const PUBLIC_FIELDS = [
+  "id",
+  "title",
+  "description",
+  "image_url",
+  "tags",
+  "meal_type",
+  "servings",
+  "prep_time_minutes",
+  "cook_time_minutes",
+  "ingredients",
+  "steps",
+  "source_url",
+  "calories",
+  "protein_g",
+  "carbs_g",
+  "fat_g",
+  "fiber_g",
+] as const;
+
+function sanitizePublic(recipe: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = { is_public_view: true };
+  for (const key of PUBLIC_FIELDS) {
+    if (key in recipe) out[key] = recipe[key];
+  }
+  return out;
+}
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -22,7 +52,6 @@ export async function GET(
   const { id } = await params;
   const admin = createAdminClient();
 
-  // Fetch the recipe (bypasses RLS)
   const { data: recipe, error } = await admin
     .from("recipes")
     .select("*")
@@ -33,12 +62,12 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  // Own recipe — return immediately
+  // Owner gets the full recipe
   if (recipe.user_id === user.id) {
     return NextResponse.json({ recipe });
   }
 
-  // Check if the recipe owner is in the same household
+  // Same household → full recipe (they cook together)
   const { data: myMembership } = await admin
     .from("household_members")
     .select("household_id")
@@ -58,33 +87,6 @@ export async function GET(
     }
   }
 
-  // Check if recipe was shared with this user via friend sharing
-  const { data: share } = await admin
-    .from("recipe_shares")
-    .select("id")
-    .eq("recipe_id", id)
-    .eq("shared_with_user_id", user.id)
-    .limit(1)
-    .maybeSingle();
-
-  if (share) {
-    return NextResponse.json({ recipe });
-  }
-
-  // Check if recipe owner is a friend
-  const { data: friendship } = await admin
-    .from("friendships")
-    .select("id")
-    .eq("status", "accepted")
-    .or(
-      `and(user_id.eq.${user.id},friend_id.eq.${recipe.user_id}),and(user_id.eq.${recipe.user_id},friend_id.eq.${user.id})`
-    )
-    .limit(1)
-    .maybeSingle();
-
-  if (friendship) {
-    return NextResponse.json({ recipe });
-  }
-
-  return NextResponse.json({ error: "Not found" }, { status: 404 });
+  // Everyone else (friends, community, strangers) gets the sanitized public view
+  return NextResponse.json({ recipe: sanitizePublic(recipe) });
 }
