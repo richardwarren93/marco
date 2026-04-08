@@ -761,7 +761,7 @@ export default function DiscoverTab({
               )}
 
               {/* Categorized rows */}
-              <div className="space-y-7">
+              <div className="space-y-8">
                 {categorizedRows.map((row) => (
                   <CategoryRow
                     key={row.title}
@@ -953,22 +953,22 @@ function CategoryRow({
   savedIds: Set<string>;
   savingIds: Set<string>;
 }) {
+  // Cap each row at 4 cards (2x2 grid) so the page stays scannable.
+  const visibleRecipes = recipes.slice(0, 4);
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{emoji}</span>
-          <h3 className="text-lg font-black tracking-tight" style={{ color: "#1a1410" }}>
-            {title}
-          </h3>
-        </div>
+      <div className="flex items-center gap-2 mb-3.5 px-0.5">
+        <span className="text-base">{emoji}</span>
+        <h3 className="text-[17px] font-bold tracking-tight" style={{ color: "#1a1410", letterSpacing: "-0.01em" }}>
+          {title}
+        </h3>
       </div>
-      <div className="flex gap-4 overflow-x-auto pb-3 -mx-4 px-4 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
-        {recipes.map((recipe, i) => (
+      <div className="grid grid-cols-2 gap-3">
+        {visibleRecipes.map((recipe, i) => (
           <div
             key={recipe.recipeId}
-            className="flex-shrink-0 w-56 sm:w-64"
-            style={{ scrollSnapAlign: "start", animation: `cardPop 0.4s ease ${i * 40}ms both` }}
+            style={{ animation: `cardPop 0.4s ease ${i * 40}ms both` }}
             onContextMenu={onContextMenu(recipe.recipeId, recipe.title)}
             onTouchStart={(e) => onLongPress(recipe.recipeId, recipe.title, e)}
             onTouchMove={onLongPressCancel}
@@ -1005,10 +1005,12 @@ function CategoryCard({
 
   return (
     <div
-      className="relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-all duration-200 hover:-translate-y-1 active:scale-[0.98]"
+      className="relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-transform duration-200 active:scale-[0.97]"
       style={{
-        boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
-        height: "310px",
+        // 4:5 portrait aspect for image-dominant card. Two cards in a 2-col
+        // grid on a 390px screen leaves ~170px width → ~212px tall.
+        aspectRatio: "4 / 5",
+        boxShadow: "0 4px 16px rgba(20,12,5,0.10)",
       }}
       onClick={onTap}
     >
@@ -1020,51 +1022,51 @@ function CategoryCard({
           alt={recipe.title}
           referrerPolicy="no-referrer"
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
         />
       ) : (
         <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-          <span className="text-6xl opacity-60">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
+          <span className="text-5xl opacity-60">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
         </div>
       )}
 
-      {/* Softer gradient — lighter at bottom so food still pops */}
+      {/* Gradient — concentrated at bottom only so food stays vivid */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 50%, rgba(20,12,5,0.55) 82%, rgba(20,12,5,0.78) 100%)",
+            "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 55%, rgba(20,12,5,0.40) 80%, rgba(20,12,5,0.72) 100%)",
         }}
       />
 
-      {/* Save heart button — glassy, smaller */}
+      {/* Save heart — small, glassy, sits lightly */}
       <button
         onClick={(e) => {
           e.stopPropagation();
           if (!saved && !saving) onSave();
         }}
         disabled={saved || saving}
-        className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-white/25 backdrop-blur-md ring-1 ring-white/30 transition-all active:scale-90 disabled:opacity-100 z-10"
+        className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 disabled:opacity-100 z-10"
         aria-label={saved ? "Saved" : "Save recipe"}
       >
         {saving ? (
-          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          <div className="w-3 h-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
         ) : saved ? (
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
+          <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         ) : (
-          <svg className="w-4 h-4 text-white drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2}>
+          <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
           </svg>
         )}
       </button>
 
-      {/* Community 🔥 badge — top left, glassy, tighter */}
+      {/* Community 🔥 badge — tiny, glassy */}
       {recipe.userCount > 1 && (
         <div
-          className="absolute top-3 left-3 flex items-center gap-0.5 bg-white/25 backdrop-blur-md ring-1 ring-white/30 text-[10px] font-bold px-2 py-0.5 rounded-full z-10"
+          className="absolute top-2.5 left-2.5 flex items-center gap-0.5 bg-black/25 backdrop-blur-md text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full z-10 leading-none"
           style={{ color: "#fff" }}
         >
           <span>{"\u{1F525}"}</span>
@@ -1073,29 +1075,25 @@ function CategoryCard({
       )}
 
       {/* Title + meta overlay at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 px-4 pb-4 pt-6 pointer-events-none z-10">
+      <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-8 pointer-events-none z-10">
         <h4
-          className="font-black text-white text-[17px] mb-1.5 drop-shadow-md line-clamp-2"
-          style={{ lineHeight: "1.18" }}
+          className="font-bold text-white text-[14px] mb-1 line-clamp-2"
+          style={{
+            lineHeight: "1.22",
+            letterSpacing: "-0.01em",
+            textShadow: "0 1px 4px rgba(0,0,0,0.4)",
+          }}
         >
           {recipe.title}
         </h4>
-        <div className="flex items-center gap-1.5 text-white/80 text-[10.5px] font-medium">
-          {totalTime > 0 && (
-            <span className="flex items-center gap-1">
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {totalTime} min
-            </span>
-          )}
-          {recipe.tags && recipe.tags[0] && totalTime > 0 && (
-            <span className="text-white/40">{"\u00B7"}</span>
-          )}
-          {recipe.tags && recipe.tags[0] && (
-            <span className="truncate">{recipe.tags[0]}</span>
-          )}
-        </div>
+        {totalTime > 0 && (
+          <div className="flex items-center gap-1 text-white/85 text-[10px] font-medium">
+            <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{totalTime} min</span>
+          </div>
+        )}
       </div>
     </div>
   );
