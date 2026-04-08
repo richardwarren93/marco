@@ -417,15 +417,15 @@ For each recipe, include a sourceHint like "Popular on TikTok", "Instagram favor
 IMPORTANT: When suggesting real, well-known recipes, include the source_url — the actual URL of the original recipe page (e.g. from allrecipes.com, budgetbytes.com, seriouseats.com, bonappetit.com, halfbakedharvest.com, etc.). Only include real URLs you are confident exist. If you are not sure of the exact URL, omit it.${tasteContext}`;
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 4000,
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 6000,
     system: systemPrompt,
     messages: [
       {
         role: "user",
         content: `User prompt: "${prompt}"
 
-Return a JSON array of 4 recipe results. Each result should have:
+Return a JSON array of 10 recipe results. (We over-fetch so we can pick the 6 best with images.) Each result should have:
 - recipe: object with title, description, ingredients (array of {name, amount, unit}), steps (array of strings), servings, prep_time_minutes, cook_time_minutes, tags, matchingPantryItems (array, empty if context is "all"), missingIngredients (array, empty if context is "all")
 - source: "generated" or "saved" (use "saved" only if suggesting from user's saved recipes, with matching recipeId)
 - recipeId: string (only if source is "saved")
@@ -433,7 +433,7 @@ Return a JSON array of 4 recipe results. Each result should have:
 - reasoning: one sentence on why this recipe matches the user's request
 - source_url: string or null — the real URL of the original recipe page if this is based on a well-known published recipe (e.g. from allrecipes.com, budgetbytes.com, seriouseats.com, bonappetit.com, halfbakedharvest.com, etc.). Only include URLs you are confident actually exist. Omit or set null if unsure.
 
-Make recipes genuinely appetizing and varied. Think food creator quality — specific, flavorful, not generic. Prefer suggesting recipes that are based on real, popular published recipes with known source URLs.
+Make recipes genuinely appetizing and varied. Think food creator quality — specific, flavorful, not generic. STRONGLY prefer suggesting recipes that are based on real, popular published recipes with known source URLs (so we can pull cover images). At least 8 of the 10 should have a real source_url.
 
 Return ONLY a valid JSON array. No markdown, no code blocks.`,
       },

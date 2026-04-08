@@ -11,7 +11,9 @@ const DISCOVER_DAILY_LIMIT = 10;
 async function fetchOgImage(url: string): Promise<string | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    // Reduced from 5s to 2s — slow blogs aren't worth waiting for since
+    // we over-fetch recipe candidates and pick the ones that resolve fast.
+    const timeout = setTimeout(() => controller.abort(), 2000);
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
@@ -49,6 +51,8 @@ async function fetchOgImage(url: string): Promise<string | null> {
     return null;
   }
 }
+
+const TARGET_RESULTS = 6;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -140,11 +144,14 @@ export async function POST(request: Request) {
       };
     }
 
-    const results = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
+    // Over-fetch: ask Haiku for ~10 candidates so we can drop ones whose
+    // og:image fetch fails and still return TARGET_RESULTS with images.
+    const candidates = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
 
-    // Enrich results with images by fetching OG images from source URLs
-    const enriched = await Promise.all(
-      results.map(async (result) => {
+    // Parallel-fetch og:image for every candidate that has a source_url.
+    // Each fetch has a 2s timeout (see fetchOgImage).
+    const enrichedCandidates = await Promise.all(
+      candidates.map(async (result) => {
         if (result.source_url && !result.image_url) {
           try {
             const imgUrl = await fetchOgImage(result.source_url);
@@ -156,6 +163,16 @@ export async function POST(request: Request) {
         return result;
       })
     );
+
+    // Prefer results that have images. Take the first TARGET_RESULTS with images,
+    // then fill any remaining slots with imageless results so we never return fewer
+    // than TARGET_RESULTS (or all candidates if fewer were generated).
+    const withImages = enrichedCandidates.filter((r) => Boolean(r.image_url));
+    const withoutImages = enrichedCandidates.filter((r) => !r.image_url);
+    const enriched = [
+      ...withImages.slice(0, TARGET_RESULTS),
+      ...withoutImages.slice(0, Math.max(0, TARGET_RESULTS - withImages.length)),
+    ];
 
     return NextResponse.json({ results: enriched }, {
       headers: { "X-RateLimit-Remaining": String(remaining) },
