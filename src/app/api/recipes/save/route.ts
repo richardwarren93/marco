@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { rehostIfExpiring } from "@/lib/image-rehost";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -33,6 +34,10 @@ export async function POST(request: Request) {
       }
     }
 
+    // Re-host any image from an expiring CDN (Instagram, TikTok, etc.) to
+    // our Supabase storage so it never expires.
+    const persistentImageUrl = await rehostIfExpiring(body.image_url);
+
     const { error, data } = await admin.from("recipes").insert({
       user_id: user.id,
       title: body.title,
@@ -46,7 +51,7 @@ export async function POST(request: Request) {
       meal_type: body.meal_type || "dinner",
       source_url: body.source_url || null,
       source_platform: body.source_platform || null,
-      image_url: body.image_url || null,
+      image_url: persistentImageUrl,
       notes: body.notes || null,
       calories: body.calories || null,
       protein_g: body.protein_g || null,

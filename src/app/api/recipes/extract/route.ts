@@ -2,34 +2,7 @@ import { NextResponse } from "next/server";
 import { scrapeUrl, detectPlatform } from "@/lib/scraper";
 import { extractRecipe, extractRecipeFromCarousel } from "@/lib/claude";
 import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
-
-// Download a scraped image URL and re-upload to Supabase so it never expires.
-// Returns the permanent public URL, or null if anything fails.
-async function rehostImage(url: string | null): Promise<string | null> {
-  if (!url) return null;
-  try {
-    const resp = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      signal: AbortSignal.timeout(10000),
-    });
-    if (!resp.ok) return null;
-    const contentType = resp.headers.get("content-type") || "image/jpeg";
-    if (!contentType.startsWith("image/")) return null;
-    const buffer = Buffer.from(await resp.arrayBuffer());
-    const ext = contentType.split("/")[1]?.split(";")[0] || "jpg";
-    const filename = `scraped/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const admin = createAdminClient();
-    const { error } = await admin.storage
-      .from("recipe-images")
-      .upload(filename, buffer, { contentType, upsert: false });
-    if (error) return null;
-    const { data: { publicUrl } } = admin.storage.from("recipe-images").getPublicUrl(filename);
-    return publicUrl;
-  } catch {
-    return null;
-  }
-}
+import { rehostImage } from "@/lib/image-rehost";
 
 export async function POST(request: Request) {
   // Verify user is authenticated
