@@ -246,19 +246,33 @@ export default function DiscoverTab({
   const categorizedRows = useMemo(() => {
     try {
       if (!Array.isArray(trending) || trending.length === 0) return [];
-      return CATEGORIES.map((cat) => {
-        const matched = trending.filter((r) => r && matchesCategory(r, cat));
-        // Sort by personal taste match score (descending). Use slice() to avoid mutating.
-        const sorted = matched.slice().sort(
-          (a, b) => tasteMatchScore(b, tasteProfile) - tasteMatchScore(a, tasteProfile)
+      // Deduplicate across rows: each recipe appears in at most one category.
+      // Seed with hero recipe IDs so categories don't repeat what's in the carousel.
+      const usedIds = new Set<string>();
+      for (const h of heroRecipes) usedIds.add(h.recipeId);
+
+      const rows: { title: string; emoji: string; recipes: TrendingRecipe[] }[] = [];
+      for (const cat of CATEGORIES) {
+        const matched = trending.filter(
+          (r) => r && r.recipeId && !usedIds.has(r.recipeId) && matchesCategory(r, cat)
         );
-        return { ...cat, recipes: sorted.slice(0, 10) };
-      }).filter((row) => row.recipes.length >= MIN_ROW_SIZE);
+        const sorted = matched
+          .slice()
+          .sort((a, b) => tasteMatchScore(b, tasteProfile) - tasteMatchScore(a, tasteProfile));
+        // Take only the top 4 (matches what CategoryRow renders) so each
+        // category claims its best fits and leaves variety for later rows.
+        const top = sorted.slice(0, 4);
+        if (top.length >= MIN_ROW_SIZE) {
+          for (const r of top) usedIds.add(r.recipeId);
+          rows.push({ title: cat.title, emoji: cat.emoji, recipes: top });
+        }
+      }
+      return rows;
     } catch (err) {
       console.error("[Discover] categorizedRows failed:", err);
       return [];
     }
-  }, [trending, tasteProfile]);
+  }, [trending, tasteProfile, heroRecipes]);
 
   // Fetch taste profile once on mount
   useEffect(() => {
