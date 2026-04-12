@@ -730,10 +730,9 @@ export default function DiscoverTab({
                           background: "linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.85) 100%)",
                         }}
                       />
-                      {/* Trending pill */}
-                      <div className="absolute top-4 left-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm">
-                        <span className="text-sm">{"\u{1F525}"}</span>
-                        <span className="text-[11px] font-bold" style={{ color: "#1a1410" }}>Trending Tonight</span>
+                      {/* Featured pill */}
+                      <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm">
+                        <span className="text-[11px] font-bold" style={{ color: "#1a1410" }}>Featured</span>
                       </div>
                       {/* Title and meta */}
                       <div className="absolute bottom-0 left-0 right-0 p-5 pb-9 text-white">
@@ -746,9 +745,6 @@ export default function DiscoverTab({
                               </svg>
                               {(recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0)} min
                             </span>
-                          )}
-                          {recipe.userCount > 1 && (
-                            <span>{"\u00B7"} {recipe.userCount} cooks loved it</span>
                           )}
                         </div>
                       </div>
@@ -1041,17 +1037,6 @@ function CategoryCard({
           loading: saving,
         },
       ]}
-      topLeftBadge={
-        recipe.userCount > 1 ? (
-          <div
-            className="flex items-center gap-0.5 bg-black/25 backdrop-blur-md text-[9.5px] font-semibold px-1.5 py-0.5 rounded-full leading-none"
-            style={{ color: "#fff" }}
-          >
-            <span>{"\u{1F525}"}</span>
-            <span>{recipe.userCount}</span>
-          </div>
-        ) : undefined
-      }
     />
   );
 }

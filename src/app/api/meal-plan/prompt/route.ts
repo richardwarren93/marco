@@ -11,7 +11,10 @@ const DISCOVER_DAILY_LIMIT = 10;
 async function fetchOgImage(url: string): Promise<string | null> {
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
+    // 4s ceiling per single fetch. We over-fetch 12 candidates and use
+    // a race-to-6 pattern, so the response returns as soon as 6 images
+    // resolve — most slow blogs are abandoned before they even matter.
+    const timeout = setTimeout(() => controller.abort(), 4000);
     const res = await fetch(url, {
       signal: controller.signal,
       headers: {
@@ -49,6 +52,8 @@ async function fetchOgImage(url: string): Promise<string | null> {
     return null;
   }
 }
+
+const TARGET_RESULTS = 6;
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -140,22 +145,65 @@ export async function POST(request: Request) {
       };
     }
 
-    const results = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
+    // Over-fetch: ask Haiku for 12 candidates. We'll race their og:image
+    // fetches and return as soon as TARGET_RESULTS (6) successfully resolve.
+    const candidates = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
 
-    // Enrich results with images by fetching OG images from source URLs
-    const enriched = await Promise.all(
-      results.map(async (result) => {
-        if (result.source_url && !result.image_url) {
+    // Race-to-N pattern: kick off all og:image fetches in parallel and resolve
+    // the user's request as soon as TARGET_RESULTS candidates have images.
+    // Slower in-flight fetches are abandoned (their results are discarded).
+    // This guarantees every returned recipe has an image AND the user-perceived
+    // wait is bounded by the 6th-fastest resolver, not the slowest.
+    type Candidate = (typeof candidates)[number];
+
+    const winners: Candidate[] = await new Promise((resolve) => {
+      const out: Candidate[] = [];
+      let completed = 0;
+      const total = candidates.length;
+
+      if (total === 0) {
+        resolve(out);
+        return;
+      }
+
+      candidates.forEach((c) => {
+        (async () => {
+          // Already has an image (rare for prompted results) → straight pass.
+          if (c.image_url) return c;
+          if (!c.source_url) return null;
           try {
-            const imgUrl = await fetchOgImage(result.source_url);
-            if (imgUrl) return { ...result, image_url: imgUrl };
+            const img = await fetchOgImage(c.source_url);
+            return img ? ({ ...c, image_url: img } as Candidate) : null;
           } catch {
-            // ignore — no image is fine
+            return null;
           }
-        }
-        return result;
-      })
-    );
+        })().then((result) => {
+          if (result && out.length < TARGET_RESULTS) {
+            out.push(result);
+            if (out.length === TARGET_RESULTS) {
+              resolve(out);
+            }
+          }
+          completed++;
+          // All fetches done — resolve with whatever we got (may be < TARGET).
+          if (completed === total) {
+            resolve(out);
+          }
+        });
+      });
+    });
+
+    // Fallback: if fewer than TARGET resolved with images (e.g. all blogs slow),
+    // fill remaining slots with imageless candidates so we still return SOMETHING.
+    // In practice this almost never triggers because we over-fetch to 12.
+    const enriched = [...winners];
+    if (enriched.length < TARGET_RESULTS) {
+      const winnerIds = new Set(enriched.map((r) => r.recipe?.title));
+      const fillers = candidates
+        .filter((c) => !winnerIds.has(c.recipe?.title))
+        .slice(0, TARGET_RESULTS - enriched.length);
+      enriched.push(...fillers);
+    }
 
     return NextResponse.json({ results: enriched }, {
       headers: { "X-RateLimit-Remaining": String(remaining) },

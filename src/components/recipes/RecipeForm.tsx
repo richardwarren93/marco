@@ -22,7 +22,7 @@ export default function RecipeForm({
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
   const [duplicateRecipeId, setDuplicateRecipeId] = useState<string | null>(null);
-  const [step, setStep] = useState<Step>(recipe ? "preview" : "url");
+  const [step, setStep] = useState<Step>(recipe ? "editing" : "url");
   const { showToast } = useToast();
 
   const [title, setTitle] = useState(recipe?.title || "");
