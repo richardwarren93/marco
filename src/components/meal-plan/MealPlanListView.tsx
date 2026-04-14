@@ -327,20 +327,53 @@ export default function MealPlanListView({
       .slice(0, 8);
   }, [trendingData, recipeLibrary]);
 
-  const saveRecommendedRecipe = useCallback(async (recipeId: string) => {
-    if (recommendSavingIds.has(recipeId) || recommendSavedIds.has(recipeId)) return;
+  const saveAndPlanRecommended = useCallback(async (recipeId: string) => {
+    if (recommendSavingIds.has(recipeId)) return;
+
+    // If already saved, just open AddMealSheet directly
+    if (recommendSavedIds.has(recipeId)) {
+      openAddSheetWithRecipe(selectedDate, recipeId);
+      return;
+    }
+
     setRecommendSavingIds((s) => new Set(s).add(recipeId));
     try {
+      // Fetch full recipe details first
+      const detailRes = await fetch(`/api/recipes/${recipeId}`);
+      if (!detailRes.ok) throw new Error("Could not load recipe");
+      const detail = await detailRes.json();
+      const r = detail.recipe || detail;
+
+      // Save to user's library
       const res = await fetch("/api/recipes/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipeId }),
+        body: JSON.stringify({
+          title: r.title,
+          description: r.description,
+          ingredients: r.ingredients,
+          steps: r.steps,
+          servings: r.servings,
+          prep_time_minutes: r.prep_time_minutes,
+          cook_time_minutes: r.cook_time_minutes,
+          tags: r.tags,
+          meal_type: r.meal_type,
+          source_url: r.source_url,
+          image_url: r.image_url,
+          calories: r.calories,
+          protein_g: r.protein_g,
+          carbs_g: r.carbs_g,
+          fat_g: r.fat_g,
+          fiber_g: r.fiber_g,
+          notes: "Saved from Meal Plan recommendations",
+        }),
       });
+
       if (res.ok) {
         const data = await res.json();
         const savedId = data.recipe?.id || recipeId;
         setRecommendSavedIds((s) => new Set(s).add(recipeId));
-        // Open AddMealSheet with the saved recipe pre-selected
+        // Open AddMealSheet with the saved recipe
         openAddSheetWithRecipe(selectedDate, savedId);
       }
     } catch { /* ignore */ }
@@ -649,18 +682,18 @@ export default function MealPlanListView({
                         background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)",
                       }}
                     />
-                    {/* Heart save button (top-right) */}
+                    {/* Save heart / Add plus button (top-right) */}
                     <button
-                      onClick={(e) => { e.stopPropagation(); saveRecommendedRecipe(recipe.recipeId); }}
-                      disabled={isSaving || isSaved}
+                      onClick={(e) => { e.stopPropagation(); saveAndPlanRecommended(recipe.recipeId); }}
+                      disabled={isSaving}
                       className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 z-10"
-                      aria-label={isSaved ? "Saved" : "Save recipe"}
+                      aria-label={isSaved ? "Add to meal plan" : "Save & plan"}
                     >
                       {isSaving ? (
                         <div className="w-3 h-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
                       ) : isSaved ? (
-                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                       ) : (
                         <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
