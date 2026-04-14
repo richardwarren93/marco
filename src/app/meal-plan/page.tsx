@@ -11,6 +11,7 @@ import AnalyzeScreen from "@/components/meal-plan/AnalyzeScreen";
 import AssignDaysScreen, { type DayAssignment } from "@/components/meal-plan/AssignDaysScreen";
 import type { MealPlan, Recipe } from "@/types";
 import { useToast } from "@/components/ui/Toast";
+import MobileHeader from "@/components/layout/MobileHeader";
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -296,6 +297,7 @@ function MealPlanInner() {
   // ─── Step 3: Schedule (default) ───────────────────────────────────────────────
   return (
     <>
+      <MobileHeader />
       {error && (
         <div className="bg-red-50 text-red-600 px-4 py-2 text-sm">{error}</div>
       )}

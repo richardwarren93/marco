@@ -77,7 +77,7 @@ export default function MobileHeader({
         {children ? (
           <div className="flex-1 min-w-0">{children}</div>
         ) : title ? (
-          <h1 className="text-lg font-black tracking-tight" style={{ color: "#1a1410" }}>
+          <h1 className="text-[22px] font-black" style={{ color: "#1a1410", letterSpacing: "-0.02em" }}>
             {title}
           </h1>
         ) : (
