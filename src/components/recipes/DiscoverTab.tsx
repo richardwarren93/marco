@@ -461,9 +461,19 @@ export default function DiscoverTab({
 
   async function handleSaveTrending(recipe: TrendingRecipe) {
     if (trendingSavedIds.has(recipe.recipeId) || trendingSavingIds.has(recipe.recipeId)) return;
-    setTrendingSavingIds((prev) => new Set(prev).add(recipe.recipeId));
+
+    // Optimistic: immediately show as saved + toast
+    setTrendingSavedIds((prev) => new Set(prev).add(recipe.recipeId));
+    showToast("Recipe saved!", {
+      duration: 5000,
+      action: {
+        label: "Add to meal plan",
+        onClick: () => router.push(`/recipes?tab=meal-plan`),
+      },
+    });
+
+    // Save in background
     try {
-      // Fetch full recipe details first (we only have minimal trending data)
       const detailRes = await fetch(`/api/recipes/${recipe.recipeId}`);
       if (!detailRes.ok) throw new Error("Could not load recipe");
       const detail = await detailRes.json();
@@ -496,16 +506,11 @@ export default function DiscoverTab({
         const data = await res.json();
         if (!data.duplicate) throw new Error(data.error || "Failed to save");
       }
-      setTrendingSavedIds((prev) => new Set(prev).add(recipe.recipeId));
-      showToast("Recipe saved!", {
-        duration: 5000,
-        action: {
-          label: "Add to meal plan",
-          onClick: () => router.push(`/recipes?tab=meal-plan`),
-        },
-      });
     } catch (err) {
+      // Revert optimistic update on failure
       console.error("[Discover] save failed:", err);
+      setTrendingSavedIds((prev) => { const n = new Set(prev); n.delete(recipe.recipeId); return n; });
+      showToast("Failed to save recipe");
     } finally {
       setTrendingSavingIds((prev) => {
         const next = new Set(prev);

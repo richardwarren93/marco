@@ -255,13 +255,13 @@ function BottomTabBarInner() {
         }}
       >
         <div
-          className="flex justify-around items-center h-16 px-3 mx-auto max-w-md relative"
+          className="flex justify-around items-center h-[52px] px-2 mx-auto max-w-md relative"
           style={{
-            background: "rgba(26,20,16,0.75)",
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-            borderRadius: 32,
-            boxShadow: "0 4px 24px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08)",
+            background: "rgba(255,248,241,0.88)",
+            backdropFilter: "blur(24px)",
+            WebkitBackdropFilter: "blur(24px)",
+            borderRadius: 28,
+            boxShadow: "0 2px 16px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04)",
           }}
         >
           {leftTabs.map((tab) => {
@@ -272,13 +272,13 @@ function BottomTabBarInner() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
-                style={{ color: isActive ? ACCENT : "rgba(255,255,255,0.45)" }}
+                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+                style={{ color: isActive ? ACCENT : "rgba(0,0,0,0.35)" }}
               >
                 {isActive && (
                   <div
-                    className="absolute inset-x-2 inset-y-0.5 rounded-xl -z-10"
-                    style={{ background: "rgba(232,83,10,0.12)" }}
+                    className="absolute inset-x-2.5 inset-y-0.5 rounded-lg -z-10"
+                    style={{ background: "rgba(232,83,10,0.08)" }}
                   />
                 )}
                 <tab.Icon className="w-5 h-5" filled={isActive} />
@@ -291,16 +291,16 @@ function BottomTabBarInner() {
           <div className="flex flex-col items-center justify-center flex-1">
             <button
               onClick={() => setFabOpen((v) => !v)}
-              className="-translate-y-5 active:scale-90 transition-all duration-150 touch-manipulation"
+              className="-translate-y-4 active:scale-90 transition-all duration-150 touch-manipulation"
               aria-label={fabOpen ? "Close menu" : "Add or import"}
               style={{
-                width: 56,
-                height: 56,
+                width: 52,
+                height: 52,
                 borderRadius: "50%",
                 background: ACCENT,
                 boxShadow: fabOpen
-                  ? `0 4px 16px rgba(232,83,10,0.4)`
-                  : `0 3px 12px rgba(232,83,10,0.3)`,
+                  ? `0 3px 12px rgba(232,83,10,0.3)`
+                  : `0 2px 8px rgba(232,83,10,0.2)`,
                 transition: "box-shadow 0.2s ease",
               }}
             >
@@ -321,13 +321,13 @@ function BottomTabBarInner() {
           {/* Grocery */}
           <Link
             href="/grocery"
-            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
-            style={{ color: isGroceryActive ? ACCENT : "rgba(255,255,255,0.45)" }}
+            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+            style={{ color: isGroceryActive ? ACCENT : "rgba(0,0,0,0.35)" }}
           >
             {isGroceryActive && (
               <div
-                className="absolute inset-x-2 inset-y-0.5 rounded-xl -z-10"
-                style={{ background: "rgba(232,83,10,0.12)" }}
+                className="absolute inset-x-2.5 inset-y-0.5 rounded-lg -z-10"
+                style={{ background: "rgba(232,83,10,0.08)" }}
               />
             )}
             <GroceryIcon className="w-5 h-5" filled={isGroceryActive} />
@@ -338,12 +338,12 @@ function BottomTabBarInner() {
           <Link
             href="/recipes?tab=discover"
             className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
-            style={{ color: isDiscoverActive ? ACCENT : "rgba(255,255,255,0.45)" }}
+            style={{ color: isDiscoverActive ? ACCENT : "rgba(0,0,0,0.35)" }}
           >
             {isDiscoverActive && (
               <div
-                className="absolute inset-x-2 inset-y-0.5 rounded-xl -z-10"
-                style={{ background: "rgba(232,83,10,0.12)" }}
+                className="absolute inset-x-2.5 inset-y-0.5 rounded-lg -z-10"
+                style={{ background: "rgba(232,83,10,0.08)" }}
               />
             )}
             <SearchIcon className="w-5 h-5" />
