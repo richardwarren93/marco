@@ -255,11 +255,13 @@ function BottomTabBarInner() {
         }}
       >
         <div
-          className="flex justify-around items-center h-14 px-2 mx-auto max-w-md"
+          className="flex justify-around items-center h-16 px-3 mx-auto max-w-md relative"
           style={{
-            background: "#1a1410",
-            borderRadius: 28,
-            boxShadow: "0 4px 24px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1)",
+            background: "rgba(26,20,16,0.75)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            borderRadius: 32,
+            boxShadow: "0 4px 24px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.08)",
           }}
         >
           {leftTabs.map((tab) => {
@@ -270,29 +272,35 @@ function BottomTabBarInner() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
-                style={{ color: isActive ? ACCENT : "rgba(255,255,255,0.5)" }}
+                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
+                style={{ color: isActive ? ACCENT : "rgba(255,255,255,0.45)" }}
               >
+                {isActive && (
+                  <div
+                    className="absolute inset-x-2 inset-y-0.5 rounded-xl -z-10"
+                    style={{ background: "rgba(232,83,10,0.12)" }}
+                  />
+                )}
                 <tab.Icon className="w-5 h-5" filled={isActive} />
                 <span className="text-[9px] font-semibold leading-tight">{tab.label}</span>
               </Link>
             );
           })}
 
-          {/* Center FAB — inline */}
+          {/* Center FAB — raised to full nav height */}
           <div className="flex flex-col items-center justify-center flex-1">
             <button
               onClick={() => setFabOpen((v) => !v)}
-              className="active:scale-90 transition-all duration-150 touch-manipulation"
+              className="-translate-y-5 active:scale-90 transition-all duration-150 touch-manipulation"
               aria-label={fabOpen ? "Close menu" : "Add or import"}
               style={{
-                width: 44,
-                height: 44,
+                width: 56,
+                height: 56,
                 borderRadius: "50%",
                 background: ACCENT,
                 boxShadow: fabOpen
-                  ? `0 0 0 2px #1a1410, 0 3px 12px rgba(232,83,10,0.35)`
-                  : `0 0 0 2px #1a1410, 0 2px 8px rgba(232,83,10,0.25)`,
+                  ? `0 4px 16px rgba(232,83,10,0.4)`
+                  : `0 3px 12px rgba(232,83,10,0.3)`,
                 transition: "box-shadow 0.2s ease",
               }}
             >
@@ -303,7 +311,7 @@ function BottomTabBarInner() {
                   transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)",
                 }}
               >
-                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
               </span>
@@ -313,9 +321,15 @@ function BottomTabBarInner() {
           {/* Grocery */}
           <Link
             href="/grocery"
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
-            style={{ color: isGroceryActive ? ACCENT : "rgba(255,255,255,0.5)" }}
+            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
+            style={{ color: isGroceryActive ? ACCENT : "rgba(255,255,255,0.45)" }}
           >
+            {isGroceryActive && (
+              <div
+                className="absolute inset-x-2 inset-y-0.5 rounded-xl -z-10"
+                style={{ background: "rgba(232,83,10,0.12)" }}
+              />
+            )}
             <GroceryIcon className="w-5 h-5" filled={isGroceryActive} />
             <span className="text-[9px] font-semibold leading-tight">Grocery</span>
           </Link>
@@ -323,9 +337,15 @@ function BottomTabBarInner() {
           {/* Discover */}
           <Link
             href="/recipes?tab=discover"
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
-            style={{ color: isDiscoverActive ? ACCENT : "rgba(255,255,255,0.5)" }}
+            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
+            style={{ color: isDiscoverActive ? ACCENT : "rgba(255,255,255,0.45)" }}
           >
+            {isDiscoverActive && (
+              <div
+                className="absolute inset-x-2 inset-y-0.5 rounded-xl -z-10"
+                style={{ background: "rgba(232,83,10,0.12)" }}
+              />
+            )}
             <SearchIcon className="w-5 h-5" />
             <span className="text-[9px] font-semibold leading-tight">Discover</span>
           </Link>
