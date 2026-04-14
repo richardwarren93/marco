@@ -337,11 +337,15 @@ export default function MealPlanListView({
         body: JSON.stringify({ recipeId }),
       });
       if (res.ok) {
+        const data = await res.json();
+        const savedId = data.recipe?.id || recipeId;
         setRecommendSavedIds((s) => new Set(s).add(recipeId));
+        // Open AddMealSheet with the saved recipe pre-selected
+        openAddSheetWithRecipe(selectedDate, savedId);
       }
     } catch { /* ignore */ }
     setRecommendSavingIds((s) => { const n = new Set(s); n.delete(recipeId); return n; });
-  }, [recommendSavedIds, recommendSavingIds]);
+  }, [recommendSavedIds, recommendSavingIds, selectedDate]);
 
   // ─── Empty-state hero recipe (from library first, then trending) ────────────
   const heroRecipe = useMemo<{ recipe: Recipe; isTrending: boolean } | null>(() => {

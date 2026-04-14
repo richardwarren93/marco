@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTrending } from "@/lib/hooks/use-data";
 import type { PromptRecipeResult } from "@/lib/claude";
 import SharedRecipeCard from "./SharedRecipeCard";
+import { useToast } from "@/components/ui/Toast";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -202,6 +203,7 @@ export default function DiscoverTab({
   onAddToCollection?: (recipeId: string) => void;
 }) {
   const router = useRouter();
+  const { showToast } = useToast();
 
   // ── Trending recipes ──
   const { data: trendingData, isLoading: trendingLoading } = useTrending();
@@ -495,6 +497,13 @@ export default function DiscoverTab({
         if (!data.duplicate) throw new Error(data.error || "Failed to save");
       }
       setTrendingSavedIds((prev) => new Set(prev).add(recipe.recipeId));
+      showToast("Recipe saved!", {
+        duration: 5000,
+        action: {
+          label: "Add to meal plan",
+          onClick: () => router.push(`/recipes?tab=meal-plan`),
+        },
+      });
     } catch (err) {
       console.error("[Discover] save failed:", err);
     } finally {
