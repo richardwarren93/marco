@@ -133,15 +133,30 @@ function NavbarInner() {
 
   return (
     <>
-      <nav className="bg-[#faf9f7] sticky top-0 z-40" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      <nav className="hidden sm:block bg-[#faf9f7] sticky top-0 z-40" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-8 sm:h-14 items-center">
-            {/* Left: Logo — hidden on mobile (page content acts as header), visible on desktop */}
+          <div className="flex justify-between h-10 sm:h-14 items-center">
+            {/* Left: Page title on mobile, Marco logo on desktop */}
             <Link href={user ? "/recipes" : "/"} className="hidden sm:block text-2xl font-black text-orange-600 tracking-tight">
               Marco
             </Link>
-            {/* Spacer on mobile so right icons align right */}
-            <div className="sm:hidden flex-1" />
+            {(() => {
+              const mobileTitle = user
+                ? pathname === "/recipes" && activeTab === "recipes" ? "My Recipes"
+                : pathname === "/recipes" && activeTab === "discover" ? "Explore Recipes"
+                : pathname === "/profile" ? "Profile"
+                : pathname.startsWith("/friends") ? "Friends"
+                : pathname.startsWith("/collections") ? "Collections"
+                : null
+                : null;
+              return mobileTitle ? (
+                <span className="sm:hidden text-lg font-black tracking-tight" style={{ color: "#1a1410" }}>
+                  {mobileTitle}
+                </span>
+              ) : (
+                <div className="sm:hidden flex-1" />
+              );
+            })()}
 
             {/* Center: Page tabs (desktop only, on recipes page) */}
             {isRecipesPage && user && (

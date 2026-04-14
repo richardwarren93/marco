@@ -8,6 +8,7 @@ import useSWR from "swr";
 import type { Recipe, Collection } from "@/types";
 import { useRecipes, useCollections, apiFetcher } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
+import MobileHeader from "@/components/layout/MobileHeader";
 import { useToast } from "@/components/ui/Toast";
 
 // ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
@@ -102,6 +103,12 @@ function RecipesInner() {
 
   return (
     <>
+      {/* ── Mobile header ─────────────────────────────────────────── */}
+      {activeTab === "recipes" && <MobileHeader title="My Recipes" />}
+      {activeTab === "discover" && <MobileHeader title="Explore Recipes" />}
+      {activeTab === "meal-plan" && <MobileHeader />}
+      {activeTab === "grocery" && <MobileHeader />}
+
       {/* ── Tab content ────────────────────────────────────────────── */}
 
       {/* Recipes tab */}

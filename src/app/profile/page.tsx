@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, CookingGoal } from "@/types";
 import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
 import { RecipesIcon, CollectionsIcon, FriendsIcon } from "@/components/icons/HandDrawnIcons";
+import MobileHeader from "@/components/layout/MobileHeader";
 import BadgesCard from "@/components/gamification/BadgesCard";
 import TasteProfileCard from "@/components/gamification/TasteProfileCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
