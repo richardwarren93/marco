@@ -22,6 +22,10 @@ type LibraryMode = {
   onAddToCollection?: (recipeId: string) => void;
   /** Revalidate collections after creation */
   mutateCollections?: () => void;
+  /** Set of recipe IDs that are in at least one collection */
+  inCollectionIds?: Set<string>;
+  /** Called after a collection change to refresh the inCollectionIds */
+  onCollectionChanged?: () => void;
 };
 
 type PickMode = {
@@ -51,6 +55,7 @@ function BrowserCard({
   mode,
   onAdd,
   onCollection,
+  isInCollection,
   onPick,
   isPicking,
   index = 0,
@@ -59,6 +64,7 @@ function BrowserCard({
   mode: "library" | "pick";
   onAdd?: () => void;
   onCollection?: () => void;
+  isInCollection?: boolean;
   onPick?: () => void;
   isPicking?: boolean;
   index?: number;
@@ -79,12 +85,12 @@ function BrowserCard({
         ...(onCollection
           ? [{
               icon: (
-                <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-3.5 h-3.5 text-white" fill={isInCollection ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
               ),
               onClick: onCollection,
-              label: "Add to collection",
+              label: isInCollection ? "In collection" : "Add to collection",
             }]
           : []),
         ...(onAdd
@@ -656,6 +662,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                 mode={props.mode}
                 onAdd={props.mode === "library" && props.onAddToMealPlan ? () => props.onAddToMealPlan!(recipe.id) : undefined}
                 onCollection={props.mode === "library" && props.onAddToCollection ? () => props.onAddToCollection!(recipe.id) : undefined}
+                isInCollection={props.mode === "library" && props.inCollectionIds ? props.inCollectionIds.has(recipe.id) : false}
                 onPick={props.mode === "pick" ? () => handlePick(recipe.id) : undefined}
                 isPicking={selectingId === recipe.id}
               />

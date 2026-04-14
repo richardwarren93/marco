@@ -4,8 +4,9 @@ import { useState, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
+import useSWR from "swr";
 import type { Recipe, Collection } from "@/types";
-import { useRecipes, useCollections } from "@/lib/hooks/use-data";
+import { useRecipes, useCollections, apiFetcher } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
 import { useToast } from "@/components/ui/Toast";
 
@@ -48,6 +49,14 @@ function RecipesInner() {
   const { data: collectionsData, isLoading: collectionsLoading, mutate: mutateCollections } = useCollections();
   const collections: Collection[] = collectionsData?.collections ?? [];
   const loading = recipesLoading || collectionsLoading;
+
+  // Fetch all recipe IDs that are in any collection
+  const { data: collRecipesData, mutate: mutateCollRecipes } = useSWR<{ recipe_ids: string[] }>(
+    "/api/collections/recipe-ids",
+    apiFetcher,
+    { revalidateOnFocus: false }
+  );
+  const inCollectionIds = useMemo(() => new Set(collRecipesData?.recipe_ids ?? []), [collRecipesData]);
 
   const tabParam = searchParams.get("tab");
   const activeTab: ActiveTab = (["recipes", "discover", "grocery", "meal-plan"].includes(tabParam ?? "") ? tabParam : "recipes") as ActiveTab;
@@ -110,6 +119,8 @@ function RecipesInner() {
             setAddSheetOpen(true);
           }}
           onAddToCollection={(id) => setCollectionRecipeId(id)}
+          inCollectionIds={inCollectionIds}
+          onCollectionChanged={() => mutateCollRecipes()}
         />
       )}
 
