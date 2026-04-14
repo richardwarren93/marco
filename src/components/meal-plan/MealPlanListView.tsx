@@ -534,7 +534,21 @@ export default function MealPlanListView({
             className="rounded-2xl overflow-hidden"
             style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
           >
-            {selectedPlans.length === 0 ? null : (
+            {selectedPlans.length === 0 ? (
+              /* ── Empty: same height as one meal row, centered Add meal ── */
+              <div className="flex items-center justify-center" style={{ minHeight: 80 }}>
+                <button
+                  onClick={() => openAddSheet(selectedDate)}
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
+                  style={{ background: "#eeecea", color: "#333" }}
+                >
+                  <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add meal
+                </button>
+              </div>
+            ) : (
               <div>
                 {selectedPlans.map((plan, i) => (
                   <div key={plan.id}>
@@ -560,12 +574,75 @@ export default function MealPlanListView({
           </div>
         </div>
 
-        {/* ── Recommended for you (trending, horizontal scroll) ────────── */}
+        {/* ── My Recipes (unplanned from library) ────────────────────────── */}
+        {suggestedRecipes.length > 0 && (
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "#c0c0be" }}>
+                My Recipes
+              </p>
+              <button
+                onClick={() => router.push("/recipes")}
+                className="text-[11px] font-semibold"
+                style={{ color: ACCENT }}
+              >
+                See all &gt;
+              </button>
+            </div>
+            <div
+              className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1"
+              style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+            >
+              {suggestedRecipes.map((recipe) => {
+                const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
+                return (
+                  <div
+                    key={recipe.id}
+                    className="relative flex-shrink-0 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform group"
+                    style={{ width: 170, height: 220, boxShadow: "0 4px 16px rgba(20,12,5,0.10)" }}
+                    onClick={() => openAddSheetWithRecipe(selectedDate, recipe.id)}
+                  >
+                    {recipe.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={recipe.image_url} alt={recipe.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
+                        <span className="text-3xl opacity-60">{MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "\u{1F373}"}</span>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)" }} />
+                    {/* Plus button */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, recipe.id); }}
+                      className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 z-10"
+                      aria-label="Add to meal plan"
+                    >
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 z-10">
+                      <h4 className="font-bold text-white text-sm line-clamp-2" style={{ lineHeight: "1.22", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>{recipe.title}</h4>
+                      {totalTime > 0 && (
+                        <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-white/85 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5">
+                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l4 2" /></svg>
+                          {totalTime} min
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Trending Recipes (community, horizontal scroll) ─────────── */}
         {recommendedRecipes.length > 0 && (
           <div className="mt-5">
             <div className="flex items-center justify-between mb-3">
               <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "#c0c0be" }}>
-                Recommended for you
+                Trending Recipes
               </p>
               <button
                 onClick={() => router.push("/recipes?tab=discover")}
@@ -579,19 +656,14 @@ export default function MealPlanListView({
               className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1"
               style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
             >
-              {recommendedRecipes.map((recipe: { recipeId: string; title: string; image_url?: string | null; prep_time_minutes?: number | null; cook_time_minutes?: number | null; meal_type?: string }, idx: number) => {
+              {recommendedRecipes.map((recipe: { recipeId: string; title: string; image_url?: string | null; prep_time_minutes?: number | null; cook_time_minutes?: number | null; meal_type?: string }) => {
                 const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
                 const isSaved = recommendSavedIds.has(recipe.recipeId);
-                const isSaving = recommendSavingIds.has(recipe.recipeId);
                 return (
                   <div
                     key={recipe.recipeId}
                     className="relative flex-shrink-0 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform group"
-                    style={{
-                      width: 170,
-                      height: 220,
-                      boxShadow: "0 4px 16px rgba(20,12,5,0.10)",
-                    }}
+                    style={{ width: 170, height: 220, boxShadow: "0 4px 16px rgba(20,12,5,0.10)" }}
                     onClick={() => router.push(`/recipes?tab=discover`)}
                   >
                     {/* Image fills card */}
@@ -616,15 +688,21 @@ export default function MealPlanListView({
                         background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)",
                       }}
                     />
-                    {/* Save heart / Add plus button (top-right) */}
+                    {/* Heart (unsaved) or Plus (saved) button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); saveAndPlanRecommended(recipe.recipeId); }}
                       className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 z-10"
-                      aria-label={isSaved ? "Add to meal plan" : "Save & plan"}
+                      aria-label={isSaved ? "Add to meal plan" : "Save recipe"}
                     >
-                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
+                      {isSaved ? (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      )}
                     </button>
                     {/* Title + time at bottom */}
                     <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 z-10">
