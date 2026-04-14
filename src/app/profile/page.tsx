@@ -3,7 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
+import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, CookingGoal } from "@/types";
 import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
 import { RecipesIcon, CollectionsIcon, FriendsIcon } from "@/components/icons/HandDrawnIcons";
@@ -287,6 +289,21 @@ export default function ProfilePage() {
         <HouseholdCard />
       </div>
 
+      {/* ── Log out ── */}
+      <div className="px-4 pt-8 pb-12">
+        <button
+          onClick={async () => {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            document.cookie = "marco_onboarded=; path=/; max-age=0";
+            window.location.href = "/auth/signup";
+          }}
+          className="w-full py-3 rounded-2xl text-sm font-semibold text-red-500 transition-colors active:scale-[0.98]"
+          style={{ background: "rgba(239,68,68,0.06)" }}
+        >
+          Log out
+        </button>
+      </div>
 
     </div>
   );
