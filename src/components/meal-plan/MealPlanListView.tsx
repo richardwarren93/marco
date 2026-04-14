@@ -534,21 +534,7 @@ export default function MealPlanListView({
             className="rounded-2xl overflow-hidden"
             style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
           >
-            {selectedPlans.length === 0 ? (
-              /* ── Empty: same height as one meal row, centered Add meal ── */
-              <div className="flex items-center justify-center" style={{ minHeight: 80 }}>
-                <button
-                  onClick={() => openAddSheet(selectedDate)}
-                  className="flex items-center gap-2 px-5 py-2 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
-                  style={{ background: "#eeecea", color: "#333" }}
-                >
-                  <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add meal
-                </button>
-              </div>
-            ) : (
+            {selectedPlans.length > 0 && (
               <div>
                 {selectedPlans.map((plan, i) => (
                   <div key={plan.id}>
@@ -558,11 +544,11 @@ export default function MealPlanListView({
               </div>
             )}
 
-            {/* Add meal CTA */}
-            <div className="px-3.5 py-3">
+            {/* Add meal CTA — centered vertically when empty, bottom when has meals */}
+            <div className={`px-3.5 py-3 ${selectedPlans.length === 0 ? "flex items-center justify-center" : ""}`} style={selectedPlans.length === 0 ? { minHeight: 80 } : undefined}>
               <button
                 onClick={() => openAddSheet(selectedDate)}
-                className="w-full flex items-center justify-center gap-2 py-1.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
+                className={`flex items-center justify-center gap-2 py-1.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation ${selectedPlans.length === 0 ? "px-5" : "w-full"}`}
                 style={{ background: "#eeecea", color: "#333" }}
               >
                 <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
