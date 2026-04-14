@@ -314,6 +314,7 @@ export default function MealPlanListView({
 
   // ─── Trending / Recommended data ───────────────────────────────────────────
   const { data: trendingData } = useTrending();
+  const trending = trendingData?.trending ?? [];
   const [recommendSavedIds, setRecommendSavedIds] = useState<Set<string>>(new Set());
   const [recommendSavingIds, setRecommendSavingIds] = useState<Set<string>>(new Set());
 
@@ -342,21 +343,67 @@ export default function MealPlanListView({
     setRecommendSavingIds((s) => { const n = new Set(s); n.delete(recipeId); return n; });
   }, [recommendSavedIds, recommendSavingIds]);
 
-  // ─── Empty-state hero recipe (quick recipe from library) ───────────────────
-  const heroRecipe = useMemo(() => {
-    if (recipeLibrary.length === 0) return null;
-    // Prefer recipes with images and under 30 min total time
-    const withImage = recipeLibrary.filter((r) => r.image_url);
-    const quick = withImage.filter((r) => {
-      const t = (r.prep_time_minutes ?? 0) + (r.cook_time_minutes ?? 0);
-      return t > 0 && t <= 30;
-    });
-    const pool = quick.length > 0 ? quick : withImage;
-    if (pool.length === 0) return null;
-    // Rotate by selected date for variety
-    const offset = new Date(selectedDate).getDay();
-    return pool[offset % pool.length];
-  }, [recipeLibrary, selectedDate]);
+  // ─── Empty-state hero recipe (from library first, then trending) ────────────
+  const heroRecipe = useMemo<{ recipe: Recipe; isTrending: boolean } | null>(() => {
+    // First try: user's own library (prefer quick recipes with images)
+    if (recipeLibrary.length > 0) {
+      const withImage = recipeLibrary.filter((r) => r.image_url);
+      const quick = withImage.filter((r) => {
+        const t = (r.prep_time_minutes ?? 0) + (r.cook_time_minutes ?? 0);
+        return t > 0 && t <= 30;
+      });
+      const pool = quick.length > 0 ? quick : withImage;
+      if (pool.length > 0) {
+        const offset = new Date(selectedDate).getDay();
+        return { recipe: pool[offset % pool.length], isTrending: false };
+      }
+    }
+    // Fallback: trending community recipes
+    if (trending.length > 0) {
+      const withImage = trending.filter((r: Record<string, unknown>) => r.image_url);
+      if (withImage.length > 0) {
+        const offset = new Date(selectedDate).getDay();
+        const t = withImage[offset % withImage.length];
+        // Convert trending to Recipe-like shape
+        const asRecipe: Recipe = {
+          id: t.recipeId,
+          title: t.title,
+          description: t.description || null,
+          image_url: t.image_url,
+          tags: t.tags || [],
+          meal_type: t.meal_type || "dinner",
+          servings: t.servings || null,
+          prep_time_minutes: t.prep_time_minutes || null,
+          cook_time_minutes: t.cook_time_minutes || null,
+          source_url: t.source_url || null,
+        } as Recipe;
+        return { recipe: asRecipe, isTrending: true };
+      }
+    }
+    return null;
+  }, [recipeLibrary, trending, selectedDate]);
+
+  // Save a trending recipe to library before planning it
+  const [savingHeroRecipe, setSavingHeroRecipe] = useState(false);
+  async function handleSaveAndPlanTrending(date: string, trendingRecipe: Recipe) {
+    setSavingHeroRecipe(true);
+    try {
+      const res = await fetch("/api/recipes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipe: trendingRecipe }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const savedId = data.recipe?.id || trendingRecipe.id;
+        openAddSheetWithRecipe(date, savedId);
+      }
+    } catch {
+      // Silent fail
+    } finally {
+      setSavingHeroRecipe(false);
+    }
+  }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   function openAddSheet(date: string, mealTypes?: string[]) {
@@ -448,31 +495,34 @@ export default function MealPlanListView({
           >
             {selectedPlans.length === 0 ? (
               heroRecipe ? (
-                /* ── Empty-day hero card: recipe-backed promotional card ── */
+                /* ── Empty-day hero card: recipe suggestion (own library OR trending) ── */
                 <div
                   className="relative overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
                   style={{ minHeight: 200 }}
-                  onClick={() => openAddSheetWithRecipe(selectedDate, heroRecipe.id)}
+                  onClick={() => {
+                    if (heroRecipe.isTrending) {
+                      handleSaveAndPlanTrending(selectedDate, heroRecipe.recipe);
+                    } else {
+                      openAddSheetWithRecipe(selectedDate, heroRecipe.recipe.id);
+                    }
+                  }}
                 >
-                  {/* Background image */}
-                  {heroRecipe.image_url && (
+                  {heroRecipe.recipe.image_url && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={heroRecipe.image_url}
-                      alt={heroRecipe.title}
+                      src={heroRecipe.recipe.image_url}
+                      alt={heroRecipe.recipe.title}
                       className="absolute inset-0 w-full h-full object-cover"
                     />
                   )}
-                  {/* Dark gradient overlay */}
                   <div
                     className="absolute inset-0"
                     style={{
                       background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.7) 100%)",
                     }}
                   />
-                  {/* Cook time pill (top-left) */}
                   {(() => {
-                    const t = (heroRecipe.prep_time_minutes ?? 0) + (heroRecipe.cook_time_minutes ?? 0);
+                    const t = (heroRecipe.recipe.prep_time_minutes ?? 0) + (heroRecipe.recipe.cook_time_minutes ?? 0);
                     return t > 0 ? (
                       <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-semibold text-white bg-black/35 backdrop-blur-sm rounded-full px-2.5 py-1">
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -483,24 +533,34 @@ export default function MealPlanListView({
                       </span>
                     ) : null;
                   })()}
-                  {/* Text content */}
                   <div className="relative z-10 flex flex-col justify-end h-full px-4 pb-4 pt-20">
                     <p className="text-white font-bold text-base leading-snug">No meals planned yet</p>
                     <p className="text-white/75 text-xs mt-0.5">How about something quick?</p>
                     <button
-                      className="mt-3 self-start flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-all active:scale-95"
+                      className="mt-3 self-start flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-all active:scale-95 disabled:opacity-60"
                       style={{ background: ACCENT, color: "white" }}
-                      onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, heroRecipe.id); }}
+                      disabled={savingHeroRecipe}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (heroRecipe.isTrending) {
+                          handleSaveAndPlanTrending(selectedDate, heroRecipe.recipe);
+                        } else {
+                          openAddSheetWithRecipe(selectedDate, heroRecipe.recipe.id);
+                        }
+                      }}
                     >
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                       </svg>
-                      Plan {heroRecipe.title.length > 24 ? heroRecipe.title.slice(0, 24) + "..." : heroRecipe.title}
+                      {savingHeroRecipe ? "Saving..." : heroRecipe.isTrending
+                        ? `Save & Plan ${heroRecipe.recipe.title.length > 18 ? heroRecipe.recipe.title.slice(0, 18) + "..." : heroRecipe.recipe.title}`
+                        : `Plan ${heroRecipe.recipe.title.length > 24 ? heroRecipe.recipe.title.slice(0, 24) + "..." : heroRecipe.recipe.title}`
+                      }
                     </button>
                   </div>
                 </div>
               ) : (
-                /* ── Fallback empty state (no saved recipes) ── */
+                /* ── Fallback empty state (no recipes anywhere) ── */
                 <div className="flex flex-col items-center py-5 px-6">
                   <p className="text-sm" style={{ color: "#ccc" }}>Nothing planned</p>
                 </div>
