@@ -591,63 +591,6 @@ export default function MealPlanListView({
           </div>
         </div>
 
-        {/* ── Suggested for you (up to 3 cards) ───────────────────────────── */}
-        {suggestedRecipes.length > 0 && (
-          <div className="mt-5">
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#c0c0be" }}>
-              Suggested for you
-            </p>
-            <div
-              className="rounded-2xl overflow-hidden"
-              style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
-            >
-              {suggestedRecipes.slice(0, 3).map((recipe, i) => {
-                const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
-                return (
-                  <div key={recipe.id}>
-                    <div
-                      className="flex items-center gap-3 px-4 py-2.5 cursor-pointer active:bg-gray-50/40 transition-colors"
-                      onClick={() => openAddSheetWithRecipe(selectedDate, recipe.id)}
-                    >
-                      {/* Image */}
-                      <div
-                        className="w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center"
-                        style={{ background: "#f0f0ee" }}
-                      >
-                        {recipe.image_url
-                          ? <img src={recipe.image_url} alt={recipe.title} className="w-full h-full object-cover" />
-                          : <span className="text-lg opacity-40 select-none">{MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "🍳"}</span>}
-                      </div>
-                      {/* Text */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-semibold line-clamp-1 leading-snug" style={{ color: TEXT_1 }}>
-                          {recipe.title}
-                        </p>
-                        {totalTime > 0 && (
-                          <p className="text-[11px] mt-0.5 font-medium" style={{ color: "#c0c0be" }}>
-                            {totalTime} min
-                          </p>
-                        )}
-                      </div>
-                      {/* Add button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, recipe.id); }}
-                        className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 active:scale-90 transition-transform"
-                        style={{ background: "#f0f0ee" }}
-                        aria-label="Add to meal plan"
-                      >
-                        <svg className="w-3 h-3" style={{ color: "#999" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {/* ── Recommended for you (trending, horizontal scroll) ────────── */}
         {recommendedRecipes.length > 0 && (
           <div className="mt-5">
