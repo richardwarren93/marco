@@ -614,7 +614,7 @@ export default function MealPlanListView({
               <button
                 onClick={() => openAddSheet(selectedDate)}
                 className="w-full flex items-center justify-center gap-2 py-1.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
-                style={{ background: "transparent", color: "#999" }}
+                style={{ background: "#eeecea", color: "#333" }}
               >
                 <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
