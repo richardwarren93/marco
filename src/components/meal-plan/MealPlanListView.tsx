@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
+import { useTrending, useRecipes } from "@/lib/hooks/use-data";
 import AddMealSheet from "./AddMealSheet";
 import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
@@ -311,6 +312,52 @@ export default function MealPlanListView({
   // ─── Suggested card swipe ref (gesture isolation from day-swipe) ─────────────
   const suggestedCardIsTouching = useRef(false);
 
+  // ─── Trending / Recommended data ───────────────────────────────────────────
+  const { data: trendingData } = useTrending();
+  const [recommendSavedIds, setRecommendSavedIds] = useState<Set<string>>(new Set());
+  const [recommendSavingIds, setRecommendSavingIds] = useState<Set<string>>(new Set());
+
+  const recommendedRecipes = useMemo(() => {
+    const trending = trendingData?.trending;
+    if (!Array.isArray(trending) || trending.length === 0) return [];
+    const libraryIds = new Set(recipeLibrary.map((r) => r.id));
+    return trending
+      .filter((t: { recipeId: string; image_url?: string | null }) => !libraryIds.has(t.recipeId) && t.image_url)
+      .slice(0, 8);
+  }, [trendingData, recipeLibrary]);
+
+  const saveRecommendedRecipe = useCallback(async (recipeId: string) => {
+    if (recommendSavingIds.has(recipeId) || recommendSavedIds.has(recipeId)) return;
+    setRecommendSavingIds((s) => new Set(s).add(recipeId));
+    try {
+      const res = await fetch("/api/recipes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId }),
+      });
+      if (res.ok) {
+        setRecommendSavedIds((s) => new Set(s).add(recipeId));
+      }
+    } catch { /* ignore */ }
+    setRecommendSavingIds((s) => { const n = new Set(s); n.delete(recipeId); return n; });
+  }, [recommendSavedIds, recommendSavingIds]);
+
+  // ─── Empty-state hero recipe (quick recipe from library) ───────────────────
+  const heroRecipe = useMemo(() => {
+    if (recipeLibrary.length === 0) return null;
+    // Prefer recipes with images and under 30 min total time
+    const withImage = recipeLibrary.filter((r) => r.image_url);
+    const quick = withImage.filter((r) => {
+      const t = (r.prep_time_minutes ?? 0) + (r.cook_time_minutes ?? 0);
+      return t > 0 && t <= 30;
+    });
+    const pool = quick.length > 0 ? quick : withImage;
+    if (pool.length === 0) return null;
+    // Rotate by selected date for variety
+    const offset = new Date(selectedDate).getDay();
+    return pool[offset % pool.length];
+  }, [recipeLibrary, selectedDate]);
+
   // ─── Helpers ─────────────────────────────────────────────────────────────────
   function openAddSheet(date: string, mealTypes?: string[]) {
     setAddDate(date);
@@ -400,9 +447,64 @@ export default function MealPlanListView({
             style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
           >
             {selectedPlans.length === 0 ? (
-              <div className="flex flex-col items-center py-5 px-6">
-                <p className="text-sm" style={{ color: "#ccc" }}>Nothing planned</p>
-              </div>
+              heroRecipe ? (
+                /* ── Empty-day hero card: recipe-backed promotional card ── */
+                <div
+                  className="relative overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
+                  style={{ minHeight: 200 }}
+                  onClick={() => openAddSheetWithRecipe(selectedDate, heroRecipe.id)}
+                >
+                  {/* Background image */}
+                  {heroRecipe.image_url && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={heroRecipe.image_url}
+                      alt={heroRecipe.title}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  )}
+                  {/* Dark gradient overlay */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.7) 100%)",
+                    }}
+                  />
+                  {/* Cook time pill (top-left) */}
+                  {(() => {
+                    const t = (heroRecipe.prep_time_minutes ?? 0) + (heroRecipe.cook_time_minutes ?? 0);
+                    return t > 0 ? (
+                      <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-semibold text-white bg-black/35 backdrop-blur-sm rounded-full px-2.5 py-1">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <circle cx="12" cy="12" r="10" />
+                          <path strokeLinecap="round" d="M12 6v6l4 2" />
+                        </svg>
+                        {t} min
+                      </span>
+                    ) : null;
+                  })()}
+                  {/* Text content */}
+                  <div className="relative z-10 flex flex-col justify-end h-full px-4 pb-4 pt-20">
+                    <p className="text-white font-bold text-base leading-snug">No meals planned yet</p>
+                    <p className="text-white/75 text-xs mt-0.5">How about something quick?</p>
+                    <button
+                      className="mt-3 self-start flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-all active:scale-95"
+                      style={{ background: ACCENT, color: "white" }}
+                      onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, heroRecipe.id); }}
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Plan {heroRecipe.title.length > 24 ? heroRecipe.title.slice(0, 24) + "..." : heroRecipe.title}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* ── Fallback empty state (no saved recipes) ── */
+                <div className="flex flex-col items-center py-5 px-6">
+                  <p className="text-sm" style={{ color: "#ccc" }}>Nothing planned</p>
+                </div>
+              )
             ) : (
               <div>
                 {selectedPlans.map((plan, i) => (
@@ -478,6 +580,105 @@ export default function MealPlanListView({
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                       </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Recommended for you (trending, horizontal scroll) ────────── */}
+        {recommendedRecipes.length > 0 && (
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "#c0c0be" }}>
+                Recommended for you
+              </p>
+              <button
+                onClick={() => router.push("/recipes?tab=discover")}
+                className="text-[11px] font-semibold"
+                style={{ color: ACCENT }}
+              >
+                See all &gt;
+              </button>
+            </div>
+            <div
+              className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1"
+              style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+            >
+              {recommendedRecipes.map((recipe: { recipeId: string; title: string; image_url?: string | null; prep_time_minutes?: number | null; cook_time_minutes?: number | null; meal_type?: string }, idx: number) => {
+                const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
+                const isSaved = recommendSavedIds.has(recipe.recipeId);
+                const isSaving = recommendSavingIds.has(recipe.recipeId);
+                return (
+                  <div
+                    key={recipe.recipeId}
+                    className="relative flex-shrink-0 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform group"
+                    style={{
+                      width: 170,
+                      height: 220,
+                      boxShadow: "0 4px 16px rgba(20,12,5,0.10)",
+                    }}
+                    onClick={() => router.push(`/recipes?tab=discover`)}
+                  >
+                    {/* Image fills card */}
+                    {recipe.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={recipe.image_url}
+                        alt={recipe.title}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
+                        <span className="text-3xl opacity-60">{MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "\u{1F373}"}</span>
+                      </div>
+                    )}
+                    {/* Dark gradient */}
+                    <div
+                      className="absolute inset-0 pointer-events-none"
+                      style={{
+                        background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)",
+                      }}
+                    />
+                    {/* Heart save button (top-right) */}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); saveRecommendedRecipe(recipe.recipeId); }}
+                      disabled={isSaving || isSaved}
+                      className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 z-10"
+                      aria-label={isSaved ? "Saved" : "Save recipe"}
+                    >
+                      {isSaving ? (
+                        <div className="w-3 h-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
+                      ) : isSaved ? (
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#f97316" stroke="#f97316" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      ) : (
+                        <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      )}
+                    </button>
+                    {/* Title + time at bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 z-10">
+                      <h4
+                        className="font-bold text-white text-sm line-clamp-2"
+                        style={{ lineHeight: "1.22", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
+                      >
+                        {recipe.title}
+                      </h4>
+                      {totalTime > 0 && (
+                        <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-white/85 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5">
+                          <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {totalTime} min
+                        </span>
+                      )}
                     </div>
                   </div>
                 );
