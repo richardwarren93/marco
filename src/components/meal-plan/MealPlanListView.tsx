@@ -534,8 +534,6 @@ export default function MealPlanListView({
                     ) : null;
                   })()}
                   <div className="relative z-10 flex flex-col justify-end h-full px-4 pb-4 pt-20">
-                    <p className="text-white font-bold text-base leading-snug">No meals planned yet</p>
-                    <p className="text-white/75 text-xs mt-0.5">How about something quick?</p>
                     <button
                       className="mt-3 self-start flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-all active:scale-95 disabled:opacity-60"
                       style={{ background: ACCENT, color: "white" }}
