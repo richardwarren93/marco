@@ -248,17 +248,20 @@ function BottomTabBarInner() {
 
       {/* Tab bar */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation"
+        className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation px-4"
         style={{
-          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
           willChange: "transform",
-          background: "rgba(255,255,255,0.97)",
-          borderTop: "1px solid #e8e8e5",
-          backdropFilter: "blur(10px)",
-          WebkitBackdropFilter: "blur(10px)",
         }}
       >
-        <div className="flex justify-around items-end h-16 px-1">
+        <div
+          className="flex justify-around items-center h-14 px-2 mx-auto max-w-md"
+          style={{
+            background: "#1a1410",
+            borderRadius: 28,
+            boxShadow: "0 4px 24px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1)",
+          }}
+        >
           {leftTabs.map((tab) => {
             const isActive = tab.href === "/recipes"
               ? pathname.startsWith("/recipes") && !isDiscoverActive
@@ -267,29 +270,29 @@ function BottomTabBarInner() {
               <Link
                 key={tab.href}
                 href={tab.href}
-                className="flex flex-col items-center justify-center gap-0.5 flex-1 pb-2 pt-1 transition-colors"
-                style={{ color: isActive ? ACCENT : "#b0b0b0" }}
+                className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+                style={{ color: isActive ? ACCENT : "rgba(255,255,255,0.5)" }}
               >
-                <tab.Icon className="w-6 h-6" filled={isActive} />
-                <span className="text-[10px] font-medium leading-tight">{tab.label}</span>
+                <tab.Icon className="w-5 h-5" filled={isActive} />
+                <span className="text-[9px] font-semibold leading-tight">{tab.label}</span>
               </Link>
             );
           })}
 
-          {/* Center FAB — raised */}
-          <div className="flex flex-col items-center justify-end flex-1 pb-2">
+          {/* Center FAB — inline */}
+          <div className="flex flex-col items-center justify-center flex-1">
             <button
               onClick={() => setFabOpen((v) => !v)}
-              className="-translate-y-4 active:scale-90 transition-all duration-150 touch-manipulation"
+              className="active:scale-90 transition-all duration-150 touch-manipulation"
               aria-label={fabOpen ? "Close menu" : "Add or import"}
               style={{
-                width: 50,
-                height: 50,
+                width: 44,
+                height: 44,
                 borderRadius: "50%",
-                background: "#e8530a",
+                background: ACCENT,
                 boxShadow: fabOpen
-                  ? `0 0 0 3px white, 0 3px 12px rgba(232,83,10,0.28)`
-                  : `0 0 0 3px white, 0 2px 10px rgba(232,83,10,0.20)`,
+                  ? `0 0 0 2px #1a1410, 0 3px 12px rgba(232,83,10,0.35)`
+                  : `0 0 0 2px #1a1410, 0 2px 8px rgba(232,83,10,0.25)`,
                 transition: "box-shadow 0.2s ease",
               }}
             >
@@ -310,21 +313,21 @@ function BottomTabBarInner() {
           {/* Grocery */}
           <Link
             href="/grocery"
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 pb-2 pt-1 transition-colors"
-            style={{ color: isGroceryActive ? ACCENT : "#b0b0b0" }}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+            style={{ color: isGroceryActive ? ACCENT : "rgba(255,255,255,0.5)" }}
           >
-            <GroceryIcon className="w-6 h-6" filled={isGroceryActive} />
-            <span className="text-[10px] font-medium leading-tight">Grocery</span>
+            <GroceryIcon className="w-5 h-5" filled={isGroceryActive} />
+            <span className="text-[9px] font-semibold leading-tight">Grocery</span>
           </Link>
 
           {/* Discover */}
           <Link
             href="/recipes?tab=discover"
-            className="flex flex-col items-center justify-center gap-0.5 flex-1 pb-2 pt-1 transition-colors"
-            style={{ color: isDiscoverActive ? ACCENT : "#b0b0b0" }}
+            className="flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+            style={{ color: isDiscoverActive ? ACCENT : "rgba(255,255,255,0.5)" }}
           >
-            <SearchIcon className="w-6 h-6" />
-            <span className="text-[10px] font-medium leading-tight">Discover</span>
+            <SearchIcon className="w-5 h-5" />
+            <span className="text-[9px] font-semibold leading-tight">Discover</span>
           </Link>
         </div>
       </nav>
