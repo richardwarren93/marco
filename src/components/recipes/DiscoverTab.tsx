@@ -813,7 +813,7 @@ export default function DiscoverTab({
             className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl px-6 pt-4 animate-slide-up"
             style={{
               maxHeight: "85dvh",
-              overflowY: "hidden",
+              overflowY: "auto",
               paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)",
             }}
             onClick={(e) => e.stopPropagation()}
