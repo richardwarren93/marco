@@ -534,21 +534,7 @@ export default function MealPlanListView({
             className="rounded-2xl overflow-hidden"
             style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
           >
-            {selectedPlans.length === 0 ? (
-              /* ── Empty state: just centered Add meal ── */
-              <div className="flex items-center justify-center py-6 px-4">
-                <button
-                  onClick={() => openAddSheet(selectedDate)}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
-                  style={{ background: "#eeecea", color: "#333" }}
-                >
-                  <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                  Add meal
-                </button>
-              </div>
-            ) : (
+            {selectedPlans.length === 0 ? null : (
               <div>
                 {selectedPlans.map((plan, i) => (
                   <div key={plan.id}>
