@@ -135,11 +135,13 @@ function NavbarInner() {
     <>
       <nav className="bg-[#faf9f7] sticky top-0 z-40" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-11 sm:h-14 items-center">
-            {/* Left: Logo text only */}
-            <Link href={user ? "/recipes" : "/"} className="text-xl sm:text-2xl font-black text-orange-600 tracking-tight">
+          <div className="flex justify-between h-8 sm:h-14 items-center">
+            {/* Left: Logo — hidden on mobile (page content acts as header), visible on desktop */}
+            <Link href={user ? "/recipes" : "/"} className="hidden sm:block text-2xl font-black text-orange-600 tracking-tight">
               Marco
             </Link>
+            {/* Spacer on mobile so right icons align right */}
+            <div className="sm:hidden flex-1" />
 
             {/* Center: Page tabs (desktop only, on recipes page) */}
             {isRecipesPage && user && (
