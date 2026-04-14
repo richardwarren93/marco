@@ -327,17 +327,21 @@ export default function MealPlanListView({
       .slice(0, 8);
   }, [trendingData, recipeLibrary]);
 
+  // Map trending recipe ID → user's saved copy ID
+  const [savedIdMap, setSavedIdMap] = useState<Map<string, string>>(new Map());
+
   const saveAndPlanRecommended = useCallback(async (recipeId: string) => {
-    // If already saved, just open AddMealSheet directly
+    // If already saved, open sheet with the user's saved copy ID
     if (recommendSavedIds.has(recipeId)) {
-      openAddSheetWithRecipe(selectedDate, recipeId);
+      const savedId = savedIdMap.get(recipeId) || recipeId;
+      openAddSheetWithRecipe(selectedDate, savedId);
       return;
     }
 
     // Optimistic: immediately mark as saved
     setRecommendSavedIds((s) => new Set(s).add(recipeId));
 
-    // Save in background, then open AddMealSheet
+    // Save in background, then open AddMealSheet with the NEW saved ID
     try {
       const detailRes = await fetch(`/api/recipes/${recipeId}`);
       if (!detailRes.ok) throw new Error("Could not load recipe");
@@ -371,13 +375,14 @@ export default function MealPlanListView({
       if (res.ok) {
         const data = await res.json();
         const savedId = data.recipe?.id || recipeId;
+        setSavedIdMap((m) => new Map(m).set(recipeId, savedId));
         openAddSheetWithRecipe(selectedDate, savedId);
       }
     } catch {
       // Revert on failure
       setRecommendSavedIds((s) => { const n = new Set(s); n.delete(recipeId); return n; });
     }
-  }, [recommendSavedIds, selectedDate]);
+  }, [recommendSavedIds, savedIdMap, selectedDate]);
 
   // ─── Empty-state hero recipe (from library first, then trending) ────────────
   const heroRecipe = useMemo<{ recipe: Recipe; isTrending: boolean } | null>(() => {
@@ -530,75 +535,19 @@ export default function MealPlanListView({
             style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
           >
             {selectedPlans.length === 0 ? (
-              heroRecipe ? (
-                /* ── Empty-day hero card: recipe suggestion (own library OR trending) ── */
-                <div
-                  className="relative overflow-hidden cursor-pointer active:scale-[0.99] transition-transform"
-                  style={{ minHeight: 200 }}
-                  onClick={() => {
-                    if (heroRecipe.isTrending) {
-                      handleSaveAndPlanTrending(selectedDate, heroRecipe.recipe);
-                    } else {
-                      openAddSheetWithRecipe(selectedDate, heroRecipe.recipe.id);
-                    }
-                  }}
+              /* ── Empty state: just centered Add meal ── */
+              <div className="flex items-center justify-center py-6 px-4">
+                <button
+                  onClick={() => openAddSheet(selectedDate)}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation"
+                  style={{ background: "#eeecea", color: "#333" }}
                 >
-                  {heroRecipe.recipe.image_url && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={heroRecipe.recipe.image_url}
-                      alt={heroRecipe.recipe.title}
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  )}
-                  <div
-                    className="absolute inset-0"
-                    style={{
-                      background: "linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.15) 30%, rgba(0,0,0,0.7) 100%)",
-                    }}
-                  />
-                  {(() => {
-                    const t = (heroRecipe.recipe.prep_time_minutes ?? 0) + (heroRecipe.recipe.cook_time_minutes ?? 0);
-                    return t > 0 ? (
-                      <span className="absolute top-3 left-3 flex items-center gap-1 text-[10px] font-semibold text-white bg-black/35 backdrop-blur-sm rounded-full px-2.5 py-1">
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <circle cx="12" cy="12" r="10" />
-                          <path strokeLinecap="round" d="M12 6v6l4 2" />
-                        </svg>
-                        {t} min
-                      </span>
-                    ) : null;
-                  })()}
-                  <div className="relative z-10 flex flex-col justify-end h-full px-4 pb-4 pt-20">
-                    <button
-                      className="mt-3 self-start flex items-center gap-1.5 px-4 py-2 rounded-full text-[13px] font-bold transition-all active:scale-95 disabled:opacity-60"
-                      style={{ background: ACCENT, color: "white" }}
-                      disabled={savingHeroRecipe}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (heroRecipe.isTrending) {
-                          handleSaveAndPlanTrending(selectedDate, heroRecipe.recipe);
-                        } else {
-                          openAddSheetWithRecipe(selectedDate, heroRecipe.recipe.id);
-                        }
-                      }}
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                      </svg>
-                      {savingHeroRecipe ? "Saving..." : heroRecipe.isTrending
-                        ? `Save & Plan ${heroRecipe.recipe.title.length > 18 ? heroRecipe.recipe.title.slice(0, 18) + "..." : heroRecipe.recipe.title}`
-                        : `Plan ${heroRecipe.recipe.title.length > 24 ? heroRecipe.recipe.title.slice(0, 24) + "..." : heroRecipe.recipe.title}`
-                      }
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* ── Fallback empty state (no recipes anywhere) ── */
-                <div className="flex flex-col items-center py-5 px-6">
-                  <p className="text-sm" style={{ color: "#ccc" }}>Nothing planned</p>
-                </div>
-              )
+                  <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add meal
+                </button>
+              </div>
             ) : (
               <div>
                 {selectedPlans.map((plan, i) => (
