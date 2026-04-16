@@ -286,13 +286,15 @@ export async function GET() {
   // Check for cached profile
   const { data: prefsData } = await admin
     .from("user_preferences")
-    .select("taste_profile")
+    .select("taste_profile, meal_planning_priority")
     .eq("user_id", user.id)
     .single();
 
   const tasteProfile = prefsData?.taste_profile as Record<string, unknown> | null;
   const cached = tasteProfile?.cached_profile as CachedProfile | undefined;
   const currentRefreshDate = getLastRefreshDate();
+
+  const priority = (prefsData?.meal_planning_priority as string) || null;
 
   // Return cached data if it was computed during the current 2-week period
   if (cached && cached.lastComputed >= currentRefreshDate) {
@@ -303,6 +305,7 @@ export async function GET() {
       chef: cached.chef,
       insights: cached.insights,
       signatureMeals: cached.signatureMeals,
+      priority,
     });
   }
 
@@ -381,5 +384,6 @@ export async function GET() {
     chef,
     insights,
     signatureMeals,
+    priority,
   });
 }
