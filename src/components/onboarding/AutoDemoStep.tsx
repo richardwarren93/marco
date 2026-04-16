@@ -133,11 +133,11 @@ export default function AutoDemoStep({ onNext }: Props) {
 
   useEffect(() => {
     if (phase === "extract-loading") {
-      const t = setTimeout(() => setPhase("extract-reveal"), 2000);
+      const t = setTimeout(() => setPhase("extract-reveal"), 1500);
       return () => clearTimeout(t);
     }
     if (phase === "extract-reveal") {
-      const t = setTimeout(() => setPhase("extract-details"), 2500);
+      const t = setTimeout(() => setPhase("extract-details"), 2000);
       return () => clearTimeout(t);
     }
     if (phase === "extract-details") {
@@ -159,7 +159,7 @@ export default function AutoDemoStep({ onNext }: Props) {
             }
           }, 350);
         }
-      }, 250);
+      }, 400);
       return () => clearInterval(ingTimer);
     }
     if (phase === "choose-selecting") {
@@ -172,7 +172,7 @@ export default function AutoDemoStep({ onNext }: Props) {
       return () => clearInterval(t);
     }
     if (phase === "assign-filling") {
-      const t = setTimeout(() => setPhase("calendar-daily"), 2500);
+      const t = setTimeout(() => setPhase("calendar-daily"), 2000);
       return () => clearTimeout(t);
     }
     if (phase === "calendar-daily") {

@@ -146,7 +146,17 @@ interface TasteProfile {
   all?: { sweet: number; savory: number; spicy: number; tangy: number; richness: number };
   cuisines?: { cuisine: string; label: string }[];
   cookingStyles?: { style: string; label: string }[];
+  priority?: string | null;
 }
+
+// Map user's meal_planning_priority to preferred category order
+// Priority values: "value", "nutritious", "delicious", "no_waste"
+const PRIORITY_CATEGORY_ORDER: Record<string, string[]> = {
+  nutritious: ["Healthy & Fresh", "High Protein", "Quick Weeknight", "Comfort Food", "Bold & Global"],
+  value: ["Quick Weeknight", "Healthy & Fresh", "High Protein", "Comfort Food", "Bold & Global"],
+  delicious: ["Comfort Food", "Bold & Global", "High Protein", "Quick Weeknight", "Healthy & Fresh"],
+  no_waste: ["Quick Weeknight", "Comfort Food", "Healthy & Fresh", "High Protein", "Bold & Global"],
+};
 
 // Lightweight client-side scoring: how well does this recipe match the user's taste?
 function tasteMatchScore(recipe: TrendingRecipe, profile: TasteProfile | null): number {
@@ -255,7 +265,16 @@ export default function DiscoverTab({
       for (const h of heroRecipes) usedIds.add(h.recipeId);
 
       const rows: { title: string; emoji: string; recipes: TrendingRecipe[] }[] = [];
-      for (const cat of CATEGORIES) {
+      // Reorder categories based on user's meal planning priority
+      const preferredOrder = tasteProfile?.priority ? PRIORITY_CATEGORY_ORDER[tasteProfile.priority] : null;
+      const orderedCategories = preferredOrder
+        ? [...CATEGORIES].sort((a, b) => {
+            const aIdx = preferredOrder.indexOf(a.title);
+            const bIdx = preferredOrder.indexOf(b.title);
+            return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+          })
+        : CATEGORIES;
+      for (const cat of orderedCategories) {
         const matched = trending.filter(
           (r) => r && r.recipeId && !usedIds.has(r.recipeId) && matchesCategory(r, cat)
         );
@@ -297,6 +316,9 @@ export default function DiscoverTab({
             (s: unknown): s is { style: string; label: string } =>
               !!s && typeof s === "object" && typeof (s as { style?: unknown }).style === "string"
           );
+        }
+        if (d.priority && typeof d.priority === "string") {
+          cleaned.priority = d.priority;
         }
         setTasteProfile(cleaned);
       })
