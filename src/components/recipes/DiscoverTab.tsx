@@ -603,6 +603,7 @@ export default function DiscoverTab({
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold uppercase tracking-wider mb-0.5" style={{ color: "#a09890" }}>
                 Ask Marco
+                <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-400 font-medium align-middle normal-case tracking-normal">beta</span>
               </p>
               <textarea
                 ref={textareaRef}

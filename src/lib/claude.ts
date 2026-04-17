@@ -395,10 +395,10 @@ export async function promptRecipes(
   let tasteContext = "";
   if (tasteProfile) {
     const parts: string[] = [];
-    parts.push(`The user's taste profile: Sweet ${tasteProfile.sweet}/100, Savory ${tasteProfile.savory}/100, Spicy ${tasteProfile.spicy}/100, Tangy ${tasteProfile.tangy}/100, Richness ${tasteProfile.richness}/100.`);
-    if (tasteProfile.topCuisines?.length) parts.push(`Top cuisines: ${tasteProfile.topCuisines.join(", ")}.`);
-    if (tasteProfile.cookingStyles?.length) parts.push(`Preferred cooking styles: ${tasteProfile.cookingStyles.join(", ")}.`);
-    parts.push("Weight 3 of your 4 recommendations toward their preferences. Make the 4th recommendation something outside their usual taste profile to help them discover new flavors.");
+    parts.push(`User's taste profile (use ONLY as a tiebreaker between equally-good matches for the search query — NEVER override or substitute the search query itself): Sweet ${tasteProfile.sweet}/100, Savory ${tasteProfile.savory}/100, Spicy ${tasteProfile.spicy}/100, Tangy ${tasteProfile.tangy}/100, Richness ${tasteProfile.richness}/100.`);
+    if (tasteProfile.topCuisines?.length) parts.push(`Top cuisines (tiebreaker only — if user searched a specific dish, return that dish): ${tasteProfile.topCuisines.join(", ")}.`);
+    if (tasteProfile.cookingStyles?.length) parts.push(`Preferred cooking styles (tiebreaker only): ${tasteProfile.cookingStyles.join(", ")}.`);
+    parts.push("EXAMPLE: If user searches 'lamb chops' and prefers Italian food, return 6 different LAMB CHOP recipes (perhaps slightly favoring a Mediterranean style as one of them). Do NOT return Italian pasta dishes just because they like Italian food.");
     tasteContext = "\n\n" + parts.join(" ");
   }
 
@@ -418,14 +418,16 @@ IMPORTANT: When suggesting real, well-known recipes, include the source_url — 
 
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 6000,
+    max_tokens: 3500,
     system: systemPrompt,
     messages: [
       {
         role: "user",
         content: `User prompt: "${prompt}"
 
-Return a JSON array of 12 recipe results. (We over-fetch so we can pick the 6 best with images — race-to-6 pattern.) Each result should have:
+PRIMARY DIRECTIVE: Match the user's search query first. The query is the dish/ingredient they want. Return 6 different variations or interpretations of THAT specific query.
+
+Return a JSON array of 6 recipe results. Each result should have:
 - recipe: object with title, description, ingredients (array of {name, amount, unit}), steps (array of strings), servings, prep_time_minutes, cook_time_minutes, tags, matchingPantryItems (array, empty if context is "all"), missingIngredients (array, empty if context is "all")
 - source: "generated" or "saved" (use "saved" only if suggesting from user's saved recipes, with matching recipeId)
 - recipeId: string (only if source is "saved")
@@ -433,7 +435,7 @@ Return a JSON array of 12 recipe results. (We over-fetch so we can pick the 6 be
 - reasoning: one sentence on why this recipe matches the user's request
 - source_url: string or null — the real URL of the original recipe page if this is based on a well-known published recipe (e.g. from allrecipes.com, budgetbytes.com, seriouseats.com, bonappetit.com, halfbakedharvest.com, etc.). Only include URLs you are confident actually exist. Omit or set null if unsure.
 
-Make recipes genuinely appetizing and varied. Think food creator quality — specific, flavorful, not generic. STRONGLY prefer suggesting recipes that are based on real, popular published recipes with known source URLs (so we can pull cover images). At least 8 of the 10 should have a real source_url.
+Make recipes genuinely appetizing and varied — different cooking methods, cuisines, or styles, but ALL matching the user's search query. STRONGLY prefer suggesting recipes that are based on real, popular published recipes with known source URLs (so we can pull cover images). At least 4 of the 6 should have a real source_url.
 
 Return ONLY a valid JSON array. No markdown, no code blocks.`,
       },
