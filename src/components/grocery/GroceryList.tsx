@@ -8,6 +8,7 @@ import type { GroceryItem as GroceryItemType, GroceryList as GroceryListType } f
 import GroceryItem from "./GroceryItem";
 import SharedRecipeCard from "@/components/recipes/SharedRecipeCard";
 import AddItemSheet from "./AddItemSheet";
+import HeaderActions from "@/components/layout/HeaderActions";
 import EditItemSheet from "./EditItemSheet";
 import OrderOnlineSheet from "./OrderOnlineSheet";
 
@@ -662,6 +663,7 @@ export default function GroceryList() {
               )}
             </div>
           </div>
+          <HeaderActions />
         </div>
       </div>
 

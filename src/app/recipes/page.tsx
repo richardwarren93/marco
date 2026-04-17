@@ -106,8 +106,7 @@ function RecipesInner() {
       {/* ── Mobile header ─────────────────────────────────────────── */}
       {activeTab === "recipes" && <MobileHeader title="My Recipes" />}
       {activeTab === "discover" && <MobileHeader title="Explore Recipes" />}
-      {activeTab === "meal-plan" && <MobileHeader title="Meal Plan" />}
-      {activeTab === "grocery" && <MobileHeader title="Grocery" />}
+      {/* meal-plan and grocery have their own integrated headers */}
 
       {/* ── Tab content ────────────────────────────────────────────── */}
 
