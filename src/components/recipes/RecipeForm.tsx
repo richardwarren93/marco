@@ -566,6 +566,7 @@ export default function RecipeForm({
               type="text"
               value={tags}
               onChange={(e) => setTags(e.target.value)}
+              onFocus={(e) => { setTimeout(() => { e.target.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300); }}
               placeholder="e.g. vegan, quick, dessert"
               className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50 focus:bg-white transition-all"
             />
@@ -579,6 +580,7 @@ export default function RecipeForm({
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              onFocus={(e) => { setTimeout(() => { e.target.scrollIntoView({ behavior: "smooth", block: "center" }); }, 300); }}
               rows={2}
               placeholder="Personal notes, tips..."
               className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50 focus:bg-white transition-all"

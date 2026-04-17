@@ -156,19 +156,27 @@ export async function POST(request: Request) {
     // wait is bounded by the 6th-fastest resolver, not the slowest.
     type Candidate = (typeof candidates)[number];
 
+    const RACE_TIMEOUT_MS = 7_500; // 7.5s global timeout — return whatever we have
+
     const winners: Candidate[] = await new Promise((resolve) => {
       const out: Candidate[] = [];
       let completed = 0;
+      let resolved = false;
       const total = candidates.length;
 
-      if (total === 0) {
+      function finish() {
+        if (resolved) return;
+        resolved = true;
         resolve(out);
-        return;
       }
+
+      if (total === 0) { finish(); return; }
+
+      // Global timeout: after 10s, stop waiting and return what we have
+      const timer = setTimeout(finish, RACE_TIMEOUT_MS);
 
       candidates.forEach((c) => {
         (async () => {
-          // Already has an image (rare for prompted results) → straight pass.
           if (c.image_url) return c;
           if (!c.source_url) return null;
           try {
@@ -178,16 +186,18 @@ export async function POST(request: Request) {
             return null;
           }
         })().then((result) => {
+          if (resolved) return;
           if (result && out.length < TARGET_RESULTS) {
             out.push(result);
             if (out.length === TARGET_RESULTS) {
-              resolve(out);
+              clearTimeout(timer);
+              finish();
             }
           }
           completed++;
-          // All fetches done — resolve with whatever we got (may be < TARGET).
           if (completed === total) {
-            resolve(out);
+            clearTimeout(timer);
+            finish();
           }
         });
       });
