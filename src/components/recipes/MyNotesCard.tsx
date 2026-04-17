@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { scrollIntoViewAboveKeyboard } from "@/lib/keyboard-scroll";
 
 interface RecipeNoteData {
   private_note: string;
@@ -119,15 +120,9 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
       <textarea
         value={note}
         onChange={(e) => handleNoteChange(e.target.value)}
-        onFocus={(e) => {
-          // Scroll textarea into view above the mobile keyboard
-          setTimeout(() => {
-            e.target.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 300);
-        }}
+        onFocus={(e) => scrollIntoViewAboveKeyboard(e.target)}
         placeholder="Add notes, tips, modifications..."
         rows={3}
-        style={{ scrollMarginBottom: "320px" }}
         className="w-full px-4 py-3 bg-[#faf9f7] border border-gray-100 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:ring-gray-200 focus:border-gray-200 outline-none resize-none"
       />
     </div>

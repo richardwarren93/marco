@@ -860,8 +860,8 @@ export default function RecipeDetailPage() {
           </div>
         )}
 
-        {/* spacer for sticky bottom bar */}
-        <div className="h-16" />
+        {/* spacer for sticky bottom bar + room to scroll inputs above mobile keyboard */}
+        <div style={{ height: "60vh" }} />
       </div>
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
