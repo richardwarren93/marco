@@ -930,7 +930,7 @@ export default function GroceryList() {
             </div>
           ) : (
             <div className="py-8">
-              <p className="text-gray-400 text-sm">No items yet. Add meals to get started.</p>
+              <p className="text-gray-400 text-sm leading-relaxed px-6">No items yet. Add meals to get started and to see how much you can save by shopping with us.</p>
             </div>
           )}
         </div>

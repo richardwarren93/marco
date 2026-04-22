@@ -214,42 +214,34 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
           ))}
         </div>
 
-        {/* Search + Discover (build mode only) */}
+        {/* Search (build mode only) */}
         {props.mode === "build" && (
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <svg
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
-              </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder={activeTab === "all" ? "Search all recipes…" : `Search ${TAB_LABELS[activeTab].toLowerCase()} recipes…`}
-                className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none"
-                style={{ background: "white", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", color: "#1a1410" }}
-              />
-              {search && (
-                <button
-                  onClick={() => handleSearchChange("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            <button
-              onClick={() => router.push("/discover")}
-              className="text-sm font-bold text-orange-500 hover:text-orange-600 flex-shrink-0 px-1 transition-colors"
+          <div className="relative">
+            <svg
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400"
+              viewBox="0 0 24 24"
+              fill="currentColor"
             >
-              Discover
-            </button>
+              <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
+            </svg>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              placeholder={activeTab === "all" ? "Search all recipes…" : `Search ${TAB_LABELS[activeTab].toLowerCase()} recipes…`}
+              className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none"
+              style={{ background: "white", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", color: "#1a1410" }}
+            />
+            {search && (
+              <button
+                onClick={() => handleSearchChange("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
 
@@ -346,18 +338,6 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                   : `No ${activeTab === "all" ? "" : activeTab + " "}recipes saved yet for "${search}"`
                 : `No ${activeTab === "all" ? "" : activeTab + " "}recipes saved yet`}
             </p>
-            {search && aiResults !== null && props.mode === "build" && (
-              <p className="text-xs text-gray-300">
-                Try{" "}
-                <button
-                  onClick={() => router.push("/discover")}
-                  className="text-orange-500 font-medium"
-                >
-                  Discover
-                </button>{" "}
-                to find new recipes
-              </p>
-            )}
             {aiError && <p className="text-xs text-red-500">{aiError}</p>}
           </div>
         ) : (

@@ -133,49 +133,53 @@ export default function AutoDemoStep({ onNext }: Props) {
 
   useEffect(() => {
     if (phase === "extract-loading") {
-      const t = setTimeout(() => setPhase("extract-reveal"), 1500);
+      // Slower loading so the "magic" of extraction registers
+      const t = setTimeout(() => setPhase("extract-reveal"), 1900);
       return () => clearTimeout(t);
     }
     if (phase === "extract-reveal") {
-      const t = setTimeout(() => setPhase("extract-details"), 2000);
+      // Let the recipe card settle — this is the first "wow" moment
+      const t = setTimeout(() => setPhase("extract-details"), 2600);
       return () => clearTimeout(t);
     }
     if (phase === "extract-details") {
-      // Reveal ingredients one by one, then steps
+      // Reveal ingredients one by one, then steps — slow to let eyes track
       let ingIdx = 0;
       const ingTimer = setInterval(() => {
         ingIdx++;
         setVisibleIngredients(ingIdx);
         if (ingIdx >= DEMO_INGREDIENTS.length) {
           clearInterval(ingTimer);
-          // Then reveal steps
           let stepIdx = 0;
           const stepTimer = setInterval(() => {
             stepIdx++;
             setVisibleSteps(stepIdx);
             if (stepIdx >= DEMO_STEPS.length) {
               clearInterval(stepTimer);
-              setTimeout(() => setPhase("choose-selecting"), 1500);
+              setTimeout(() => setPhase("choose-selecting"), 2000);
             }
-          }, 350);
+          }, 440);
         }
-      }, 400);
+      }, 500);
       return () => clearInterval(ingTimer);
     }
     if (phase === "choose-selecting") {
+      // Slightly slower selection — shows each pick deliberately
       let count = 0;
       const t = setInterval(() => {
         count++;
         setSelectedCount(count);
-        if (count >= 4) { clearInterval(t); setTimeout(() => setPhase("assign-filling"), 1000); }
-      }, 650);
+        if (count >= 4) { clearInterval(t); setTimeout(() => setPhase("assign-filling"), 1300); }
+      }, 800);
       return () => clearInterval(t);
     }
     if (phase === "assign-filling") {
-      const t = setTimeout(() => setPhase("calendar-daily"), 2000);
+      // Longer dwell so users see the scheduling happen
+      const t = setTimeout(() => setPhase("calendar-daily"), 2600);
       return () => clearTimeout(t);
     }
     if (phase === "calendar-daily") {
+      // Calendar populating day-by-day — the core "planning" moment
       let day = 0;
       const t = setInterval(() => {
         day++;
@@ -183,9 +187,9 @@ export default function AutoDemoStep({ onNext }: Props) {
         setSelectedDayIdx(day - 1);
         if (day >= WEEK_MEALS.length) {
           clearInterval(t);
-          setTimeout(() => setPhase("grocery-list"), 1500);
+          setTimeout(() => setPhase("grocery-list"), 2000);
         }
-      }, 900);
+      }, 1100);
       return () => clearInterval(t);
     }
     if (phase === "grocery-list") {
@@ -194,7 +198,7 @@ export default function AutoDemoStep({ onNext }: Props) {
         aisleIdx++;
         setVisibleGroceryAisles(aisleIdx);
         if (aisleIdx >= GROCERY_ITEMS.length) clearInterval(t);
-      }, 700);
+      }, 850);
       return () => clearInterval(t);
     }
   }, [phase]);
@@ -362,23 +366,58 @@ export default function AutoDemoStep({ onNext }: Props) {
               const isSelected = i < selectedCount;
               const isPicking = i === selectedCount;
               return (
-                <div key={recipe.id} className="rounded-2xl overflow-hidden relative transition-all duration-300"
-                  style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)", background: "white", transform: isPicking ? "scale(1.03)" : "scale(1)" }}>
-                  <div className="h-24 relative flex items-center justify-center" style={{ background: "#eeecea" }}>
-                    {recipe.image_url ? (
-                      <Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" />
-                    ) : <span className="text-3xl">{"\u{1F35D}"}</span>}
-                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-300 z-10"
-                      style={{ background: isSelected ? ACCENT : "white", boxShadow: "0 1px 4px rgba(0,0,0,0.12)" }}>
-                      {isSelected ? (
-                        <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                      ) : (
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke={isPicking ? ACCENT : "#ccc"} strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" /></svg>
-                      )}
+                <div
+                  key={recipe.id}
+                  className="relative rounded-3xl overflow-hidden transition-all duration-300"
+                  style={{
+                    height: 180,
+                    boxShadow: "0 4px 16px rgba(20,12,5,0.10)",
+                    transform: isPicking ? "scale(1.03)" : "scale(1)",
+                  }}
+                >
+                  {/* Image fills card */}
+                  {recipe.image_url ? (
+                    <Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
+                      <span className="text-4xl opacity-60">{"\u{1F35D}"}</span>
                     </div>
+                  )}
+
+                  {/* Dark gradient overlay */}
+                  <div
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)",
+                    }}
+                  />
+
+                  {/* Select indicator — top right */}
+                  <div
+                    className="absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 z-10 backdrop-blur-md"
+                    style={{
+                      background: isSelected ? ACCENT : "rgba(0,0,0,0.25)",
+                    }}
+                  >
+                    {isSelected ? (
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke={isPicking ? "white" : "rgba(255,255,255,0.8)"} strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                    )}
                   </div>
-                  <div className="p-2">
-                    <p className="text-[11px] font-semibold leading-tight line-clamp-2" style={{ color: TEXT_1 }}>{recipe.title}</p>
+
+                  {/* Title at bottom */}
+                  <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 z-10">
+                    <p
+                      className="font-bold text-white text-[13px] line-clamp-2"
+                      style={{ lineHeight: "1.22", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
+                    >
+                      {recipe.title}
+                    </p>
                   </div>
                 </div>
               );
@@ -404,11 +443,11 @@ export default function AutoDemoStep({ onNext }: Props) {
         <div className="flex-1 overflow-y-auto px-4 space-y-3">
           {DEMO_RECIPES.slice(0, 4).map((recipe, i) => (
             <div key={recipe.id} className="animate-stagger-in rounded-2xl p-3 flex items-center gap-3"
-              style={{ animationDelay: `${i * 0.12}s`, background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
-              <div className="w-10 h-10 rounded-xl overflow-hidden relative flex-shrink-0" style={{ background: "#eeecea" }}>
+              style={{ animationDelay: `${i * 0.15}s`, background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
+              <div className="w-12 h-12 rounded-xl overflow-hidden relative flex-shrink-0" style={{ background: "#eeecea" }}>
                 {recipe.image_url ? <Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" /> : <span className="text-lg flex items-center justify-center w-full h-full">{"\u{1F35D}"}</span>}
               </div>
-              <p className="text-xs font-semibold flex-1 truncate" style={{ color: TEXT_1 }}>{recipe.title}</p>
+              <p className="text-[13px] font-semibold flex-1 truncate" style={{ color: TEXT_1 }}>{recipe.title}</p>
               <span className="animate-pulse-soft text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "#fff4ec", color: ACCENT }}>scheduling...</span>
             </div>
           ))}
@@ -419,10 +458,52 @@ export default function AutoDemoStep({ onNext }: Props) {
 
   // ─── Grocery list ───
   if (phase === "grocery-list") {
+    // Mock numbers sized for a ~1-week plan. Matches the real GroceryList card.
+    const groceryLow = 58;
+    const groceryHigh = 74;
+    const weeklyAvg = (groceryLow + groceryHigh) / 2;
+    const thisRunSavings = Math.round(weeklyAvg * 0.02 * 100) / 100;
+    const annualSavings = Math.round(thisRunSavings * 52);
+    const progressPct = Math.min((thisRunSavings / annualSavings) * 100, 100);
+    const savingsVisible = visibleGroceryAisles >= 1;
+
     return (
       <div className="flex flex-col h-full pb-8" style={{ background: BG }}>
         <PhaseHeader />
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 space-y-3">
+          {/* Savings card — same look as the live Grocery page */}
+          {savingsVisible && (
+            <div
+              className="animate-stagger-in p-4 rounded-2xl bg-white border border-gray-100"
+              style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)", animationDelay: "0.1s" }}
+            >
+              <div className="flex items-baseline justify-between mb-3">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">This week&apos;s groceries</p>
+                <p className="text-base font-bold text-gray-900 tabular-nums">
+                  ${groceryLow}&ndash;${groceryHigh}
+                </p>
+              </div>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <p className="text-xs font-semibold text-green-500 tabular-nums">
+                  +${thisRunSavings.toFixed(2)} this run
+                </p>
+                <p className="text-sm font-bold text-green-600">
+                  ${annualSavings}<span className="text-xs font-semibold text-green-500">/year</span>
+                </p>
+              </div>
+              <div className="w-full h-2 rounded-full bg-green-100 overflow-hidden">
+                <div
+                  className="h-full rounded-full transition-all duration-700 ease-out"
+                  style={{
+                    width: `${progressPct}%`,
+                    background: "linear-gradient(90deg, #22c55e, #16a34a)",
+                  }}
+                />
+              </div>
+              <p className="text-[10px] text-gray-400 mt-1.5">Earn back on every grocery run &middot; Updates as you plan</p>
+            </div>
+          )}
+
           {GROCERY_ITEMS.slice(0, visibleGroceryAisles).map((aisle, ai) => (
             <div key={aisle.aisle} className="animate-stagger-in rounded-2xl p-4" style={{ animationDelay: `${ai * 0.1}s`, background: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
               <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: ACCENT }}>
