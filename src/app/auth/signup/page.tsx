@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function SignupPage() {
@@ -11,8 +12,27 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
+
+  async function handleGuestSignIn() {
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms and Privacy Policy");
+      return;
+    }
+    setError("");
+    setGuestLoading(true);
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      setError(error.message);
+      setGuestLoading(false);
+      return;
+    }
+    router.push("/onboarding");
+    router.refresh();
+  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -289,6 +309,15 @@ export default function SignupPage() {
             Continue with Apple
           </button>
         )}
+
+        {/* Continue as guest */}
+        <button
+          onClick={handleGuestSignIn}
+          disabled={guestLoading}
+          className="w-full text-center py-2 text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+        >
+          {guestLoading ? "Signing in..." : "Continue as guest"}
+        </button>
 
         {/* Sign in link */}
         <p className="text-center text-sm text-gray-500 pt-1">

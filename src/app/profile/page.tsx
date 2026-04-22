@@ -21,6 +21,42 @@ export default function ProfilePage() {
   const { data: friendsData, isLoading: friendsLoading } = useSWR("/api/friends", apiFetcher, { revalidateOnFocus: false });
   const { data: goalData, isLoading: goalLoading, mutate: mutateGoal } = useSWR("/api/cooking-goal", apiFetcher, { revalidateOnFocus: false });
 
+  // Detect anonymous (guest) users
+  const [isGuest, setIsGuest] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeEmail, setUpgradeEmail] = useState("");
+  const [upgradePassword, setUpgradePassword] = useState("");
+  const [upgradeError, setUpgradeError] = useState("");
+  const [upgradeLoading, setUpgradeLoading] = useState(false);
+  const [upgradeSent, setUpgradeSent] = useState(false);
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then((result: { data: { user: { is_anonymous?: boolean } | null } }) => {
+      setIsGuest(result.data.user?.is_anonymous === true);
+    });
+  }, []);
+
+  async function handleUpgrade(e: React.FormEvent) {
+    e.preventDefault();
+    setUpgradeError("");
+    setUpgradeLoading(true);
+    const supabase = createClient();
+    const { error: pwError } = await supabase.auth.updateUser({ password: upgradePassword });
+    if (pwError) {
+      setUpgradeError(pwError.message);
+      setUpgradeLoading(false);
+      return;
+    }
+    const { error: emailError } = await supabase.auth.updateUser({ email: upgradeEmail });
+    if (emailError) {
+      setUpgradeError(emailError.message);
+      setUpgradeLoading(false);
+      return;
+    }
+    setUpgradeSent(true);
+    setUpgradeLoading(false);
+  }
+
   const profile: UserProfile | null = profileData?.profile ?? null;
   const goal: CookingGoal | null = goalData?.goal ?? null;
   const loading = profileLoading || recipesLoading || collectionsLoading || friendsLoading || goalLoading;
@@ -138,6 +174,75 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-lg mx-auto pb-8" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+
+      {/* ── Guest upgrade banner ── */}
+      {isGuest && !showUpgrade && (
+        <div className="mx-4 mt-3 p-4 rounded-2xl flex items-start gap-3" style={{ background: "#fff4ec", border: "1px solid #fcd9bd" }}>
+          <span className="text-2xl flex-shrink-0">🔒</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold" style={{ color: "#1a1410" }}>Secure your account</p>
+            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#a09890" }}>
+              Add an email to access Marco from any device and never lose your recipes.
+            </p>
+            <button
+              onClick={() => setShowUpgrade(true)}
+              className="mt-2.5 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all active:scale-95"
+              style={{ background: "#e8530a" }}
+            >
+              Add email
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Upgrade form ── */}
+      {isGuest && showUpgrade && !upgradeSent && (
+        <div className="mx-4 mt-3 p-4 rounded-2xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-sm font-bold" style={{ color: "#1a1410" }}>Secure your account</p>
+            <button onClick={() => setShowUpgrade(false)} className="text-gray-400 text-sm" aria-label="Close">✕</button>
+          </div>
+          <form onSubmit={handleUpgrade} className="space-y-2.5">
+            {upgradeError && (
+              <div className="bg-red-50 text-red-600 p-2.5 rounded-xl text-xs">{upgradeError}</div>
+            )}
+            <input
+              type="email"
+              value={upgradeEmail}
+              onChange={(e) => setUpgradeEmail(e.target.value)}
+              required
+              placeholder="you@example.com"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
+            />
+            <input
+              type="password"
+              value={upgradePassword}
+              onChange={(e) => setUpgradePassword(e.target.value)}
+              required
+              minLength={6}
+              placeholder="Choose a password (6+ chars)"
+              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
+            />
+            <button
+              type="submit"
+              disabled={upgradeLoading}
+              className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-50"
+              style={{ background: "#e8530a" }}
+            >
+              {upgradeLoading ? "Securing..." : "Secure account"}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {isGuest && upgradeSent && (
+        <div className="mx-4 mt-3 p-4 rounded-2xl" style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+          <p className="text-sm font-bold" style={{ color: "#065f46" }}>📬 Check your email!</p>
+          <p className="text-xs mt-1 leading-relaxed" style={{ color: "#065f46" }}>
+            We sent a confirmation link to <strong>{upgradeEmail}</strong>. Click it to finish securing your account.
+          </p>
+        </div>
+      )}
 
       {/* ── Banner + Avatar ── */}
       <div className="relative">
