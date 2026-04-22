@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function SignupPage() {
@@ -11,8 +12,27 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const router = useRouter();
   const supabase = createClient();
+
+  async function handleGuestSignIn() {
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms and Privacy Policy");
+      return;
+    }
+    setError("");
+    setGuestLoading(true);
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error) {
+      setError(error.message);
+      setGuestLoading(false);
+      return;
+    }
+    router.push("/onboarding");
+    router.refresh();
+  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -148,31 +168,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Terms checkbox */}
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }}
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
-                  agreedToTerms
-                    ? "bg-orange-500 border-orange-500"
-                    : "border-gray-300 bg-white"
-                }`}
-              >
-                {agreedToTerms && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </button>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                I&apos;ve read and agree with the{" "}
-                <span className="underline text-gray-700 font-medium">Terms</span>
-                {" "}and{" "}
-                <span className="underline text-gray-700 font-medium">Privacy Policy</span>
-              </p>
-            </div>
-
             <button
               type="submit"
               disabled={loading}
@@ -247,9 +242,39 @@ export default function SignupPage() {
           <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm text-center">{error}</div>
         )}
 
+        {/* Terms checkbox */}
+        <div className="flex items-start gap-3 pb-1">
+          <button
+            type="button"
+            onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }}
+            className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
+              agreedToTerms
+                ? "bg-orange-500 border-orange-500"
+                : "border-gray-300 bg-white"
+            }`}
+            aria-label="Agree to terms"
+          >
+            {agreedToTerms && (
+              <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
+          <p className="text-xs text-gray-500 leading-relaxed">
+            I&apos;ve read and agree with the{" "}
+            <span className="underline text-gray-700 font-medium">Terms</span>
+            {" "}and{" "}
+            <span className="underline text-gray-700 font-medium">Privacy Policy</span>
+          </p>
+        </div>
+
         {/* Continue with Email */}
         <button
           onClick={() => {
+            if (!agreedToTerms) {
+              setError("Please agree to the Terms and Privacy Policy");
+              return;
+            }
             setError("");
             setMode("email");
           }}
@@ -289,6 +314,18 @@ export default function SignupPage() {
             Continue with Apple
           </button>
         )}
+
+        {/* Continue as guest */}
+        <button
+          onClick={handleGuestSignIn}
+          disabled={guestLoading}
+          className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border border-gray-200 rounded-2xl font-semibold text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+          </svg>
+          {guestLoading ? "Signing in..." : "Continue as guest"}
+        </button>
 
         {/* Sign in link */}
         <p className="text-center text-sm text-gray-500 pt-1">
