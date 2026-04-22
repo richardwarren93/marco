@@ -715,19 +715,6 @@ export default function MealPlanListView({
           </div>
         )}
 
-        {/* ── Build plan CTA (empty week) ─────────────────────────────────── */}
-        {totalVisibleMeals === 0 && onPlanThisWeek && (
-          <div className="flex flex-col items-center py-8 space-y-3">
-            <p className="text-sm font-medium" style={{ color: TEXT_2 }}>No meals planned this week</p>
-            <button
-              onClick={() => onPlanThisWeek?.()}
-              className="px-5 py-2.5 rounded-full text-sm font-semibold transition-all active:scale-[0.97]"
-              style={{ background: ACCENT, color: "white" }}
-            >
-              Plan your week
-            </button>
-          </div>
-        )}
       </div>
     );
   }
