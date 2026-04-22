@@ -278,106 +278,102 @@ export default function ProfilePage() {
       <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} className="hidden" />
 
       {/* ── Name ── */}
-      <div className="text-center pt-12 px-6 pb-1">
+      <div className="text-center pt-14 px-6 pb-1">
         {editing ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <input
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full max-w-[220px] px-3 py-2 border border-gray-300 rounded-xl text-center text-lg font-semibold focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none mx-auto block"
+              className="w-full max-w-[260px] px-3 py-2.5 border border-gray-200 rounded-xl text-center text-xl font-black tracking-tight focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none mx-auto block bg-white"
               autoFocus
             />
             <div className="flex items-center justify-center gap-2">
-              <button onClick={handleSave} disabled={saving} className="px-4 py-2 bg-orange-600 text-white rounded-xl text-sm font-medium">
-                {saving ? "..." : "Save"}
+              <button onClick={handleSave} disabled={saving} className="px-5 py-2 rounded-full text-sm font-bold text-white active:scale-95 transition-all" style={{ background: "#e8530a" }}>
+                {saving ? "Saving..." : "Save"}
               </button>
-              <button onClick={() => { setEditing(false); setDisplayName(profile?.display_name || ""); }} className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm">
+              <button onClick={() => { setEditing(false); setDisplayName(profile?.display_name || ""); }} className="px-5 py-2 rounded-full text-sm font-semibold text-gray-600 active:scale-95 transition-all" style={{ background: "#eeecea" }}>
                 Cancel
               </button>
             </div>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-2">
-            <h1 className="text-xl font-bold" style={{ color: "#1a1410" }}>{profile?.display_name}</h1>
-            <button
-              onClick={() => setEditing(true)}
-              className="w-7 h-7 rounded-full bg-gray-100 hover:bg-orange-50 flex items-center justify-center transition-colors"
-            >
-              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-              </svg>
-            </button>
-          </div>
+          <button
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-2 active:scale-[0.98] transition-transform"
+          >
+            <h1 className="text-[22px] font-black tracking-tight" style={{ color: "#1a1410", letterSpacing: "-0.02em" }}>
+              {profile?.display_name}
+            </h1>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#c0b8af" }}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
+            </svg>
+          </button>
         )}
       </div>
 
-      {/* ── Stats — 2x2 grid ── */}
-      <div className="grid grid-cols-2 gap-2.5 px-5 py-3">
-        <Link
-          href="/recipes"
-          className="flex items-center justify-center gap-1.5 bg-orange-50 py-2.5 rounded-2xl ring-1 ring-orange-200/50 hover:shadow-md transition-all active:scale-95"
-        >
-          <RecipesIcon className="w-4 h-4 text-orange-600" />
-          <span className="text-lg font-black text-orange-600">{stats.recipes}</span>
-          <span className="text-[11px] text-gray-500 font-medium">Recipes</span>
-        </Link>
+      {/* ── Stats — single card, horizontal divisions ── */}
+      <div className="mx-4 mt-3 bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
+        <div className="grid grid-cols-4">
+          <Link
+            href="/recipes"
+            className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
+          >
+            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{stats.recipes}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Recipes</span>
+          </Link>
 
-        <Link
-          href="/collections"
-          className="flex items-center justify-center gap-1.5 bg-violet-50 py-2.5 rounded-2xl ring-1 ring-violet-200/50 hover:shadow-md transition-all active:scale-95"
-        >
-          <CollectionsIcon className="w-4 h-4 text-violet-600" />
-          <span className="text-lg font-black text-violet-600">{stats.collections}</span>
-          <span className="text-[11px] text-gray-500 font-medium">Collections</span>
-        </Link>
+          <Link
+            href="/collections"
+            className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
+          >
+            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{stats.collections}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Collections</span>
+          </Link>
 
-        <Link
-          href="/friends"
-          className="flex items-center justify-center gap-1.5 bg-emerald-50 py-2.5 rounded-2xl ring-1 ring-emerald-200/50 hover:shadow-md transition-all active:scale-95"
-        >
-          <FriendsIcon className="w-4 h-4 text-emerald-600" />
-          <span className="text-lg font-black text-emerald-600">{stats.friends}</span>
-          <span className="text-[11px] text-gray-500 font-medium">Friends</span>
-        </Link>
+          <Link
+            href="/friends"
+            className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
+          >
+            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{stats.friends}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Friends</span>
+          </Link>
 
-        {/* Weekly Goal chip */}
-        <div className="relative">
           <button
             onClick={() => setShowGoalPicker(!showGoalPicker)}
-            className="w-full flex items-center justify-center gap-1.5 bg-amber-50 py-2.5 rounded-2xl ring-1 ring-amber-200/50 hover:shadow-md transition-all active:scale-95"
+            className="relative flex flex-col items-center gap-1 py-4 active:bg-gray-50 transition-colors"
           >
-            <span className="text-sm">🔥</span>
-            <span className="text-lg font-black text-amber-600">{goalTarget || "–"}</span>
-            <span className="text-[11px] text-gray-500 font-medium">/ week</span>
+            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{goalTarget || "–"}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Per Week</span>
           </button>
-
-          {/* Goal picker dropdown */}
-          {showGoalPicker && (
-            <>
-              <div className="fixed inset-0 z-20" onClick={() => setShowGoalPicker(false)} />
-              <div className="absolute top-full left-0 right-0 mt-1.5 z-30 bg-white rounded-2xl shadow-xl ring-1 ring-gray-200/60 p-2.5 animate-pop-in">
-                <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider text-center mb-2">Meals per week</p>
-                <div className="grid grid-cols-7 gap-1">
-                  {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => handleGoalSelect(n)}
-                      disabled={savingGoal}
-                      className={`w-full aspect-square rounded-xl text-sm font-bold transition-all active:scale-90 ${
-                        n === goalTarget
-                          ? "bg-amber-500 text-white shadow-sm"
-                          : "bg-gray-50 text-gray-600 hover:bg-amber-50"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
         </div>
+
+        {/* Goal picker dropdown */}
+        {showGoalPicker && (
+          <>
+            <div className="fixed inset-0 z-20" onClick={() => setShowGoalPicker(false)} />
+            <div className="relative z-30 border-t border-gray-100 p-3 animate-pop-in">
+              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider text-center mb-2">Meals per week goal</p>
+              <div className="grid grid-cols-7 gap-1.5">
+                {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => handleGoalSelect(n)}
+                    disabled={savingGoal}
+                    className={`w-full aspect-square rounded-xl text-sm font-bold transition-all active:scale-90 ${
+                      n === goalTarget
+                        ? "text-white shadow-sm"
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
+                    }`}
+                    style={n === goalTarget ? { background: "#e8530a" } : undefined}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Taste Profile ── */}
