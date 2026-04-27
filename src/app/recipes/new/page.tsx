@@ -47,11 +47,16 @@ function NewRecipeInner() {
       if (stored) {
         sessionStorage.removeItem("importedRecipe");
         setExtractedRecipe(JSON.parse(stored));
+        return;
       }
     } catch {
       // sessionStorage unavailable or data corrupted
     }
-  }, [isExtracted]);
+    // No payload to restore — likely a back-nav return after the recipe was
+    // already saved (sessionStorage consumed). Don't strand the user on the
+    // permanent "Loading your recipe…" spinner.
+    router.replace("/recipes");
+  }, [isExtracted, router]);
 
   async function handleTextExtract() {
     if (!pastedText.trim()) return;
