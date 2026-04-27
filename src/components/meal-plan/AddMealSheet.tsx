@@ -124,6 +124,8 @@ export default function AddMealSheet({
   const [searchMode, setSearchMode] = useState(false);
   // Track if user has manually interacted with days (for "first tap swaps default" behavior)
   const [hasManuallyTappedDay, setHasManuallyTappedDay] = useState(false);
+  // 0 = the week passed in via weekStart, 1 = next week
+  const [weekOffset, setWeekOffset] = useState(0);
 
   const scrollBodyRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -160,15 +162,32 @@ export default function AddMealSheet({
     setRecipeSearch("");
     setSearchMode(false);
     setHasManuallyTappedDay(false);
+    // Open on whichever week contains defaultDate
+    const offset = (() => {
+      const target = new Date(defaultDate + "T12:00:00");
+      const start = new Date(weekStart);
+      start.setHours(12, 0, 0, 0);
+      const diffDays = Math.round((target.getTime() - start.getTime()) / 86400000);
+      return diffDays >= 7 ? 1 : 0;
+    })();
+    setWeekOffset(offset);
   }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const displayWeekStart = useMemo(() => addDays(weekStart, weekOffset * 7), [weekStart, weekOffset]);
 
   const weekDates = useMemo(
     () => Array.from({ length: 7 }, (_, i) => {
-      const d = addDays(weekStart, i);
+      const d = addDays(displayWeekStart, i);
       return { key: formatDateKey(d), dayAbbr: d.toLocaleDateString("en-US", { weekday: "short" }).slice(0, 2), dayNum: d.getDate() };
     }),
-    [weekStart]
+    [displayWeekStart]
   );
+
+  const weekRangeLabel = useMemo(() => {
+    const end = addDays(displayWeekStart, 6);
+    const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    return `${fmt(displayWeekStart)} – ${fmt(end)}`;
+  }, [displayWeekStart]);
 
   const anyScheduledIds = useMemo(
     () => new Set(weekPlans.filter((p) => p.recipe_id).map((p) => p.recipe_id as string)),
@@ -457,7 +476,32 @@ export default function AddMealSheet({
 
           {/* When */}
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">When</p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">When</p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => setWeekOffset((o) => Math.max(0, o - 1))}
+                  disabled={weekOffset === 0}
+                  aria-label="Previous week"
+                  className="w-6 h-6 rounded-full flex items-center justify-center disabled:opacity-30 hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <span className="text-[11px] font-semibold text-gray-700 tabular-nums min-w-[88px] text-center">{weekRangeLabel}</span>
+                <button
+                  onClick={() => setWeekOffset((o) => Math.min(1, o + 1))}
+                  disabled={weekOffset === 1}
+                  aria-label="Next week"
+                  className="w-6 h-6 rounded-full flex items-center justify-center disabled:opacity-30 hover:bg-gray-100 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            </div>
             <div className="flex gap-1">
               {weekDates.map(({ key, dayAbbr, dayNum }) => {
                 const isSelected = selectedDates.has(key);
