@@ -39,15 +39,29 @@ for (const ing of INGREDIENTS) {
   }
 }
 
-/** Keyword-based fallback when the ingredient isn't in the alias map. */
+/** Keyword-based fallback when the ingredient isn't in the alias map.
+ *
+ * All keyword groups are wrapped in `\b(...)\b` so substrings inside larger
+ * words don't trip a category — e.g. "minced" doesn't match `mince`,
+ * "cornstarch" doesn't match `corn`, "applesauce" doesn't match `apple`.
+ *
+ * The first pass catches multi-word phrases that share a head word with a
+ * produce keyword ("tomato paste" → pantry, not produce). After that,
+ * produce runs before protein so "minced garlic" / "lamb's lettuce" /
+ * "crab apple" land in produce as expected. */
 function keywordCategorize(lower: string): string | null {
-  if (/chicken|beef|pork|lamb|turkey|duck|venison|steak|mince|ground meat|sausage|bacon|ham|prawn|shrimp|salmon|tuna|cod|tilapia|halibut|mahi|crab|lobster|clam|mussel|oyster|anchovy|sardine|tofu|tempeh|seitan/.test(lower)) return "protein";
-  if (/parmesan|mozzarella|cheddar|gouda|brie|feta|ricotta|goat cheese|cream cheese|cottage cheese|yogurt|sour cream|half.and.half|heavy cream|whipped cream|ghee/.test(lower)) return "dairy";
-  if (/vinegar|soy sauce|fish sauce|hot sauce|sriracha|tabasco|worcestershire|ketchup|mayonnaise|mustard|relish/.test(lower)) return "spice";
-  if (/salt|pepper|paprika|cumin|turmeric|coriander|oregano|chili|chilli|cayenne|cinnamon|nutmeg|cardamom|saffron|sesame|spice|crisp|seasoning/.test(lower)) return "spice";
-  if (/oil|flour|sugar|honey|maple|pasta|noodle|rice|quinoa|oat|lentil|chickpea|bread|cracker|stock|broth|tomato paste|coconut milk|peanut butter|nut butter|almond butter|chocolate|cocoa|baking powder|baking soda|cornstarch|panko|breadcrumb/.test(lower)) return "pantry";
-  if (/potato|onion|garlic|ginger|tomato|carrot|celery|lettuce|spinach|kale|broccoli|cauliflower|asparagus|zucchini|cucumber|rosemary|thyme|sage|mint|parsley|cilantro|basil|dill|chive|lemon|lime|orange|apple|banana|berry|mushroom|corn|peas|vegetable|greens|arugula|leek|avocado|eggplant|squash|beet|radish|yam|scallion|fennel|bok choy|cabbage|artichoke|herb/.test(lower)) return "produce";
-  if (/frozen|ice cream|sorbet/.test(lower)) return "frozen";
+  // Pass 0 — multi-word phrases that would otherwise be intercepted later
+  if (/\b(tomato paste|tomato sauce|tomato puree|sun.?dried tomato(es)?)\b/.test(lower)) return "pantry";
+  if (/\b(apple cider vinegar|cider vinegar|apple ?sauce|apple butter)\b/.test(lower)) return "spice";
+  if (/\b(peppermint|spearmint|wintergreen)\b/.test(lower)) return "spice";
+
+  if (/\b(potato(es)?|onion(s)?|garlic|ginger|tomato(es)?|carrot(s)?|celery|lettuce|spinach|kale|broccoli|cauliflower|asparagus|zucchini|cucumber(s)?|rosemary|thyme|sage|mint|parsley|cilantro|basil|dill|chive(s)?|lemon(s)?|lime(s)?|orange(s)?|apple(s)?|banana(s)?|berr(y|ies)|mushroom(s)?|peas|vegetable(s)?|greens|arugula|leek(s)?|avocado(s)?|eggplant|squash|beet(s)?|radish(es)?|yam(s)?|scallion(s)?|fennel|bok choy|cabbage|artichoke(s)?|herb(s)?|bell pepper(s)?|sweet pepper(s)?|hot pepper(s)?|jalapeno(s)?|jalapeño(s)?|serrano(s)?|poblano(s)?|habanero(s)?|shallot(s)?|sweet potato(es)?)\b/.test(lower)) return "produce";
+  if (/\b(chicken|beef|pork|lamb|turkey|duck|venison|steak|mincemeat|ground meat|ground beef|ground pork|ground turkey|ground chicken|sausage(s)?|bacon|ham|prawn(s)?|shrimp|salmon|tuna|cod|tilapia|halibut|mahi|crab|lobster|clam(s)?|mussel(s)?|oyster(s)?|anchov(y|ies)|sardine(s)?|tofu|tempeh|seitan)\b/.test(lower)) return "protein";
+  if (/\b(parmesan|mozzarella|cheddar|gouda|brie|feta|ricotta|goat cheese|cream cheese|cottage cheese|yogurt|sour cream|half.and.half|heavy cream|whipped cream|ghee)\b/.test(lower)) return "dairy";
+  if (/\b(vinegar|soy sauce|fish sauce|hot sauce|sriracha|tabasco|worcestershire|ketchup|mayonnaise|mustard|relish)\b/.test(lower)) return "spice";
+  if (/\b(salt|black pepper|white pepper|peppercorn(s)?|paprika|cumin|turmeric|coriander|oregano|chili|chilli|cayenne|cinnamon|nutmeg|cardamom|saffron|sesame|spice(s)?|seasoning(s)?)\b/.test(lower)) return "spice";
+  if (/\b(oil|flour|sugar|honey|maple|pasta|noodle(s)?|rice|quinoa|oat(s|meal)?|lentil(s)?|chickpea(s)?|bread|cracker(s)?|stock|broth|coconut milk|peanut butter|nut butter|almond butter|chocolate|cocoa|baking powder|baking soda|cornstarch|corn starch|cornmeal|corn meal|panko|breadcrumb(s)?)\b/.test(lower)) return "pantry";
+  if (/\b(frozen|ice cream|sorbet)\b/.test(lower)) return "frozen";
   return null;
 }
 

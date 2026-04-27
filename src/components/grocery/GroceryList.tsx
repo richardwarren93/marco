@@ -30,20 +30,35 @@ const CATEGORY_CONFIG: Record<string, { label: string; emoji: string }> = {
 
 const CATEGORY_SORT_ORDER = [
   "produce", "protein", "dairy",
-  "pantry", "canned",
-  "spices", "spice", "condiment",
-  "frozen", "bakery", "grain",
+  "pantry",
+  "spice",
+  "frozen", "bakery",
   "other",
 ];
 
+// Collapse raw categories that share a display section into one canonical key
+// so "spice" and "condiment" don't render as two adjacent "Spices & Condiments"
+// groups (same for "pantry"/"canned" and "bakery"/"grain").
+const CATEGORY_CANONICAL: Record<string, string> = {
+  spices: "spice",
+  condiment: "spice",
+  canned: "pantry",
+  grain: "bakery",
+};
+
+function canonicalCategory(cat: string | null | undefined): string {
+  const c = (cat || "other").toLowerCase();
+  return CATEGORY_CANONICAL[c] || c;
+}
+
 function categoryLabel(cat: string | null): string {
-  const c = cat || "other";
+  const c = canonicalCategory(cat);
   const cfg = CATEGORY_CONFIG[c];
   return cfg ? `${cfg.emoji} ${cfg.label}` : c;
 }
 
 function categorySort(cat: string | null): number {
-  const idx = CATEGORY_SORT_ORDER.indexOf(cat || "other");
+  const idx = CATEGORY_SORT_ORDER.indexOf(canonicalCategory(cat));
   return idx === -1 ? 999 : idx;
 }
 
@@ -497,11 +512,11 @@ export default function GroceryList() {
     return () => { cancelled = true; };
   }, [toBuyItems.length]); // Re-fetch when item count changes
 
-  // Group by category
+  // Group by category (canonicalized so duplicate display labels collapse)
   const groupedByCategory = useMemo(() => {
     const map = new Map<string, HouseholdGroceryItem[]>();
     for (const item of filteredItems) {
-      const cat = item.category_override ?? item.category ?? "other";
+      const cat = canonicalCategory(item.category_override ?? item.category);
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push(item);
     }
