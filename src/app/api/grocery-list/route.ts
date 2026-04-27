@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { aggregateIngredients } from "@/lib/groceryAggregator";
+import { categorizeUnknown } from "@/lib/ingredientCategorizer";
 import type { Ingredient, PantryItem, Recipe } from "@/types";
 
 // ─── Helper: fetch items, gracefully handling missing soft_deleted column ─────
@@ -221,6 +222,18 @@ export async function POST(request: Request) {
       }));
 
     const aggregated = aggregateIngredients(recipeIngredients, (pantryItems as PantryItem[]) || []);
+
+    // ── AI fallback: fill in null categories via Claude Haiku (cached) ───────
+    const unknowns = aggregated.filter((a) => !a.category).map((a) => a.name);
+    if (unknowns.length > 0) {
+      const aiCategories = await categorizeUnknown(admin, unknowns);
+      for (const item of aggregated) {
+        if (!item.category) {
+          const guess = aiCategories.get(item.name.toLowerCase().trim());
+          if (guess) item.category = guess;
+        }
+      }
+    }
 
     // ── Step 1: Upsert grocery list with ORIGINAL columns only ────────────────
     // (safe even if v2 migration hasn't been run)
