@@ -548,19 +548,39 @@ export default function RecipeDetailPage() {
 
         {/* ── 2. Title section ────────────────────────────────────────── */}
         <div className="py-6 space-y-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#1C1A17] leading-tight">
+          {/* Recipe title — Fraunces display */}
+          <h1
+            className="leading-tight"
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontVariationSettings: '"opsz" 144, "SOFT" 100, "wght" 600',
+              fontSize: "clamp(1.75rem, 6vw, 2.25rem)",
+              letterSpacing: "-0.02em",
+              color: "var(--ink, #1C1A17)",
+            }}
+          >
             {recipe.title}
           </h1>
 
-          {/* Stats row */}
-          <div className="flex items-center gap-3 flex-wrap text-[13px] text-[#a09890]">
+          {/* Stats row — Marco mono uppercase tracked metadata */}
+          <div
+            className="flex items-center gap-2 flex-wrap"
+            style={{
+              fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+              fontSize: "11px",
+              fontWeight: 500,
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: "var(--ink-soft, #4A4742)",
+            }}
+          >
             {recipe.meal_type && (
-              <span className="capitalize inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1.5">
                 <MealTypeIcon type={recipe.meal_type} className="w-3.5 h-3.5" strokeWidth={2} />
                 {recipe.meal_type}
               </span>
             )}
-            {recipe.meal_type && totalTime > 0 && <span>·</span>}
+            {recipe.meal_type && totalTime > 0 && <span style={{ opacity: 0.5 }}>·</span>}
             {totalTime > 0 && (
               <span>
                 {recipe.prep_time_minutes ? `${recipe.prep_time_minutes}m prep` : ""}
@@ -568,19 +588,23 @@ export default function RecipeDetailPage() {
                 {recipe.cook_time_minutes ? `${recipe.cook_time_minutes}m cook` : ""}
               </span>
             )}
-            {(recipe.meal_type || totalTime > 0) && recipe.servings && <span>·</span>}
+            {(recipe.meal_type || totalTime > 0) && recipe.servings && <span style={{ opacity: 0.5 }}>·</span>}
             {recipe.servings && (
               <span>{recipe.servings} servings</span>
             )}
           </div>
 
-          {/* Tags */}
+          {/* Tags — Marco cream-warm pills with body font */}
           {(recipe.tags || []).length > 0 && (
             <div className="flex flex-wrap gap-1.5">
               {(recipe.tags || []).map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-0.5 bg-white text-[#a09890] rounded-full text-[11px] font-medium"
+                  className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
+                  style={{
+                    background: "var(--cream-warm, #EFE5D2)",
+                    color: "var(--ink-soft, #4A4742)",
+                  }}
                 >
                   {tag}
                 </span>
@@ -646,24 +670,28 @@ export default function RecipeDetailPage() {
 
         {/* ── 3. Three tabs: Ingredients | Steps | Macros ──────────────── */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          {/* Tab bar */}
-          <div className="flex border-b border-gray-100">
+          {/* Tab bar — Marco palette: tomato accent, ink-soft inactive */}
+          <div className="flex border-b" style={{ borderColor: "var(--line, rgba(28,26,23,0.08))" }}>
             {(["ingredients", "steps", "nutrition"] as const).map((tab) => {
               // Hide macros tab if no macro data
               if (tab === "nutrition" && !hasMacros) return null;
+              const isActive = activeTab === tab;
               return (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex-1 py-3.5 text-sm text-center transition-colors relative capitalize ${
-                    activeTab === tab
-                      ? "text-[#e8530a] font-bold"
-                      : "text-[#a09890] font-medium hover:text-gray-600"
-                  }`}
+                  className="flex-1 py-3.5 text-sm text-center transition-colors relative capitalize"
+                  style={{
+                    color: isActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
+                    fontWeight: isActive ? 600 : 500,
+                  }}
                 >
                   {tab}
-                  {activeTab === tab && (
-                    <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-[#e8530a] rounded-full" />
+                  {isActive && (
+                    <div
+                      className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full"
+                      style={{ background: "var(--tomato, #E5462E)" }}
+                    />
                   )}
                 </button>
               );
@@ -961,11 +989,26 @@ export default function RecipeDetailPage() {
               </button>
               <button
                 onClick={() => setShowMarcoChat(true)}
-                className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border"
-                style={{ borderColor: "#e0e0de", color: "#1C1A17", background: "white" }}
+                className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border inline-flex items-center justify-center gap-2"
+                style={{ borderColor: "var(--line, rgba(28,26,23,0.12))", color: "var(--ink, #1C1A17)", background: "white" }}
               >
-                {"\u{1F9D1}\u200D\u{1F373}"} Cook with Marco
-                <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-400 font-medium align-middle">beta</span>
+                <span>Cook with</span>
+                {/* Marco signature mark with the tomato punctum \u2014 replaces the chef emoji */}
+                <span className="marco-signature" style={{ fontSize: "1.25rem" }}>marco</span>
+                <span
+                  className="ml-0.5 px-1.5 py-0.5 rounded-full align-middle"
+                  style={{
+                    background: "var(--cream-warm, #EFE5D2)",
+                    color: "var(--tomato, #E5462E)",
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                    fontSize: "9px",
+                    fontWeight: 600,
+                    letterSpacing: "0.1em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  beta
+                </span>
               </button>
             </>
           )}

@@ -609,9 +609,30 @@ export default function MealPlanListView({
                       </svg>
                     </button>
                     <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 z-10">
-                      <h4 className="font-bold text-white text-sm line-clamp-2" style={{ lineHeight: "1.22", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}>{recipe.title}</h4>
+                      <h4
+                        className="text-white line-clamp-2"
+                        style={{
+                          fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                          fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
+                          fontSize: "16px",
+                          lineHeight: 1.18,
+                          letterSpacing: "-0.015em",
+                          textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+                        }}
+                      >
+                        {recipe.title}
+                      </h4>
                       {totalTime > 0 && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-white/85 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5">
+                        <span
+                          className="inline-flex items-center gap-1 mt-1.5 text-white/85 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5"
+                          style={{
+                            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                            fontSize: "9.5px",
+                            fontWeight: 500,
+                            letterSpacing: "0.13em",
+                            textTransform: "uppercase",
+                          }}
+                        >
                           <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l4 2" /></svg>
                           {totalTime} min
                         </span>
@@ -697,16 +718,32 @@ export default function MealPlanListView({
                         </svg>
                       )}
                     </button>
-                    {/* Title + time at bottom */}
+                    {/* Title + time at bottom — Marco editorial voice */}
                     <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 z-10">
                       <h4
-                        className="font-bold text-white text-sm line-clamp-2"
-                        style={{ lineHeight: "1.22", textShadow: "0 1px 4px rgba(0,0,0,0.4)" }}
+                        className="text-white line-clamp-2"
+                        style={{
+                          fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                          fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
+                          fontSize: "16px",
+                          lineHeight: 1.18,
+                          letterSpacing: "-0.015em",
+                          textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+                        }}
                       >
                         {recipe.title}
                       </h4>
                       {totalTime > 0 && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] font-semibold text-white/85 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5">
+                        <span
+                          className="inline-flex items-center gap-1 mt-1.5 text-white/85 bg-black/30 backdrop-blur-sm rounded-full px-2 py-0.5"
+                          style={{
+                            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                            fontSize: "9.5px",
+                            fontWeight: 500,
+                            letterSpacing: "0.13em",
+                            textTransform: "uppercase",
+                          }}
+                        >
                           <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
