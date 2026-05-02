@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/Toast";
 const DiscoverTab = dynamic(() => import("@/components/recipes/DiscoverTab"));
 const GroceryPageContent = dynamic(() => import("@/components/grocery/GroceryPageContent"), { ssr: false });
 const MealPlanPageContent = dynamic(() => import("@/components/meal-plan/MealPlanPageContent"), { ssr: false });
+const ProfilePage = dynamic(() => import("@/app/profile/page"), { ssr: false });
 const ImportRecipeSheet = dynamic(() => import("@/components/recipes/ImportRecipeSheet"), { ssr: false });
 const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
 const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
@@ -31,7 +32,7 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-type ActiveTab = "recipes" | "discover" | "grocery" | "meal-plan";
+type ActiveTab = "recipes" | "discover" | "grocery" | "meal-plan" | "profile";
 
 export default function RecipesPage() {
   return (
@@ -60,7 +61,7 @@ function RecipesInner() {
   const inCollectionIds = useMemo(() => new Set(collRecipesData?.recipe_ids ?? []), [collRecipesData]);
 
   const tabParam = searchParams.get("tab");
-  const activeTab: ActiveTab = (["recipes", "discover", "grocery", "meal-plan"].includes(tabParam ?? "") ? tabParam : "recipes") as ActiveTab;
+  const activeTab: ActiveTab = (["recipes", "discover", "grocery", "meal-plan", "profile"].includes(tabParam ?? "") ? tabParam : "recipes") as ActiveTab;
 
   // Quick-add sheet state
   const [addSheetOpen, setAddSheetOpen] = useState(false);
@@ -153,6 +154,10 @@ function RecipesInner() {
       {activeTab === "grocery" && (
         <GroceryPageContent />
       )}
+
+      {/* Profile tab — Profile page renders its own MobileHeader, so we
+          intentionally skip the recipes/page.tsx one for this tab. */}
+      {activeTab === "profile" && <ProfilePage />}
 
       <AddMealSheet
         isOpen={addSheetOpen}

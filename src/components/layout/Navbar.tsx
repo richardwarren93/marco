@@ -222,7 +222,7 @@ function NavbarInner() {
 
                   {/* Profile avatar — always visible */}
                   <Link
-                    href="/profile"
+                    href="/recipes?tab=profile"
                     className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center font-bold text-[11px] hover:shadow-md transition-all overflow-hidden"
                   >
                     {avatarUrl ? (

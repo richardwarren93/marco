@@ -13,7 +13,7 @@ export default function WeeklyGoalCard({ weeklyTarget, weekProgress }: WeeklyGoa
   if (!weeklyTarget) {
     return (
       <Link
-        href="/profile"
+        href="/recipes?tab=profile"
         className="block bg-white rounded-2xl shadow-sm p-4 hover:shadow-md transition-shadow"
       >
         <div className="flex items-center gap-3">
