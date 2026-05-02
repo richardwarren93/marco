@@ -4,16 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import type { Recipe } from "@/types";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
-
-const MEAL_PLACEHOLDER: Record<string, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
-};
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -245,7 +239,7 @@ export default function AddMealModal({
                           {selectedRecipe.image_url ? (
                             <div className="relative w-full h-full"><Image src={selectedRecipe.image_url} alt={selectedRecipe.title} fill className="object-cover" sizes="32px" /></div>
                           ) : (
-                            <span className="text-sm">{MEAL_PLACEHOLDER[selectedRecipe.meal_type] || "🍳"}</span>
+                            <MealTypeIcon type={selectedRecipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
                           )}
                         </div>
                         <span className="text-sm font-medium text-gray-800 flex-1 line-clamp-1">{selectedRecipe.title}</span>
@@ -278,7 +272,7 @@ export default function AddMealModal({
                               {recipe.image_url ? (
                                 <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="32px" /></div>
                               ) : (
-                                <span className="text-sm">{MEAL_PLACEHOLDER[recipe.meal_type] || "🍳"}</span>
+                                <MealTypeIcon type={recipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
                               )}
                             </div>
                             <span className="text-sm font-medium text-gray-800 line-clamp-1 flex-1">{recipe.title}</span>

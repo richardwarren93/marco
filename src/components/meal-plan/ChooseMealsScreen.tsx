@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import RecipeDetailSheet from "./RecipeDetailSheet";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 const MEAL_TABS = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealTab = (typeof MEAL_TABS)[number];
@@ -16,13 +17,6 @@ const TAB_LABELS: Record<ActiveTab, string> = {
   lunch: "Lunch",
   dinner: "Dinner",
   snack: "Snack",
-};
-
-const MEAL_PLACEHOLDER: Record<MealTab, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
 };
 
 const SEED_PILLS: Record<ActiveTab, string[]> = {
@@ -379,9 +373,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                         }}
                       />
                     ) : (
-                      <span className="text-4xl">
-                        {MEAL_PLACEHOLDER[(recipe.meal_type || "dinner") as MealTab] || "🍳"}
-                      </span>
+                      <MealTypeIcon type={(recipe.meal_type || "dinner") as MealTab} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
                     )}
 
                     {/* Build mode: ✓ toggle button */}

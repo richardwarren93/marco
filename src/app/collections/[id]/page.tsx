@@ -8,13 +8,7 @@ import type { Collection, Recipe } from "@/types";
 import ShareCollectionModal from "@/components/collections/ShareCollectionModal";
 import ShareWithFriendsModal from "@/components/friends/ShareWithFriendsModal";
 import AddToCollectionModal from "@/components/collections/AddToCollectionModal";
-
-const MEAL_EMOJIS: Record<string, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
-};
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 function timeAgo(dateStr: string): string {
   const now = new Date();
@@ -49,8 +43,7 @@ function CollectionRecipeCard({
   lastMadeAt?: string;
 }) {
   const [imgError, setImgError] = useState(false);
-  const emoji = MEAL_EMOJIS[recipe.meal_type ?? "dinner"] ?? "🍳";
-  const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
+    const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
 
   return (
     <div className="relative group">
@@ -70,7 +63,15 @@ function CollectionRecipeCard({
               onError={() => setImgError(true)}
             />
           ) : (
-            <span className="text-3xl">{emoji}</span>
+            <div
+              className="absolute inset-0 w-full h-full flex items-center justify-center"
+              style={{
+                background:
+                  "radial-gradient(circle at 35% 40%, var(--mustard, #E8A33D) 0%, transparent 45%), radial-gradient(circle at 70% 70%, var(--tomato, #E5462E) 0%, transparent 40%), var(--cream-warm, #EFE5D2)",
+              }}
+            >
+              <MealTypeIcon type={recipe.meal_type} className="opacity-50" size={28} strokeWidth={1.6} />
+            </div>
           )}
           {recipe.meal_type && (
             <span className="absolute top-2 left-2 text-[10px] bg-black/40 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-full font-medium capitalize">
@@ -611,9 +612,7 @@ function AddRecipesSheet({
             <div className="space-y-1">
               {filtered.map((recipe) => {
                 const alreadyIn = existingRecipeIds.includes(recipe.id) || addedIds.has(recipe.id);
-                const emoji = MEAL_EMOJIS[recipe.meal_type ?? "dinner"] ?? "🍳";
-
-                return (
+                                return (
                   <div
                     key={recipe.id}
                     className="flex items-center gap-3 py-2 px-1 rounded-lg hover:bg-gray-50 transition-colors"
@@ -623,7 +622,7 @@ function AddRecipesSheet({
                       {recipe.image_url ? (
                         <div className="relative w-full h-full"><Image src={recipe.image_url} alt="" fill className="object-cover" sizes="44px" /></div>
                       ) : (
-                        <span className="text-lg">{emoji}</span>
+                        <MealTypeIcon type={recipe.meal_type} className="opacity-55" size={20} strokeWidth={1.7} />
                       )}
                     </div>
 

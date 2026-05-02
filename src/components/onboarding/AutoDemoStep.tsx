@@ -24,10 +24,6 @@ const ACCENT = "#e8530a";
 const BG = "#f4f3f1";
 const TEXT_1 = "#141414";
 
-const MEAL_EMOJI: Record<string, string> = {
-  breakfast: "\u{1F95E}", lunch: "\u{1F957}", dinner: "\u{1F35D}", snack: "\u{1F34E}",
-};
-
 // Convert ranking recipes to Recipe-like objects
 const DEMO_RECIPES: Recipe[] = RANKING_RECIPES.map((r) => ({
   id: r.id, user_id: "", title: r.title, source_url: null, source_platform: null,
@@ -584,7 +580,7 @@ export default function AutoDemoStep({ onNext }: Props) {
                     {meal.recipe.image_url ? (
                       <Image src={meal.recipe.image_url} alt={meal.recipe.title} fill className="object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl opacity-50">{MEAL_EMOJI[meal.mealType]}</div>
+                      <div className="w-full h-full flex items-center justify-center text-2xl opacity-50"></div>
                     )}
                   </div>
                   {/* Text */}

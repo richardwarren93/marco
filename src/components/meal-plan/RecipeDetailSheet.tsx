@@ -1,13 +1,7 @@
 "use client";
 
 import type { Recipe, Ingredient } from "@/types";
-
-const MEAL_ICONS: Record<string, string> = {
-  breakfast: "🌅",
-  lunch: "☀️",
-  dinner: "🌙",
-  snack: "🍎",
-};
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 export default function RecipeDetailSheet({
   isOpen,
@@ -43,7 +37,7 @@ export default function RecipeDetailSheet({
           </div>
         ) : (
           <div className="h-40 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
-            <span className="text-5xl">{MEAL_ICONS[recipe.meal_type] || "🍽️"}</span>
+            <MealTypeIcon type={recipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
           </div>
         )}
 
@@ -79,7 +73,7 @@ export default function RecipeDetailSheet({
                 recipe.meal_type === "dinner" ? "bg-violet-50 text-violet-700" :
                 "bg-orange-50 text-orange-700"
               }`}>
-                {MEAL_ICONS[recipe.meal_type]} {recipe.meal_type}
+                {recipe.meal_type}
               </span>
             )}
             {totalTime > 0 && (

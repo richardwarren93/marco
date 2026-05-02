@@ -6,6 +6,7 @@ import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import { useToast } from "@/components/ui/Toast";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
 const ACCENT = "#E5462E";
@@ -13,13 +14,6 @@ const ACCENT_LIGHT = "#fff7ed";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
-
-const MEAL_PLACEHOLDER: Record<string, string> = {
-  breakfast: "🥞",
-  lunch:     "🥗",
-  dinner:    "🍽️",
-  snack:     "🍎",
-};
 
 function addDays(date: Date, n: number): Date {
   const d = new Date(date);
@@ -51,7 +45,7 @@ function RecipeRow({
         {recipe.image_url ? (
           <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="36px" /></div>
         ) : (
-          <span className={compact ? "text-xs" : "text-sm"}>{MEAL_PLACEHOLDER[recipe.meal_type] || "🍳"}</span>
+          <span className={compact ? "text-xs" : "text-sm"}><MealTypeIcon type={recipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} /></span>
         )}
       </div>
       <span className={`font-medium text-gray-800 line-clamp-1 flex-1 ${compact ? "text-xs" : "text-sm"}`}>

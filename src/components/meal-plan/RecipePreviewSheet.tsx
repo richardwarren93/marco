@@ -2,13 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { MealPlan } from "@/types";
-
-const MEAL_PLACEHOLDER: Record<string, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
-};
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 export default function RecipePreviewSheet({
   isOpen,
@@ -76,9 +70,7 @@ export default function RecipePreviewSheet({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-2xl">
-                {MEAL_PLACEHOLDER[plan.meal_type] || "🍴"}
-              </span>
+              <MealTypeIcon type={plan.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
             )}
           </div>
           <div className="flex-1 min-w-0">

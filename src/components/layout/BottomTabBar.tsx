@@ -283,16 +283,20 @@ function BottomTabBarInner() {
                 key={tab.href}
                 href={tab.href}
                 className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
-                style={{ color: isActive ? ACCENT : "rgba(0,0,0,0.35)" }}
+                aria-label={tab.label}
+                style={{ color: isActive ? ACCENT : "rgba(0,0,0,0.45)" }}
               >
-                {isActive && (
-                  <div
-                    className="absolute inset-x-2.5 inset-y-0.5 rounded-lg -z-10"
-                    style={{ background: "rgba(232,83,10,0.08)" }}
-                  />
-                )}
                 <tab.Icon className="w-5 h-5" filled={isActive} />
-                <span className="text-[9px] font-semibold leading-tight">{tab.label}</span>
+                <span
+                  className="leading-tight"
+                  style={{
+                    fontSize: 9,
+                    fontWeight: isActive ? 600 : 500,
+                    letterSpacing: 0,
+                  }}
+                >
+                  {tab.label}
+                </span>
               </Link>
             );
           })}
@@ -332,32 +336,40 @@ function BottomTabBarInner() {
           <Link
             href="/grocery"
             className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
-            style={{ color: isGroceryActive ? ACCENT : "rgba(0,0,0,0.35)" }}
+            aria-label="Grocery"
+            style={{ color: isGroceryActive ? ACCENT : "rgba(0,0,0,0.45)" }}
           >
-            {isGroceryActive && (
-              <div
-                className="absolute inset-x-2.5 inset-y-0.5 rounded-lg -z-10"
-                style={{ background: "rgba(232,83,10,0.08)" }}
-              />
-            )}
             <GroceryIcon className="w-5 h-5" filled={isGroceryActive} />
-            <span className="text-[9px] font-semibold leading-tight">Grocery</span>
+            <span
+              className="leading-tight"
+              style={{
+                fontSize: 9,
+                fontWeight: isGroceryActive ? 600 : 500,
+                letterSpacing: 0,
+              }}
+            >
+              Grocery
+            </span>
           </Link>
 
           {/* Discover */}
           <Link
             href="/recipes?tab=discover"
             className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
-            style={{ color: isDiscoverActive ? ACCENT : "rgba(0,0,0,0.35)" }}
+            aria-label="Discover"
+            style={{ color: isDiscoverActive ? ACCENT : "rgba(0,0,0,0.45)" }}
           >
-            {isDiscoverActive && (
-              <div
-                className="absolute inset-x-2.5 inset-y-0.5 rounded-lg -z-10"
-                style={{ background: "rgba(232,83,10,0.08)" }}
-              />
-            )}
             <SearchIcon className="w-5 h-5" />
-            <span className="text-[9px] font-semibold leading-tight">Discover</span>
+            <span
+              className="leading-tight"
+              style={{
+                fontSize: 9,
+                fontWeight: isDiscoverActive ? 600 : 500,
+                letterSpacing: 0,
+              }}
+            >
+              Discover
+            </span>
           </Link>
         </div>
       </nav>

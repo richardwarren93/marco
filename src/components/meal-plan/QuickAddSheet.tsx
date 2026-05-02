@@ -3,16 +3,10 @@
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import type { Recipe } from "@/types";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
-
-const MEAL_PLACEHOLDER: Record<string, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
-};
 
 /** Simple fuzzy score: higher = better match */
 function fuzzyScore(recipe: Recipe, query: string): number {
@@ -297,7 +291,7 @@ function RecipeRow({
         {recipe.image_url ? (
           <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="40px" /></div>
         ) : (
-          <span className="text-base">{MEAL_PLACEHOLDER[recipe.meal_type] || "🍳"}</span>
+          <MealTypeIcon type={recipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
         )}
       </div>
 

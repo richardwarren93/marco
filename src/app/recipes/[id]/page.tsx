@@ -12,6 +12,7 @@ import SocialEmbed from "@/components/recipes/SocialEmbed";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
 import { useToast } from "@/components/ui/Toast";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 /* ── Accordion wrapper ──────────────────────────────────────────────── */
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
@@ -47,12 +48,6 @@ const CommunitySection = dynamic(() => import("@/components/community/CommunityS
 const CookPhotosGallery = dynamic(() => import("@/components/recipes/CookPhotosGallery"));
 const CookWithMarcoChat = dynamic(() => import("@/components/recipes/CookWithMarcoChat"), { ssr: false });
 
-const MEAL_ICONS: Record<string, string> = {
-  breakfast: "🌅",
-  lunch: "☀️",
-  dinner: "🌙",
-  snack: "🍎",
-};
 
 /* ── Unit conversion maps ────────────────────────────────────────────── */
 type UnitSystem = "imperial" | "metric";
@@ -466,8 +461,14 @@ export default function RecipeDetailPage() {
             )}
           </div>
         ) : (
-          <div className="h-52 sm:h-64 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
-            <span className="text-6xl">{MEAL_ICONS[recipe.meal_type] || "🍽️"}</span>
+          <div
+            className="h-52 sm:h-64 flex items-center justify-center"
+            style={{
+              background:
+                "radial-gradient(circle at 30% 60%, var(--tomato, #E5462E) 0%, transparent 45%), radial-gradient(circle at 80% 30%, var(--mustard, #E8A33D) 0%, transparent 30%), var(--cream-warm, #EFE5D2)",
+            }}
+          >
+            <MealTypeIcon type={recipe.meal_type} className="text-white/85" size={64} strokeWidth={1.5} />
           </div>
         )}
 
@@ -548,8 +549,9 @@ export default function RecipeDetailPage() {
           {/* Stats row */}
           <div className="flex items-center gap-3 flex-wrap text-[13px] text-[#a09890]">
             {recipe.meal_type && (
-              <span className="capitalize">
-                {MEAL_ICONS[recipe.meal_type]} {recipe.meal_type}
+              <span className="capitalize inline-flex items-center gap-1">
+                <MealTypeIcon type={recipe.meal_type} className="w-3.5 h-3.5" strokeWidth={2} />
+                {recipe.meal_type}
               </span>
             )}
             {recipe.meal_type && totalTime > 0 && <span>·</span>}

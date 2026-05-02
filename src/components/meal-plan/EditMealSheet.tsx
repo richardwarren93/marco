@@ -4,16 +4,10 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
-
-const MEAL_PLACEHOLDER: Record<string, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
-};
 
 export default function EditMealSheet({
   isOpen,
@@ -159,9 +153,7 @@ export default function EditMealSheet({
                   {selectedRecipe.image_url ? (
                     <div className="relative w-full h-full"><Image src={selectedRecipe.image_url} alt={selectedRecipe.title} fill className="object-cover" sizes="36px" /></div>
                   ) : (
-                    <span className="text-sm">
-                      {MEAL_PLACEHOLDER[selectedRecipe.meal_type] || "🍳"}
-                    </span>
+                    <MealTypeIcon type={selectedRecipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
                   )}
                 </div>
                 <p className="text-sm font-semibold text-orange-800 flex-1 line-clamp-1">
@@ -204,7 +196,7 @@ export default function EditMealSheet({
                       {r.image_url ? (
                         <div className="relative w-full h-full"><Image src={r.image_url} alt={r.title} fill className="object-cover" sizes="32px" /></div>
                       ) : (
-                        <span className="text-sm">{MEAL_PLACEHOLDER[r.meal_type] || "🍳"}</span>
+                        <MealTypeIcon type={r.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
                       )}
                     </div>
                     <span className="text-sm font-medium text-gray-800 line-clamp-1 flex-1">

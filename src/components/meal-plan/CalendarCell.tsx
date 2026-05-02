@@ -2,15 +2,9 @@
 
 import Link from "next/link";
 import type { MealPlan } from "@/types";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
-const MEAL_EMOJI: Record<string, string> = {
-  breakfast: "🌅",
-  lunch: "☀️",
-  dinner: "🌙",
-  snack: "🍎",
-};
-
 // Sort plans by meal type order
 function sortByMealType(plans: MealPlan[]): MealPlan[] {
   return [...plans].sort(
@@ -53,7 +47,7 @@ export default function DayColumn({
             }`}
           >
             {/* Meal type emoji */}
-            <span className="text-[9px] mr-0.5">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>
+            <MealTypeIcon type={plan.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
             <Link
               href={`/recipes/${plan.recipe_id}${plan.servings ? `?servings=${plan.servings}` : ""}`}
               className={`font-medium line-clamp-2 ${

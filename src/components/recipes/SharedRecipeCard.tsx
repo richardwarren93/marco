@@ -1,30 +1,25 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 /**
  * Shared visual recipe card used across Discover, My Recipes, and Grocery.
  *
- * Design rules (matching the polished Discover card):
+ * Marco design rules:
  * - 4:5 portrait aspect ratio, fills parent width
  * - Image fills entire card
  * - Concentrated bottom gradient so the food still pops
- * - Title overlaid in white, bold 14px, max 2 lines
- * - Optional time / meta line below the title
+ * - Fraunces serif title (the editorial voice), white, 16px, max 2 lines
+ * - Mono uppercase metadata line ("45 MIN \u00B7 DINNER") for time/meal type
  * - Glassy black/25 buttons in the top corners
+ * - Cream-warm fallback (no emoji ever \u2014 stroke-2 SVG meal icon)
  * - Subtle box shadow, no border
  *
  * Per-page differences are passed in via props (action buttons, badges,
  * excluded state) so each consumer can keep its own behavior while still
  * sharing the same look.
  */
-
-const MEAL_EMOJIS: Record<string, string> = {
-  breakfast: "\u{1F95E}",
-  lunch: "\u{1F96A}",
-  dinner: "\u{1F37D}\uFE0F",
-  snack: "\u{1F36A}",
-};
 
 export interface SharedCardAction {
   icon: ReactNode;
@@ -70,8 +65,6 @@ export default function SharedRecipeCard({
   index = 0,
   className = "",
 }: SharedRecipeCardProps) {
-  const fallbackEmoji = MEAL_EMOJIS[mealType ?? ""] ?? "\u{1F373}";
-
   return (
     <div
       className={`relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-transform duration-200 active:scale-[0.97] ${excluded ? "opacity-50 grayscale" : ""} ${className}`}
@@ -96,8 +89,19 @@ export default function SharedRecipeCard({
           }}
         />
       ) : (
-        <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-          <span className="text-5xl opacity-60">{fallbackEmoji}</span>
+        <div
+          className="absolute inset-0 w-full h-full flex items-center justify-center"
+          style={{
+            background:
+              "radial-gradient(circle at 35% 40%, var(--mustard, #E8A33D) 0%, transparent 45%), radial-gradient(circle at 70% 70%, var(--tomato, #E5462E) 0%, transparent 40%), var(--cream-warm, #EFE5D2)",
+          }}
+        >
+          <MealTypeIcon
+            type={mealType}
+            className="opacity-50"
+            size={48}
+            strokeWidth={1.5}
+          />
         </div>
       )}
 
@@ -119,61 +123,44 @@ export default function SharedRecipeCard({
       {actions.length > 0 && (
         <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
           {actions.map((action, i) => (
-            <button
-              key={i}
-              onClick={(e) => {
-                e.stopPropagation();
-                action.onClick();
-              }}
-              disabled={action.loading}
-              className="w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 disabled:opacity-100"
-              aria-label={action.label}
-            >
-              {action.loading ? (
-                <div className="w-3 h-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                action.icon
-              )}
-            </button>
+            <ActionButton key={i} action={action} />
           ))}
         </div>
       )}
 
-      {/* Title + meta overlay at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-8 pointer-events-none z-10">
+      {/* Title + meta overlay at bottom \u2014 Marco editorial voice */}
+      <div className="absolute bottom-0 left-0 right-0 px-3.5 pb-3 pt-10 pointer-events-none z-10">
         <h4
-          className={`font-bold text-white text-[14px] mb-1 line-clamp-2 ${excluded ? "line-through" : ""}`}
+          className={`text-white mb-1.5 line-clamp-2 ${excluded ? "line-through" : ""}`}
           style={{
-            lineHeight: "1.22",
-            letterSpacing: "-0.01em",
-            textShadow: "0 1px 4px rgba(0,0,0,0.4)",
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
+            fontSize: "16px",
+            lineHeight: "1.18",
+            letterSpacing: "-0.015em",
+            textShadow: "0 1px 6px rgba(0,0,0,0.45)",
           }}
         >
           {title}
         </h4>
-        {(metaText || (totalTime && totalTime > 0)) && (
-          <div className="flex items-center gap-1 text-white/85 text-[10px] font-medium">
-            {totalTime && totalTime > 0 && (
-              <span className="flex items-center gap-1">
-                <svg
-                  className="w-2.5 h-2.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span>{totalTime} min</span>
-              </span>
-            )}
-            {metaText && totalTime && totalTime > 0 && (
+        {(metaText || (totalTime && totalTime > 0) || mealType) && (
+          <div
+            className="flex items-center gap-1.5 truncate"
+            style={{
+              fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+              fontSize: "9.5px",
+              letterSpacing: "0.13em",
+              textTransform: "uppercase",
+              color: "rgba(255,255,255,0.85)",
+              fontWeight: 500,
+              textShadow: "0 1px 3px rgba(0,0,0,0.4)",
+            }}
+          >
+            {totalTime && totalTime > 0 && <span>{totalTime} min</span>}
+            {totalTime && totalTime > 0 && (mealType || metaText) && (
               <span className="text-white/40">{"\u00B7"}</span>
             )}
+            {mealType && !metaText && <span>{mealType}</span>}
             {metaText && <span className="truncate">{metaText}</span>}
           </div>
         )}
@@ -194,5 +181,48 @@ export default function SharedRecipeCard({
         </button>
       )}
     </div>
+  );
+}
+
+/**
+ * Top-right action button. Fires the Marco punctum pulse the moment the
+ * action transitions to active (e.g. saving a recipe — tomato ripple
+ * emanates outward as the brand's "save / cooked it" feedback).
+ */
+function ActionButton({ action }: { action: SharedCardAction }) {
+  const [pulseKey, setPulseKey] = useState(0);
+  const prevActiveRef = useRef(action.active);
+
+  useEffect(() => {
+    if (action.active && !prevActiveRef.current) {
+      // Just turned on — fire a fresh pulse
+      setPulseKey((k) => k + 1);
+    }
+    prevActiveRef.current = action.active;
+  }, [action.active]);
+
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        action.onClick();
+      }}
+      disabled={action.loading}
+      className="relative w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 disabled:opacity-100"
+      aria-label={action.label}
+    >
+      {action.loading ? (
+        <div className="w-3 h-3 border-[1.5px] border-white border-t-transparent rounded-full animate-spin" />
+      ) : (
+        action.icon
+      )}
+      {pulseKey > 0 && (
+        <span
+          key={pulseKey}
+          className="marco-punctum-pulse"
+          aria-hidden="true"
+        />
+      )}
+    </button>
   );
 }

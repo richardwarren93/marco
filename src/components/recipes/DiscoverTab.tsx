@@ -71,10 +71,6 @@ const QUESTIONS = [
   },
 ];
 
-const MEAL_EMOJIS: Record<string, string> = {
-  breakfast: "🥞", lunch: "🥗", dinner: "🍽️", snack: "🍎",
-};
-
 // ─── Category definitions (driven by tags) ──────────────────────────────────
 
 interface Category {
@@ -757,7 +753,7 @@ export default function DiscoverTab({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-                          <span className="text-6xl">{MEAL_EMOJIS[recipe.meal_type] ?? "🍳"}</span>
+                          
                         </div>
                       )}
                       {/* Dark gradient overlay */}
@@ -1007,7 +1003,7 @@ function CategoryRow({
   return (
     <div>
       <div className="flex items-center gap-2 mb-3.5 px-0.5">
-        <span className="text-base">{emoji}</span>
+        
         <h3 className="text-[17px] font-bold tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.01em" }}>
           {title}
         </h3>

@@ -10,6 +10,7 @@ import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import HeaderActions from "@/components/layout/HeaderActions";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const ACCENT = "#e8530a";          // slightly calmer orange
@@ -23,12 +24,6 @@ const CARD_SHADOW = "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
-const MEAL_EMOJI: Record<string, string> = {
-  breakfast: "🥞",
-  lunch:     "🥗",
-  dinner:    "🍽️",
-  snack:     "🍎",
-};
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -80,7 +75,7 @@ function MealRow({
         <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#f0f0ee" }}>
           {plan.recipe?.image_url
             ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
-            : <span className="text-sm">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
+            : <MealTypeIcon type={plan.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
@@ -116,7 +111,7 @@ function MealRow({
         >
           {plan.recipe?.image_url
             ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
-            : <span className="text-2xl opacity-50 select-none">{MEAL_EMOJI[plan.meal_type] || "🍴"}</span>}
+            : <MealTypeIcon type={plan.meal_type} className="w-7 h-7 opacity-50" strokeWidth={1.6} />}
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13.5px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
@@ -593,8 +588,14 @@ export default function MealPlanListView({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={recipe.image_url} alt={recipe.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
-                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-                        <span className="text-3xl opacity-60">{MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "\u{1F373}"}</span>
+                      <div
+                        className="absolute inset-0 w-full h-full flex items-center justify-center"
+                        style={{
+                          background:
+                            "radial-gradient(circle at 35% 40%, var(--mustard, #E8A33D) 0%, transparent 45%), radial-gradient(circle at 70% 70%, var(--tomato, #E5462E) 0%, transparent 40%), var(--cream-warm, #EFE5D2)",
+                        }}
+                      >
+                        <MealTypeIcon type={recipe.meal_type} className="opacity-50" size={36} strokeWidth={1.5} />
                       </div>
                     )}
                     <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)" }} />
@@ -664,8 +665,14 @@ export default function MealPlanListView({
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="absolute inset-0 w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-                        <span className="text-3xl opacity-60">{MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "\u{1F373}"}</span>
+                      <div
+                        className="absolute inset-0 w-full h-full flex items-center justify-center"
+                        style={{
+                          background:
+                            "radial-gradient(circle at 35% 40%, var(--mustard, #E8A33D) 0%, transparent 45%), radial-gradient(circle at 70% 70%, var(--tomato, #E5462E) 0%, transparent 40%), var(--cream-warm, #EFE5D2)",
+                        }}
+                      >
+                        <MealTypeIcon type={recipe.meal_type} className="opacity-50" size={36} strokeWidth={1.5} />
                       </div>
                     )}
                     {/* Dark gradient */}
@@ -825,8 +832,14 @@ export default function MealPlanListView({
                           sizes="180px"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl bg-gradient-to-br from-orange-50 to-amber-50">
-                          {MEAL_EMOJI[recipe.meal_type as keyof typeof MEAL_EMOJI] || "🍳"}
+                        <div
+                          className="w-full h-full flex items-center justify-center"
+                          style={{
+                            background:
+                              "radial-gradient(circle at 35% 40%, var(--mustard, #E8A33D) 0%, transparent 45%), radial-gradient(circle at 70% 70%, var(--tomato, #E5462E) 0%, transparent 40%), var(--cream-warm, #EFE5D2)",
+                          }}
+                        >
+                          <MealTypeIcon type={recipe.meal_type} className="opacity-55" size={32} strokeWidth={1.6} />
                         </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />

@@ -87,6 +87,34 @@
 }
 .marco-signature.on-dark { color: var(--cream); }
 
+/* The punctum dot — Marco's signature mark. A small tomato circle that
+   ends every flourish. Lives inside .marco-signature::after by default,
+   but can also be used standalone via this class. */
+.marco-punctum {
+  display: inline-block;
+  width: 0.35em;
+  height: 0.35em;
+  background: var(--tomato);
+  border-radius: 50%;
+  vertical-align: middle;
+}
+
+/* Punctum pulse — the save / cooked-it ripple. Per the design system:
+   tomato ripple, three concentric circles emanate over 2s with 0.6s
+   stagger, scaling from 1× to ~3.5× while fading. */
+@keyframes marco-punctum-pulse {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  100% { transform: scale(3.5); opacity: 0; }
+}
+.marco-punctum-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--tomato);
+  pointer-events: none;
+  animation: marco-punctum-pulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
 html {
   /* Prevent iOS rubber-band bounce from shifting fixed-position elements */
   overscroll-behavior: none;

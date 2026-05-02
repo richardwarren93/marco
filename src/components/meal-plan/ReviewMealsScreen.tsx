@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Recipe } from "@/types";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -10,13 +11,6 @@ const MEAL_LABELS: Record<string, string> = {
   lunch: "Lunch",
   dinner: "Dinner",
   snack: "Snack",
-};
-
-const MEAL_PLACEHOLDER: Record<string, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
 };
 
 export default function ReviewMealsScreen({
@@ -105,9 +99,7 @@ export default function ReviewMealsScreen({
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-2xl">
-                            {MEAL_PLACEHOLDER[recipe.meal_type] || "🍳"}
-                          </span>
+                          <MealTypeIcon type={recipe.meal_type} className="opacity-60" size={28} strokeWidth={1.6} />
                         )}
                       </div>
 

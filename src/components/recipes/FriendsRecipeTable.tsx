@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 interface FriendRecipe {
   id: string;
@@ -23,13 +24,6 @@ interface FriendRecipe {
   planning_friends: { name: string; avatar: string | null }[];
   next_planned_date: string | null;
 }
-
-const MEAL_EMOJIS: Record<string, string> = {
-  breakfast: "🥞",
-  lunch: "🥗",
-  dinner: "🍽️",
-  snack: "🍎",
-};
 
 function timeAgo(dateStr: string): string {
   const now = new Date();
@@ -263,9 +257,7 @@ function FriendRecipeCard({
   isSaved: boolean;
 }) {
   const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
-  const emoji = MEAL_EMOJIS[recipe.meal_type] ?? "🍳";
-
-  return (
+    return (
     <div
       className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden active:scale-[0.99] transition-transform cursor-pointer"
       onClick={onTap}
@@ -284,7 +276,7 @@ function FriendRecipeCard({
               }}
             />
           ) : (
-            <span className="text-2xl">{emoji}</span>
+            <MealTypeIcon type={recipe.meal_type} className="opacity-55" size={24} strokeWidth={1.7} />
           )}
           {/* Planning badge */}
           {recipe.is_planned && (
