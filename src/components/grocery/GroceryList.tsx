@@ -43,9 +43,12 @@ function canonicalUiCategory(cat: string | null): string {
 }
 
 function categoryLabel(cat: string | null): string {
+  // Per Marco design: no emoji glyphs in section labels — labels are
+  // pure mono-tracked uppercase text. The category emoji map is kept on
+  // CATEGORY_CONFIG only for legacy callers (not used here anymore).
   const c = canonicalUiCategory(cat);
   const cfg = CATEGORY_CONFIG[c];
-  return cfg ? `${cfg.emoji} ${cfg.label}` : c;
+  return cfg ? cfg.label : c;
 }
 
 function categorySort(cat: string | null): number {
@@ -588,7 +591,7 @@ export default function GroceryList() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setRangePickerOpen(false)} />
                   <div
-                    className="absolute left-0 top-full mt-1 w-56 bg-white rounded-xl overflow-hidden z-50 py-1"
+                    className="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl overflow-hidden z-50 py-1"
                     style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)" }}
                   >
                     {(["this_week", "next_week", "custom"] as RangePreset[]).map((preset) => (
@@ -664,7 +667,7 @@ export default function GroceryList() {
             onClick={() => setMealsExpanded((v) => !v)}
             className="flex items-center gap-2 w-full text-left py-2"
           >
-            <h2 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+            <h2 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
               Meals ({activeMeals.length})
             </h2>
             <svg
@@ -755,7 +758,7 @@ export default function GroceryList() {
       {/* ── List header + filter + view toggle ─────────────────────────── */}
       {!loading && (
         <div className="mx-4 mt-4 mb-1">
-          <h2 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+          <h2 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
             List ({toBuyCount})
           </h2>
         </div>
@@ -937,21 +940,42 @@ export default function GroceryList() {
                   animation: `fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) ${gi * 60}ms both`,
                 }}
               >
-                {/* Section header — tap to expand/collapse */}
+                {/* Section header — tap to expand/collapse. Marco mono
+                    uppercase tracked label, no emoji glyph. */}
                 <button
                   onClick={toggleGroup}
                   className="w-full flex items-center justify-between px-4 pt-3.5 pb-2"
                 >
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+                    <h3
+                      className="uppercase"
+                      style={{
+                        fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                        fontSize: "11px",
+                        fontWeight: 500,
+                        letterSpacing: "0.15em",
+                        color: "var(--ink-soft, #4A4742)",
+                      }}
+                    >
                       {groupMode === "category"
                         ? categoryLabel(groupKey)
                         : groupKey === "__custom__"
-                          ? "📦 Custom & Added"
-                          : `🍽 ${groupKey}`
+                          ? "Custom & Added"
+                          : groupKey
                       }
                     </h3>
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#a09890" }}>
+                    <span
+                      className="rounded-full"
+                      style={{
+                        fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                        fontSize: "10px",
+                        fontWeight: 500,
+                        padding: "2px 7px",
+                        background: "var(--cream-warm, #EFE5D2)",
+                        color: "var(--ink-soft, #4A4742)",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
                       {groupItems.length}
                     </span>
                   </div>
@@ -961,7 +985,7 @@ export default function GroceryList() {
                       role="button"
                       onClick={(e) => { e.stopPropagation(); setAddSheetOpen(true); }}
                       className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
-                      style={{ color: "#a09890" }}
+                      style={{ color: "var(--ink-soft, #4A4742)" }}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -970,7 +994,7 @@ export default function GroceryList() {
                     {/* Chevron */}
                     <svg
                       className={`w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                      style={{ color: "#c0b8b0" }}
+                      style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.55 }}
                       fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1017,7 +1041,7 @@ export default function GroceryList() {
                   className="w-full flex items-center justify-between px-4 pt-3.5 pb-2"
                 >
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+                    <h3 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
                       ✅ Already have
                     </h3>
                     <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#a09890" }}>
@@ -1080,7 +1104,7 @@ export default function GroceryList() {
             >
               <div className="px-4 pt-4 pb-2">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-black tracking-widest uppercase" style={{ color: "#a09890" }}>
+                  <h3 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
                     Estimated Cost
                   </h3>
                   <button
