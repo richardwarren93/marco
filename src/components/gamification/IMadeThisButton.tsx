@@ -95,13 +95,13 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
           variant === "pill"
             ? `px-5 py-2 rounded-full text-xs ${
                 justCooked
-                  ? "bg-green-50 text-green-700 border border-green-200"
+                  ? "bg-[var(--teal,#0F4C5C)]/10 text-[var(--teal-deep,#082E38)] border border-[var(--teal,#0F4C5C)]/30"
                   : "bg-[#1C1A17]/5 text-[#1C1A17]/60 hover:bg-[#1C1A17]/10 border border-[#1C1A17]/10"
               }`
             : `w-full py-3 px-4 rounded-2xl text-sm ${
                 justCooked
-                  ? "bg-green-50 text-green-700 border-2 border-green-200"
-                  : "bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600 shadow-sm hover:shadow-md"
+                  ? "bg-[var(--teal,#0F4C5C)]/10 text-[var(--teal-deep,#082E38)] border-2 border-[var(--teal,#0F4C5C)]/30"
+                  : "bg-[var(--tomato,#E5462E)] text-white hover:bg-[var(--tomato-dark,#B8331E)] shadow-sm hover:shadow-md"
               }`
         } ${loading ? "opacity-70" : ""}`}
       >
@@ -122,9 +122,13 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
       {justCooked && cookingLogId && !showPhotoUpload && !photoPosted && (
         <button
           onClick={() => setShowPhotoUpload(true)}
-          className="w-full mt-2 py-2 text-sm text-orange-600 hover:text-orange-700 font-medium hover:bg-orange-50 rounded-xl transition-colors"
+          className="w-full mt-2 py-2 text-sm text-[var(--tomato,#E5462E)] hover:text-[var(--tomato-dark,#B8331E)] font-medium hover:bg-orange-50 rounded-xl transition-colors flex items-center justify-center gap-1.5"
         >
-          📸 Add a photo of your dish
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          Add a photo of your dish
         </button>
       )}
 

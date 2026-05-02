@@ -342,7 +342,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, ingredient, tag…"
-              className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-sm outline-none transition-all"
+              className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-[13px] font-medium tracking-tight outline-none transition-all placeholder:font-medium placeholder:text-[var(--ink-soft,#4A4742)] placeholder:opacity-60"
               style={{ background: "#fff", border: "1.5px solid rgba(28,26,23,0.12)" }}
               onFocus={(e) => (e.target.style.borderColor = "#E5462E")}
               onBlur={(e) => (e.target.style.borderColor = "rgba(28,26,23,0.12)")}
@@ -377,7 +377,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           <div className="relative flex-shrink-0" ref={sortMenuRef}>
             <button
               onClick={() => { setShowSortMenu((v) => !v); setShowMealMenu(false); setShowCollMenu(false); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
               style={{ background: "#1C1A17", color: "#fff" }}
             >
               {sort === "newest" ? "Newest" : "Prep time"}
@@ -411,7 +411,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           <div className="relative flex-shrink-0" ref={mealMenuRef}>
             <button
               onClick={() => { setShowMealMenu((v) => !v); setShowSortMenu(false); setShowCollMenu(false); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
               style={activeMealType !== "all"
                 ? { background: "var(--tomato, #E5462E)", color: "#fff" }
                 : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
@@ -448,7 +448,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             <div className="relative flex-shrink-0" ref={collMenuRef}>
               <button
                 onClick={() => { setShowCollMenu((v) => !v); setShowCollSub(false); setShowCollCreate(false); setShowSortMenu(false); setShowMealMenu(false); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
                 style={activeCollectionId
                   ? { background: "var(--tomato, #E5462E)", color: "#fff" }
                   : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}

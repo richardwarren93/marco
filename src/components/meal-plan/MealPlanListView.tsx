@@ -560,7 +560,7 @@ export default function MealPlanListView({
         {suggestedRecipes.length > 0 && (
           <div className="mt-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "#c0c0be" }}>
+              <p className="text-[10px] font-medium uppercase tracking-[0.15em]" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.65, fontFamily: "var(--font-mono, 'Geist Mono', monospace)" }}>
                 My Recipes
               </p>
               <button
@@ -629,7 +629,7 @@ export default function MealPlanListView({
         {recommendedRecipes.length > 0 && (
           <div className="mt-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-[10px] font-bold uppercase tracking-[0.1em]" style={{ color: "#c0c0be" }}>
+              <p className="text-[10px] font-medium uppercase tracking-[0.15em]" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.65, fontFamily: "var(--font-mono, 'Geist Mono', monospace)" }}>
                 Trending Recipes
               </p>
               <button
@@ -809,8 +809,8 @@ export default function MealPlanListView({
         {/* ── Suggested recipes (large cards) ───────────────────────────────── */}
         {weeklySuggestedRecipes.length > 0 && (
           <div className="mt-4">
-            <p className="text-[10px] font-bold uppercase tracking-[0.1em] mb-3" style={{ color: "#c0c0be" }}>
-              Try this week
+            <p className="text-[10px] font-medium uppercase tracking-[0.15em] mb-3" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.65, fontFamily: "var(--font-mono, 'Geist Mono', monospace)" }}>
+              Trending recipes
             </p>
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
               {weeklySuggestedRecipes.map((recipe) => {
@@ -853,7 +853,7 @@ export default function MealPlanListView({
                         </span>
                       )}
                       {recipe.meal_type && (
-                        <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-green-500/90 text-white backdrop-blur-sm">
+                        <span className="absolute top-2 left-2 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full text-white backdrop-blur-sm" style={{ background: "rgba(232,163,61,0.95)" }}>
                           {recipe.meal_type}
                         </span>
                       )}

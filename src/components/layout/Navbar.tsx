@@ -176,10 +176,10 @@ function NavbarInner() {
                     <Link
                       key={tab.key}
                       href={tab.key === "recipes" ? "/recipes" : `/recipes?tab=${tab.key}`}
-                      className="flex items-center gap-1.5 px-4 pt-2 pb-2.5 text-sm font-semibold transition-all duration-200 relative"
+                      className="flex items-center gap-1.5 px-4 pt-2 pb-2.5 text-[13px] font-medium tracking-tight transition-all duration-200 relative"
                       style={{
                         background: isActive ? "#fff" : "transparent",
-                        color: isActive ? "#E5462E" : "#9a918a",
+                        color: isActive ? "#E5462E" : "var(--ink-soft, #4A4742)",
                         borderRadius: "12px 12px 0 0",
                         borderTop: isActive ? "2px solid #fb923c" : "2px solid transparent",
                         borderLeft: isActive ? "1px solid #ede8e0" : "1px solid transparent",
