@@ -549,7 +549,7 @@ export default function GroceryList() {
     <div className="pb-24" style={{ background: "#F5EEE2" }}>
 
       {/* ── Header: week navigation bar (matches Meal Plan) ────────────── */}
-      <div className="sticky top-0 z-10 px-4 pt-3 pb-2" style={{ background: "#F5EEE2" }}>
+      <div className="px-4 pt-3 pb-2" style={{ background: "#F5EEE2" }}>
         <div className="flex items-center justify-between mb-2 max-w-3xl mx-auto">
           {/* Left: prev arrow + week label + next arrow + calendar icon */}
           <div className="flex items-center gap-1">

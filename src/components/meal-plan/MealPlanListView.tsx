@@ -888,7 +888,7 @@ export default function MealPlanListView({
   return (
     <>
       {/* ── Sticky navigation header ─────────────────────────────────────────── */}
-      <div className="sticky top-0 z-10 pt-3 pb-2" style={{ background: BG }}>
+      <div className="pt-3 pb-2" style={{ background: BG }}>
 
         {/* Row 1: week label (title style) + view dropdown + utility icons */}
         <div className="flex items-center justify-between mb-2">
