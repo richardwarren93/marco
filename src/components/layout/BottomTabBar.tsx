@@ -12,9 +12,13 @@ import {
 
 const ACCENT = "#E5462E";
 
+// All five tabs route through /recipes?tab=* so switching between them is a
+// SPA tab change, not a fresh route navigation. iOS Safari's bottom toolbar
+// re-appears on every full route change — keeping everything on one route
+// preserves the user's scroll/chrome state across tab taps.
 const leftTabs = [
   { href: "/recipes", label: "Recipes", Icon: RecipesIcon },
-  { href: "/meal-plan", label: "Meal Plan", Icon: MealPlanIcon },
+  { href: "/recipes?tab=meal-plan", label: "Meal Plan", Icon: MealPlanIcon },
 ];
 
 export default function BottomTabBar() {
@@ -63,9 +67,11 @@ function BottomTabBarInner() {
     return null;
   }
 
-  const isGroceryActive = pathname.startsWith("/grocery");
-  const isOnMealPlan = pathname.startsWith("/meal-plan");
-  const isDiscoverActive = pathname.startsWith("/recipes") && searchParams.get("tab") === "discover";
+  const tab = searchParams.get("tab");
+  const onRecipesRoute = pathname === "/recipes" || pathname.startsWith("/recipes/");
+  const isGroceryActive = pathname.startsWith("/grocery") || (onRecipesRoute && tab === "grocery");
+  const isOnMealPlan = pathname.startsWith("/meal-plan") || (onRecipesRoute && tab === "meal-plan");
+  const isDiscoverActive = onRecipesRoute && tab === "discover";
 
   function closeFab() {
     setFabOpen(false);
@@ -77,7 +83,7 @@ function BottomTabBarInner() {
     if (isOnMealPlan) {
       window.dispatchEvent(new CustomEvent("openMealAddSheet"));
     } else {
-      router.push("/meal-plan");
+      router.push("/recipes?tab=meal-plan");
     }
   }
 
@@ -274,19 +280,22 @@ function BottomTabBarInner() {
             boxShadow: "0 2px 16px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04)",
           }}
         >
-          {leftTabs.map((tab) => {
-            const isActive = tab.href === "/recipes"
-              ? pathname.startsWith("/recipes") && !isDiscoverActive
-              : pathname.startsWith(tab.href);
+          {leftTabs.map((leftTab) => {
+            // "Recipes" is the default tab — active when on /recipes with no
+            // ?tab override (and explicitly not when meal-plan / grocery /
+            // discover tabs are showing).
+            const isActive = leftTab.href === "/recipes"
+              ? onRecipesRoute && !isDiscoverActive && !isOnMealPlan && !isGroceryActive
+              : isOnMealPlan;
             return (
               <Link
-                key={tab.href}
-                href={tab.href}
+                key={leftTab.href}
+                href={leftTab.href}
                 className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
-                aria-label={tab.label}
+                aria-label={leftTab.label}
                 style={{ color: isActive ? ACCENT : "rgba(0,0,0,0.45)" }}
               >
-                <tab.Icon className="w-5 h-5" filled={isActive} />
+                <leftTab.Icon className="w-5 h-5" filled={isActive} />
                 <span
                   className="leading-tight"
                   style={{
@@ -295,7 +304,7 @@ function BottomTabBarInner() {
                     letterSpacing: 0,
                   }}
                 >
-                  {tab.label}
+                  {leftTab.label}
                 </span>
               </Link>
             );
@@ -332,9 +341,9 @@ function BottomTabBarInner() {
             </button>
           </div>
 
-          {/* Grocery */}
+          {/* Grocery — same /recipes?tab=* SPA pattern as the others */}
           <Link
-            href="/grocery"
+            href="/recipes?tab=grocery"
             className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
             aria-label="Grocery"
             style={{ color: isGroceryActive ? ACCENT : "rgba(0,0,0,0.45)" }}
