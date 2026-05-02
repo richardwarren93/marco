@@ -481,8 +481,14 @@ export default function RecipeDetailPage() {
           className="hidden"
         />
 
-        {/* Overlaid nav */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 z-10">
+        {/* Overlaid nav — pushed below the iOS status bar / notch in PWA mode.
+            env(safe-area-inset-top) is 0 in regular Safari (since the status
+            bar already overlays the page content there), so this only adds
+            extra spacing when the app is installed as a PWA. */}
+        <div
+          className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 z-10"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}
+        >
           <button
             onClick={() => {
               const from = searchParams?.get("from");
