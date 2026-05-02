@@ -8,16 +8,25 @@ import { Suspense, useEffect, useState, useRef, useCallback } from "react";
 import type { User } from "@supabase/supabase-js";
 import {
   FriendsIcon,
+  RecipesIcon,
+  SearchIcon,
+  MealPlanIcon,
+  GroceryIcon,
 } from "@/components/icons/HandDrawnIcons";
 import NotificationSheet from "@/components/notifications/NotificationSheet";
 import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
 
-// ── Tab config for the recipes page (rendered in navbar on desktop) ───────────
-const TAB_CONFIG: { key: string; label: string; emoji: string }[] = [
-  { key: "recipes", label: "My Recipes", emoji: "📖" },
-  { key: "discover", label: "Discover", emoji: "🔍" },
-  { key: "meal-plan", label: "Meal Plan", emoji: "📅" },
-  { key: "grocery", label: "Grocery", emoji: "🛒" },
+// ── Tab config for the recipes page (rendered in navbar on desktop).
+// Per Marco design system: stroke-2 outline icons, no emoji. ───────────────────
+const TAB_CONFIG: {
+  key: string;
+  label: string;
+  Icon: React.ComponentType<{ className?: string; filled?: boolean }>;
+}[] = [
+  { key: "recipes", label: "My Recipes", Icon: RecipesIcon },
+  { key: "discover", label: "Discover", Icon: SearchIcon },
+  { key: "meal-plan", label: "Meal Plan", Icon: MealPlanIcon },
+  { key: "grocery", label: "Grocery", Icon: GroceryIcon },
 ];
 
 // Menu items removed — community deleted, friends accessible from profile
@@ -179,7 +188,7 @@ function NavbarInner() {
                         marginBottom: isActive ? "-1px" : "0",
                       }}
                     >
-                      <span className="text-xs">{tab.emoji}</span>
+                      <tab.Icon className="w-4 h-4" filled={isActive} />
                       {tab.label}
                     </Link>
                   );

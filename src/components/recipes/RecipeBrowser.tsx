@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import type { Recipe, Collection } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import SharedRecipeCard from "./SharedRecipeCard";
+import { ClockIcon, CollectionsIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
+import { MealIcon } from "@/components/icons/MealIcons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -341,9 +343,9 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search by title, ingredient, tag…"
               className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-sm outline-none transition-all"
-              style={{ background: "#fff", border: "1.5px solid #e8e4df" }}
-              onFocus={e => (e.target.style.borderColor = "#f97316")}
-              onBlur={e => (e.target.style.borderColor = "transparent")}
+              style={{ background: "#fff", border: "1.5px solid rgba(28,26,23,0.12)" }}
+              onFocus={(e) => (e.target.style.borderColor = "#E5462E")}
+              onBlur={(e) => (e.target.style.borderColor = "rgba(28,26,23,0.12)")}
               autoComplete="off"
             />
             {search && (
@@ -411,8 +413,8 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               onClick={() => { setShowMealMenu((v) => !v); setShowSortMenu(false); setShowCollMenu(false); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
               style={activeMealType !== "all"
-                ? { background: "#f97316", color: "#fff" }
-                : { background: "#ede9e3", color: "#6b6560" }}
+                ? { background: "var(--tomato, #E5462E)", color: "#fff" }
+                : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
             >
               {activeMealType !== "all" ? MEAL_TYPE_LABELS[activeMealType] : "Meal type"}
               <svg className={`w-3 h-3 opacity-60 transition-transform ${showMealMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -427,11 +429,11 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                     key={value}
                     onClick={() => { setActiveMealType(value as MealType | "all"); setShowMealMenu(false); }}
                     className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-orange-50"
-                    style={{ color: activeMealType === value ? "#f97316" : "#374151" }}
+                    style={{ color: activeMealType === value ? "var(--tomato, #E5462E)" : "#374151" }}
                   >
                     <span>{label}</span>
                     {activeMealType === value && (
-                      <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <svg className="w-3.5 h-3.5" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
                     )}
@@ -448,8 +450,8 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                 onClick={() => { setShowCollMenu((v) => !v); setShowCollSub(false); setShowCollCreate(false); setShowSortMenu(false); setShowMealMenu(false); }}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
                 style={activeCollectionId
-                  ? { background: "#f97316", color: "#fff" }
-                  : { background: "#ede9e3", color: "#6b6560" }}
+                  ? { background: "var(--tomato, #E5462E)", color: "#fff" }
+                  : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
               >
                 {activeCollectionName || "Collections"}
                 <svg className={`w-3 h-3 opacity-60 transition-transform ${showCollMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -476,16 +478,16 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                     <button
                       onClick={() => selectCollection(recentlyMade.id)}
                       className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold hover:bg-orange-50 transition-colors"
-                      style={{ color: activeCollectionId === recentlyMade.id ? "#f97316" : "#374151" }}
+                      style={{ color: activeCollectionId === recentlyMade.id ? "var(--tomato, #E5462E)" : "#374151" }}
                     >
                       <span className="flex items-center gap-2">
-                        <span>🕐</span> Recently Made
+                        <ClockIcon className="w-3.5 h-3.5" /> Recently Made
                         {recentlyMade.recipe_count ? (
                           <span className="text-[10px] text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded-full">{recentlyMade.recipe_count}</span>
                         ) : null}
                       </span>
                       {activeCollectionId === recentlyMade.id && (
-                        <svg className="w-3.5 h-3.5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <svg className="w-3.5 h-3.5" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       )}
@@ -500,7 +502,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                         className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-orange-50 transition-colors"
                       >
                         <span className="flex items-center gap-2">
-                          <span>📚</span> My Collections
+                          <CollectionsIcon className="w-3.5 h-3.5" /> My Collections
                         </span>
                         <svg className={`w-3 h-3 text-gray-400 transition-transform ${showCollSub ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -513,7 +515,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                               key={col.id}
                               onClick={() => selectCollection(col.id)}
                               className="w-full flex items-center justify-between px-4 pl-10 py-2.5 text-xs font-semibold hover:bg-orange-50 transition-colors"
-                              style={{ color: activeCollectionId === col.id ? "#f97316" : "#374151" }}
+                              style={{ color: activeCollectionId === col.id ? "var(--tomato, #E5462E)" : "#374151" }}
                             >
                               <span className="flex items-center gap-2 truncate">
                                 {col.name}
@@ -522,7 +524,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                                 ) : null}
                               </span>
                               {activeCollectionId === col.id && (
-                                <svg className="w-3.5 h-3.5 text-orange-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                 </svg>
                               )}
@@ -634,7 +636,9 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         ) : displayRecipes.length === 0 ? (
           <div className="text-center py-20 animate-fade-slide-up">
-            <p className="text-4xl mb-4">{hasFilters ? "🔍" : "🍳"}</p>
+            <div className="flex justify-center mb-4" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.45 }}>
+              {hasFilters ? <SearchIcon className="w-12 h-12" /> : <MealIcon className="w-12 h-12" strokeWidth={1.5} />}
+            </div>
             <p className="font-bold text-gray-700 text-base mb-1">
               {activeCollectionId ? "No recipes in this collection" : hasFilters ? "No matches" : "Nothing saved yet"}
             </p>
