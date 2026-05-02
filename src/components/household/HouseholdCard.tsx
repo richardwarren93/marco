@@ -144,8 +144,11 @@ export default function HouseholdCard() {
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-              🏠 {household.name}
+            <h3 className="font-bold flex items-center gap-2" style={{ color: "var(--ink, #1C1A17)" }}>
+              <svg className="w-4 h-4" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+              {household.name}
             </h3>
             <span className="text-xs text-gray-400">{household.members?.length || 1} member{(household.members?.length || 1) > 1 ? "s" : ""}</span>
           </div>
@@ -231,8 +234,11 @@ export default function HouseholdCard() {
   return (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
       <div className="px-5 py-4 border-b border-gray-100">
-        <h3 className="font-bold text-gray-900 flex items-center gap-2">
-          🏠 Household
+        <h3 className="font-bold flex items-center gap-2" style={{ color: "var(--ink, #1C1A17)" }}>
+          <svg className="w-4 h-4" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          Household
         </h3>
         <p className="text-xs text-gray-400 mt-0.5">
           Share grocery lists with your housemates

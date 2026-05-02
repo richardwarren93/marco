@@ -151,10 +151,11 @@ export default function TasteProfileCard() {
               <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#E5462E" }}>
                 Top Cuisines
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {data.cuisines.map((c) => (
-                  <div key={c.id} className="flex items-center gap-1.5">
-                    <span className="text-sm">{c.flag}</span>
+                  <div key={c.id} className="flex items-center gap-2">
+                    {/* Marco bullet — small tomato dot, no flag emoji */}
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "var(--tomato, #E5462E)" }} />
                     <span className="text-xs font-semibold" style={{ color: "#1C1A17" }}>{c.label}</span>
                   </div>
                 ))}
@@ -171,11 +172,12 @@ export default function TasteProfileCard() {
               <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#E5462E" }}>
                 You tend to...
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {data.insights.map((item, i) => (
-                  <div key={i} className="flex items-start gap-1.5">
-                    <span className="text-xs flex-shrink-0">{item.emoji}</span>
-                    <span className="text-[11px] leading-tight" style={{ color: "#555" }}>{item.text}</span>
+                  <div key={i} className="flex items-start gap-2">
+                    {/* Marco bullet — small mustard dot, no per-insight emoji */}
+                    <span className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: "var(--mustard, #E8A33D)" }} />
+                    <span className="text-[11px] leading-tight" style={{ color: "var(--ink-soft, #4A4742)" }}>{item.text}</span>
                   </div>
                 ))}
               </div>
@@ -196,12 +198,30 @@ export default function TasteProfileCard() {
           <div className="space-y-2">
             {data.signatureMeals.map((meal, i) => (
               <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">{i === 0 ? "\u{1F451}" : "\u{1F373}"}</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  {/* Marco rank indicator — first place gets a mustard dot, rest get muted */}
+                  <span
+                    className="text-[10px] font-bold flex-shrink-0 w-5 text-center"
+                    style={{
+                      fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                      color: i === 0 ? "var(--mustard, #E8A33D)" : "var(--ink-soft, #4A4742)",
+                    }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   <span className="text-xs font-semibold line-clamp-1" style={{ color: "#1C1A17" }}>{meal.title}</span>
                 </div>
-                <span className="text-[10px] font-medium flex-shrink-0 ml-2" style={{ color: "#a09890" }}>
-                  {meal.count}x
+                <span
+                  className="flex-shrink-0 ml-2"
+                  style={{
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                    fontSize: "10px",
+                    fontWeight: 500,
+                    letterSpacing: "0.05em",
+                    color: "var(--ink-soft, #4A4742)",
+                  }}
+                >
+                  {meal.count}×
                 </span>
               </div>
             ))}
@@ -220,10 +240,19 @@ export default function TasteProfileCard() {
           </p>
           <div className="flex gap-2 flex-wrap">
             {data.cookingStyles.map((s) => (
-              <div key={s.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "#f3f2ef" }}>
-                <span className="text-xs">{s.emoji}</span>
-                <span className="text-xs font-medium" style={{ color: "#1C1A17" }}>{s.label}</span>
-              </div>
+              <span
+                key={s.id}
+                className="px-3 py-1.5 rounded-full"
+                style={{
+                  background: "var(--cream-warm, #EFE5D2)",
+                  fontFamily: "var(--font-body, 'Geist', system-ui, sans-serif)",
+                  fontSize: "12px",
+                  fontWeight: 500,
+                  color: "var(--ink, #1C1A17)",
+                }}
+              >
+                {s.label}
+              </span>
             ))}
           </div>
         </div>

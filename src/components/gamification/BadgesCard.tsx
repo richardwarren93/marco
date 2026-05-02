@@ -39,7 +39,8 @@ function BadgeIcon({
 
 // ─── Sparkles that radiate outward from the badge ────────────────────────────
 function Sparkles({ tier }: { tier: string }) {
-  const color = tier === "gold" ? "#fbbf24" : tier === "silver" ? "#94a3b8" : "#f97316";
+  // Marco palette: gold→mustard, silver→teal, bronze→tomato
+  const color = tier === "gold" ? "#E8A33D" : tier === "silver" ? "#0F4C5C" : "#E5462E";
   // 8 sparkles at 45° increments, each with a unique translate direction
   const angles = [0, 45, 90, 135, 180, 225, 270, 315];
   return (
@@ -74,7 +75,8 @@ function Sparkles({ tier }: { tier: string }) {
 
 // ─── Confetti raining from top ─────────────────────────────────────────────────
 function Confetti() {
-  const colors = ["#f97316", "#fbbf24", "#34d399", "#60a5fa", "#a78bfa", "#f472b6"];
+  // Marco palette confetti: tomato, mustard, teal, cream variations
+  const colors = ["#E5462E", "#E8A33D", "#F2C77A", "#0F4C5C", "#1C1A17", "#EFE5D2"];
   const pieces = Array.from({ length: 22 }, (_, i) => ({
     id: i,
     color: colors[i % colors.length],
@@ -104,11 +106,30 @@ function Confetti() {
   );
 }
 
-// ─── Rarity colors for earned badges ──────────────────────────────────────────
-const RARITY_STYLES: Record<string, { bg: string; border: string; glow: string; label: string; labelBg: string }> = {
-  bronze: { bg: "bg-sky-50", border: "border-sky-200", glow: "shadow-sky-100", label: "text-sky-600", labelBg: "bg-sky-100" },
-  silver: { bg: "bg-indigo-50", border: "border-indigo-200", glow: "shadow-indigo-100", label: "text-indigo-600", labelBg: "bg-indigo-100" },
-  gold:   { bg: "bg-amber-50", border: "border-amber-300", glow: "shadow-amber-100", label: "text-amber-700", labelBg: "bg-amber-100" },
+// ─── Rarity colors for earned badges — Marco palette ────────────────────────
+// Bronze → tomato (primary punch) | Silver → teal (anchor) | Gold → mustard (energy)
+const RARITY_STYLES: Record<
+  string,
+  { bgStyle: React.CSSProperties; borderStyle: React.CSSProperties; dotBg: string; dotMark: string }
+> = {
+  bronze: {
+    bgStyle: { background: "rgba(229,70,46,0.06)" },
+    borderStyle: { borderColor: "rgba(229,70,46,0.30)" },
+    dotBg: "#E5462E",
+    dotMark: "●",
+  },
+  silver: {
+    bgStyle: { background: "rgba(15,76,92,0.06)" },
+    borderStyle: { borderColor: "rgba(15,76,92,0.30)" },
+    dotBg: "#0F4C5C",
+    dotMark: "◆",
+  },
+  gold: {
+    bgStyle: { background: "rgba(232,163,61,0.10)" },
+    borderStyle: { borderColor: "rgba(232,163,61,0.45)" },
+    dotBg: "#E8A33D",
+    dotMark: "★",
+  },
 };
 
 // ─── Badge tile — showcase size ───────────────────────────────────────────────
@@ -120,11 +141,12 @@ function BadgeTile({ item, onClick, size = "normal" }: { item: BadgeProgress; on
   return (
     <button
       onClick={onClick}
-      className={`relative aspect-square rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-200 active:scale-90 ${
+      className="relative aspect-square rounded-2xl border-2 flex flex-col items-center justify-center transition-all duration-200 active:scale-90 hover:-translate-y-0.5"
+      style={
         item.earned
-          ? `${rarity.bg} ${rarity.border} hover:shadow-lg hover:-translate-y-1 ${rarity.glow}`
-          : "bg-gray-50 border-gray-200/60 hover:bg-gray-100/50"
-      }`}
+          ? { ...rarity.bgStyle, ...rarity.borderStyle }
+          : { background: "var(--cream-warm, #EFE5D2)", borderColor: "rgba(28,26,23,0.08)" }
+      }
     >
       <BadgeIcon
         badge={item.badge}
@@ -135,7 +157,17 @@ function BadgeTile({ item, onClick, size = "normal" }: { item: BadgeProgress; on
 
       {/* Badge name under icon for earned */}
       {item.earned && size === "normal" && (
-        <span className="text-[9px] font-semibold text-gray-500 mt-0.5 px-1 truncate max-w-full leading-tight">
+        <span
+          className="mt-0.5 px-1 truncate max-w-full"
+          style={{
+            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+            fontSize: "9px",
+            fontWeight: 500,
+            letterSpacing: "0.05em",
+            color: "var(--ink-soft, #4A4742)",
+            lineHeight: 1.2,
+          }}
+        >
           {item.badge.name}
         </span>
       )}
@@ -143,20 +175,19 @@ function BadgeTile({ item, onClick, size = "normal" }: { item: BadgeProgress; on
       {/* Progress for unearned */}
       {!item.earned && pct > 0 && (
         <div className="absolute bottom-1.5 inset-x-2">
-          <div className="w-full h-1 bg-gray-200 rounded-full overflow-hidden">
-            <div className="h-full bg-gray-400 rounded-full" style={{ width: `${pct}%` }} />
+          <div className="w-full h-1 rounded-full overflow-hidden" style={{ background: "rgba(28,26,23,0.10)" }}>
+            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "var(--ink-soft, #4A4742)" }} />
           </div>
         </div>
       )}
 
-      {/* Tier indicator */}
+      {/* Tier indicator — Marco palette dot */}
       {item.earned && (
-        <div className={`absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full border-2 border-white shadow-sm flex items-center justify-center ${
-          item.badge.tier === "gold" ? "bg-amber-400" : item.badge.tier === "silver" ? "bg-indigo-400" : "bg-sky-400"
-        }`}>
-          <span className="text-[7px] text-white font-bold">
-            {item.badge.tier === "gold" ? "★" : item.badge.tier === "silver" ? "◆" : "●"}
-          </span>
+        <div
+          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full border-2 border-white shadow-sm flex items-center justify-center"
+          style={{ background: rarity.dotBg }}
+        >
+          <span className="text-[7px] text-white font-bold">{rarity.dotMark}</span>
         </div>
       )}
     </button>
@@ -181,34 +212,59 @@ function BadgeDetailModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
           />
         </div>
 
-        <h3 className={`font-bold text-lg ${badge.earned ? "text-gray-900" : "text-gray-400"}`}>
+        <h3
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+            fontSize: "20px",
+            letterSpacing: "-0.015em",
+            color: badge.earned ? "var(--ink, #1C1A17)" : "var(--ink-soft, #4A4742)",
+            opacity: badge.earned ? 1 : 0.6,
+          }}
+        >
           {badge.badge.name}
         </h3>
 
-        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider mt-1 ${TIER_COLORS[badge.badge.tier].bg} ${TIER_COLORS[badge.badge.tier].text}`}>
+        <span
+          className={`inline-block px-2 py-0.5 rounded-full mt-1 ${TIER_COLORS[badge.badge.tier].bg} ${TIER_COLORS[badge.badge.tier].text}`}
+          style={{
+            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+          }}
+        >
           {badge.badge.tier}
         </span>
 
-        <p className="text-sm text-gray-500 mt-2">{badge.badge.description}</p>
+        <p className="text-sm mt-2" style={{ color: "var(--ink-soft, #4A4742)" }}>
+          {badge.badge.description}
+        </p>
 
         {!badge.earned && (
           <div className="mt-3">
-            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: "rgba(28,26,23,0.08)" }}>
               <div
-                className="h-full bg-orange-400 rounded-full transition-all"
-                style={{ width: `${Math.min(100, (badge.current / badge.badge.threshold) * 100)}%` }}
+                className="h-full rounded-full transition-all"
+                style={{
+                  width: `${Math.min(100, (badge.current / badge.badge.threshold) * 100)}%`,
+                  background: "var(--tomato, #E5462E)",
+                }}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">{badge.current} / {badge.badge.threshold}</p>
+            <p className="text-xs mt-1" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.6 }}>
+              {badge.current} / {badge.badge.threshold}
+            </p>
           </div>
         )}
 
         {badge.earned && (
-          <p className="text-xs text-green-600 font-medium mt-3 flex items-center justify-center gap-1">
+          <p className="text-xs font-medium mt-3 flex items-center justify-center gap-1" style={{ color: "var(--teal, #0F4C5C)" }}>
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            Earned!
+            Earned
           </p>
         )}
 
@@ -223,11 +279,12 @@ function BadgeDetailModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
 // ─── Achievement celebration modal ─────────────────────────────────────────────
 function AchievementModal({ badge, onClose }: { badge: BadgeProgress; onClose: () => void }) {
   const colors = TIER_COLORS[badge.badge.tier];
+  // Marco palette glow: gold→mustard, silver→teal, bronze→tomato
   const glowColor =
-    badge.badge.tier === "gold"   ? "rgba(251,191,36,0.55)"
-    : badge.badge.tier === "silver" ? "rgba(148,163,184,0.55)"
-    : "rgba(249,115,22,0.55)";
-  const tierEmoji = badge.badge.tier === "gold" ? "🥇" : badge.badge.tier === "silver" ? "🥈" : "🥉";
+    badge.badge.tier === "gold"   ? "rgba(232,163,61,0.55)"
+    : badge.badge.tier === "silver" ? "rgba(15,76,92,0.40)"
+    : "rgba(229,70,46,0.50)";
+  const tierMark = badge.badge.tier === "gold" ? "★" : badge.badge.tier === "silver" ? "◆" : "●";
 
   return (
     <div
@@ -242,9 +299,19 @@ function AchievementModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
         {/* Confetti rain */}
         <Confetti />
 
-        {/* "Badge Unlocked" label */}
-        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-gray-400 mb-5">
-          Badge Unlocked {tierEmoji}
+        {/* "Badge Unlocked" label — Marco mono uppercase tracked */}
+        <p
+          className="mb-5"
+          style={{
+            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+            fontSize: "11px",
+            fontWeight: 600,
+            textTransform: "uppercase",
+            letterSpacing: "0.18em",
+            color: "var(--ink-soft, #4A4742)",
+          }}
+        >
+          Badge unlocked
         </p>
 
         {/* THE BADGE — zooms in and sparkles */}
@@ -275,46 +342,73 @@ function AchievementModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
                 }}
               />
             </div>
-            <span className="text-5xl drop-shadow-md">{badge.badge.icon}</span>
+            <BadgeIcon
+              badge={badge.badge}
+              earned={true}
+              pixelSize={80}
+              emojiClassName="text-5xl drop-shadow-md"
+            />
           </div>
 
-          {/* Tier dot */}
-          <div className={`absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md ${
-            badge.badge.tier === "gold" ? "bg-yellow-400"
-            : badge.badge.tier === "silver" ? "bg-gray-300"
-            : "bg-amber-500"
-          }`}>
-            <span className="text-[11px] font-black text-white">
-              {badge.badge.tier === "gold" ? "★" : badge.badge.tier === "silver" ? "◆" : "●"}
-            </span>
+          {/* Tier dot — Marco palette */}
+          <div
+            className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md"
+            style={{
+              background:
+                badge.badge.tier === "gold" ? "#E8A33D"
+                : badge.badge.tier === "silver" ? "#0F4C5C"
+                : "#E5462E",
+            }}
+          >
+            <span className="text-[11px] font-black text-white">{tierMark}</span>
           </div>
         </div>
 
-        {/* Badge name — big and bold */}
-        <h2 className="text-[22px] font-black text-gray-900 leading-tight tracking-tight">
+        {/* Badge name — Fraunces display */}
+        <h2
+          className="leading-tight"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+            fontSize: "24px",
+            letterSpacing: "-0.02em",
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
           {badge.badge.name}
         </h2>
 
-        {/* Tier label */}
-        <span className={`inline-block mt-1.5 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${colors.bg} ${colors.text}`}>
+        {/* Tier label — Marco mono uppercase tracked */}
+        <span
+          className={`inline-block mt-1.5 px-3 py-0.5 rounded-full ${colors.bg} ${colors.text}`}
+          style={{
+            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+            fontSize: "10px",
+            fontWeight: 600,
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+          }}
+        >
           {badge.badge.tier} tier
         </span>
 
         {/* Description */}
-        <p className="text-sm text-gray-500 mt-3 leading-snug">{badge.badge.description}</p>
+        <p className="text-sm mt-3 leading-snug" style={{ color: "var(--ink-soft, #4A4742)" }}>
+          {badge.badge.description}
+        </p>
 
-        {/* CTA */}
+        {/* CTA — solid tomato (gold gets mustard, silver gets teal) */}
         <button
           onClick={onClose}
-          className={`mt-5 w-full font-bold py-3.5 rounded-2xl transition-all text-sm active:scale-95 text-white shadow-lg ${
-            badge.badge.tier === "gold"
-              ? "bg-gradient-to-r from-yellow-400 to-amber-400 shadow-yellow-200"
-              : badge.badge.tier === "silver"
-              ? "bg-gradient-to-r from-gray-400 to-slate-400 shadow-gray-200"
-              : "bg-gradient-to-r from-orange-500 to-amber-500 shadow-orange-200"
-          }`}
+          className="mt-5 w-full font-medium py-3.5 rounded-2xl transition-all text-sm active:scale-95 text-white shadow-lg hover:opacity-95"
+          style={{
+            background:
+              badge.badge.tier === "gold" ? "var(--mustard, #E8A33D)"
+              : badge.badge.tier === "silver" ? "var(--teal, #0F4C5C)"
+              : "var(--tomato, #E5462E)",
+          }}
         >
-          Woohoo! 🎉
+          Nice
         </button>
       </div>
     </div>
@@ -359,12 +453,30 @@ function AllBadgesModal({
           {/* Header */}
           <div className="px-5 pt-3 pb-3 flex-shrink-0">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-bold text-gray-900 text-lg flex items-center gap-2">
-                <span>🏅</span> Badges
+              <h2
+                className="text-[20px]"
+                style={{
+                  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                  fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+                  color: "var(--ink, #1C1A17)",
+                  letterSpacing: "-0.015em",
+                }}
+              >
+                Badges
               </h2>
               <div className="flex items-center gap-3">
-                <span className="text-sm font-semibold text-gray-500">{earned}/{total}</span>
-                <button onClick={onClose} className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    letterSpacing: "0.08em",
+                    color: "var(--ink-soft, #4A4742)",
+                  }}
+                >
+                  {earned}/{total}
+                </span>
+                <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}>
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -372,31 +484,39 @@ function AllBadgesModal({
               </div>
             </div>
 
-            {/* Progress bar */}
-            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+            {/* Progress bar — tomato fill */}
+            <div className="w-full h-2 rounded-full overflow-hidden mb-3" style={{ background: "rgba(28,26,23,0.08)" }}>
               <div
-                className="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-500"
-                style={{ width: `${progressPct}%` }}
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progressPct}%`, background: "var(--tomato, #E5462E)" }}
               />
             </div>
 
-            {/* Category filter */}
+            {/* Category filter — Marco mono pills */}
             <div className="flex gap-1 overflow-x-auto scrollbar-hide -mx-1 px-1 pb-1">
               {categories.map((cat) => {
                 const count = cat === "all"
                   ? progress.filter((p) => p.earned).length
                   : progress.filter((p) => p.badge.category === cat && p.earned).length;
                 const catTotal = cat === "all" ? total : progress.filter((p) => p.badge.category === cat).length;
+                const isActive = activeCategory === cat;
                 return (
                   <button
                     key={cat}
                     onClick={() => setActiveCategory(cat)}
-                    className={`flex-shrink-0 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all ${
-                      activeCategory === cat ? "bg-orange-100 text-orange-700" : "bg-gray-50 text-gray-500 hover:bg-gray-100"
-                    }`}
+                    className="flex-shrink-0 px-2.5 py-1 rounded-lg transition-all"
+                    style={{
+                      fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                      fontSize: "10px",
+                      fontWeight: 600,
+                      letterSpacing: "0.1em",
+                      textTransform: "uppercase",
+                      background: isActive ? "var(--tomato, #E5462E)" : "var(--cream-warm, #EFE5D2)",
+                      color: isActive ? "#fff" : "var(--ink-soft, #4A4742)",
+                    }}
                   >
                     {cat === "all" ? "All" : CATEGORY_LABELS[cat]}
-                    <span className="ml-1 opacity-60">{count}/{catTotal}</span>
+                    <span className="ml-1 opacity-70">{count}/{catTotal}</span>
                   </button>
                 );
               })}
@@ -477,24 +597,41 @@ export default function BadgesCard() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 20px rgba(234,88,12,0.06)" }}>
-        {/* Header */}
+      <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 20px rgba(229,70,46,0.06)" }}>
+        {/* Header — Marco voice: Fraunces title, mono progress label */}
         <div className="px-4 pt-4 pb-2">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-bold text-gray-900 flex items-center gap-2 text-base">
-              <span>🏅</span> Badges
+            <h3
+              className="text-[20px]"
+              style={{
+                fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+                color: "var(--ink, #1C1A17)",
+                letterSpacing: "-0.015em",
+              }}
+            >
+              Badges
             </h3>
-            <div className="flex items-center gap-1.5 bg-orange-50 px-2.5 py-1 rounded-full">
-              <span className="text-xs">🔥</span>
-              <span className="text-xs font-bold text-orange-600">{earned}/{total}</span>
+            <div
+              className="px-2.5 py-1 rounded-full"
+              style={{
+                background: "var(--cream-warm, #EFE5D2)",
+                fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                fontSize: "11px",
+                fontWeight: 600,
+                letterSpacing: "0.08em",
+                color: "var(--tomato, #E5462E)",
+              }}
+            >
+              {earned}/{total}
             </div>
           </div>
 
-          {/* Progress bar */}
-          <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          {/* Progress bar — solid tomato instead of orange→amber gradient */}
+          <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(28,26,23,0.08)" }}>
             <div
-              className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all duration-700"
-              style={{ width: `${progressPct}%` }}
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${progressPct}%`, background: "var(--tomato, #E5462E)" }}
             />
           </div>
         </div>
@@ -512,9 +649,10 @@ export default function BadgesCard() {
         <div className="px-4 pb-4 pt-1">
           <button
             onClick={() => setShowAll(true)}
-            className="w-full py-2.5 bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold rounded-xl transition-colors active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm"
+            className="w-full py-2.5 text-white text-sm font-medium rounded-xl transition-colors active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm hover:opacity-95"
+            style={{ background: "var(--tomato, #E5462E)" }}
           >
-            View All Badges
+            View all badges
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
             </svg>
