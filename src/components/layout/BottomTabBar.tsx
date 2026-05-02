@@ -124,7 +124,7 @@ function BottomTabBarInner() {
         <div
           className="fixed z-50 left-1/2 sm:hidden"
           style={{
-            bottom: "calc(4.5rem + env(safe-area-inset-bottom, 0px) + 14px)",
+            bottom: "calc(4.5rem + var(--safe-bottom, 0px) + 14px)",
             animation: "fabMenuIn 0.22s cubic-bezier(0.34,1.2,0.64,1) both",
           }}
         >
@@ -250,7 +250,7 @@ function BottomTabBarInner() {
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation px-4"
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+          paddingBottom: "calc(var(--safe-bottom, 0px) + 8px)",
           willChange: "transform",
         }}
       >

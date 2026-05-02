@@ -6,6 +6,16 @@ html {
   overscroll-behavior: none;
   /* Use the full screen including notch/home-indicator areas */
   height: 100%;
+  /* Safe-area inset that only applies in PWA standalone mode.
+     In a regular Safari browser, the bottom toolbar already covers
+     the home-indicator area, so we don't need extra padding. */
+  --safe-bottom: 0px;
+}
+
+@media (display-mode: standalone) {
+  html {
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
 body {
