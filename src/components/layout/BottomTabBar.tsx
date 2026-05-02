@@ -274,12 +274,12 @@ function BottomTabBarInner() {
         }}
       >
         <div
-          className="flex justify-around items-center h-[56px] px-2 mx-auto max-w-md relative"
+          className="flex justify-around items-center h-[60px] px-2 mx-auto max-w-md relative"
           style={{
             background: "rgba(255,253,247,0.92)",
             backdropFilter: "blur(24px)",
             WebkitBackdropFilter: "blur(24px)",
-            borderRadius: 28,
+            borderRadius: 30,
             boxShadow: "0 2px 16px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(28,26,23,0.06)",
           }}
         >
@@ -294,7 +294,7 @@ function BottomTabBarInner() {
               <Link
                 key={leftTab.href}
                 href={leftTab.href}
-                className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+                className="relative flex items-center justify-center flex-1 transition-colors"
                 aria-label={leftTab.label}
                 style={{ color: isActive ? "#fff" : "var(--ink-soft, #4A4742)" }}
               >
@@ -303,24 +303,13 @@ function BottomTabBarInner() {
                 <span
                   className="flex items-center justify-center transition-all"
                   style={{
-                    width: 30,
-                    height: 30,
+                    width: 44,
+                    height: 44,
                     borderRadius: "50%",
                     background: isActive ? "var(--tomato, #E5462E)" : "transparent",
                   }}
                 >
-                  <leftTab.Icon className="w-[18px] h-[18px]" filled={isActive} />
-                </span>
-                <span
-                  className="leading-tight"
-                  style={{
-                    fontSize: 9,
-                    fontWeight: 500,
-                    letterSpacing: "0.04em",
-                    color: isActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
-                  }}
-                >
-                  {leftTab.label}
+                  <leftTab.Icon className="w-[26px] h-[26px]" filled={isActive} />
                 </span>
               </Link>
             );
@@ -360,62 +349,40 @@ function BottomTabBarInner() {
           {/* Grocery — same /recipes?tab=* SPA pattern as the others */}
           <Link
             href="/recipes?tab=grocery"
-            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+            className="relative flex items-center justify-center flex-1 transition-colors"
             aria-label="Grocery"
             style={{ color: isGroceryActive ? "#fff" : "var(--ink-soft, #4A4742)" }}
           >
             <span
               className="flex items-center justify-center transition-all"
               style={{
-                width: 30,
-                height: 30,
+                width: 44,
+                height: 44,
                 borderRadius: "50%",
                 background: isGroceryActive ? "var(--tomato, #E5462E)" : "transparent",
               }}
             >
-              <GroceryIcon className="w-[18px] h-[18px]" filled={isGroceryActive} />
-            </span>
-            <span
-              className="leading-tight"
-              style={{
-                fontSize: 9,
-                fontWeight: 500,
-                letterSpacing: "0.04em",
-                color: isGroceryActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
-              }}
-            >
-              Grocery
+              <GroceryIcon className="w-[26px] h-[26px]" filled={isGroceryActive} />
             </span>
           </Link>
 
           {/* Discover */}
           <Link
             href="/recipes?tab=discover"
-            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
+            className="relative flex items-center justify-center flex-1 transition-colors"
             aria-label="Discover"
             style={{ color: isDiscoverActive ? "#fff" : "var(--ink-soft, #4A4742)" }}
           >
             <span
               className="flex items-center justify-center transition-all"
               style={{
-                width: 30,
-                height: 30,
+                width: 44,
+                height: 44,
                 borderRadius: "50%",
                 background: isDiscoverActive ? "var(--tomato, #E5462E)" : "transparent",
               }}
             >
-              <SearchIcon className="w-[18px] h-[18px]" />
-            </span>
-            <span
-              className="leading-tight"
-              style={{
-                fontSize: 9,
-                fontWeight: 500,
-                letterSpacing: "0.04em",
-                color: isDiscoverActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
-              }}
-            >
-              Discover
+              <SearchIcon className="w-[26px] h-[26px]" />
             </span>
           </Link>
         </div>
