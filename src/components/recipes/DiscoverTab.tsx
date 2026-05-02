@@ -6,6 +6,7 @@ import { useTrending } from "@/lib/hooks/use-data";
 import type { PromptRecipeResult } from "@/lib/claude";
 import SharedRecipeCard from "./SharedRecipeCard";
 import { useToast } from "@/components/ui/Toast";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -579,7 +580,10 @@ export default function DiscoverTab({
   const showLanding = results.length === 0 && !searching && !exploreError;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-32 pt-5" style={{ background: "#F5EEE2" }}>
+    <div
+      className="max-w-3xl mx-auto px-4 pt-5"
+      style={{ background: "#F5EEE2", paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
+    >
 
       {/* AI Prompt Input — always visible at top */}
       <div className="mb-6">
@@ -749,13 +753,30 @@ export default function DiscoverTab({
                           alt={recipe.title}
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          onError={(e) => {
+                            // Image failed; reveal the warm Marco fallback below
+                            const img = e.target as HTMLImageElement;
+                            img.style.display = "none";
+                            const fallback = img.nextElementSibling as HTMLDivElement | null;
+                            if (fallback) fallback.style.display = "flex";
+                          }}
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-orange-100 to-amber-100">
-                          
-                        </div>
-                      )}
+                      ) : null}
+                      <div
+                        className="absolute inset-0 w-full h-full items-center justify-center"
+                        style={{
+                          display: recipe.image_url ? "none" : "flex",
+                          background:
+                            "radial-gradient(circle at 35% 40%, var(--mustard, #E8A33D) 0%, transparent 45%), radial-gradient(circle at 70% 70%, var(--tomato, #E5462E) 0%, transparent 40%), var(--cream-warm, #EFE5D2)",
+                        }}
+                      >
+                        <MealTypeIcon
+                          type={recipe.meal_type}
+                          className="text-white/85"
+                          size={72}
+                          strokeWidth={1.4}
+                        />
+                      </div>
                       {/* Dark gradient overlay */}
                       <div
                         className="absolute inset-0"

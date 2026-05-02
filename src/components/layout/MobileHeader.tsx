@@ -68,23 +68,42 @@ export default function MobileHeader({
     return () => clearInterval(interval);
   }, [user, fetchUnreadCount]);
 
-  if (!user) return null;
+  // Don't gate the entire header on user resolution — the title and chrome
+  // should appear immediately so the layout is stable. We only suppress the
+  // notification bell + avatar when there's no signed-in user.
 
   return (
     <>
-      <div className="flex items-center justify-between px-4 pt-2 pb-1 sm:hidden">
+      <div
+        className="flex items-center justify-between px-4 pb-1 sm:hidden"
+        // Account for the iOS notch / status bar in PWA standalone mode.
+        // env() returns 0 in browsers that have their own chrome, so this is
+        // a no-op in regular Safari and only kicks in for installed PWAs.
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 8px)" }}
+      >
         {/* Left: page title or custom content */}
         {children ? (
           <div className="flex-1 min-w-0">{children}</div>
         ) : title ? (
-          <h1 className="text-[22px] font-black" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
+          <h1
+            className="font-black"
+            style={{
+              color: "#1C1A17",
+              letterSpacing: "-0.02em",
+              fontSize: "22px",
+              lineHeight: 1.1,
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 700',
+            }}
+          >
             {title}
           </h1>
         ) : (
           <div className="flex-1" />
         )}
 
-        {/* Right: notifications + profile */}
+        {/* Right: notifications + profile (only once user is resolved) */}
+        {user && (
         <div className="flex items-center gap-1 flex-shrink-0 ml-2">
           <button
             onClick={() => setShowNotifications(true)}
@@ -116,6 +135,7 @@ export default function MobileHeader({
             )}
           </Link>
         </div>
+        )}
       </div>
 
       {/* Notification sheet */}

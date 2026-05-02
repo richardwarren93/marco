@@ -599,7 +599,10 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
       </div>
 
       {/* ── Scrollable body ────────────────────────────────────────── */}
-      <div className="flex-1 px-4 py-4 pb-28 overflow-y-auto max-w-5xl mx-auto w-full">
+      <div
+        className="flex-1 px-4 py-4 overflow-y-auto max-w-5xl mx-auto w-full"
+        style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
+      >
 
         {/* Collection header when filtered */}
         {activeCollectionId && activeCollectionName && (
