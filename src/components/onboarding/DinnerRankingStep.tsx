@@ -219,17 +219,17 @@ export default function DinnerRankingStep({ onNext }: Props) {
     return (
       <div
         className="flex flex-col h-full pb-24"
-        style={{ background: "#faf9f7" }}
+        style={{ background: "#F5EEE2" }}
       >
         <div className="flex-1 flex flex-col items-center justify-center px-6">
           {/* Animated header */}
           <div className="text-4xl mb-4 animate-bounce-slow">🧬</div>
           <h2
             className="text-xl font-black text-center mb-2 animate-stagger-in"
-            style={{ color: "#1a1410" }}
+            style={{ color: "#1C1A17" }}
           >
             Generating your{" "}
-            <span style={{ color: "#ea580c" }}>Taste DNA</span>
+            <span style={{ color: "#E5462E" }}>Taste DNA</span>
           </h2>
           <p
             className="text-sm text-center mb-6 animate-stagger-in"
@@ -246,7 +246,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
             <div
               className="h-full rounded-full transition-all duration-100 ease-linear"
               style={{
-                background: "linear-gradient(90deg, #ea580c, #f59e0b)",
+                background: "linear-gradient(90deg, #E5462E, #f59e0b)",
                 width: `${generatingProgress}%`,
               }}
             />
@@ -267,7 +267,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
                       style={{
                         background:
                           i === 0
-                            ? "#ea580c"
+                            ? "#E5462E"
                             : i === 1
                               ? "#f07828"
                               : i === 2
@@ -280,7 +280,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
                     </div>
                     <span
                       className="text-sm font-medium"
-                      style={{ color: i <= 2 ? "#1a1410" : "#a09890" }}
+                      style={{ color: i <= 2 ? "#1C1A17" : "#a09890" }}
                     >
                       {recipe.title}
                     </span>
@@ -312,7 +312,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
   return (
     <div
       className="flex flex-col h-full pb-24"
-      style={{ background: "#faf9f7" }}
+      style={{ background: "#F5EEE2" }}
     >
       {/* Progress bar only (no counter) */}
       <div className="px-6 pt-4 pb-1">
@@ -323,7 +323,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
           <div
             className="h-full rounded-full transition-all duration-500 ease-out"
             style={{
-              background: "#ea580c",
+              background: "#E5462E",
               width: `${(matchCount / MAX_MATCHES) * 100}%`,
             }}
           />
@@ -334,9 +334,9 @@ export default function DinnerRankingStep({ onNext }: Props) {
       <div className="pt-2 pb-2 px-6 text-center">
         <h1
           className="text-[22px] font-black tracking-tight"
-          style={{ color: "#1a1410" }}
+          style={{ color: "#1C1A17" }}
         >
-          Which would you <span style={{ color: "#ea580c" }}>rather eat</span>?
+          Which would you <span style={{ color: "#E5462E" }}>rather eat</span>?
         </h1>
         {showHint && (
           <p
@@ -364,7 +364,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
               style={{
                 background: "white",
                 boxShadow: isWinner
-                  ? "0 0 0 3px #ea580c, 0 8px 32px rgba(234,88,12,0.25)"
+                  ? "0 0 0 3px #E5462E, 0 8px 32px rgba(234,88,12,0.25)"
                   : "0 2px 12px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
                 transform: isWinner
                   ? "scale(1.03) translateY(-4px)"
@@ -410,7 +410,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
               <div className="px-4 pb-4 pt-1">
                 <p
                   className="text-base font-bold"
-                  style={{ color: "#1a1410" }}
+                  style={{ color: "#1C1A17" }}
                 >
                   {recipe.title}
                 </p>
@@ -450,7 +450,7 @@ export default function DinnerRankingStep({ onNext }: Props) {
             className="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs shadow-lg"
             style={{
               background: "white",
-              color: "#ea580c",
+              color: "#E5462E",
               border: "2px solid #fed7aa",
               boxShadow: "0 4px 16px rgba(234,88,12,0.15)",
             }}

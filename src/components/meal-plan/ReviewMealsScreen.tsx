@@ -42,9 +42,9 @@ export default function ReviewMealsScreen({
   const orderedMealTypes = MEAL_ORDER.filter((mt) => grouped[mt]?.length > 0);
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "#F5EEE2" }}>
       {/* Header */}
-      <div className="px-4 pt-5 pb-4 border-b" style={{ background: "#faf9f7", borderColor: "#ede8e0" }}>
+      <div className="px-4 pt-5 pb-4 border-b" style={{ background: "#F5EEE2", borderColor: "#ede8e0" }}>
         <div className="max-w-2xl mx-auto">
           <button
             onClick={onBack}
@@ -56,12 +56,12 @@ export default function ReviewMealsScreen({
             </svg>
           </button>
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-black tracking-tight" style={{ color: "#1a1410" }}>Review your meals</h1>
+            <h1 className="text-xl font-black tracking-tight" style={{ color: "#1C1A17" }}>Review your meals</h1>
             {onAddMore && (
               <button
                 onClick={onAddMore}
                 className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all active:scale-95"
-                style={{ background: "#fff4ed", color: "#ea580c" }}
+                style={{ background: "#fff4ed", color: "#E5462E" }}
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -113,7 +113,7 @@ export default function ReviewMealsScreen({
 
                       {/* Info */}
                       <Link href={`/recipes/${recipe.id}`} className="flex-1 min-w-0">
-                        <p className="text-sm font-bold line-clamp-2 leading-snug" style={{ color: "#1a1410" }}>
+                        <p className="text-sm font-bold line-clamp-2 leading-snug" style={{ color: "#1C1A17" }}>
                           {recipe.title}
                         </p>
                         {totalTime > 0 && (
@@ -148,7 +148,7 @@ export default function ReviewMealsScreen({
           onClick={onBuild}
           disabled={selectedRecipes.length === 0}
           className="w-full py-4 text-white rounded-2xl font-bold text-base active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ background: "#1a1410", boxShadow: "0 4px 20px rgba(26,20,16,0.2)" }}
+          style={{ background: "#1C1A17", boxShadow: "0 4px 20px rgba(26,20,16,0.2)" }}
         >
           Build schedule
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

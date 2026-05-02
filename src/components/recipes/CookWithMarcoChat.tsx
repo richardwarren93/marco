@@ -264,7 +264,7 @@ export default function CookWithMarcoChat({
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: "#faf9f7" }}
+      style={{ background: "#F5EEE2" }}
     >
       {/* Header */}
       <div
@@ -375,7 +375,7 @@ export default function CookWithMarcoChat({
                     style={
                       msg.role === "user"
                         ? { background: "#e8530a", color: "white" }
-                        : { background: "#ffffff", color: "#1a1410", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }
+                        : { background: "#ffffff", color: "#1C1A17", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }
                     }
                   >
                     {msg.content || (
@@ -487,7 +487,7 @@ export default function CookWithMarcoChat({
               className="w-full resize-none rounded-2xl border px-4 py-2.5 text-sm outline-none transition-colors disabled:opacity-50 placeholder:text-gray-400"
               style={{
                 borderColor: "#e8e6e3",
-                background: "#faf9f7",
+                background: "#F5EEE2",
                 maxHeight: 120,
                 lineHeight: "1.4",
               }}

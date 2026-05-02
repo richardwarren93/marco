@@ -149,10 +149,10 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="max-w-lg mx-auto" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+      <div className="max-w-lg mx-auto" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
         <div className="h-36 rounded-b-[2rem] skeleton-warm" />
         <div className="px-5 -mt-10 space-y-4">
-          <div className="w-20 h-20 rounded-full skeleton-warm mx-auto ring-4 ring-[#faf9f7]" />
+          <div className="w-20 h-20 rounded-full skeleton-warm mx-auto ring-4 ring-[#F5EEE2]" />
           <div className="h-5 skeleton-warm rounded-2xl w-32 mx-auto" />
           <div className="grid grid-cols-2 gap-2.5">
             {[0, 1, 2, 3].map((i) => (
@@ -173,14 +173,14 @@ export default function ProfilePage() {
     .toUpperCase();
 
   return (
-    <div className="max-w-lg mx-auto pb-8" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+    <div className="max-w-lg mx-auto pb-8" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
 
       {/* ── Guest upgrade banner ── */}
       {isGuest && !showUpgrade && (
         <div className="mx-4 mt-3 p-4 rounded-2xl flex items-start gap-3" style={{ background: "#fff4ec", border: "1px solid #fcd9bd" }}>
           <span className="text-2xl flex-shrink-0">🔒</span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold" style={{ color: "#1a1410" }}>Secure your account</p>
+            <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
             <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#a09890" }}>
               Add an email to access Marco from any device and never lose your recipes.
             </p>
@@ -199,7 +199,7 @@ export default function ProfilePage() {
       {isGuest && showUpgrade && !upgradeSent && (
         <div className="mx-4 mt-3 p-4 rounded-2xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-bold" style={{ color: "#1a1410" }}>Secure your account</p>
+            <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
             <button onClick={() => setShowUpgrade(false)} className="text-gray-400 text-sm" aria-label="Close">✕</button>
           </div>
           <form onSubmit={handleUpgrade} className="space-y-2.5">
@@ -255,7 +255,7 @@ export default function ProfilePage() {
           <button
             onClick={() => avatarInputRef.current?.click()}
             disabled={uploadingAvatar}
-            className="relative w-20 h-20 rounded-full ring-4 ring-[#faf9f7] shadow-xl group"
+            className="relative w-20 h-20 rounded-full ring-4 ring-[#F5EEE2] shadow-xl group"
           >
             {profile?.avatar_url ? (
               <Image src={profile.avatar_url} alt={profile.display_name} width={80} height={80} className="w-20 h-20 rounded-full object-cover" />
@@ -302,7 +302,7 @@ export default function ProfilePage() {
             onClick={() => setEditing(true)}
             className="inline-flex items-center gap-2 active:scale-[0.98] transition-transform"
           >
-            <h1 className="text-[22px] font-black tracking-tight" style={{ color: "#1a1410", letterSpacing: "-0.02em" }}>
+            <h1 className="text-[22px] font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
               {profile?.display_name}
             </h1>
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#c0b8af" }}>
@@ -319,7 +319,7 @@ export default function ProfilePage() {
             href="/recipes"
             className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
           >
-            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{stats.recipes}</span>
+            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{stats.recipes}</span>
             <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Recipes</span>
           </Link>
 
@@ -327,7 +327,7 @@ export default function ProfilePage() {
             href="/collections"
             className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
           >
-            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{stats.collections}</span>
+            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{stats.collections}</span>
             <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Collections</span>
           </Link>
 
@@ -335,7 +335,7 @@ export default function ProfilePage() {
             href="/friends"
             className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
           >
-            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{stats.friends}</span>
+            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{stats.friends}</span>
             <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Friends</span>
           </Link>
 
@@ -343,7 +343,7 @@ export default function ProfilePage() {
             onClick={() => setShowGoalPicker(!showGoalPicker)}
             className="relative flex flex-col items-center gap-1 py-4 active:bg-gray-50 transition-colors"
           >
-            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{goalTarget || "–"}</span>
+            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{goalTarget || "–"}</span>
             <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Per Week</span>
           </button>
         </div>

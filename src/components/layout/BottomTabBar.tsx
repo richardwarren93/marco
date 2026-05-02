@@ -10,7 +10,7 @@ import {
   SearchIcon,
 } from "@/components/icons/HandDrawnIcons";
 
-const ACCENT = "#ea580c";
+const ACCENT = "#E5462E";
 
 const leftTabs = [
   { href: "/recipes", label: "Recipes", Icon: RecipesIcon },
@@ -374,7 +374,7 @@ function BottomTabBarInner() {
       {/* Full-screen uploading indicator */}
       {photoUploading && (
         <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm">
-          <div className="w-10 h-10 border-2 border-[#ea580c] border-t-transparent rounded-full animate-spin mb-3" />
+          <div className="w-10 h-10 border-2 border-[#E5462E] border-t-transparent rounded-full animate-spin mb-3" />
           <p className="text-sm font-medium text-gray-600">Extracting recipe…</p>
         </div>
       )}

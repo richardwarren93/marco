@@ -83,7 +83,7 @@ export default function SignupPage() {
   // Success confirmation
   if (success) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#faf9f7" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
         <div className="text-center space-y-4 max-w-sm">
           <span className="text-6xl block">📬</span>
           <h1 className="text-2xl font-black text-gray-900">Check your email!</h1>
@@ -104,7 +104,7 @@ export default function SignupPage() {
   // Email + password form
   if (mode === "email") {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
+      <div className="min-h-screen flex flex-col" style={{ background: "#F5EEE2" }}>
         {/* Compact hero */}
         <div className="relative">
           <div className="h-48 bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-300 flex items-center justify-center overflow-hidden">
@@ -171,7 +171,7 @@ export default function SignupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3.5 px-4 bg-[#1a1410] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
+              className="w-full py-3.5 px-4 bg-[#1C1A17] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
             >
               {loading ? "Creating account..." : "Create account"}
             </button>
@@ -190,9 +190,9 @@ export default function SignupPage() {
 
   // Main choose screen
   return (
-    <div className="flex flex-col" style={{ background: "#faf9f7", minHeight: "100dvh" }}>
+    <div className="flex flex-col" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
       {/* Hero illustration area */}
-      <div className="relative flex-1 bg-gradient-to-b from-[#fff4e8] via-[#fdf5ec] to-[#faf9f7] flex flex-col items-center justify-center overflow-hidden py-6">
+      <div className="relative flex-1 bg-gradient-to-b from-[#fff4e8] via-[#fdf5ec] to-[#F5EEE2] flex flex-col items-center justify-center overflow-hidden py-6">
         <div className="absolute inset-0 opacity-[0.07]">
           <svg className="w-full h-full" viewBox="0 0 400 400" fill="none">
             <circle cx="50" cy="60" r="30" fill="currentColor" className="text-orange-500" />
@@ -223,14 +223,14 @@ export default function SignupPage() {
 
           {/* Value props */}
           <div className="space-y-0.5">
-            <p className="text-[15px] font-bold" style={{ color: "#1a1410" }}>
-              Save recipes from <span style={{ color: "#ea580c" }}>anywhere</span>
+            <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>
+              Save recipes from <span style={{ color: "#E5462E" }}>anywhere</span>
             </p>
-            <p className="text-[15px] font-bold" style={{ color: "#1a1410" }}>
-              Plan meals in <span style={{ color: "#ea580c" }}>seconds</span>
+            <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>
+              Plan meals in <span style={{ color: "#E5462E" }}>seconds</span>
             </p>
-            <p className="text-[15px] font-bold" style={{ color: "#1a1410" }}>
-              Shop and <span style={{ color: "#ea580c" }}>earn back</span>
+            <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>
+              Shop and <span style={{ color: "#E5462E" }}>earn back</span>
             </p>
           </div>
         </div>

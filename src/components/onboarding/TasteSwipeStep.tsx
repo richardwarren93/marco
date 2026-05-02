@@ -130,8 +130,8 @@ export default function TasteSwipeStep({ likedRecipes: initLiked, onNext }: Prop
   return (
     <div className="flex flex-col h-full px-6 pb-8">
       <div className="pt-2 pb-4 text-center">
-        <h1 className="text-[24px] font-black tracking-tight" style={{ color: "#1a1410" }}>
-          Build your <span style={{ color: "#ea580c" }}>taste profile</span>
+        <h1 className="text-[24px] font-black tracking-tight" style={{ color: "#1C1A17" }}>
+          Build your <span style={{ color: "#E5462E" }}>taste profile</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "#a09890" }}>
           Swipe right to like, left to skip
@@ -146,8 +146,8 @@ export default function TasteSwipeStep({ likedRecipes: initLiked, onNext }: Prop
             className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
             style={{
               background: i === categoryIdx ? "#fff4ec" : "transparent",
-              color: i === categoryIdx ? "#ea580c" : i < categoryIdx ? "#22c55e" : "#d4d0cc",
-              border: i === categoryIdx ? "1.5px solid #ea580c" : "1.5px solid transparent",
+              color: i === categoryIdx ? "#E5462E" : i < categoryIdx ? "#22c55e" : "#d4d0cc",
+              border: i === categoryIdx ? "1.5px solid #E5462E" : "1.5px solid transparent",
             }}
           >
             <span>{MEAL_TYPE_EMOJIS[type]}</span>
@@ -237,7 +237,7 @@ export default function TasteSwipeStep({ likedRecipes: initLiked, onNext }: Prop
 
             {/* Card body */}
             <div className="p-5">
-              <h3 className="text-lg font-bold" style={{ color: "#1a1410" }}>
+              <h3 className="text-lg font-bold" style={{ color: "#1C1A17" }}>
                 {currentCard.title}
               </h3>
               <p className="text-xs mt-1" style={{ color: "#a09890" }}>
@@ -249,7 +249,7 @@ export default function TasteSwipeStep({ likedRecipes: initLiked, onNext }: Prop
                     {tag}
                   </span>
                 ))}
-                <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: "#fff4ec", color: "#ea580c" }}>
+                <span className="text-xs font-medium px-2.5 py-1 rounded-full" style={{ background: "#fff4ec", color: "#E5462E" }}>
                   {currentCard.prep_time + currentCard.cook_time} min
                 </span>
               </div>

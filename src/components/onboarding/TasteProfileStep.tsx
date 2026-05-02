@@ -49,13 +49,13 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
 
   if (phase === "loading") {
     return (
-      <div className="flex flex-col h-full items-center justify-center px-6" style={{ background: "#faf9f7" }}>
+      <div className="flex flex-col h-full items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
         <div className="text-center space-y-6">
           {pal && (
             <span className="text-7xl block animate-pulse-soft">{pal.emoji}</span>
           )}
           <div>
-            <h2 className="text-2xl font-black" style={{ color: "#1a1410" }}>
+            <h2 className="text-2xl font-black" style={{ color: "#1C1A17" }}>
               Analyzing your taste...
             </h2>
             <p className="text-sm mt-2" style={{ color: "#a09890" }}>
@@ -68,7 +68,7 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
                 key={i}
                 className="w-3 h-3 rounded-full"
                 style={{
-                  background: "#ea580c",
+                  background: "#E5462E",
                   animation: `pulse-soft 1.2s ease-in-out ${i * 0.2}s infinite`,
                 }}
               />
@@ -82,8 +82,8 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
   return (
     <div className="flex flex-col h-full pb-8">
       <div className="pt-4 pb-4 px-6 text-center">
-        <h1 className="text-[26px] font-black tracking-tight animate-stagger-in" style={{ color: "#1a1410" }}>
-          Your <span style={{ color: "#ea580c" }}>Taste Profile</span>
+        <h1 className="text-[26px] font-black tracking-tight animate-stagger-in" style={{ color: "#1C1A17" }}>
+          Your <span style={{ color: "#E5462E" }}>Taste Profile</span>
         </h1>
       </div>
 
@@ -181,14 +181,14 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
         <button
           onClick={() => setShowShare(true)}
           className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
-          style={{ background: "white", color: "#1a1410", border: "2px solid #e8e8e5" }}
+          style={{ background: "white", color: "#1C1A17", border: "2px solid #e8e8e5" }}
         >
           Share my profile
         </button>
         <button
           onClick={() => onNext(profileData)}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
-          style={{ background: "#ea580c" }}
+          style={{ background: "#E5462E" }}
         >
           Enter Marco
         </button>
@@ -200,13 +200,13 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowShare(false)} />
           <div className="relative bg-white w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 space-y-4 animate-slide-up">
             <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto sm:hidden" />
-            <h3 className="text-xl font-bold text-center" style={{ color: "#1a1410" }}>
+            <h3 className="text-xl font-bold text-center" style={{ color: "#1C1A17" }}>
               Share Your Taste Profile
             </h3>
 
-            <div className="text-center space-y-1 p-4 rounded-xl" style={{ background: "#faf9f7" }}>
+            <div className="text-center space-y-1 p-4 rounded-xl" style={{ background: "#F5EEE2" }}>
               {pal && <span className="text-4xl block mb-2">{pal.emoji}</span>}
-              <p className="text-sm font-semibold" style={{ color: "#1a1410" }}>
+              <p className="text-sm font-semibold" style={{ color: "#1C1A17" }}>
                 My top flavors:
               </p>
               <div className="flex flex-wrap gap-1.5 justify-center mt-2">
@@ -231,7 +231,7 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
                 setShowShare(false);
               }}
               className="w-full py-3.5 rounded-2xl font-bold text-sm text-white transition-all active:scale-[0.98]"
-              style={{ background: "#ea580c" }}
+              style={{ background: "#E5462E" }}
             >
               {typeof navigator !== "undefined" && typeof navigator.share === "function" ? "Share" : "Copy to clipboard"}
             </button>

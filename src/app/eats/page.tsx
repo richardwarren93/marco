@@ -113,16 +113,16 @@ export default function EatsPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 animate-fade-slide-up" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+    <div className="max-w-5xl mx-auto px-4 py-6 sm:py-8 animate-fade-slide-up" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Eats</h1>
+          <h1 className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>Eats</h1>
           <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Your restaurant diary</p>
         </div>
         <button
           onClick={() => setShowAdd(true)}
           className="px-4 py-2.5 rounded-2xl text-sm font-bold text-white active:scale-95 transition-transform shadow-sm"
-          style={{ background: "#1a1410" }}
+          style={{ background: "#1C1A17" }}
         >
           + Add
         </button>
@@ -148,7 +148,7 @@ export default function EatsPage() {
               }}
             >
               <div className="text-orange-500 mb-1"><stat.Icon className="w-5 h-5" /></div>
-              <p className="text-2xl font-black" style={{ color: "#1a1410" }}>{statValues[stat.key]}</p>
+              <p className="text-2xl font-black" style={{ color: "#1C1A17" }}>{statValues[stat.key]}</p>
               <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>{stat.label}</p>
             </div>
           ))}
@@ -168,14 +168,14 @@ export default function EatsPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-9 pr-4 py-2.5 rounded-2xl border-0 outline-none text-sm"
-            style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", color: "#1a1410" }}
+            style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", color: "#1C1A17" }}
           />
         </div>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value)}
           className="rounded-2xl px-4 py-2.5 text-sm border-0 outline-none appearance-none cursor-pointer"
-          style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", color: "#1a1410" }}
+          style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", color: "#1C1A17" }}
         >
           <option value="updated_at">Recent</option>
           <option value="name">A–Z</option>

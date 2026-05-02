@@ -31,7 +31,7 @@ export default function CollectionsPage() {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 animate-fade-slide-up" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 animate-fade-slide-up" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -40,12 +40,12 @@ export default function CollectionsPage() {
             className="w-8 h-8 rounded-full flex items-center justify-center transition-colors -ml-1"
             style={{ background: "rgba(0,0,0,0.05)" }}
           >
-            <svg className="w-4 h-4" style={{ color: "#1a1410" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <div>
-            <h1 className="text-2xl font-black tracking-tight flex items-center gap-2" style={{ color: "#1a1410" }}>
+            <h1 className="text-3xl marco-h1 flex items-center gap-2" style={{ color: "#1C1A17" }}>
               <CollectionsIcon className="w-6 h-6 text-orange-600" /> Collections
             </h1>
             <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Organize your saved recipes</p>

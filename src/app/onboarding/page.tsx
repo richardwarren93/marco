@@ -139,7 +139,7 @@ export default function OnboardingPage() {
       <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
         <div className="flex gap-1.5">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: "#ea580c", animation: `pulse-soft 1s ease-in-out ${i * 0.15}s infinite` }} />
+            <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: "#E5462E", animation: `pulse-soft 1s ease-in-out ${i * 0.15}s infinite` }} />
           ))}
         </div>
       </div>

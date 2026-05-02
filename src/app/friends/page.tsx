@@ -46,7 +46,7 @@ export default function FriendsPage() {
 
   if (loading) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+      <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
         <div className="space-y-4">
           <div className="h-8 skeleton-warm rounded-2xl w-32" />
           <div className="h-40 skeleton-warm rounded-3xl" />
@@ -60,19 +60,19 @@ export default function FriendsPage() {
   const pendingCount = incoming.length;
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 animate-fade-slide-up" style={{ background: "#faf9f7", minHeight: "100vh" }}>
+    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 animate-fade-slide-up" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.back()}
           className="w-8 h-8 rounded-full flex items-center justify-center transition-colors -ml-1"
           style={{ background: "rgba(0,0,0,0.05)" }}
         >
-          <svg className="w-4 h-4" style={{ color: "#1a1410" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <div>
-          <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Friends</h1>
+          <h1 className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>Friends</h1>
           <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Cook & share with friends</p>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function FriendsPage() {
 
       {/* Add Friend */}
       <div className="rounded-3xl p-5" style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-        <h2 className="text-base font-bold mb-3" style={{ color: "#1a1410" }}>
+        <h2 className="text-base font-bold mb-3" style={{ color: "#1C1A17" }}>
           Add a Friend
         </h2>
         <AddFriendForm onRequestSent={loadAll} />
@@ -96,7 +96,7 @@ export default function FriendsPage() {
       {/* Pending Requests */}
       {(incoming.length > 0 || outgoing.length > 0) && (
         <div>
-          <h2 className="text-base font-bold mb-3 flex items-center gap-2" style={{ color: "#1a1410" }}>
+          <h2 className="text-base font-bold mb-3 flex items-center gap-2" style={{ color: "#1C1A17" }}>
             Pending Requests
             {pendingCount > 0 && (
               <span className="inline-flex items-center justify-center w-5 h-5 rounded-full text-white text-xs font-bold" style={{ background: "#f97316" }}>
@@ -129,7 +129,7 @@ export default function FriendsPage() {
 
       {/* Friends List */}
       <div>
-        <h2 className="text-base font-bold mb-3 flex items-center gap-1.5" style={{ color: "#1a1410" }}>
+        <h2 className="text-base font-bold mb-3 flex items-center gap-1.5" style={{ color: "#1C1A17" }}>
           My Friends
           {friends.length > 0 && (
             <span className="text-sm font-normal" style={{ color: "#a09890" }}>

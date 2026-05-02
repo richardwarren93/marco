@@ -23,26 +23,26 @@ export default function WelcomeStep({ kitchenPal, onNext }: Props) {
         <div className="space-y-4 text-center">
           <h2
             className="text-[32px] font-black leading-[1.15] tracking-tight animate-stagger-in"
-            style={{ color: "#1a1410", animationDelay: "0.1s" }}
+            style={{ color: "#1C1A17", animationDelay: "0.1s" }}
           >
             Save recipes from{" "}
-            <span style={{ color: "#ea580c" }}>anywhere</span>
+            <span style={{ color: "#E5462E" }}>anywhere</span>
           </h2>
 
           <h2
             className="text-[32px] font-black leading-[1.15] tracking-tight animate-stagger-in"
-            style={{ color: "#1a1410", animationDelay: "0.25s" }}
+            style={{ color: "#1C1A17", animationDelay: "0.25s" }}
           >
             Plan meals in{" "}
-            <span style={{ color: "#ea580c" }}>seconds</span>
+            <span style={{ color: "#E5462E" }}>seconds</span>
           </h2>
 
           <h2
             className="text-[32px] font-black leading-[1.15] tracking-tight animate-stagger-in"
-            style={{ color: "#1a1410", animationDelay: "0.4s" }}
+            style={{ color: "#1C1A17", animationDelay: "0.4s" }}
           >
             Shop and{" "}
-            <span style={{ color: "#ea580c" }}>earn back</span>
+            <span style={{ color: "#E5462E" }}>earn back</span>
           </h2>
         </div>
       </div>
@@ -52,7 +52,7 @@ export default function WelcomeStep({ kitchenPal, onNext }: Props) {
         <button
           onClick={onNext}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
-          style={{ background: "#1a1410" }}
+          style={{ background: "#1C1A17" }}
         >
           Let&apos;s go
         </button>

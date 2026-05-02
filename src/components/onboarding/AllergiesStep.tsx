@@ -43,9 +43,9 @@ export default function AllergiesStep({ value, onNext }: Props) {
   return (
     <div className="flex flex-col h-full px-6 pb-24">
       <div className="pt-4 pb-6">
-        <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1a1410" }}>
+        <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1C1A17" }}>
           Any food{" "}
-          <span style={{ color: "#ea580c" }}>allergies</span>?
+          <span style={{ color: "#E5462E" }}>allergies</span>?
         </h1>
         <p className="text-sm mt-2" style={{ color: "#a09890" }}>
           We&apos;ll keep these out of your suggestions
@@ -68,7 +68,7 @@ export default function AllergiesStep({ value, onNext }: Props) {
           <button
             onClick={addCustom}
             className="px-4 py-3 rounded-2xl font-semibold text-sm text-white"
-            style={{ background: "#ea580c" }}
+            style={{ background: "#E5462E" }}
           >
             Add
           </button>
@@ -86,9 +86,9 @@ export default function AllergiesStep({ value, onNext }: Props) {
               className="animate-stagger-in px-4 py-2.5 rounded-full font-semibold text-sm transition-all duration-200 active:scale-[0.97]"
               style={{
                 animationDelay: `${i * 0.04}s`,
-                background: isSelected ? "#ea580c" : "white",
-                color: isSelected ? "white" : "#1a1410",
-                border: isSelected ? "2px solid #ea580c" : "2px solid #e8e8e5",
+                background: isSelected ? "#E5462E" : "white",
+                color: isSelected ? "white" : "#1C1A17",
+                border: isSelected ? "2px solid #E5462E" : "2px solid #e8e8e5",
               }}
             >
               {allergy}
@@ -104,7 +104,7 @@ export default function AllergiesStep({ value, onNext }: Props) {
             <span
               key={allergy}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold text-white animate-bounce-in"
-              style={{ background: "#ea580c" }}
+              style={{ background: "#E5462E" }}
             >
               {allergy}
               <button
@@ -127,7 +127,7 @@ export default function AllergiesStep({ value, onNext }: Props) {
         <button
           onClick={() => onNext(selected)}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
-          style={{ background: "#1a1410" }}
+          style={{ background: "#1C1A17" }}
         >
           {selected.length > 0 ? "Continue" : "No allergies - continue"}
         </button>

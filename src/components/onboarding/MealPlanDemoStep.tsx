@@ -79,10 +79,10 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
   // ─── Choose ───
   if (subStep === "choose") {
     return (
-      <div className="flex flex-col h-full pb-8" style={{ background: "#faf9f7" }}>
+      <div className="flex flex-col h-full pb-8" style={{ background: "#F5EEE2" }}>
         <div className="px-4 pt-4 pb-3" style={{ borderBottom: "1px solid #ede8e0" }}>
           <div className="flex items-center gap-3 mb-3">
-            <h1 className="text-lg font-bold" style={{ color: "#1a1410" }}>Choose meals</h1>
+            <h1 className="text-lg font-bold" style={{ color: "#1C1A17" }}>Choose meals</h1>
           </div>
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             {MEAL_TABS.map((tab) => (
@@ -91,8 +91,8 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
                 onClick={() => setActiveTab(tab)}
                 className="px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all"
                 style={{
-                  background: activeTab === tab ? "#1a1410" : "white",
-                  color: activeTab === tab ? "white" : "#1a1410",
+                  background: activeTab === tab ? "#1C1A17" : "white",
+                  color: activeTab === tab ? "white" : "#1C1A17",
                   boxShadow: activeTab === tab ? "none" : "0 1px 3px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)",
                 }}
               >
@@ -104,7 +104,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
 
         {!doneAutoSelecting && (
           <div className="text-center py-3 animate-pulse-soft">
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: "#fff4ec", color: "#ea580c" }}>
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-full" style={{ background: "#fff4ec", color: "#E5462E" }}>
               Picking meals for your week...
             </span>
           </div>
@@ -126,7 +126,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
                     <div
                       className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300"
                       style={{
-                        background: isSelected ? "#ea580c" : "white",
+                        background: isSelected ? "#E5462E" : "white",
                         boxShadow: isSelected ? "none" : "0 1px 4px rgba(0,0,0,0.12)",
                         transform: isSelected ? "scale(1.1)" : "scale(1)",
                       }}
@@ -136,14 +136,14 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                       ) : (
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke={isPending ? "#ea580c" : "#888"} strokeWidth={2}>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke={isPending ? "#E5462E" : "#888"} strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                       )}
                     </div>
                   </div>
                   <div className="p-2.5">
-                    <p className="text-[12px] font-semibold leading-tight line-clamp-2" style={{ color: "#1a1410" }}>{recipe.title}</p>
+                    <p className="text-[12px] font-semibold leading-tight line-clamp-2" style={{ color: "#1C1A17" }}>{recipe.title}</p>
                     <p className="text-[10px] mt-0.5" style={{ color: "#a09890" }}>{recipe.prep_time + recipe.cook_time} min</p>
                   </div>
                 </div>
@@ -157,7 +157,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
             <button
               onClick={() => setSubStep("review")}
               className="w-full py-3.5 rounded-2xl font-bold text-sm text-white transition-all active:scale-[0.98]"
-              style={{ background: "#1a1410", boxShadow: "0 4px 20px rgba(26,20,16,0.25)" }}
+              style={{ background: "#1C1A17", boxShadow: "0 4px 20px rgba(26,20,16,0.25)" }}
             >
               View meals &middot; {selectedIds.size}
             </button>
@@ -176,14 +176,14 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
     }
 
     return (
-      <div className="flex flex-col h-full pb-8" style={{ background: "#faf9f7" }}>
+      <div className="flex flex-col h-full pb-8" style={{ background: "#F5EEE2" }}>
         <div className="flex items-center gap-3 px-4 pt-4 pb-3" style={{ borderBottom: "1px solid #ede8e0" }}>
           <button onClick={() => setSubStep("choose")} className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100">
             <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-lg font-bold" style={{ color: "#1a1410" }}>Review your meals</h1>
+          <h1 className="text-lg font-bold" style={{ color: "#1C1A17" }}>Review your meals</h1>
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 pt-3 space-y-4">
@@ -206,7 +206,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
                       <span className="text-2xl">{recipe.image_emoji}</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold truncate" style={{ color: "#1a1410" }}>{recipe.title}</p>
+                      <p className="text-sm font-semibold truncate" style={{ color: "#1C1A17" }}>{recipe.title}</p>
                       <p className="text-xs" style={{ color: "#a09890" }}>{recipe.prep_time + recipe.cook_time} min</p>
                     </div>
                   </div>
@@ -220,7 +220,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
           <button
             onClick={() => setSubStep("assign")}
             className="w-full py-3.5 rounded-2xl font-bold text-sm text-white transition-all active:scale-[0.98]"
-            style={{ background: "#1a1410" }}
+            style={{ background: "#1C1A17" }}
           >
             Build schedule
           </button>
@@ -239,7 +239,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
           </svg>
         </button>
         <div>
-          <h1 className="text-lg font-bold" style={{ color: "#1a1410" }}>Place on calendar</h1>
+          <h1 className="text-lg font-bold" style={{ color: "#1C1A17" }}>Place on calendar</h1>
           <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Choose days and meal types for each recipe</p>
         </div>
       </div>
@@ -257,8 +257,8 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "linear-gradient(135deg, #fff4e8 0%, #fde8cc 100%)" }}>
                   <span className="text-lg">{recipe.image_emoji}</span>
                 </div>
-                <p className="text-sm font-semibold flex-1 truncate" style={{ color: "#1a1410" }}>{recipe.title}</p>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#fff4ec", color: "#ea580c" }}>
+                <p className="text-sm font-semibold flex-1 truncate" style={{ color: "#1C1A17" }}>{recipe.title}</p>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full" style={{ background: "#fff4ec", color: "#E5462E" }}>
                   {assignment.days.length}&times;
                 </span>
               </div>
@@ -281,7 +281,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
                 <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#a09890" }}>Meal type</p>
                 <div className="flex gap-2">
                   {["breakfast", "lunch", "dinner"].map((mt) => (
-                    <div key={mt} className="px-3 py-1.5 rounded-full text-xs font-semibold capitalize" style={{ background: assignment.mealType === mt ? "#ea580c" : "#f3f3f1", color: assignment.mealType === mt ? "white" : "#888" }}>
+                    <div key={mt} className="px-3 py-1.5 rounded-full text-xs font-semibold capitalize" style={{ background: assignment.mealType === mt ? "#E5462E" : "#f3f3f1", color: assignment.mealType === mt ? "white" : "#888" }}>
                       {mt}
                     </div>
                   ))}
@@ -296,7 +296,7 @@ export default function MealPlanDemoStep({ onNext, onBack }: Props) {
         <button
           onClick={() => onNext(buildFinalAssignments())}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
-          style={{ background: "#1a1410" }}
+          style={{ background: "#1C1A17" }}
         >
           Schedule {totalSlots} meals
         </button>

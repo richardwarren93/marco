@@ -8,7 +8,7 @@ import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import { useToast } from "@/components/ui/Toast";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
-const ACCENT = "#ea580c";
+const ACCENT = "#E5462E";
 const ACCENT_LIGHT = "#fff7ed";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -42,7 +42,7 @@ function RecipeRow({
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 rounded-xl text-left transition-colors border ${
         compact ? "px-2.5 py-1.5" : "px-3 py-2.5"
-      } ${isSelected ? "border-[#ea580c]/30" : "border-transparent hover:bg-gray-100"} ${dimmed ? "opacity-55" : ""}`}
+      } ${isSelected ? "border-[#E5462E]/30" : "border-transparent hover:bg-gray-100"} ${dimmed ? "opacity-55" : ""}`}
       style={isSelected ? { background: ACCENT_LIGHT } : { background: "#f5f5f3" }}
     >
       <div
@@ -59,7 +59,7 @@ function RecipeRow({
       </span>
       {badge && (
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-          badge === "Scheduled" ? "bg-gray-100 text-gray-400" : "text-[#ea580c]"
+          badge === "Scheduled" ? "bg-gray-100 text-gray-400" : "text-[#E5462E]"
         }`} style={badge !== "Scheduled" ? { background: ACCENT_LIGHT } : {}}>
           {badge}
         </span>
@@ -464,7 +464,7 @@ export default function AddMealSheet({
                   className="flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border"
                   style={
                     selectedMealTypes.has(mt)
-                      ? { background: "#1a1410", color: "white", borderColor: "#1a1410" }
+                      ? { background: "#1C1A17", color: "white", borderColor: "#1C1A17" }
                       : { background: "#f3f3f1", color: "#888", borderColor: "#f3f3f1" }
                   }
                 >
@@ -512,7 +512,7 @@ export default function AddMealSheet({
                     className="flex-1 flex flex-col items-center py-1.5 rounded-xl transition-colors"
                     style={
                       isSelected
-                        ? { background: "#1a1410", color: "white" }
+                        ? { background: "#1C1A17", color: "white" }
                         : { background: "#f3f3f1", color: "#888" }
                     }
                   >

@@ -25,7 +25,7 @@ export default function EatsStatusTabs({ active, onChange, counts }: EatsStatusT
           onClick={() => onChange(tab.value)}
           className="px-4 py-1.5 rounded-2xl text-sm font-semibold transition-all active:scale-95"
           style={active === tab.value
-            ? { background: "#1a1410", color: "white" }
+            ? { background: "#1C1A17", color: "white" }
             : { background: "white", color: "#a09890", boxShadow: "0 1px 6px rgba(0,0,0,0.06)" }}
         >
           {tab.label}

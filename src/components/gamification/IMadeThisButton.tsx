@@ -96,7 +96,7 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
             ? `px-5 py-2 rounded-full text-xs ${
                 justCooked
                   ? "bg-green-50 text-green-700 border border-green-200"
-                  : "bg-[#1a1410]/5 text-[#1a1410]/60 hover:bg-[#1a1410]/10 border border-[#1a1410]/10"
+                  : "bg-[#1C1A17]/5 text-[#1C1A17]/60 hover:bg-[#1C1A17]/10 border border-[#1C1A17]/10"
               }`
             : `w-full py-3 px-4 rounded-2xl text-sm ${
                 justCooked

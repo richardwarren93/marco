@@ -57,10 +57,10 @@ export default function JoinHouseholdStep({ onJoin, onCreateNew }: Props) {
       <div className="pt-4 pb-6">
         <h1
           className="text-[28px] font-black tracking-tight"
-          style={{ color: "#1a1410" }}
+          style={{ color: "#1C1A17" }}
         >
           Cook with your{" "}
-          <span style={{ color: "#ea580c" }}>household</span>
+          <span style={{ color: "#E5462E" }}>household</span>
         </h1>
         <p className="text-sm mt-2" style={{ color: "#a09890" }}>
           Join an existing household to share recipes and meal plans
@@ -81,7 +81,7 @@ export default function JoinHouseholdStep({ onJoin, onCreateNew }: Props) {
           <div>
             <p
               className="font-bold text-sm"
-              style={{ color: "#1a1410" }}
+              style={{ color: "#1C1A17" }}
             >
               Have an invite code?
             </p>
@@ -115,7 +115,7 @@ export default function JoinHouseholdStep({ onJoin, onCreateNew }: Props) {
               border: error
                 ? "2px solid #ef4444"
                 : "2px solid #e8ddd3",
-              color: "#1a1410",
+              color: "#1C1A17",
               scrollMarginBottom: "120px",
             }}
           />
@@ -123,7 +123,7 @@ export default function JoinHouseholdStep({ onJoin, onCreateNew }: Props) {
             onClick={handleJoin}
             disabled={!code.trim() || loading || !!success}
             className="px-5 py-3 rounded-xl font-bold text-sm transition-all active:scale-[0.97] disabled:opacity-40"
-            style={{ background: "#ea580c", color: "white" }}
+            style={{ background: "#E5462E", color: "white" }}
           >
             {loading ? (
               <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -175,7 +175,7 @@ export default function JoinHouseholdStep({ onJoin, onCreateNew }: Props) {
       >
         <span className="text-2xl">🏠</span>
         <div>
-          <p className="font-bold text-sm" style={{ color: "#1a1410" }}>
+          <p className="font-bold text-sm" style={{ color: "#1C1A17" }}>
             Start a new household
           </p>
           <p className="text-xs" style={{ color: "#a09890" }}>

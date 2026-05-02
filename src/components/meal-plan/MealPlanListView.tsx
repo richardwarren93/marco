@@ -891,7 +891,7 @@ export default function MealPlanListView({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-[22px] font-black" style={{ color: "#1a1410", letterSpacing: "-0.02em" }}>{weekLabel}</span>
+            <span className="text-[22px] font-black" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>{weekLabel}</span>
             <button
               onClick={() => changeWeek(addDays(weekStart, 7))}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
@@ -1010,7 +1010,7 @@ export default function MealPlanListView({
               >
                 <span
                   className="text-[9px] font-semibold tracking-wide"
-                  style={{ color: (viewMode === "daily" && isSelected) ? ACCENT : isToday ? "#1a1410" : "#c0c0be" }}
+                  style={{ color: (viewMode === "daily" && isSelected) ? ACCENT : isToday ? "#1C1A17" : "#c0c0be" }}
                 >
                   {abbr.slice(0, 3)}
                 </span>

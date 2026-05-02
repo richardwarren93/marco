@@ -293,7 +293,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const isLoading = props.mode === "library" && props.loading;
 
   return (
-    <div className="flex flex-col" style={{ background: "#faf9f7" }}>
+    <div className="flex flex-col" style={{ background: "#F5EEE2" }}>
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div>
         <div className="max-w-5xl mx-auto">
@@ -376,7 +376,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             <button
               onClick={() => { setShowSortMenu((v) => !v); setShowMealMenu(false); setShowCollMenu(false); }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all active:scale-95 whitespace-nowrap"
-              style={{ background: "#1a1410", color: "#fff" }}
+              style={{ background: "#1C1A17", color: "#fff" }}
             >
               {sort === "newest" ? "Newest" : "Prep time"}
               <svg className={`w-3 h-3 opacity-60 transition-transform ${showSortMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -391,7 +391,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                     key={value}
                     onClick={() => { setSort(value); setShowSortMenu(false); }}
                     className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-gray-50"
-                    style={{ color: sort === value ? "#1a1410" : "#6b6560" }}
+                    style={{ color: sort === value ? "#1C1A17" : "#6b6560" }}
                   >
                     <span>{label}</span>
                     {sort === value && (

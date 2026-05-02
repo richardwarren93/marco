@@ -191,7 +191,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                 onClick={() => handleFriendRespond(n, "accept")}
                 disabled={respondingId === n.id}
                 className="px-4 py-1.5 rounded-full text-xs font-bold text-white active:scale-95 transition-all disabled:opacity-50"
-                style={{ background: "#1a1410" }}
+                style={{ background: "#1C1A17" }}
               >
                 {respondingId === n.id ? "..." : "Accept"}
               </button>
@@ -241,7 +241,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-base font-black" style={{ color: "#1a1410" }}>
+          <h2 className="text-base font-black" style={{ color: "#1C1A17" }}>
             Notifications
           </h2>
           <button
@@ -331,7 +331,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                                 onClick={() => handleBefriend(profile)}
                                 disabled={inProgress}
                                 className="px-4 py-1.5 rounded-full text-xs font-bold text-white active:scale-95 transition-all disabled:opacity-50"
-                                style={{ background: "#1a1410" }}
+                                style={{ background: "#1C1A17" }}
                               >
                                 {inProgress ? "..." : "Befriend"}
                               </button>

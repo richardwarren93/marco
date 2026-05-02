@@ -544,10 +544,10 @@ export default function GroceryList() {
   }, [dateRange.start, dateRange.end]);
 
   return (
-    <div className="pb-24" style={{ background: "#faf9f7" }}>
+    <div className="pb-24" style={{ background: "#F5EEE2" }}>
 
       {/* ── Header: week navigation bar (matches Meal Plan) ────────────── */}
-      <div className="sticky top-0 z-10 px-4 pt-3 pb-2" style={{ background: "#faf9f7" }}>
+      <div className="sticky top-0 z-10 px-4 pt-3 pb-2" style={{ background: "#F5EEE2" }}>
         <div className="flex items-center justify-between mb-2 max-w-3xl mx-auto">
           {/* Left: prev arrow + week label + next arrow + calendar icon */}
           <div className="flex items-center gap-1">
@@ -560,7 +560,7 @@ export default function GroceryList() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>{weekLabel}</span>
+            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{weekLabel}</span>
             <button
               onClick={() => navigateWeek(7)}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
@@ -814,7 +814,7 @@ export default function GroceryList() {
                         key={key}
                         onClick={() => { setGroupMode(key); setGroupMenuOpen(false); }}
                         className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-gray-50"
-                        style={{ color: groupMode === key ? "#1a1410" : "#6b6560" }}
+                        style={{ color: groupMode === key ? "#1C1A17" : "#6b6560" }}
                       >
                         <span>{label}</span>
                         {groupMode === key && (

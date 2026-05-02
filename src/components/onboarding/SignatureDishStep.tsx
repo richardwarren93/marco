@@ -14,7 +14,7 @@ export default function SignatureDishStep({ value, onNext }: Props) {
   return (
     <div
       className="flex flex-col h-full pb-24"
-      style={{ background: "#faf9f7" }}
+      style={{ background: "#F5EEE2" }}
     >
       <div className="flex-1 flex flex-col items-center justify-center px-6">
         {/* Emoji */}
@@ -28,10 +28,10 @@ export default function SignatureDishStep({ value, onNext }: Props) {
         {/* Title */}
         <h1
           className="text-[28px] font-black tracking-tight text-center mb-2 animate-stagger-in"
-          style={{ color: "#1a1410", animationDelay: "0.15s" }}
+          style={{ color: "#1C1A17", animationDelay: "0.15s" }}
         >
           What&apos;s your{" "}
-          <span style={{ color: "#ea580c" }}>Dream Meal</span>?
+          <span style={{ color: "#E5462E" }}>Dream Meal</span>?
         </h1>
 
         <p
@@ -63,7 +63,7 @@ export default function SignatureDishStep({ value, onNext }: Props) {
             className="w-full px-5 py-4 rounded-2xl text-base bg-white outline-none text-center font-medium"
             style={{
               border: "2px solid #e8ddd3",
-              color: "#1a1410",
+              color: "#1C1A17",
               scrollMarginBottom: "120px",
             }}
             autoFocus
@@ -84,7 +84,7 @@ export default function SignatureDishStep({ value, onNext }: Props) {
           onClick={() => onNext(dish)}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
           style={{
-            background: dish.trim() ? "#ea580c" : "#e8ddd3",
+            background: dish.trim() ? "#E5462E" : "#e8ddd3",
             color: dish.trim() ? "white" : "#c4b8aa",
           }}
         >

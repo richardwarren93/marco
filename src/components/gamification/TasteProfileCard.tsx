@@ -47,7 +47,7 @@ interface TasteProfileData {
 }
 
 const DIMENSIONS = [
-  { key: "sweet" as const, label: "Sweet", color: "#ea580c" },
+  { key: "sweet" as const, label: "Sweet", color: "#E5462E" },
   { key: "savory" as const, label: "Savory", color: "#d97706" },
   { key: "spicy" as const, label: "Spicy", color: "#dc2626" },
   { key: "tangy" as const, label: "Tangy", color: "#c2410c" },
@@ -131,10 +131,10 @@ export default function TasteProfileCard() {
             boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
           }}
         >
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: "#ea580c" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] mb-2" style={{ color: "#E5462E" }}>
             Your Taste Look-A-Like
           </p>
-          <p className="text-base font-black" style={{ color: "#1a1410" }}>{data.chef.name}</p>
+          <p className="text-base font-black" style={{ color: "#1C1A17" }}>{data.chef.name}</p>
           <p className="text-xs leading-relaxed mt-1" style={{ color: "#666" }}>{data.chef.description}</p>
         </div>
       )}
@@ -148,14 +148,14 @@ export default function TasteProfileCard() {
               className="rounded-2xl p-4"
               style={{ background: "white", border: "1px solid #eae7e2" }}
             >
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#ea580c" }}>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#E5462E" }}>
                 Top Cuisines
               </p>
               <div className="space-y-2">
                 {data.cuisines.map((c) => (
                   <div key={c.id} className="flex items-center gap-1.5">
                     <span className="text-sm">{c.flag}</span>
-                    <span className="text-xs font-semibold" style={{ color: "#1a1410" }}>{c.label}</span>
+                    <span className="text-xs font-semibold" style={{ color: "#1C1A17" }}>{c.label}</span>
                   </div>
                 ))}
               </div>
@@ -168,7 +168,7 @@ export default function TasteProfileCard() {
               className="rounded-2xl p-4"
               style={{ background: "white", border: "1px solid #eae7e2" }}
             >
-              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#ea580c" }}>
+              <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#E5462E" }}>
                 You tend to...
               </p>
               <div className="space-y-2">
@@ -190,7 +190,7 @@ export default function TasteProfileCard() {
           className="rounded-2xl p-4"
           style={{ background: "white", border: "1px solid #eae7e2", boxShadow: "0 2px 16px rgba(0,0,0,0.04)" }}
         >
-          <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#ea580c" }}>
+          <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#E5462E" }}>
             Signature Meals
           </p>
           <div className="space-y-2">
@@ -198,7 +198,7 @@ export default function TasteProfileCard() {
               <div key={i} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className="text-sm">{i === 0 ? "\u{1F451}" : "\u{1F373}"}</span>
-                  <span className="text-xs font-semibold line-clamp-1" style={{ color: "#1a1410" }}>{meal.title}</span>
+                  <span className="text-xs font-semibold line-clamp-1" style={{ color: "#1C1A17" }}>{meal.title}</span>
                 </div>
                 <span className="text-[10px] font-medium flex-shrink-0 ml-2" style={{ color: "#a09890" }}>
                   {meal.count}x
@@ -215,14 +215,14 @@ export default function TasteProfileCard() {
           className="rounded-2xl p-4"
           style={{ background: "white", border: "1px solid #eae7e2", boxShadow: "0 2px 16px rgba(0,0,0,0.04)" }}
         >
-          <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#ea580c" }}>
+          <p className="text-[9px] font-bold uppercase tracking-[0.15em] mb-2.5" style={{ color: "#E5462E" }}>
             Cooking Style
           </p>
           <div className="flex gap-2 flex-wrap">
             {data.cookingStyles.map((s) => (
               <div key={s.id} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full" style={{ background: "#f3f2ef" }}>
                 <span className="text-xs">{s.emoji}</span>
-                <span className="text-xs font-medium" style={{ color: "#1a1410" }}>{s.label}</span>
+                <span className="text-xs font-medium" style={{ color: "#1C1A17" }}>{s.label}</span>
               </div>
             ))}
           </div>

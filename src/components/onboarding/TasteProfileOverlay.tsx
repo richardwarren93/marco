@@ -33,7 +33,7 @@ const CUISINE_LABELS: Record<string, string> = {
 };
 
 const FLAVOR_DIMENSIONS = [
-  { key: "sweet" as const, label: "Sweet", color: "#ea580c" },
+  { key: "sweet" as const, label: "Sweet", color: "#E5462E" },
   { key: "savory" as const, label: "Savory", color: "#d97706" },
   { key: "tangy" as const, label: "Tangy", color: "#c2410c" },
   { key: "richness" as const, label: "Richness", color: "#b45309" },
@@ -202,13 +202,13 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
       <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
         <div className="text-center space-y-5 px-8 max-w-sm">
           <span className="text-6xl block animate-pulse-soft">{"\u{1F9D1}\u{200D}\u{1F373}"}</span>
-          <h2 className="text-xl font-black" style={{ color: "#1a1410" }}>Generating your taste profile...</h2>
+          <h2 className="text-xl font-black" style={{ color: "#1C1A17" }}>Generating your taste profile...</h2>
           <p className="text-sm leading-relaxed" style={{ color: "#a09890" }}>
             The more recipes you save and meals you plan, the more accurate your taste profile becomes
           </p>
           <div className="flex justify-center gap-2 pt-2">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="w-2 h-2 rounded-full" style={{ background: "#ea580c", animation: `pulse-soft 1.2s ease-in-out ${i * 0.25}s infinite` }} />
+              <div key={i} className="w-2 h-2 rounded-full" style={{ background: "#E5462E", animation: `pulse-soft 1.2s ease-in-out ${i * 0.25}s infinite` }} />
             ))}
           </div>
         </div>
@@ -222,12 +222,12 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
       <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
         <div className="w-full max-w-sm mx-auto p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
           <span className="text-6xl block mb-4">{"\u{1F389}"}</span>
-          <h2 className="text-2xl font-black mb-2" style={{ color: "#1a1410" }}>You&apos;re all set!</h2>
+          <h2 className="text-2xl font-black mb-2" style={{ color: "#1C1A17" }}>You&apos;re all set!</h2>
           <p className="text-sm mb-6" style={{ color: "#a09890" }}>Import your first recipe to get started</p>
           <button
             onClick={() => { onComplete(flavorScores, topCuisines.map((c) => c.id)); router.replace("/recipes"); setTimeout(() => { window.dispatchEvent(new CustomEvent("openFabImport")); }, 800); }}
             className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98] mb-3"
-            style={{ background: "#ea580c" }}
+            style={{ background: "#E5462E" }}
           >
             Import my first recipe
           </button>
@@ -245,25 +245,25 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
       <div className="flex-1">
         {/* Header */}
         <div className="pt-6 pb-2 px-6 text-center">
-          <h1 className="text-[32px] font-black leading-none" style={{ color: "#1a1410" }}>Taste DNA</h1>
+          <h1 className="text-[32px] font-black leading-none" style={{ color: "#1C1A17" }}>Taste DNA</h1>
         </div>
 
         {/* Your Taste Look-A-Like */}
         <div className="mx-5 mt-5 rounded-2xl p-5 animate-stagger-in" style={{ background: "white", border: "1px solid #eae7e2" }}>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#ea580c" }}>Your Taste Look-A-Like</p>
-          <p className="text-lg font-black mb-1" style={{ color: "#1a1410" }}>{chefMatch.name}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#E5462E" }}>Your Taste Look-A-Like</p>
+          <p className="text-lg font-black mb-1" style={{ color: "#1C1A17" }}>{chefMatch.name}</p>
           <p className="text-sm leading-relaxed" style={{ color: "#555" }}>{chefMatch.description}</p>
         </div>
 
         {/* Top Cuisines */}
         {topCuisines.length > 0 && (
           <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.08s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#ea580c" }}>Top Cuisines</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Top Cuisines</p>
             <div className="flex gap-2 flex-wrap">
               {topCuisines.map((c) => (
                 <div key={c.id} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full" style={{ background: "#f3f2ef" }}>
                   <span className="text-sm">{c.flag}</span>
-                  <span className="text-xs font-semibold" style={{ color: "#1a1410" }}>{c.label}</span>
+                  <span className="text-xs font-semibold" style={{ color: "#1C1A17" }}>{c.label}</span>
                 </div>
               ))}
             </div>
@@ -274,7 +274,7 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
         <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
           {/* You tend to */}
           <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.15s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#ea580c" }}>You tend to...</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>You tend to...</p>
             <div className="space-y-2.5">
               {insights.map((item, i) => (
                 <div key={i} className="flex items-start gap-1.5">
@@ -287,11 +287,11 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
 
           {/* Flavor profile — 4 unified dimensions */}
           <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.2s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#ea580c" }}>Flavor Profile</p>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Flavor Profile</p>
             <div className="space-y-2.5">
               {FLAVOR_DIMENSIONS.map((dim) => (
                 <div key={dim.key}>
-                  <span className="text-[10px] font-medium" style={{ color: "#1a1410" }}>{dim.label}</span>
+                  <span className="text-[10px] font-medium" style={{ color: "#1C1A17" }}>{dim.label}</span>
                   <div className="h-2 rounded-full overflow-hidden mt-0.5" style={{ background: "#efede8" }}>
                     <div className="h-full rounded-full animate-bar-fill" style={{ width: `${Math.max(flavorScores[dim.key], 8)}%`, background: dim.color }} />
                   </div>
@@ -304,12 +304,12 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
         {/* Cooking Style */}
         {topStyles.length > 0 && (
           <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.28s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#ea580c" }}>Cooking Style</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Cooking Style</p>
             <div className="flex gap-2 flex-wrap">
               {topStyles.map((s) => (
                 <div key={s.id} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full" style={{ background: "#f3f2ef" }}>
                   <span className="text-xs">{s.emoji}</span>
-                  <span className="text-xs font-medium" style={{ color: "#1a1410" }}>{s.label}</span>
+                  <span className="text-xs font-medium" style={{ color: "#1C1A17" }}>{s.label}</span>
                 </div>
               ))}
             </div>
@@ -319,10 +319,10 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
         {/* Dream Meal */}
         {signatureDish && (
           <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.35s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#ea580c" }}>Dream Meal</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#E5462E" }}>Dream Meal</p>
             <div className="flex items-center gap-3">
               <span className="text-2xl">{"\u{1F451}"}</span>
-              <p className="text-base font-bold" style={{ color: "#1a1410" }}>{signatureDish}</p>
+              <p className="text-base font-bold" style={{ color: "#1C1A17" }}>{signatureDish}</p>
             </div>
           </div>
         )}
@@ -344,11 +344,11 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
             }
           }}
           className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
-          style={{ background: "#1a1410", color: "white" }}
+          style={{ background: "#1C1A17", color: "white" }}
         >
           🔗 Share my Taste DNA
         </button>
-        <button onClick={() => setPhase("import")} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#ea580c" }}>
+        <button onClick={() => setPhase("import")} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#E5462E" }}>
           Continue
         </button>
       </div>
@@ -359,9 +359,9 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
           <div className="absolute inset-0 bg-black/30" onClick={() => setShowShare(false)} />
           <div className="relative w-full sm:max-w-sm sm:rounded-2xl rounded-t-2xl p-6 space-y-4 animate-slide-up bg-white">
             <div className="w-10 h-1 rounded-full mx-auto sm:hidden" style={{ background: "#eae7e2" }} />
-            <h3 className="text-lg font-bold text-center" style={{ color: "#1a1410" }}>Share Your Taste DNA</h3>
+            <h3 className="text-lg font-bold text-center" style={{ color: "#1C1A17" }}>Share Your Taste DNA</h3>
             <div className="p-4 rounded-xl" style={{ background: "#f8f7f5" }}>
-              <p className="text-sm font-bold text-center mb-1" style={{ color: "#1a1410" }}>Taste Look-A-Like: {chefMatch.name}</p>
+              <p className="text-sm font-bold text-center mb-1" style={{ color: "#1C1A17" }}>Taste Look-A-Like: {chefMatch.name}</p>
               <p className="text-xs text-center leading-relaxed" style={{ color: "#555" }}>{chefMatch.description}</p>
             </div>
             <button
@@ -372,7 +372,7 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
                 } else if (typeof navigator !== "undefined") { await navigator.clipboard.writeText(text); }
                 setShowShare(false);
               }}
-              className="w-full py-3.5 rounded-2xl font-bold text-sm text-white" style={{ background: "#ea580c" }}
+              className="w-full py-3.5 rounded-2xl font-bold text-sm text-white" style={{ background: "#E5462E" }}
             >
               {typeof navigator !== "undefined" && typeof navigator.share === "function" ? "Share" : "Copy to clipboard"}
             </button>

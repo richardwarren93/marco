@@ -1,6 +1,92 @@
 @import "tailwindcss";
 @source not "../../.claude";
 
+/* ============================================================
+   MARCO DESIGN SYSTEM TOKENS
+   Source: marco-design-system v1.0
+   Warm but exacting · curated · talkative · confident
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..900,0..100;1,9..144,300..900,0..100&family=Caveat:wght@600;700&family=Geist+Mono:wght@400..600&display=swap');
+
+:root {
+  /* Brand palette */
+  --tomato: #E5462E;        /* primary punch · CTAs · the punctum */
+  --tomato-dark: #B8331E;   /* hover/press */
+  --mustard: #E8A33D;       /* energy · tags · accents */
+  --mustard-soft: #F2C77A;
+  --teal: #0F4C5C;          /* anchor */
+  --teal-deep: #082E38;
+  --cream: #F5EEE2;         /* default surface */
+  --cream-warm: #EFE5D2;    /* recessed surface */
+  --ink: #1C1A17;           /* type · UI chrome */
+  --ink-soft: #4A4742;
+  --line: rgba(28, 26, 23, 0.12);
+  --line-on-dark: rgba(245, 238, 226, 0.18);
+
+  /* Type families */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-script: 'Caveat', 'Comic Sans MS', cursive;
+  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* Radii (pill-first, then editorial) */
+  --radius-pill: 100px;
+  --radius-card: 16px;
+  --radius-card-sm: 12px;
+}
+
+/* Marco display headlines — Fraunces, slightly soft. Use sparingly: page
+   titles, recipe titles, hero copy. Italic em ranges in tomato by default. */
+.h-display, .marco-h1 {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 144, "SOFT" 100, "wght" 600;
+  letter-spacing: -0.02em;
+  line-height: 1.0;
+  color: var(--ink);
+}
+.h-display em, .marco-h1 em { font-style: italic; color: var(--tomato); }
+
+.marco-h2 {
+  font-family: var(--font-display);
+  font-variation-settings: "opsz" 60, "SOFT" 100, "wght" 500;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  color: var(--ink);
+}
+.marco-h2 em { font-style: italic; color: var(--tomato); }
+
+/* Tracked uppercase metadata: 45 MIN · SERVES 4 · ITALIAN */
+.marco-mono {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+/* The signature — handwritten "marco" with the tomato punctum */
+.marco-signature {
+  font-family: var(--font-script);
+  font-weight: 600;
+  display: inline-block;
+  transform: rotate(-3deg);
+  line-height: 0.85;
+  position: relative;
+  padding-right: 0.32em;
+  color: var(--ink);
+}
+.marco-signature::after {
+  content: '';
+  position: absolute;
+  bottom: 0.18em;
+  right: 0.06em;
+  width: 0.18em;
+  height: 0.18em;
+  background: var(--tomato);
+  border-radius: 50%;
+}
+.marco-signature.on-dark { color: var(--cream); }
+
 html {
   /* Prevent iOS rubber-band bounce from shifting fixed-position elements */
   overscroll-behavior: none;
@@ -33,6 +119,34 @@ body {
   --font-sans: var(--font-geist-sans);
   --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
   --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+  /* Marco brand colors as Tailwind utilities — bg-tomato, text-cream, etc. */
+  --color-tomato: var(--tomato);
+  --color-tomato-dark: var(--tomato-dark);
+  --color-mustard: var(--mustard);
+  --color-mustard-soft: var(--mustard-soft);
+  --color-teal: var(--teal);
+  --color-teal-deep: var(--teal-deep);
+  --color-cream: var(--cream);
+  --color-cream-warm: var(--cream-warm);
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+
+  /* Remap Tailwind's orange palette → Marco tomato so existing
+     bg-orange-600 / text-orange-700 / etc. classes pick up the new
+     brand color without touching every component. The mapping uses
+     tomato for 500-700 (the punch range) and softer cream tones for
+     50-200 (the surfaces that were used for tinted backgrounds). */
+  --color-orange-50: #FBEDE6;
+  --color-orange-100: #F7DACC;
+  --color-orange-200: #F1B5A0;
+  --color-orange-300: #ED8E72;
+  --color-orange-400: #E96B4D;
+  --color-orange-500: var(--tomato);
+  --color-orange-600: var(--tomato);
+  --color-orange-700: var(--tomato-dark);
+  --color-orange-800: #962A18;
+  --color-orange-900: #6E1F12;
 }
 
 @keyframes pop-in {
@@ -237,7 +351,7 @@ body {
 
 @keyframes blink-cursor {
   0%, 100% { border-right-color: transparent; }
-  50% { border-right-color: #ea580c; }
+  50% { border-right-color: #E5462E; }
 }
 .animate-cursor { animation: blink-cursor 0.8s step-end infinite; border-right: 2px solid transparent; }
 

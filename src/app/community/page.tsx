@@ -12,7 +12,7 @@ export default function CommunityPage() {
   const router = useRouter();
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#faf9f7" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "#F5EEE2" }}>
       {/* Header */}
       <div className="px-4 pt-6 pb-2">
         <div className="max-w-2xl mx-auto">
@@ -22,12 +22,12 @@ export default function CommunityPage() {
               className="w-8 h-8 rounded-full flex items-center justify-center transition-colors -ml-1"
               style={{ background: "rgba(0,0,0,0.05)" }}
             >
-              <svg className="w-4 h-4" style={{ color: "#1a1410" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div>
-              <h1 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Community</h1>
+              <h1 className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>Community</h1>
               <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Discover & connect</p>
             </div>
           </div>
@@ -53,7 +53,7 @@ export default function CommunityPage() {
                     : "hover:opacity-80"
                 }`}
                 style={{
-                  color: activeTab === tab.key ? "#1a1410" : "#a09890",
+                  color: activeTab === tab.key ? "#1C1A17" : "#a09890",
                 }}
               >
                 <span>{tab.icon}</span>

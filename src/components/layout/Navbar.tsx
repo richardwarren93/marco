@@ -133,12 +133,12 @@ function NavbarInner() {
 
   return (
     <>
-      <nav className="hidden sm:block bg-[#faf9f7] sticky top-0 z-40" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}>
+      <nav className="hidden sm:block sticky top-0 z-40" style={{ background: "var(--cream, #F5EEE2)", paddingTop: "env(safe-area-inset-top, 0px)" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-10 sm:h-14 items-center">
-            {/* Left: Page title on mobile, Marco logo on desktop */}
-            <Link href={user ? "/recipes" : "/"} className="hidden sm:block text-2xl font-black text-orange-600 tracking-tight">
-              Marco
+            {/* Left: Page title on mobile, Marco signature wordmark on desktop */}
+            <Link href={user ? "/recipes" : "/"} className="hidden sm:inline-flex items-end" aria-label="Marco — home">
+              <span className="marco-signature" style={{ fontSize: "2.25rem" }}>marco</span>
             </Link>
             {(() => {
               const mobileTitle = user
@@ -150,7 +150,7 @@ function NavbarInner() {
                 : null
                 : null;
               return mobileTitle ? (
-                <span className="sm:hidden text-lg font-black tracking-tight" style={{ color: "#1a1410" }}>
+                <span className="sm:hidden text-lg font-black tracking-tight" style={{ color: "#1C1A17" }}>
                   {mobileTitle}
                 </span>
               ) : (
@@ -170,7 +170,7 @@ function NavbarInner() {
                       className="flex items-center gap-1.5 px-4 pt-2 pb-2.5 text-sm font-semibold transition-all duration-200 relative"
                       style={{
                         background: isActive ? "#fff" : "transparent",
-                        color: isActive ? "#ea580c" : "#9a918a",
+                        color: isActive ? "#E5462E" : "#9a918a",
                         borderRadius: "12px 12px 0 0",
                         borderTop: isActive ? "2px solid #fb923c" : "2px solid transparent",
                         borderLeft: isActive ? "1px solid #ede8e0" : "1px solid transparent",
@@ -207,7 +207,7 @@ function NavbarInner() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     </svg>
                     {unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[#faf9f7]" />
+                      <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 ring-2 ring-[#F5EEE2]" />
                     )}
                   </button>
 

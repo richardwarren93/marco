@@ -136,7 +136,7 @@ function NewRecipeInner() {
           onClick={handleTextExtract}
           disabled={extracting || !pastedText.trim()}
           className="mt-4 w-full py-3 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50"
-          style={{ background: "#ea580c" }}
+          style={{ background: "#E5462E" }}
         >
           {extracting ? "Extracting…" : "Extract Recipe"}
         </button>
@@ -163,7 +163,7 @@ function NewRecipeInner() {
               <button
                 onClick={() => router.replace("/recipes")}
                 className="px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-all active:scale-95"
-                style={{ background: "#ea580c" }}
+                style={{ background: "#E5462E" }}
               >
                 Back to recipes
               </button>

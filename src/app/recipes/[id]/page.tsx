@@ -369,7 +369,7 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20" style={{ backgroundColor: "#faf9f7" }}>
+      <div className="flex items-center justify-center py-20" style={{ backgroundColor: "#F5EEE2" }}>
         <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -377,7 +377,7 @@ export default function RecipeDetailPage() {
 
   if (!recipe) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-3" style={{ backgroundColor: "#faf9f7" }}>
+      <div className="flex flex-col items-center justify-center py-20 space-y-3" style={{ backgroundColor: "#F5EEE2" }}>
         <p className="text-[#a09890]">Recipe not found</p>
         <Link href="/recipes" className="text-[#e8530a] text-sm font-medium hover:underline">
           Back to recipes
@@ -388,7 +388,7 @@ export default function RecipeDetailPage() {
 
   if (editing) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6" style={{ backgroundColor: "#faf9f7", minHeight: "100vh" }}>
+      <div className="max-w-3xl mx-auto px-4 py-6" style={{ backgroundColor: "#F5EEE2", minHeight: "100vh" }}>
         <RecipeForm
           recipe={recipe}
           onCancel={() => setEditing(false)}
@@ -432,7 +432,7 @@ export default function RecipeDetailPage() {
   const hasMacros = !!(recipe.calories || recipe.protein_g || recipe.carbs_g || recipe.fat_g);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#faf9f7" }}>
+    <div className="min-h-screen" style={{ backgroundColor: "#F5EEE2" }}>
       {/* ── 1. Hero Image ──────────────────────────────────────────────── */}
       <div className="relative">
         {recipe.image_url ? (
@@ -541,7 +541,7 @@ export default function RecipeDetailPage() {
 
         {/* ── 2. Title section ────────────────────────────────────────── */}
         <div className="py-6 space-y-3">
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#1a1410] leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1C1A17] leading-tight">
             {recipe.title}
           </h1>
 
@@ -756,7 +756,7 @@ export default function RecipeDetailPage() {
 
                     return (
                       <li key={i} className="flex items-baseline gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#1a1410] flex-shrink-0 mt-1.5" />
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#1C1A17] flex-shrink-0 mt-1.5" />
                         <span className="text-sm text-gray-800">
                           {displayAmount && (
                             <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[#e8530a]" : ""}`}>
@@ -782,7 +782,7 @@ export default function RecipeDetailPage() {
               <ol className="space-y-6">
                 {steps.map((step, i) => (
                   <li key={i} className="flex gap-4">
-                    <span className="w-7 h-7 rounded-full bg-gray-100 text-[#1a1410] flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                    <span className="w-7 h-7 rounded-full bg-gray-100 text-[#1C1A17] flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                       {i + 1}
                     </span>
                     <p className="text-sm text-gray-700 leading-relaxed flex-1 pt-1">{step}</p>
@@ -798,7 +798,7 @@ export default function RecipeDetailPage() {
                 {recipe.calories != null && (
                   <div className="flex items-center gap-2">
                     <span className="text-xl">🔥</span>
-                    <span className="text-3xl font-bold text-[#1a1410]">
+                    <span className="text-3xl font-bold text-[#1C1A17]">
                       {Math.round(recipe.calories * ratio)}
                     </span>
                     <span className="text-sm text-gray-400 font-medium">cal</span>
@@ -810,19 +810,19 @@ export default function RecipeDetailPage() {
                   {recipe.protein_g != null && (
                     <div>
                       <div className="text-xs text-gray-400 mb-1">🥩 Protein</div>
-                      <div className="text-xl font-bold text-[#1a1410]">{Math.round(recipe.protein_g * ratio)}g</div>
+                      <div className="text-xl font-bold text-[#1C1A17]">{Math.round(recipe.protein_g * ratio)}g</div>
                     </div>
                   )}
                   {recipe.carbs_g != null && (
                     <div>
                       <div className="text-xs text-gray-400 mb-1">🌾 Carbs</div>
-                      <div className="text-xl font-bold text-[#1a1410]">{Math.round(recipe.carbs_g * ratio)}g</div>
+                      <div className="text-xl font-bold text-[#1C1A17]">{Math.round(recipe.carbs_g * ratio)}g</div>
                     </div>
                   )}
                   {recipe.fat_g != null && (
                     <div>
                       <div className="text-xs text-gray-400 mb-1">🧈 Fats</div>
-                      <div className="text-xl font-bold text-[#1a1410]">{Math.round(recipe.fat_g * ratio)}g</div>
+                      <div className="text-xl font-bold text-[#1C1A17]">{Math.round(recipe.fat_g * ratio)}g</div>
                     </div>
                   )}
                 </div>
@@ -954,7 +954,7 @@ export default function RecipeDetailPage() {
               <button
                 onClick={() => setShowMarcoChat(true)}
                 className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border"
-                style={{ borderColor: "#e0e0de", color: "#1a1410", background: "white" }}
+                style={{ borderColor: "#e0e0de", color: "#1C1A17", background: "white" }}
               >
                 {"\u{1F9D1}\u200D\u{1F373}"} Cook with Marco
                 <span className="text-[10px] ml-1.5 px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-400 font-medium align-middle">beta</span>

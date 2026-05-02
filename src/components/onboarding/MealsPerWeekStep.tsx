@@ -21,9 +21,9 @@ export default function MealsPerWeekStep({ value, onNext }: Props) {
   return (
     <div className="flex flex-col h-full px-6 pb-24">
       <div className="pt-4 pb-8">
-        <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1a1410" }}>
+        <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1C1A17" }}>
           How many meals a week do you{" "}
-          <span style={{ color: "#ea580c" }}>cook at home</span>?
+          <span style={{ color: "#E5462E" }}>cook at home</span>?
         </h1>
       </div>
 
@@ -40,13 +40,13 @@ export default function MealsPerWeekStep({ value, onNext }: Props) {
                 width: "calc(50% - 6px)",
                 padding: "20px 12px",
                 background: isSelected ? "#fff4ec" : "white",
-                border: isSelected ? "2px solid #ea580c" : "2px solid #e8e8e5",
+                border: isSelected ? "2px solid #E5462E" : "2px solid #e8e8e5",
                 boxShadow: isSelected ? "0 0 0 3px rgba(234,88,12,0.1)" : "none",
               }}
             >
               <span
                 className="text-3xl font-black"
-                style={{ color: isSelected ? "#ea580c" : "#1a1410" }}
+                style={{ color: isSelected ? "#E5462E" : "#1C1A17" }}
               >
                 {opt.label}
               </span>
@@ -63,7 +63,7 @@ export default function MealsPerWeekStep({ value, onNext }: Props) {
           onClick={() => selected && onNext(selected)}
           disabled={!selected}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98] disabled:opacity-40"
-          style={{ background: selected ? "#1a1410" : "#d4d0cc" }}
+          style={{ background: selected ? "#1C1A17" : "#d4d0cc" }}
         >
           Continue
         </button>

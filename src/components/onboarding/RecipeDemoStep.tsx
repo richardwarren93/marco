@@ -73,10 +73,10 @@ export default function RecipeDemoStep({ onNext }: Props) {
   const mealEmoji = recipe?.meal_type === "breakfast" ? "\u{1F95E}" : recipe?.meal_type === "lunch" ? "\u{1F957}" : recipe?.meal_type === "snack" ? "\u{1F370}" : "\u{1F35D}";
 
   return (
-    <div className="flex flex-col h-full pb-8" style={{ background: "#faf9f7" }}>
+    <div className="flex flex-col h-full pb-8" style={{ background: "#F5EEE2" }}>
       <div className="pt-4 pb-3 px-6 text-center">
-        <h1 className="text-[26px] font-black tracking-tight" style={{ color: "#1a1410" }}>
-          See the <span style={{ color: "#ea580c" }}>magic</span>
+        <h1 className="text-[26px] font-black tracking-tight" style={{ color: "#1C1A17" }}>
+          See the <span style={{ color: "#E5462E" }}>magic</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "#a09890" }}>
           Paste any recipe link and Marco extracts it instantly
@@ -93,7 +93,7 @@ export default function RecipeDemoStep({ onNext }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
               </svg>
-              <div className="font-mono text-sm min-h-[24px] flex-1 break-all" style={{ color: "#1a1410" }}>
+              <div className="font-mono text-sm min-h-[24px] flex-1 break-all" style={{ color: "#1C1A17" }}>
                 {phase === "intro" && <span style={{ color: "#ccc" }}>https://instagram.com/p/...</span>}
                 {phase !== "intro" && typed}
                 {phase === "typing" && <span className="animate-cursor">&nbsp;</span>}
@@ -105,7 +105,7 @@ export default function RecipeDemoStep({ onNext }: Props) {
           {(phase === "loading" || phase === "reveal") && (
             <div
               className="animate-stagger-in rounded-2xl py-3.5 text-center mb-5 font-semibold text-sm"
-              style={{ background: phase === "loading" ? "#1a1410" : "#22c55e", color: "white" }}
+              style={{ background: phase === "loading" ? "#1C1A17" : "#22c55e", color: "white" }}
             >
               {phase === "loading" ? (
                 <span className="flex items-center justify-center gap-2">
@@ -151,14 +151,14 @@ export default function RecipeDemoStep({ onNext }: Props) {
               </div>
 
               <div className="p-4">
-                <h3 className="text-lg font-bold" style={{ color: "#1a1410" }}>{title}</h3>
+                <h3 className="text-lg font-bold" style={{ color: "#1C1A17" }}>{title}</h3>
                 {description && (
                   <p className="text-xs mt-1 leading-relaxed line-clamp-2" style={{ color: "#a09890" }}>{description}</p>
                 )}
 
                 {/* Meta */}
                 <div className="flex gap-2 mt-3 flex-wrap">
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "#fff4ec", color: "#ea580c" }}>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ background: "#fff4ec", color: "#E5462E" }}>
                     {prepTime} min
                   </span>
                   {tags.slice(0, 3).map((tag) => (
@@ -173,8 +173,8 @@ export default function RecipeDemoStep({ onNext }: Props) {
                   <div className="mt-4 space-y-1.5">
                     <p className="text-xs font-bold uppercase tracking-wider" style={{ color: "#a09890" }}>Ingredients</p>
                     {ingredients.slice(0, 5).map((ing, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm" style={{ color: "#1a1410" }}>
-                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#ea580c" }} />
+                      <div key={i} className="flex items-center gap-2 text-sm" style={{ color: "#1C1A17" }}>
+                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: "#E5462E" }} />
                         {ing.amount} {ing.unit} {ing.name}
                       </div>
                     ))}
@@ -192,7 +192,7 @@ export default function RecipeDemoStep({ onNext }: Props) {
       {/* Continue */}
       {phase === "reveal" && (
         <div className="px-6 pt-4 animate-stagger-in" style={{ animationDelay: "0.3s" }}>
-          <button onClick={onNext} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#1a1410" }}>
+          <button onClick={onNext} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#1C1A17" }}>
             Now let&apos;s build a meal plan
           </button>
         </div>

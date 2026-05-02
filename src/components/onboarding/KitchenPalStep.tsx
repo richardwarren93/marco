@@ -15,7 +15,7 @@ export default function KitchenPalStep({ value, onNext }: Props) {
     <div className="flex flex-col h-full px-6 pb-24">
       {/* Heading */}
       <div className="text-center pt-4 pb-6">
-        <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1a1410" }}>
+        <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1C1A17" }}>
           Choose your kitchen pal
         </h1>
         <p className="text-sm mt-2" style={{ color: "#a09890" }}>
@@ -35,7 +35,7 @@ export default function KitchenPalStep({ value, onNext }: Props) {
               style={{
                 animationDelay: `${i * 0.07}s`,
                 background: isSelected ? undefined : pal.bgGradient,
-                border: isSelected ? "2.5px solid #ea580c" : "2.5px solid transparent",
+                border: isSelected ? "2.5px solid #E5462E" : "2.5px solid transparent",
                 boxShadow: isSelected
                   ? "0 0 0 3px rgba(234,88,12,0.15), 0 4px 20px rgba(234,88,12,0.1)"
                   : "0 1px 3px rgba(0,0,0,0.04)",
@@ -43,7 +43,7 @@ export default function KitchenPalStep({ value, onNext }: Props) {
             >
               {/* Checkmark */}
               {isSelected && (
-                <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-[#ea580c] flex items-center justify-center animate-bounce-in">
+                <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-[#E5462E] flex items-center justify-center animate-bounce-in">
                   <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -57,7 +57,7 @@ export default function KitchenPalStep({ value, onNext }: Props) {
 
               {/* Name + tagline */}
               <div className="text-center">
-                <p className="font-bold text-[15px]" style={{ color: "#1a1410" }}>
+                <p className="font-bold text-[15px]" style={{ color: "#1C1A17" }}>
                   {pal.name}
                 </p>
                 <p className="text-xs" style={{ color: "#a09890" }}>
@@ -76,7 +76,7 @@ export default function KitchenPalStep({ value, onNext }: Props) {
           disabled={!selected}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
           style={{
-            background: selected ? "#1a1410" : "#d4d0cc",
+            background: selected ? "#1C1A17" : "#d4d0cc",
           }}
         >
           Continue

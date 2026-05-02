@@ -197,10 +197,10 @@ export default function ExploreTab() {
   const showLanding = results.length === 0 && !searching && !error;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-28 pt-5" style={{ background: "#faf9f7" }}>
+    <div className="max-w-3xl mx-auto px-4 pb-28 pt-5" style={{ background: "#F5EEE2" }}>
       {/* Headline */}
       <div className="mb-5 animate-fade-slide-up">
-        <h2 className="text-2xl font-black tracking-tight" style={{ color: "#1a1410" }}>Explore</h2>
+        <h2 className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>Explore</h2>
         <p className="text-sm mt-1" style={{ color: "#a09890" }}>
           {showRawInput ? "Describe what you\u2019re craving" : "Let\u2019s find your next meal"}
         </p>
@@ -219,13 +219,13 @@ export default function ExploreTab() {
               rows={1}
               disabled={searching}
               className="flex-1 resize-none text-sm outline-none bg-transparent py-1 min-h-[36px] max-h-[96px] font-medium"
-              style={{ color: "#1a1410" }}
+              style={{ color: "#1C1A17" }}
             />
             <button
               onClick={handleSubmit}
               disabled={!prompt.trim() || searching}
               className="w-10 h-10 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all active:scale-90 disabled:opacity-40"
-              style={{ background: "#1a1410" }}
+              style={{ background: "#1C1A17" }}
             >
               {searching ? (
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -262,7 +262,7 @@ export default function ExploreTab() {
             className="bg-white rounded-3xl p-5 animate-fade-slide-up"
             style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}
           >
-            <h3 className="text-base font-bold mb-4" style={{ color: "#1a1410" }}>
+            <h3 className="text-base font-bold mb-4" style={{ color: "#1C1A17" }}>
               {QUESTIONS[questionStep].question}
             </h3>
             <div className="grid grid-cols-2 gap-2.5">
@@ -279,7 +279,7 @@ export default function ExploreTab() {
                   }}
                 >
                   <span className="text-xl">{opt.emoji}</span>
-                  <span className="text-xs font-bold" style={{ color: "#1a1410" }}>{opt.label}</span>
+                  <span className="text-xs font-bold" style={{ color: "#1C1A17" }}>{opt.label}</span>
                 </button>
               ))}
             </div>
@@ -376,7 +376,7 @@ export default function ExploreTab() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-base">🔥</span>
-                <h3 className="text-sm font-black" style={{ color: "#1a1410" }}>Popular right now</h3>
+                <h3 className="text-sm font-black" style={{ color: "#1C1A17" }}>Popular right now</h3>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {trending.map((recipe, i) => (

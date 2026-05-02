@@ -45,7 +45,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#faf9f7" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "#F5EEE2" }}>
       {/* Compact hero */}
       <div className="relative">
         <div className="h-48 bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-300 flex items-center justify-center overflow-hidden">
@@ -103,7 +103,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-4 bg-[#1a1410] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
+            className="w-full py-3.5 px-4 bg-[#1C1A17] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>

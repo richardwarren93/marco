@@ -82,8 +82,8 @@ export default function GroceryDemoStep({ assignments, onNext }: Props) {
   return (
     <div className="flex flex-col h-full pb-8">
       <div className="pt-4 pb-5 px-6 text-center">
-        <h1 className="text-[26px] font-black tracking-tight" style={{ color: "#1a1410" }}>
-          Your <span style={{ color: "#ea580c" }}>grocery list</span>
+        <h1 className="text-[26px] font-black tracking-tight" style={{ color: "#1C1A17" }}>
+          Your <span style={{ color: "#E5462E" }}>grocery list</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "#a09890" }}>
           Auto-generated from your meal plan
@@ -125,8 +125,8 @@ export default function GroceryDemoStep({ assignments, onNext }: Props) {
                       <div
                         className="w-5 h-5 rounded-md flex-shrink-0 flex items-center justify-center transition-all"
                         style={{
-                          background: isChecked ? "#ea580c" : "transparent",
-                          border: isChecked ? "2px solid #ea580c" : "2px solid #d4d0cc",
+                          background: isChecked ? "#E5462E" : "transparent",
+                          border: isChecked ? "2px solid #E5462E" : "2px solid #d4d0cc",
                         }}
                       >
                         {isChecked && (
@@ -140,7 +140,7 @@ export default function GroceryDemoStep({ assignments, onNext }: Props) {
                       <span
                         className="flex-1 text-[15px]"
                         style={{
-                          color: isChecked ? "#a09890" : "#1a1410",
+                          color: isChecked ? "#a09890" : "#1C1A17",
                           textDecoration: isChecked ? "line-through" : "none",
                         }}
                       >
@@ -163,7 +163,7 @@ export default function GroceryDemoStep({ assignments, onNext }: Props) {
         <button
           onClick={onNext}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
-          style={{ background: "#1a1410" }}
+          style={{ background: "#1C1A17" }}
         >
           Now build your taste profile
         </button>

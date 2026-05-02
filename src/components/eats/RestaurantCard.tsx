@@ -75,7 +75,7 @@ export default function RestaurantCard({ restaurant, onToggleGoBack, index = 0 }
         <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${statusAccent[restaurant.status]}`} />
 
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-bold leading-tight" style={{ color: "#1a1410" }}>
+          <h3 className="font-bold leading-tight" style={{ color: "#1C1A17" }}>
             {restaurant.name}
           </h3>
           <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full flex-shrink-0 ${status.bg}`}>

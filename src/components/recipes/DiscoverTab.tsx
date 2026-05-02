@@ -583,7 +583,7 @@ export default function DiscoverTab({
   const showLanding = results.length === 0 && !searching && !exploreError;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 pb-32 pt-5" style={{ background: "#faf9f7" }}>
+    <div className="max-w-3xl mx-auto px-4 pb-32 pt-5" style={{ background: "#F5EEE2" }}>
 
       {/* AI Prompt Input — always visible at top */}
       <div className="mb-6">
@@ -614,14 +614,14 @@ export default function DiscoverTab({
                 rows={1}
                 disabled={searching}
                 className="w-full resize-none text-sm outline-none bg-transparent min-h-[24px] max-h-[96px] font-medium placeholder:text-gray-300"
-                style={{ color: "#1a1410" }}
+                style={{ color: "#1C1A17" }}
               />
             </div>
             <button
               onClick={handleSubmit}
               disabled={!prompt.trim() || searching}
               className="w-9 h-9 flex items-center justify-center rounded-2xl flex-shrink-0 transition-all active:scale-90 disabled:opacity-30"
-              style={{ background: "#1a1410" }}
+              style={{ background: "#1C1A17" }}
               aria-label="Send"
             >
               {searching ? (
@@ -769,7 +769,7 @@ export default function DiscoverTab({
                       />
                       {/* Featured pill */}
                       <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm">
-                        <span className="text-[11px] font-bold" style={{ color: "#1a1410" }}>Featured</span>
+                        <span className="text-[11px] font-bold" style={{ color: "#1C1A17" }}>Featured</span>
                       </div>
                       {/* Title and meta */}
                       <div className="absolute bottom-0 left-0 right-0 p-5 pb-9 text-white">
@@ -881,7 +881,7 @@ export default function DiscoverTab({
 
             {/* Question */}
             <div key={QUESTIONS[questionStep].id}>
-              <h3 className="text-base font-bold mb-4" style={{ color: "#1a1410" }}>
+              <h3 className="text-base font-bold mb-4" style={{ color: "#1C1A17" }}>
                 {QUESTIONS[questionStep].question}
               </h3>
               <div className="grid grid-cols-2 gap-2.5">
@@ -898,7 +898,7 @@ export default function DiscoverTab({
                     }}
                   >
                     <span className="text-xl">{opt.emoji}</span>
-                    <span className="text-xs font-bold" style={{ color: "#1a1410" }}>{opt.label}</span>
+                    <span className="text-xs font-bold" style={{ color: "#1C1A17" }}>{opt.label}</span>
                   </button>
                 ))}
               </div>
@@ -1008,7 +1008,7 @@ function CategoryRow({
     <div>
       <div className="flex items-center gap-2 mb-3.5 px-0.5">
         <span className="text-base">{emoji}</span>
-        <h3 className="text-[17px] font-bold tracking-tight" style={{ color: "#1a1410", letterSpacing: "-0.01em" }}>
+        <h3 className="text-[17px] font-bold tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.01em" }}>
           {title}
         </h3>
       </div>
