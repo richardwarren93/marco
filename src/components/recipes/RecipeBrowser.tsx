@@ -460,7 +460,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               </button>
 
               {showCollMenu && (
-                <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[200px] overflow-visible"
+                <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[200px] overflow-visible"
                   style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
 
                   {/* All recipes (clear filter) */}
