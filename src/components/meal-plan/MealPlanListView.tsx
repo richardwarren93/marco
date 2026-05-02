@@ -15,7 +15,7 @@ import { MealTypeIcon } from "@/components/icons/MealIcons";
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const ACCENT = "#e8530a";          // slightly calmer orange
 const ACCENT_LIGHT = "#fff4ec";
-const BG = "#f4f3f1";
+const BG = "#F5EEE2"; // Marco cream — matches the rest of the app body background
 const SURFACE = "#ffffff";
 const TEXT_1 = "#141414";          // deeper near-black
 const TEXT_2 = "#888";
