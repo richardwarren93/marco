@@ -1,52 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Blue circle background -->
-  <circle cx="256" cy="256" r="256" fill="#7BA7BC"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" aria-label="Marco">
+  <!-- Tomato background, rounded square (iOS app icon corner radius) -->
+  <rect width="512" height="512" rx="115" ry="115" fill="#E5462E"/>
 
-  <!-- Chef hat - puffy white shape -->
-  <path d="M168 205 C155 200, 130 185, 128 155 C126 125, 148 105, 175 108 C185 88, 210 72, 240 74 C255 65, 275 65, 290 74 C320 72, 345 88, 355 108 C382 105, 404 125, 402 155 C400 185, 375 200, 362 205 C360 210, 358 225, 355 230 L175 230 C172 225, 170 210, 168 205Z" fill="white" stroke="#2a2a2a" stroke-width="3" stroke-linejoin="round"/>
+  <!-- Handwritten "M" — stylized brush-script glyph in cream, tilted -5°.
+       Drawn as a stroked path so the icon renders identically without
+       requiring the Caveat font. Variable feel comes from rounded caps
+       and joins; the slight -5° tilt is the Marco signature angle. -->
+  <g transform="translate(106 192) rotate(-5)">
+    <path
+      d="M 0 200
+         C 8 70, 28 24, 50 18
+         C 78 14, 102 64, 130 168
+         C 132 178, 138 180, 145 174
+         L 170 132
+         C 192 50, 222 12, 250 18
+         C 272 24, 292 70, 300 200"
+      fill="none"
+      stroke="#F5EEE2"
+      stroke-width="40"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
 
-  <!-- Hat band / bottom edge -->
-  <path d="M175 228 Q265 238, 355 228" fill="none" stroke="#2a2a2a" stroke-width="2.5" stroke-linecap="round"/>
-
-  <!-- "M" on the hat - sketchy style -->
-  <path d="M237 140 L237 175 L255 155 L273 175 L273 140" fill="none" stroke="#2a2a2a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-
-  <!-- Curly/messy hair scribbles -->
-  <path d="M178 232 C185 245, 172 255, 180 262 C188 269, 178 278, 185 285" fill="none" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round"/>
-  <path d="M192 235 C198 248, 188 258, 195 268 C202 278, 192 285, 198 292" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M208 234 C214 250, 204 260, 210 272 C216 284, 206 290, 212 298" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M222 235 C228 252, 218 262, 224 275 C230 288, 222 293, 226 300" fill="none" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
-  <path d="M240 234 C244 248, 236 258, 242 270 C248 282, 238 292, 244 300" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M258 234 C262 250, 254 260, 260 272 C266 284, 256 292, 262 300" fill="none" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
-  <path d="M275 235 C280 248, 272 258, 278 268 C284 278, 274 288, 280 295" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M292 234 C298 248, 288 258, 295 268 C302 278, 292 285, 298 292" fill="none" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round"/>
-  <path d="M310 232 C316 245, 308 255, 314 265 C320 275, 310 282, 316 290" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M328 230 C332 242, 325 252, 330 262 C335 272, 328 280, 332 286" fill="none" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M342 228 C345 238, 340 248, 344 258 C348 268, 340 275, 344 280" fill="none" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
-
-  <!-- Face outline - round head -->
-  <ellipse cx="265" cy="348" rx="88" ry="78" fill="#F5DEB3" stroke="#2a2a2a" stroke-width="3"/>
-
-  <!-- Sunglasses - rectangular frames -->
-  <rect x="192" y="318" width="62" height="35" rx="5" fill="#2a2a2a" stroke="#1a1a1a" stroke-width="2"/>
-  <rect x="268" y="318" width="62" height="35" rx="5" fill="#2a2a2a" stroke="#1a1a1a" stroke-width="2"/>
-  <!-- Bridge -->
-  <path d="M254 335 L268 335" stroke="#2a2a2a" stroke-width="4" stroke-linecap="round"/>
-  <!-- Temple arms -->
-  <path d="M192 332 L178 325" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-  <path d="M330 332 L345 325" stroke="#2a2a2a" stroke-width="3.5" stroke-linecap="round"/>
-
-  <!-- Sunglasses shine -->
-  <path d="M200 325 L210 325" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-linecap="round"/>
-  <path d="M276 325 L286 325" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-linecap="round"/>
-
-  <!-- Nose - simple line -->
-  <path d="M262 358 C258 365, 260 372, 266 372" fill="none" stroke="#2a2a2a" stroke-width="2.5" stroke-linecap="round"/>
-
-  <!-- Mouth - wide smile with teeth -->
-  <path d="M225 385 C235 405, 265 412, 305 385" fill="white" stroke="#2a2a2a" stroke-width="3" stroke-linecap="round"/>
-  <!-- Teeth lines -->
-  <line x1="245" y1="388" x2="245" y2="398" stroke="#2a2a2a" stroke-width="1.5"/>
-  <line x1="265" y1="390" x2="265" y2="402" stroke="#2a2a2a" stroke-width="1.5"/>
-  <line x1="285" y1="388" x2="285" y2="398" stroke="#2a2a2a" stroke-width="1.5"/>
+  <!-- The punctum — Marco's signature ink dot. On the tomato app-icon
+       variant it's ink (per the design system spec). -->
+  <circle cx="425" cy="380" r="22" fill="#1C1A17"/>
 </svg>
