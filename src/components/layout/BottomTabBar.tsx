@@ -274,13 +274,13 @@ function BottomTabBarInner() {
         }}
       >
         <div
-          className="flex justify-around items-center h-[52px] px-2 mx-auto max-w-md relative"
+          className="flex justify-around items-center h-[56px] px-2 mx-auto max-w-md relative"
           style={{
-            background: "rgba(255,248,241,0.88)",
+            background: "rgba(255,253,247,0.92)",
             backdropFilter: "blur(24px)",
             WebkitBackdropFilter: "blur(24px)",
             borderRadius: 28,
-            boxShadow: "0 2px 16px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04)",
+            boxShadow: "0 2px 16px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(28,26,23,0.06)",
           }}
         >
           {leftTabs.map((leftTab) => {
@@ -296,15 +296,28 @@ function BottomTabBarInner() {
                 href={leftTab.href}
                 className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
                 aria-label={leftTab.label}
-                style={{ color: isActive ? ACCENT : "rgba(0,0,0,0.45)" }}
+                style={{ color: isActive ? "#fff" : "var(--ink-soft, #4A4742)" }}
               >
-                <leftTab.Icon className="w-5 h-5" filled={isActive} />
+                {/* Active gets a tomato fill circle around the icon — Marco
+                    design spec: "Active item gets a tomato fill circle." */}
+                <span
+                  className="flex items-center justify-center transition-all"
+                  style={{
+                    width: 30,
+                    height: 30,
+                    borderRadius: "50%",
+                    background: isActive ? "var(--tomato, #E5462E)" : "transparent",
+                  }}
+                >
+                  <leftTab.Icon className="w-[18px] h-[18px]" filled={isActive} />
+                </span>
                 <span
                   className="leading-tight"
                   style={{
                     fontSize: 9,
-                    fontWeight: isActive ? 600 : 500,
-                    letterSpacing: 0,
+                    fontWeight: 500,
+                    letterSpacing: "0.04em",
+                    color: isActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
                   }}
                 >
                   {leftTab.label}
@@ -325,8 +338,8 @@ function BottomTabBarInner() {
                 borderRadius: "50%",
                 background: ACCENT,
                 boxShadow: fabOpen
-                  ? `0 3px 12px rgba(232,83,10,0.3)`
-                  : `0 2px 8px rgba(232,83,10,0.2)`,
+                  ? `0 3px 12px rgba(229,70,46,0.32)`
+                  : `0 2px 8px rgba(229,70,46,0.22)`,
                 transition: "box-shadow 0.2s ease",
               }}
             >
@@ -349,15 +362,26 @@ function BottomTabBarInner() {
             href="/recipes?tab=grocery"
             className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
             aria-label="Grocery"
-            style={{ color: isGroceryActive ? ACCENT : "rgba(0,0,0,0.45)" }}
+            style={{ color: isGroceryActive ? "#fff" : "var(--ink-soft, #4A4742)" }}
           >
-            <GroceryIcon className="w-5 h-5" filled={isGroceryActive} />
+            <span
+              className="flex items-center justify-center transition-all"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: isGroceryActive ? "var(--tomato, #E5462E)" : "transparent",
+              }}
+            >
+              <GroceryIcon className="w-[18px] h-[18px]" filled={isGroceryActive} />
+            </span>
             <span
               className="leading-tight"
               style={{
                 fontSize: 9,
-                fontWeight: isGroceryActive ? 600 : 500,
-                letterSpacing: 0,
+                fontWeight: 500,
+                letterSpacing: "0.04em",
+                color: isGroceryActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
               }}
             >
               Grocery
@@ -367,17 +391,28 @@ function BottomTabBarInner() {
           {/* Discover */}
           <Link
             href="/recipes?tab=discover"
-            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1.5 transition-colors"
+            className="relative flex flex-col items-center justify-center gap-0.5 flex-1 py-1 transition-colors"
             aria-label="Discover"
-            style={{ color: isDiscoverActive ? ACCENT : "rgba(0,0,0,0.45)" }}
+            style={{ color: isDiscoverActive ? "#fff" : "var(--ink-soft, #4A4742)" }}
           >
-            <SearchIcon className="w-5 h-5" />
+            <span
+              className="flex items-center justify-center transition-all"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                background: isDiscoverActive ? "var(--tomato, #E5462E)" : "transparent",
+              }}
+            >
+              <SearchIcon className="w-[18px] h-[18px]" />
+            </span>
             <span
               className="leading-tight"
               style={{
                 fontSize: 9,
-                fontWeight: isDiscoverActive ? 600 : 500,
-                letterSpacing: 0,
+                fontWeight: 500,
+                letterSpacing: "0.04em",
+                color: isDiscoverActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
               }}
             >
               Discover
