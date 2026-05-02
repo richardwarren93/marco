@@ -39,15 +39,29 @@ for (const ing of INGREDIENTS) {
   }
 }
 
-/** Keyword-based fallback when the ingredient isn't in the alias map. */
+/** Keyword-based fallback when the ingredient isn't in the alias map.
+ *  Order matters — earlier patterns win. Dairy must come before pantry so
+ *  "butter" lands in dairy, and "peanut butter" / "nut butter" lands in pantry. */
 function keywordCategorize(lower: string): string | null {
-  if (/chicken|beef|pork|lamb|turkey|duck|venison|steak|mince|ground meat|sausage|bacon|ham|prawn|shrimp|salmon|tuna|cod|tilapia|halibut|mahi|crab|lobster|clam|mussel|oyster|anchovy|sardine|tofu|tempeh|seitan/.test(lower)) return "protein";
-  if (/parmesan|mozzarella|cheddar|gouda|brie|feta|ricotta|goat cheese|cream cheese|cottage cheese|yogurt|sour cream|half.and.half|heavy cream|whipped cream|ghee/.test(lower)) return "dairy";
-  if (/vinegar|soy sauce|fish sauce|hot sauce|sriracha|tabasco|worcestershire|ketchup|mayonnaise|mustard|relish/.test(lower)) return "spice";
-  if (/salt|pepper|paprika|cumin|turmeric|coriander|oregano|chili|chilli|cayenne|cinnamon|nutmeg|cardamom|saffron|sesame|spice|crisp|seasoning/.test(lower)) return "spice";
-  if (/oil|flour|sugar|honey|maple|pasta|noodle|rice|quinoa|oat|lentil|chickpea|bread|cracker|stock|broth|tomato paste|coconut milk|peanut butter|nut butter|almond butter|chocolate|cocoa|baking powder|baking soda|cornstarch|panko|breadcrumb/.test(lower)) return "pantry";
-  if (/potato|onion|garlic|ginger|tomato|carrot|celery|lettuce|spinach|kale|broccoli|cauliflower|asparagus|zucchini|cucumber|rosemary|thyme|sage|mint|parsley|cilantro|basil|dill|chive|lemon|lime|orange|apple|banana|berry|mushroom|corn|peas|vegetable|greens|arugula|leek|avocado|eggplant|squash|beet|radish|yam|scallion|fennel|bok choy|cabbage|artichoke|herb/.test(lower)) return "produce";
-  if (/frozen|ice cream|sorbet/.test(lower)) return "frozen";
+  // Pantry "butters" first so they aren't caught by the dairy butter pattern
+  if (/peanut butter|almond butter|cashew butter|nut butter|sunflower butter|tahini/.test(lower)) return "pantry";
+
+  if (/chicken|beef|pork|lamb|turkey|duck|venison|steak|mince|ground meat|sausage|bacon|ham|prawn|shrimp|salmon|tuna|cod|tilapia|halibut|mahi|crab|lobster|clam|mussel|oyster|anchovy|sardine|tofu|tempeh|seitan|\begg(s|whites?|yolks?)?\b|\bbones?\b|\bliver\b|\bkidney\b|\bribs?\b/.test(lower)) return "protein";
+
+  if (/parmesan|mozzarella|cheddar|gouda|brie|feta|ricotta|goat cheese|cream cheese|cottage cheese|yogurt|sour cream|half.and.half|heavy cream|whipped cream|ghee|\bmilk\b|\bbutter\b|buttermilk|kefir|\bcream\b/.test(lower)) return "dairy";
+
+  if (/vinegar|soy sauce|fish sauce|hot sauce|sriracha|tabasco|worcestershire|ketchup|mayonnaise|mayo|mustard|relish|salsa|pesto|\bdressing\b|vinaigrette|chutney|marinade|aioli/.test(lower)) return "spice";
+
+  if (/salt|peppercorn|paprika|cumin|turmeric|coriander|oregano|chili|chilli|cayenne|cinnamon|nutmeg|cardamom|saffron|sesame|spice|crisp|seasoning|bay leaf|allspice|clove\b|fenugreek|garam masala|five spice|za'?atar|sumac|aniseed|fennel seed|caraway/.test(lower)) return "spice";
+
+  if (/\boil\b|olive oil|sesame oil|canola|flour|sugar|honey|maple|pasta|noodle|\brice\b|quinoa|\boat\b|oats|lentil|chickpea|garbanzo|black bean|kidney bean|pinto bean|cracker|stock|broth|bouillon|tomato paste|tomato sauce|tomato puree|coconut milk|coconut cream|chocolate|cocoa|baking powder|baking soda|cornstarch|panko|breadcrumb|cornmeal|polenta|couscous|barley|farro|bulgur|raisin|prune|date|nut\b|nuts\b|seed\b|seeds\b|gelatin|yeast|extract\b|food coloring|jam|jelly|preserve/.test(lower)) return "pantry";
+
+  if (/bagel|tortilla|pita|naan|\broll\b|\bbun\b|\bwrap\b|croissant|\bbread\b|baguette|focaccia|english muffin|brioche|sourdough|pastry|biscuit|scone|cookie|muffin|cake/.test(lower)) return "bakery";
+
+  if (/potato|onion|garlic|ginger|tomato|carrot|celery|lettuce|spinach|kale|broccoli|cauliflower|asparagus|zucchini|cucumber|rosemary|thyme|sage|mint|parsley|cilantro|basil|dill|chive|lemon|lime|orange|clementine|grapefruit|apple|pear|banana|grape|berry|mushroom|corn|\bpea\b|peas\b|vegetable|greens?\b|arugula|leek|avocado|eggplant|squash|pumpkin|\bbeet\b|radish|yam|scallion|green onion|fennel|bok choy|cabbage|artichoke|sprout|jalape|serrano|poblano|chipotle|bell pepper|red pepper|green pepper|herb|melon|peach|plum|cherry|nectarine|apricot|pineapple|mango|papaya|kiwi|fig|pomegranate|pear|olive|chard|collard/.test(lower)) return "produce";
+
+  if (/frozen|ice cream|sorbet|gelato|popsicle/.test(lower)) return "frozen";
+
   return null;
 }
 
@@ -58,6 +72,21 @@ function normalizeName(name: string): { canonical: string; category: string | nu
   // Fallback: keyword-based category guess for unrecognised ingredients
   const category = keywordCategorize(lower);
   return { canonical: lower, category };
+}
+
+/** Map any legacy or alias category emitted by the ingredient DB into the
+ *  canonical 8-category set the UI knows how to render. */
+const CATEGORY_ALIASES: Record<string, string> = {
+  canned: "pantry",
+  condiment: "spice",
+  spices: "spice",
+  grain: "bakery",
+};
+
+export function canonicalCategory(category: string | null | undefined): string {
+  if (!category) return "other";
+  const alias = CATEGORY_ALIASES[category];
+  return alias ?? category;
 }
 
 function parseAmount(amount: string | number | null | undefined): number | null {
@@ -284,16 +313,21 @@ export function aggregateIngredients(
     }
   }
 
-  // Sort: by category, then by name
+  // Normalize categories to the canonical 8-category set so the UI never
+  // sees legacy strings like "canned"/"condiment"/"grain".
+  for (const r of results) {
+    r.category = canonicalCategory(r.category);
+  }
+
+  // Sort: by category, then by name. Order matches CATEGORY_SORT_ORDER in the UI.
   const categoryOrder = [
     "produce",
     "protein",
     "dairy",
-    "grain",
-    "canned",
-    "frozen",
+    "pantry",
     "spice",
-    "condiment",
+    "frozen",
+    "bakery",
     "other",
   ];
 

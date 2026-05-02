@@ -14,36 +14,43 @@ import OrderOnlineSheet from "./OrderOnlineSheet";
 
 // ─── Category config ──────────────────────────────────────────────────────────
 const CATEGORY_CONFIG: Record<string, { label: string; emoji: string }> = {
-  produce:   { label: "Produce",              emoji: "🥬" },
-  protein:   { label: "Protein",              emoji: "🥩" },
-  dairy:     { label: "Dairy & Eggs",         emoji: "🥛" },
-  pantry:    { label: "Pantry",               emoji: "🥫" },
-  canned:    { label: "Pantry",               emoji: "🥫" },
-  spices:    { label: "Spices & Condiments",  emoji: "🧂" },
-  spice:     { label: "Spices & Condiments",  emoji: "🧂" },
-  condiment: { label: "Spices & Condiments",  emoji: "🧂" },
-  frozen:    { label: "Frozen",               emoji: "🧊" },
-  bakery:    { label: "Bakery",               emoji: "🍞" },
-  grain:     { label: "Bakery",               emoji: "🍞" },
-  other:     { label: "Other",               emoji: "📦" },
+  produce: { label: "Produce",              emoji: "🥬" },
+  protein: { label: "Protein",              emoji: "🥩" },
+  dairy:   { label: "Dairy & Eggs",         emoji: "🥛" },
+  pantry:  { label: "Pantry",               emoji: "🥫" },
+  spice:   { label: "Spices & Condiments",  emoji: "🧂" },
+  frozen:  { label: "Frozen",               emoji: "🧊" },
+  bakery:  { label: "Bakery",               emoji: "🍞" },
+  other:   { label: "Other",                emoji: "📦" },
 };
 
 const CATEGORY_SORT_ORDER = [
-  "produce", "protein", "dairy",
-  "pantry", "canned",
-  "spices", "spice", "condiment",
-  "frozen", "bakery", "grain",
-  "other",
+  "produce", "protein", "dairy", "pantry", "spice", "frozen", "bakery", "other",
 ];
 
+// Map legacy DB category strings (for items generated before the canonicalization
+// fix) into the canonical UI keys, so existing rows render in the right group
+// until the next regenerate cleans them up.
+const CATEGORY_ALIAS: Record<string, string> = {
+  canned: "pantry",
+  condiment: "spice",
+  spices: "spice",
+  grain: "bakery",
+};
+
+function canonicalUiCategory(cat: string | null): string {
+  const c = (cat || "other").toLowerCase();
+  return CATEGORY_ALIAS[c] ?? c;
+}
+
 function categoryLabel(cat: string | null): string {
-  const c = cat || "other";
+  const c = canonicalUiCategory(cat);
   const cfg = CATEGORY_CONFIG[c];
   return cfg ? `${cfg.emoji} ${cfg.label}` : c;
 }
 
 function categorySort(cat: string | null): number {
-  const idx = CATEGORY_SORT_ORDER.indexOf(cat || "other");
+  const idx = CATEGORY_SORT_ORDER.indexOf(canonicalUiCategory(cat));
   return idx === -1 ? 999 : idx;
 }
 
@@ -407,37 +414,9 @@ export default function GroceryList() {
   // Active meals (non-excluded) for display and stats
   const activeMeals = useMemo(() => meals.filter((m) => !excludedMealIds.has(m.id)), [meals, excludedMealIds]);
 
-  // Merge own + household items, deduplicating by name+category
-  const allItems: HouseholdGroceryItem[] = useMemo(() => {
-    if (householdItems.length === 0) return items;
-
-    // Index own items by normalized name+category for fast lookup
-    const ownByKey = new Map<string, number>();
-    const merged: HouseholdGroceryItem[] = items.map((item, idx) => {
-      const key = `${(item.name || "").toLowerCase().trim()}||${(item.category || "").toLowerCase().trim()}`;
-      ownByKey.set(key, idx);
-      return { ...item };
-    });
-
-    for (const hItem of householdItems) {
-      const key = `${(hItem.name || "").toLowerCase().trim()}||${(hItem.category || "").toLowerCase().trim()}`;
-      const existingIdx = ownByKey.get(key);
-      if (existingIdx !== undefined) {
-        // Already have this item — merge: keep own item, combine recipe_sources
-        const existing = merged[existingIdx];
-        const ownSources: string[] = existing.recipe_sources ?? [];
-        const hSources: string[] = hItem.recipe_sources ?? [];
-        const combinedSources = [...new Set([...ownSources, ...hSources])];
-        merged[existingIdx] = { ...existing, recipe_sources: combinedSources };
-      } else {
-        // New household-only item — add it
-        merged.push(hItem);
-        ownByKey.set(key, merged.length - 1);
-      }
-    }
-
-    return merged;
-  }, [items, householdItems]);
+  // The household grocery list is shared (single canonical owner) — `items`
+  // already contains the full deduped list, no need to merge householdItems.
+  const allItems: HouseholdGroceryItem[] = items;
 
   // Items filtered by exclusions only (not by checked state — tabs handle display)
   const activeItems = useMemo(() => {
@@ -497,11 +476,12 @@ export default function GroceryList() {
     return () => { cancelled = true; };
   }, [toBuyItems.length]); // Re-fetch when item count changes
 
-  // Group by category
+  // Group by category — use canonical key so legacy aliases collapse together
   const groupedByCategory = useMemo(() => {
     const map = new Map<string, HouseholdGroceryItem[]>();
     for (const item of filteredItems) {
-      const cat = item.category_override ?? item.category ?? "other";
+      const raw = item.category_override ?? item.category ?? "other";
+      const cat = canonicalUiCategory(raw);
       if (!map.has(cat)) map.set(cat, []);
       map.get(cat)!.push(item);
     }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { aggregateIngredients } from "@/lib/groceryAggregator";
+import { getCanonicalListUserId } from "@/lib/grocery-household";
 import type { Ingredient, PantryItem, Recipe } from "@/types";
 
 // ─── Helper: fetch items, gracefully handling missing soft_deleted column ─────
@@ -45,18 +46,24 @@ export async function GET(request: NextRequest) {
 
   const admin = createAdminClient();
 
+  // Canonical list owner: either this user (solo) or the household creator.
+  // All household members read/write to that one list.
+  const canonicalUserId = await getCanonicalListUserId(admin, user.id);
+
   // ── Parallel batch 1: grocery list + household membership ─────────────────
   const [listRes, membershipRes] = await Promise.all([
-    admin.from("grocery_lists").select("*").eq("user_id", user.id).eq("week_start", dateStart).maybeSingle(),
+    admin.from("grocery_lists").select("*").eq("user_id", canonicalUserId).eq("week_start", dateStart).maybeSingle(),
     admin.from("household_members").select("household_id").eq("user_id", user.id).maybeSingle(),
   ]);
 
   const list = listRes.data;
   const membership = membershipRes.data;
 
-  // Resolve all household user IDs + profiles in one go
-  let allUserIds = [user.id];
-  let profileMap = new Map<string, string>();
+  // Resolve all household user IDs + profiles (still needed for the meal cards
+  // to show "from Elayne" badges — meals stay per-user even though the
+  // grocery list is shared).
+  const allUserIds = [user.id];
+  const profileMap = new Map<string, string>();
 
   if (membership) {
     // Step 1: Get all user IDs in the household (no join — reliable)
@@ -104,40 +111,15 @@ export async function GET(request: NextRequest) {
         .gt("created_at", list.generated_at).limit(1).maybeSingle()
     : Promise.resolve({ data: null });
 
-  // Household grocery lists (parallel)
-  const householdListsPromise = (membership && allUserIds.length > 1)
-    ? admin.from("grocery_lists").select("*")
-        .in("user_id", allUserIds.filter(id => id !== user.id))
-        .eq("week_start", dateStart)
-    : Promise.resolve({ data: [] });
-
-  const [ownItems, mealsRes, changeRes, householdListsRes] = await Promise.all([
-    itemsPromise, mealsPromise, changePromise, householdListsPromise,
+  const [ownItems, mealsRes, changeRes] = await Promise.all([
+    itemsPromise, mealsPromise, changePromise,
   ]);
 
   // Detect changes: new meals added OR meals deleted (count mismatch)
   const currentMealCount = (mealsRes.data ?? []).length;
   const meal_plan_changed = !!changeRes.data || (list?.meal_count != null && currentMealCount !== list.meal_count);
 
-  // Fetch household grocery items (parallel for all household lists)
-  let householdItems: any[] = [];
-  const memberLists = householdListsRes.data || [];
-  if (memberLists.length > 0) {
-    const listOwnerMap = new Map(memberLists.map((l: any) => [l.id, l.user_id]));
-    const allHouseholdItems = await Promise.all(
-      memberLists.map((ml: any) => fetchItems(admin, ml.id))
-    );
-    for (let i = 0; i < memberLists.length; i++) {
-      for (const item of allHouseholdItems[i]) {
-        householdItems.push({
-          ...item,
-          owner_name: profileMap.get(listOwnerMap.get(item.list_id) ?? "") || "Housemate",
-        });
-      }
-    }
-  }
-
-  // Annotate meals with owner info
+  // Annotate meals with owner info (used for the meal cards at top of grocery)
   const meals = (mealsRes.data ?? []).map((m: any) => ({
     ...m,
     is_household: m.user_id !== user.id,
@@ -147,7 +129,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     list,
     items: ownItems,
-    householdItems,
+    householdItems: [], // Deprecated: list is now shared at canonical owner; kept for client compat
     householdMembers: [...profileMap.entries()].map(([user_id, display_name]) => ({ user_id, display_name })),
     meal_plan_changed,
     meals,
@@ -172,6 +154,11 @@ export async function POST(request: Request) {
     })();
 
     const admin = createAdminClient();
+
+    // Canonical list owner — household creator if in a household, else self.
+    // This is the user_id we write the grocery_lists row under, so all
+    // household members read/write the same shared list.
+    const canonicalUserId = await getCanonicalListUserId(admin, user.id);
 
     // ── Resolve household member IDs (if any) ────────────────────────────────
     const planUserIds = [user.id];
@@ -223,11 +210,12 @@ export async function POST(request: Request) {
     const aggregated = aggregateIngredients(recipeIngredients, (pantryItems as PantryItem[]) || []);
 
     // ── Step 1: Upsert grocery list with ORIGINAL columns only ────────────────
-    // (safe even if v2 migration hasn't been run)
+    // (safe even if v2 migration hasn't been run). Use the canonical owner so
+    // household members all upsert into the same row.
     const { data: list, error: listError } = await admin
       .from("grocery_lists")
       .upsert(
-        { user_id: user.id, week_start: dateStart, updated_at: new Date().toISOString() },
+        { user_id: canonicalUserId, week_start: dateStart, updated_at: new Date().toISOString() },
         { onConflict: "user_id,week_start" }
       )
       .select()

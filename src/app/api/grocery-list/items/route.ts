@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getCanonicalListUserId } from "@/lib/grocery-household";
 
 // Helper: check if two users are in the same household
 async function isInSameHousehold(admin: any, userId1: string, userId2: string): Promise<boolean> {
@@ -8,14 +9,14 @@ async function isInSameHousehold(admin: any, userId1: string, userId2: string): 
     .from("household_members")
     .select("household_id")
     .eq("user_id", userId1)
-    .single();
+    .maybeSingle();
   if (!m1) return false;
   const { data: m2 } = await admin
     .from("household_members")
     .select("household_id")
     .eq("user_id", userId2)
     .eq("household_id", m1.household_id)
-    .single();
+    .maybeSingle();
   return !!m2;
 }
 
@@ -128,6 +129,9 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
 
+    // Canonical owner: shared household list creator if in a household, else self
+    const canonicalUserId = await getCanonicalListUserId(admin, user.id);
+
     // Auto-create list if only date_start given
     if (!list_id && date_start) {
       const date_end = body.date_end ?? (() => {
@@ -139,16 +143,16 @@ export async function POST(request: Request) {
       const { data: existingList } = await admin
         .from("grocery_lists")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", canonicalUserId)
         .eq("week_start", date_start)
-        .single();
+        .maybeSingle();
 
       if (existingList) {
         list_id = existingList.id;
       } else {
         const { data: newList, error: createError } = await admin
           .from("grocery_lists")
-          .insert({ user_id: user.id, week_start: date_start, date_end })
+          .insert({ user_id: canonicalUserId, week_start: date_start, date_end })
           .select()
           .single();
         if (createError || !newList) throw createError || new Error("Failed to create list");
@@ -156,13 +160,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // Verify ownership
+    // Verify ownership: own list, or list owned by someone in the same household
     const { data: list } = await admin
       .from("grocery_lists")
       .select("id, user_id")
       .eq("id", list_id)
-      .single();
-    if (!list || list.user_id !== user.id) {
+      .maybeSingle();
+    if (!list) {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    let hasListAccess = list.user_id === user.id;
+    if (!hasListAccess) {
+      hasListAccess = await isInSameHousehold(admin, user.id, list.user_id);
+    }
+    if (!hasListAccess) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
@@ -213,13 +224,20 @@ export async function DELETE(request: NextRequest) {
     if (body.list_id && !body.id) {
       const { list_id } = body;
 
-      // Verify ownership
+      // Verify ownership: own list, or list owned by a household member
       const { data: list } = await admin
         .from("grocery_lists")
         .select("id, user_id")
         .eq("id", list_id)
-        .single();
-      if (!list || list.user_id !== user.id) {
+        .maybeSingle();
+      if (!list) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      let hasListAccess = list.user_id === user.id;
+      if (!hasListAccess) {
+        hasListAccess = await isInSameHousehold(admin, user.id, list.user_id);
+      }
+      if (!hasListAccess) {
         return NextResponse.json({ error: "Not found" }, { status: 404 });
       }
 
