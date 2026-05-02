@@ -46,23 +46,28 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#F5EEE2" }}>
-      {/* Compact hero */}
-      <div className="relative">
-        <div className="h-48 bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-300 flex items-center justify-center overflow-hidden">
-          <div className="text-center">
-            <span className="text-6xl block mb-1">🧑‍🍳</span>
-            <h1 className="text-2xl font-black text-white drop-shadow-sm">Marco</h1>
-          </div>
-          <span className="absolute top-6 left-6 text-3xl opacity-60 rotate-[-15deg]">🍅</span>
-          <span className="absolute top-10 right-8 text-2xl opacity-50 rotate-[20deg]">🌿</span>
-          <span className="absolute bottom-8 left-12 text-2xl opacity-50 rotate-[10deg]">🍋</span>
-          <span className="absolute bottom-6 right-10 text-3xl opacity-60 rotate-[-10deg]">🥑</span>
-        </div>
+      {/* Header — Marco signature wordmark instead of orange hero band */}
+      <div
+        className="relative flex items-center justify-center px-4"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)", paddingBottom: "1.5rem" }}
+      >
+        <span className="marco-signature" style={{ fontSize: "3rem" }}>marco</span>
       </div>
 
       {/* Form */}
-      <div className="flex-1 px-6 pt-8 pb-10">
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Welcome back</h2>
+      <div className="flex-1 px-6 pt-4 pb-10 max-w-sm mx-auto w-full">
+        <h2
+          className="mb-6"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontStyle: "italic",
+            fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+            fontSize: "20px",
+            color: "var(--ink-soft, #4A4742)",
+          }}
+        >
+          Welcome back.
+        </h2>
 
         <form onSubmit={handleLogin} className="space-y-4">
           {error && (
@@ -70,7 +75,7 @@ export default function LoginPage() {
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="email" className="block text-sm font-medium mb-1.5" style={{ color: "var(--ink, #1C1A17)" }}>
               Email
             </label>
             <input
@@ -80,13 +85,16 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoFocus
-              className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
+              className="w-full px-4 py-3 rounded-2xl focus:ring-2 outline-none text-sm bg-white"
+              style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--tomato, #E5462E)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(28,26,23,0.12)")}
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label htmlFor="password" className="block text-sm font-medium mb-1.5" style={{ color: "var(--ink, #1C1A17)" }}>
               Password
             </label>
             <input
@@ -95,7 +103,10 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
+              className="w-full px-4 py-3 rounded-2xl focus:ring-2 outline-none text-sm bg-white"
+              style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--tomato, #E5462E)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(28,26,23,0.12)")}
               placeholder="••••••••"
             />
           </div>
@@ -103,15 +114,16 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3.5 px-4 bg-[#1C1A17] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
+            className="w-full py-3.5 px-4 text-white rounded-2xl disabled:opacity-50 font-medium text-sm shadow-sm transition-colors hover:opacity-95"
+            style={{ background: "var(--ink, #1C1A17)" }}
           >
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm mt-6" style={{ color: "var(--ink-soft, #4A4742)" }}>
           Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="text-orange-600 hover:underline font-semibold">
+          <Link href="/auth/signup" className="font-semibold hover:underline" style={{ color: "var(--tomato, #E5462E)" }}>
             Sign up
           </Link>
         </p>

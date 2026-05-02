@@ -85,14 +85,25 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
         <div className="text-center space-y-4 max-w-sm">
-          <span className="text-6xl block">📬</span>
-          <h1 className="text-2xl font-black text-gray-900">Check your email!</h1>
-          <p className="text-sm text-gray-500 leading-relaxed">
-            We sent a confirmation link to <strong className="text-gray-700">{email}</strong>
+          <span className="marco-signature block" style={{ fontSize: "4rem" }}>marco</span>
+          <h1
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+              fontSize: "26px",
+              letterSpacing: "-0.015em",
+              color: "var(--ink, #1C1A17)",
+            }}
+          >
+            Check your email
+          </h1>
+          <p className="text-sm leading-relaxed" style={{ color: "var(--ink-soft, #4A4742)" }}>
+            We sent a confirmation link to <strong style={{ color: "var(--ink, #1C1A17)" }}>{email}</strong>
           </p>
           <Link
             href="/auth/login"
-            className="inline-block mt-4 px-6 py-3 bg-orange-500 text-white rounded-2xl font-semibold text-sm hover:bg-orange-600 transition-colors shadow-sm"
+            className="inline-block mt-4 px-6 py-3 text-white rounded-2xl font-medium text-sm transition-colors shadow-sm hover:opacity-95"
+            style={{ background: "var(--tomato, #E5462E)" }}
           >
             Back to sign in
           </Link>
@@ -105,31 +116,36 @@ export default function SignupPage() {
   if (mode === "email") {
     return (
       <div className="min-h-screen flex flex-col" style={{ background: "#F5EEE2" }}>
-        {/* Compact hero */}
-        <div className="relative">
-          <div className="h-48 bg-gradient-to-br from-orange-400 via-amber-400 to-yellow-300 flex items-center justify-center overflow-hidden">
-            <div className="text-center">
-              <span className="text-6xl block mb-1">🧑‍🍳</span>
-              <h1 className="text-2xl font-black text-white drop-shadow-sm">Marco</h1>
-            </div>
-            <span className="absolute top-6 left-6 text-3xl opacity-60 rotate-[-15deg]">🍅</span>
-            <span className="absolute top-10 right-8 text-2xl opacity-50 rotate-[20deg]">🌿</span>
-            <span className="absolute bottom-8 left-12 text-2xl opacity-50 rotate-[10deg]">🍋</span>
-            <span className="absolute bottom-6 right-10 text-3xl opacity-60 rotate-[-10deg]">🥑</span>
-          </div>
+        {/* Header — back arrow + small Marco signature, no orange hero band */}
+        <div className="relative flex items-center justify-between px-4" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}>
           <button
             onClick={() => { setMode("choose"); setError(""); }}
-            className="absolute top-12 left-4 w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm"
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            style={{ background: "rgba(0,0,0,0.05)" }}
+            aria-label="Back"
           >
-            <svg className="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
+          <span className="marco-signature" style={{ fontSize: "1.75rem" }}>marco</span>
+          <div className="w-9 h-9" aria-hidden="true" />
         </div>
 
         {/* Form */}
-        <div className="flex-1 px-6 pt-8 pb-10">
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Create your account</h2>
+        <div className="flex-1 px-6 pt-6 pb-10">
+          <h2
+            className="mb-6"
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+              fontSize: "26px",
+              letterSpacing: "-0.015em",
+              color: "var(--ink, #1C1A17)",
+            }}
+          >
+            Create your account
+          </h2>
 
           <form onSubmit={handleSignup} className="space-y-4">
             {error && (
@@ -147,7 +163,10 @@ export default function SignupPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoFocus
-                className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
+                className="w-full px-4 py-3 rounded-2xl focus:ring-2 outline-none text-sm bg-white"
+                style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--tomato, #E5462E)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(28,26,23,0.12)")}
                 placeholder="you@example.com"
               />
             </div>
@@ -163,7 +182,10 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
-                className="w-full px-4 py-3 border border-[#e8ddd3] rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none text-sm bg-white"
+                className="w-full px-4 py-3 rounded-2xl focus:ring-2 outline-none text-sm bg-white"
+                style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--tomato, #E5462E)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(28,26,23,0.12)")}
                 placeholder="At least 6 characters"
               />
             </div>
@@ -191,48 +213,30 @@ export default function SignupPage() {
   // Main choose screen
   return (
     <div className="flex flex-col" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
-      {/* Hero illustration area */}
-      <div className="relative flex-1 bg-gradient-to-b from-[#fff4e8] via-[#fdf5ec] to-[#F5EEE2] flex flex-col items-center justify-center overflow-hidden py-6">
-        <div className="absolute inset-0 opacity-[0.07]">
-          <svg className="w-full h-full" viewBox="0 0 400 400" fill="none">
-            <circle cx="50" cy="60" r="30" fill="currentColor" className="text-orange-500" />
-            <circle cx="350" cy="90" r="20" fill="currentColor" className="text-green-500" />
-            <circle cx="80" cy="300" r="22" fill="currentColor" className="text-green-500" />
-            <circle cx="300" cy="250" r="25" fill="currentColor" className="text-yellow-500" />
-            <circle cx="350" cy="350" r="16" fill="currentColor" className="text-red-500" />
-          </svg>
-        </div>
+      {/* Hero — Marco signature wordmark + italic tagline. No emoji,
+          no chef glyph circle, no orange hero band. The cream body is
+          the canvas; the wordmark is the brand. */}
+      <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden px-6 pt-10 pb-6">
+        <div className="relative z-10 text-center">
+          {/* The handwritten Marco wordmark with the tomato punctum */}
+          <span className="marco-signature" style={{ fontSize: "clamp(4.5rem, 16vw, 6rem)" }}>marco</span>
 
-        <div className="relative z-10 text-center px-8">
-          <div className="relative w-48 h-48 mx-auto mb-3">
-            <div className="absolute inset-3 rounded-full border-2 border-dashed border-orange-200/60" />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-7xl drop-shadow-sm">🧑‍🍳</span>
-            </div>
-            <span className="absolute top-0 left-1/2 -translate-x-1/2 text-3xl animate-bounce" style={{ animationDuration: "3s" }}>🍅</span>
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-3xl animate-bounce" style={{ animationDuration: "3.5s" }}>🧀</span>
-            <span className="absolute left-0 top-1/2 -translate-y-1/2 text-3xl animate-bounce" style={{ animationDuration: "2.8s" }}>🥑</span>
-            <span className="absolute right-0 top-1/2 -translate-y-1/2 text-3xl animate-bounce" style={{ animationDuration: "3.2s" }}>🍋</span>
-            <span className="absolute top-5 left-2 text-2xl animate-bounce" style={{ animationDuration: "3.7s" }}>🌿</span>
-            <span className="absolute top-5 right-2 text-2xl animate-bounce" style={{ animationDuration: "2.5s" }}>🫑</span>
-            <span className="absolute bottom-5 left-3 text-2xl animate-bounce" style={{ animationDuration: "3.3s" }}>🍊</span>
-            <span className="absolute bottom-5 right-3 text-2xl animate-bounce" style={{ animationDuration: "2.9s" }}>🥕</span>
-          </div>
-
-          <h1 className="text-3xl font-black text-gray-900 mb-4">Marco</h1>
-
-          {/* Value props */}
-          <div className="space-y-0.5">
-            <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>
-              Save recipes from <span style={{ color: "#E5462E" }}>anywhere</span>
-            </p>
-            <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>
-              Plan meals in <span style={{ color: "#E5462E" }}>seconds</span>
-            </p>
-            <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>
-              Shop and <span style={{ color: "#E5462E" }}>earn back</span>
-            </p>
-          </div>
+          {/* Italic tagline — Fraunces, calm and editorial */}
+          <p
+            className="mt-6 max-w-xs mx-auto"
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontStyle: "italic",
+              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+              fontSize: "17px",
+              lineHeight: 1.45,
+              color: "var(--ink-soft, #4A4742)",
+            }}
+          >
+            Save recipes from <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>anywhere</em>.
+            Plan meals in <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>seconds</em>.
+            Shop and <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>earn back</em>.
+          </p>
         </div>
       </div>
 
