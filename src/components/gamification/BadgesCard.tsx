@@ -1,8 +1,41 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import type { BadgeProgress, BadgeCategory } from "@/lib/badges";
 import { TIER_COLORS, CATEGORY_LABELS } from "@/lib/badges";
+
+/** Renders the badge artwork — either the hand-drawn imageUrl when present,
+ *  or the legacy emoji glyph as a fallback. The grayscale/opacity treatment
+ *  for unearned badges is shared. */
+function BadgeIcon({
+  badge,
+  earned,
+  pixelSize,
+  emojiClassName,
+}: {
+  badge: BadgeProgress["badge"];
+  earned: boolean;
+  pixelSize: number;
+  emojiClassName: string;
+}) {
+  if (badge.imageUrl) {
+    return (
+      <Image
+        src={badge.imageUrl}
+        alt={badge.name}
+        width={pixelSize}
+        height={pixelSize}
+        className={`object-contain transition-transform duration-200 ${earned ? "" : "grayscale opacity-25"}`}
+      />
+    );
+  }
+  return (
+    <span className={`${emojiClassName} transition-transform duration-200 ${earned ? "" : "grayscale opacity-20"}`}>
+      {badge.icon}
+    </span>
+  );
+}
 
 // ─── Sparkles that radiate outward from the badge ────────────────────────────
 function Sparkles({ tier }: { tier: string }) {
@@ -93,9 +126,12 @@ function BadgeTile({ item, onClick, size = "normal" }: { item: BadgeProgress; on
           : "bg-gray-50 border-gray-200/60 hover:bg-gray-100/50"
       }`}
     >
-      <span className={`${iconSize} transition-transform duration-200 ${item.earned ? "" : "grayscale opacity-20"}`}>
-        {item.badge.icon}
-      </span>
+      <BadgeIcon
+        badge={item.badge}
+        earned={item.earned}
+        pixelSize={size === "small" ? 36 : 48}
+        emojiClassName={iconSize}
+      />
 
       {/* Badge name under icon for earned */}
       {item.earned && size === "normal" && (
@@ -137,7 +173,12 @@ function BadgeDetailModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
             ? `${TIER_COLORS[badge.badge.tier].bg} ${TIER_COLORS[badge.badge.tier].border}`
             : "bg-gray-50 border-gray-200"
         }`}>
-          <span className={`text-4xl ${badge.earned ? "" : "grayscale opacity-30"}`}>{badge.badge.icon}</span>
+          <BadgeIcon
+            badge={badge.badge}
+            earned={badge.earned}
+            pixelSize={64}
+            emojiClassName="text-4xl"
+          />
         </div>
 
         <h3 className={`font-bold text-lg ${badge.earned ? "text-gray-900" : "text-gray-400"}`}>

@@ -10,7 +10,10 @@ export interface BadgeDefinition {
   id: string;
   name: string;
   description: string;
-  icon: string; // emoji
+  icon: string; // emoji fallback (used when no imageUrl)
+  /** Optional path to a hand-drawn badge illustration. When set, the
+   *  renderer uses this image instead of the emoji glyph. */
+  imageUrl?: string;
   category: BadgeCategory;
   tier: BadgeTier;
   /** The stat key this badge checks against */
@@ -73,6 +76,7 @@ export const BADGES: BadgeDefinition[] = [
     name: "First Bite",
     description: "Save your first recipe",
     icon: "🍳",
+    imageUrl: "/badges/first-bite.png",
     category: "recipes",
     tier: "bronze",
     statKey: "totalRecipes",
