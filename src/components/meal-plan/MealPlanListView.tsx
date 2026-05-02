@@ -996,8 +996,14 @@ export default function MealPlanListView({
           </div>
         </div>
 
-        {/* Row 2: day strip (both daily and weekly views) */}
-        <div className="flex justify-between items-center w-full mb-2">
+      </div>
+
+      {/* ── Day strip — only in daily view, sits above the day's meals as
+            content (not part of the sticky header chrome). Removed from the
+            sticky header entirely so the date row matches Grocery's clean
+            "< Apr 27 – May 3 > [calendar]" pattern. ──────────────────────── */}
+      {viewMode === "daily" && (
+        <div className="flex justify-between items-center w-full mb-3 mt-1">
           {sortedDates.map((dateKey) => {
             const d = new Date(dateKey + "T12:00:00");
             const abbr = d.toLocaleDateString("en-US", { weekday: "short" });
@@ -1007,21 +1013,13 @@ export default function MealPlanListView({
             return (
               <button
                 key={dateKey}
-                onClick={() => {
-                  if (viewMode === "daily") {
-                    navigateToDate(dateKey);
-                  } else {
-                    // Weekly view: scroll the day card into view
-                    const el = document.getElementById(`day-${dateKey}`);
-                    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }
-                }}
+                onClick={() => navigateToDate(dateKey)}
                 className="flex flex-col items-center gap-0.5 active:scale-95 transition-transform touch-manipulation"
                 style={{ minWidth: 36 }}
               >
                 <span
                   className="text-[9px] font-semibold tracking-wide"
-                  style={{ color: (viewMode === "daily" && isSelected) ? ACCENT : isToday ? "#1C1A17" : "#c0c0be" }}
+                  style={{ color: isSelected ? ACCENT : isToday ? "#1C1A17" : "#c0c0be" }}
                 >
                   {abbr.slice(0, 3)}
                 </span>
@@ -1029,7 +1027,7 @@ export default function MealPlanListView({
                   className="rounded-full flex items-center justify-center transition-all duration-150 relative"
                   style={{
                     width: 38, height: 38,
-                    ...(viewMode === "daily" && isSelected
+                    ...(isSelected
                       ? { background: ACCENT }
                       : isToday
                         ? { background: "rgba(234,88,12,0.1)", border: "2px solid " + ACCENT }
@@ -1038,7 +1036,7 @@ export default function MealPlanListView({
                 >
                   <span
                     className="text-[14px] font-semibold"
-                    style={{ color: viewMode === "daily" && isSelected ? "white" : isToday ? ACCENT : "#888" }}
+                    style={{ color: isSelected ? "white" : isToday ? ACCENT : "#888" }}
                   >
                     {num}
                   </span>
@@ -1047,9 +1045,7 @@ export default function MealPlanListView({
             );
           })}
         </div>
-
-
-      </div>
+      )}
 
       {/* ── Content ───────────────────────────────────────────────────────────── */}
       {viewMode === "daily" ? renderDailyView() : renderWeeklyView()}
