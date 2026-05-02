@@ -578,7 +578,7 @@ export default function GroceryList() {
               <button
                 onClick={() => setRangePickerOpen((v) => !v)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
-                style={{ color: rangePickerOpen ? "#e8590c" : "#888", background: rangePickerOpen ? "#ebebea" : "transparent" }}
+                style={{ color: rangePickerOpen ? "#E5462E" : "#888", background: rangePickerOpen ? "#ebebea" : "transparent" }}
                 aria-label="Select date range"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

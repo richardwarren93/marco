@@ -914,30 +914,24 @@ export default function MealPlanListView({
               </svg>
             </button>
 
-            {/* View dropdown — icon trigger */}
+            {/* View dropdown — icon trigger. Same calendar icon + styling
+                as the Grocery date-range trigger so the two pages look
+                identical in the header. */}
             <div className="relative">
               <button
                 onClick={() => setViewDropdownOpen((v) => !v)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
-                style={{ color: viewDropdownOpen ? ACCENT : TEXT_2, background: viewDropdownOpen ? "#ebebea" : "transparent" }}
+                style={{ color: viewDropdownOpen ? "#E5462E" : "#888", background: viewDropdownOpen ? "#ebebea" : "transparent" }}
                 aria-label="Switch view"
               >
-                {viewMode === "daily" ? (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
-                    <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none" />
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18M9 10v10M15 10v10" />
-                  </svg>
-                )}
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <rect x="3" y="4" width="18" height="18" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
               </button>
               {viewDropdownOpen && (
                 <div
-                  className="absolute left-0 top-full mt-1 rounded-xl overflow-hidden z-20"
+                  className="absolute right-0 top-full mt-1 rounded-xl overflow-hidden z-20"
                   style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)", minWidth: 110 }}
                 >
                   {(["daily", "weekly"] as const).map((mode) => (
