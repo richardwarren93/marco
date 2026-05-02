@@ -903,7 +903,7 @@ export default function MealPlanListView({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-[22px] font-black" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>{weekLabel}</span>
+            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{weekLabel}</span>
             <button
               onClick={() => changeWeek(addDays(weekStart, 7))}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
