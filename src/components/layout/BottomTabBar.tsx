@@ -262,11 +262,14 @@ function BottomTabBarInner() {
         </div>
       )}
 
-      {/* Tab bar */}
+      {/* Tab bar — in PWA mode, sit flush with the home-indicator area
+          (var(--safe-bottom) is the env() inset). In Safari the var
+          resolves to 0px, so we clamp to a minimum 8px breathing room
+          above the screen edge. */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation px-4"
         style={{
-          paddingBottom: "calc(var(--safe-bottom, 0px) + 8px)",
+          paddingBottom: "max(8px, var(--safe-bottom, 0px))",
           willChange: "transform",
         }}
       >
