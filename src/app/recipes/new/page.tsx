@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import type { Ingredient } from "@/types";
@@ -36,27 +36,63 @@ function NewRecipeInner() {
   const [pastedText, setPastedText] = useState("");
   const [extracting, setExtracting] = useState(false);
   const [extractError, setExtractError] = useState("");
-  const didRestoreRef = useRef(false);
+  // Tracks whether we've already determined what to render. Prevents a
+  // permanent spinner if the user back-navigates here after the recipe has
+  // been saved (sessionStorage was already consumed).
+  const [hydrated, setHydrated] = useState(false);
 
-  // Pick up the pre-extracted recipe that ImportRecipeSheet placed in sessionStorage
+  // Pick up the pre-extracted recipe that ImportRecipeSheet/BottomTabBar placed
+  // in sessionStorage. Reading sessionStorage is idempotent and cheap; we don't
+  // need a ref guard. The previous `didRestoreRef` guard caused a perma-spinner
+  // on iOS bfcache restore — the ref persisted true while sessionStorage was
+  // empty, so the effect short-circuited and never triggered the redirect.
   useEffect(() => {
-    if (!isExtracted || didRestoreRef.current) return;
-    didRestoreRef.current = true;
-    try {
-      const stored = sessionStorage.getItem("importedRecipe");
-      if (stored) {
-        sessionStorage.removeItem("importedRecipe");
-        setExtractedRecipe(JSON.parse(stored));
-        return;
-      }
-    } catch {
-      // sessionStorage unavailable or data corrupted
+    if (!isExtracted) {
+      setHydrated(true);
+      return;
     }
-    // No payload to restore — likely a back-nav return after the recipe was
-    // already saved (sessionStorage consumed). Don't strand the user on the
-    // permanent "Loading your recipe…" spinner.
+
+    let stored: string | null = null;
+    try {
+      stored = sessionStorage.getItem("importedRecipe");
+      if (stored) sessionStorage.removeItem("importedRecipe");
+    } catch {
+      // sessionStorage unavailable
+    }
+
+    if (stored) {
+      try {
+        setExtractedRecipe(JSON.parse(stored));
+        setHydrated(true);
+        return;
+      } catch {
+        // Corrupted payload — fall through to redirect
+      }
+    }
+
+    // No payload to restore — back-nav return after the recipe was already
+    // saved. Bounce them to /recipes immediately. We use replace so this
+    // dead URL doesn't accumulate in history.
     router.replace("/recipes");
+    // Mark hydrated so the fallback UI renders if navigation is delayed
+    // (e.g., bfcache, slow router) — gives the user a tap target instead
+    // of a perma-spinner.
+    setHydrated(true);
   }, [isExtracted, router]);
+
+  // iOS Safari bfcache: when the user uses the back gesture, the page may be
+  // restored from the back-forward cache without any React lifecycle running.
+  // Detect that case and re-run the redirect / state check.
+  useEffect(() => {
+    function handlePageShow(e: PageTransitionEvent) {
+      if (!e.persisted) return; // not a bfcache restore
+      if (isExtracted && !extractedRecipe) {
+        router.replace("/recipes");
+      }
+    }
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, [isExtracted, extractedRecipe, router]);
 
   async function handleTextExtract() {
     if (!pastedText.trim()) return;
@@ -108,13 +144,31 @@ function NewRecipeInner() {
     );
   }
 
-  // Arrived via photo flow — show spinner while sessionStorage hydrates
+  // Arrived via photo flow — show spinner while sessionStorage hydrates.
+  // Once hydration has run and we still have no recipe, the redirect to
+  // /recipes is already in flight; render an actionable fallback instead of
+  // a bare spinner so the user always has a way out.
   if (isExtracted && !extractedRecipe) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex flex-col items-center gap-4 py-16 text-gray-400">
-          <div className="w-10 h-10 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm">Loading your recipe…</p>
+        <div className="flex flex-col items-center gap-4 py-16 text-gray-500">
+          {!hydrated ? (
+            <>
+              <div className="w-10 h-10 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm">Loading your recipe…</p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm">Recipe was already saved.</p>
+              <button
+                onClick={() => router.replace("/recipes")}
+                className="px-5 py-2.5 rounded-full text-sm font-semibold text-white transition-all active:scale-95"
+                style={{ background: "#ea580c" }}
+              >
+                Back to recipes
+              </button>
+            </>
+          )}
         </div>
       </div>
     );

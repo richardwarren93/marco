@@ -44,6 +44,16 @@ function BottomTabBarInner() {
     return () => window.removeEventListener("openFabImport", handleOpenFabImport);
   }, []);
 
+  // Defensively clear the photo-uploading overlay whenever the route changes.
+  // The upload finally-block already does this, but if the user backgrounds
+  // the app or hits an iOS bfcache edge case mid-upload, the overlay can
+  // become orphaned. Route changes are a reliable "this flow is done" signal.
+  useEffect(() => {
+    setPhotoUploading(false);
+    setFabOpen(false);
+    setImportExpanded(false);
+  }, [pathname]);
+
   if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding")) {
     return null;
   }
