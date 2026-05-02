@@ -9,6 +9,7 @@ import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
 import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
 import AnalyzeScreen from "@/components/meal-plan/AnalyzeScreen";
 import AssignDaysScreen, { type DayAssignment } from "@/components/meal-plan/AssignDaysScreen";
+import MobileHeader from "@/components/layout/MobileHeader";
 import type { MealPlan, Recipe } from "@/types";
 import { useToast } from "@/components/ui/Toast";
 
@@ -296,6 +297,7 @@ function MealPlanInner() {
   // ─── Step 3: Schedule (default) ───────────────────────────────────────────────
   return (
     <>
+      <MobileHeader title="Meal Plan" />
       {error && (
         <div className="bg-red-50 text-red-600 px-4 py-2 text-sm">{error}</div>
       )}

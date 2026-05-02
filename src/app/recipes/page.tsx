@@ -103,10 +103,11 @@ function RecipesInner() {
 
   return (
     <>
-      {/* ── Mobile header ─────────────────────────────────────────── */}
+      {/* ── Mobile header — every tab gets the same top chrome ───── */}
       {activeTab === "recipes" && <MobileHeader title="My Recipes" />}
       {activeTab === "discover" && <MobileHeader title="Explore Recipes" />}
-      {/* meal-plan and grocery have their own integrated headers */}
+      {activeTab === "meal-plan" && <MobileHeader title="Meal Plan" />}
+      {activeTab === "grocery" && <MobileHeader title="Grocery" />}
 
       {/* ── Tab content ────────────────────────────────────────────── */}
 

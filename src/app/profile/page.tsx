@@ -174,6 +174,7 @@ export default function ProfilePage() {
 
   return (
     <div className="max-w-lg mx-auto pb-8" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
+      <MobileHeader title="Profile" />
 
       {/* ── Guest upgrade banner ── */}
       {isGuest && !showUpgrade && (

@@ -9,7 +9,6 @@ import AddMealSheet from "./AddMealSheet";
 import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
-import HeaderActions from "@/components/layout/HeaderActions";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -968,7 +967,7 @@ export default function MealPlanListView({
             </div>
           </div>
 
-          {/* Right: Insights (weekly only) + bell + avatar */}
+          {/* Right: Insights (weekly only). Bell + avatar live in MobileHeader at top of page. */}
           <div className="flex items-center gap-2">
           {viewMode === "weekly" && onShowInsights && (
             <button
@@ -994,7 +993,6 @@ export default function MealPlanListView({
               <span className="text-[11px] font-bold" style={{ color: "#e8890a" }}>Insights</span>
             </button>
           )}
-          <HeaderActions />
           </div>
         </div>
 
