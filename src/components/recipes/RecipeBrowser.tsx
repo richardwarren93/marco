@@ -443,18 +443,19 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             )}
           </div>
 
-          {/* Collections dropdown */}
+          {/* Collections dropdown — pill caps the active label so a long
+              collection name doesn't blow the row off-screen. */}
           {props.mode === "library" && collections.length > 0 && (
-            <div className="relative flex-shrink-0" ref={collMenuRef}>
+            <div className="relative flex-shrink min-w-0" ref={collMenuRef} style={{ maxWidth: "60%" }}>
               <button
                 onClick={() => { setShowCollMenu((v) => !v); setShowCollSub(false); setShowCollCreate(false); setShowSortMenu(false); setShowMealMenu(false); }}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 max-w-full"
                 style={activeCollectionId
                   ? { background: "var(--tomato, #E5462E)", color: "#fff" }
                   : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
               >
-                {activeCollectionName || "Collections"}
-                <svg className={`w-3 h-3 opacity-60 transition-transform ${showCollMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <span className="truncate min-w-0">{activeCollectionName || "Collections"}</span>
+                <svg className={`w-3 h-3 opacity-60 transition-transform flex-shrink-0 ${showCollMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
