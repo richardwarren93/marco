@@ -64,7 +64,9 @@
   color: var(--ink-soft);
 }
 
-/* The signature — handwritten "marco" with the tomato punctum */
+/* The signature — handwritten "marco" with the tomato punctum.
+   Matches the refined brand doc: Caveat 600 at -3°, dot at right: -0.05em
+   sitting tight against the "o" descender like a final period. */
 .marco-signature {
   font-family: var(--font-script);
   font-weight: 600;
@@ -72,14 +74,13 @@
   transform: rotate(-3deg);
   line-height: 0.85;
   position: relative;
-  padding-right: 0.32em;
   color: var(--ink);
 }
 .marco-signature::after {
   content: '';
   position: absolute;
   bottom: 0.18em;
-  right: 0.06em;
+  right: -0.05em;
   width: 0.18em;
   height: 0.18em;
   background: var(--tomato);
