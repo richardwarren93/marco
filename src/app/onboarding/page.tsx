@@ -59,7 +59,9 @@ export default function OnboardingPage() {
     supabase.auth.getUser().then(async ({ data: { user } }: { data: { user: any } }) => {
       if (!user) { router.replace("/auth/login"); return; }
 
-      // Check if onboarding already completed — redirect to app
+      // Check if onboarding already completed — redirect to app.
+      // Set the cookie before redirecting so middleware doesn't bounce
+      // the user right back here on the next protected-page hit.
       const { data: profile } = await supabase
         .from("user_profiles")
         .select("onboarding_completed")
@@ -67,6 +69,7 @@ export default function OnboardingPage() {
         .single();
 
       if (profile?.onboarding_completed) {
+        document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
         router.replace("/recipes");
         return;
       }

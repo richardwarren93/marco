@@ -46,29 +46,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // For logged-in users, check onboarding status (cookie first, then DB fallback)
+  // For logged-in users, check onboarding status from the cookie only.
+  // The cookie is set at login, signup callback, and onboarding completion;
+  // hitting the DB here makes middleware too slow under load (504
+  // MIDDLEWARE_INVOCATION_TIMEOUT). When the cookie is missing — e.g. a
+  // returning user on a new device — we redirect to /onboarding, which does
+  // its own DB check and either shows the flow or sends the user on.
   if (user && (isProtected || isOnboarding || pathname.startsWith("/auth/"))) {
-    let onboarded = request.cookies.get("marco_onboarded")?.value === "1";
-
-    // If no cookie, check the database and set cookie for future requests
-    if (!onboarded) {
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("onboarding_completed")
-        .eq("user_id", user.id)
-        .single();
-
-      onboarded = profile?.onboarding_completed === true;
-
-      if (onboarded) {
-        // Set cookie so we don't hit DB again
-        response.cookies.set("marco_onboarded", "1", {
-          path: "/",
-          maxAge: 31536000,
-          sameSite: "lax",
-        });
-      }
-    }
+    const onboarded = request.cookies.get("marco_onboarded")?.value === "1";
 
     // Logged in on auth pages → redirect away
     if (pathname.startsWith("/auth/")) {
@@ -77,20 +62,9 @@ export async function middleware(request: NextRequest) {
       );
     }
 
-    // Logged in on protected pages → check onboarding
+    // Logged in on protected pages without onboarded cookie → defer to /onboarding
     if (isProtected && !isPublicPath && !onboarded) {
       return NextResponse.redirect(new URL("/onboarding", request.url));
-    }
-
-    // Logged in on onboarding but already done → go to recipes
-    if (isOnboarding && onboarded) {
-      const res = NextResponse.redirect(new URL("/recipes", request.url));
-      res.cookies.set("marco_onboarded", "1", {
-        path: "/",
-        maxAge: 31536000,
-        sameSite: "lax",
-      });
-      return res;
     }
   }
 
