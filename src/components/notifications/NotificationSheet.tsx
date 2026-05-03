@@ -228,7 +228,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
 
       {/* Sheet */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl shadow-2xl sm:bottom-auto sm:top-16 sm:right-4 sm:left-auto sm:w-96 sm:rounded-2xl overflow-hidden"
+        className="fixed bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl shadow-2xl sm:bottom-auto sm:top-16 sm:right-4 sm:left-auto sm:w-80 sm:rounded-2xl overflow-hidden"
         style={{
           maxHeight: "85vh",
           animation: "fadeSlideUp 0.28s cubic-bezier(0.34,1.2,0.64,1) both",
