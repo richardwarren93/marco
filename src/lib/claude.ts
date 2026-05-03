@@ -449,6 +449,16 @@ Return ONLY a valid JSON array. No markdown, no code blocks.`,
   try {
     return JSON.parse(cleaned);
   } catch {
+    // Claude occasionally wraps JSON in prose ("Here are 6 recipes: [...]").
+    // Salvage the first JSON array we can find before giving up.
+    const match = cleaned.match(/\[[\s\S]*\]/);
+    if (match) {
+      try {
+        return JSON.parse(match[0]);
+      } catch {
+        // fall through to error log
+      }
+    }
     console.error("Claude returned non-JSON for prompt recipes:", cleaned.slice(0, 200));
     return [];
   }

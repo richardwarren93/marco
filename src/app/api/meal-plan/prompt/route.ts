@@ -147,7 +147,19 @@ export async function POST(request: Request) {
 
     // Over-fetch: ask Haiku for 12 candidates. We'll race their og:image
     // fetches and return as soon as TARGET_RESULTS (6) successfully resolve.
-    const candidates = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
+    // Claude occasionally returns non-JSON or refuses — retry once before
+    // surfacing a clear error so the user isn't silently bounced back to
+    // the landing screen.
+    let candidates = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
+    if (candidates.length === 0) {
+      candidates = await promptRecipes(prompt, context, kitchenContext, tasteProfile);
+    }
+    if (candidates.length === 0) {
+      return NextResponse.json(
+        { error: "Couldn't generate ideas for that. Try rephrasing or being more specific." },
+        { status: 502 }
+      );
+    }
 
     // Race-to-N pattern: kick off all og:image fetches in parallel and resolve
     // the user's request as soon as TARGET_RESULTS candidates have images.
