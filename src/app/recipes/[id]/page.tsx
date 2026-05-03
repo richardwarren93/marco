@@ -930,8 +930,8 @@ export default function RecipeDetailPage() {
       />
 
       {/* ── Sticky bottom bar ─────────────────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40" style={{ paddingBottom: "var(--safe-bottom, 0px)", background: "#ffffff", boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}>
-        <div className="max-w-3xl mx-auto px-4 py-3 space-y-2">
+      <div className="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto z-40" style={{ paddingBottom: "var(--safe-bottom, 0px)", background: "#ffffff", boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}>
+        <div className="px-4 py-3 space-y-2">
           {isPublicView ? (
             <button
               onClick={async () => {
