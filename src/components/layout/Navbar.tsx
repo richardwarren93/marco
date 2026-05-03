@@ -209,6 +209,18 @@ function NavbarInner() {
             <div className="relative flex items-center gap-1.5 sm:gap-2 ml-auto sm:ml-0">
               {user ? (
                 <>
+                  {/* Add recipe — tomato CTA, mirrors the mobile FAB on desktop */}
+                  <Link
+                    href="/recipes/new"
+                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-sm transition-opacity hover:opacity-90"
+                    style={{ background: "var(--tomato, #E5462E)" }}
+                    aria-label="Add recipe"
+                  >
+                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                  </Link>
+
                   {/* Notification bell — bigger */}
                   <button
                     onClick={() => setShowNotifications(true)}
