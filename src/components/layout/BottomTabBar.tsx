@@ -306,7 +306,7 @@ function BottomTabBarInner() {
                     width: 44,
                     height: 44,
                     borderRadius: "50%",
-                    background: isActive ? "var(--tomato, #E5462E)" : "transparent",
+                    background: isActive ? "var(--teal, #0F4C5C)" : "transparent",
                   }}
                 >
                   <leftTab.Icon className="w-[26px] h-[26px]" filled={isActive} />
@@ -359,7 +359,7 @@ function BottomTabBarInner() {
                 width: 44,
                 height: 44,
                 borderRadius: "50%",
-                background: isGroceryActive ? "var(--tomato, #E5462E)" : "transparent",
+                background: isGroceryActive ? "var(--teal, #0F4C5C)" : "transparent",
               }}
             >
               <GroceryIcon className="w-[26px] h-[26px]" filled={isGroceryActive} />
@@ -379,7 +379,7 @@ function BottomTabBarInner() {
                 width: 44,
                 height: 44,
                 borderRadius: "50%",
-                background: isDiscoverActive ? "var(--tomato, #E5462E)" : "transparent",
+                background: isDiscoverActive ? "var(--teal, #0F4C5C)" : "transparent",
               }}
             >
               <SearchIcon className="w-[26px] h-[26px]" />
