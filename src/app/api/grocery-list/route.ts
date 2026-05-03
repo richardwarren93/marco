@@ -190,7 +190,41 @@ export async function POST(request: Request) {
       .not("recipe_id", "is", null);
 
     if (!plans || plans.length === 0) {
-      return NextResponse.json({ error: "No meals planned for this range" }, { status: 400 });
+      // No meals for this week. If a list already exists, its derived items
+      // are stale (e.g. the user just removed the last meal). Clear them so
+      // the grocery view stays in sync. Custom items are preserved. If no
+      // list exists yet, nothing to do — surface an error so the UI knows.
+      const { data: existingList } = await admin
+        .from("grocery_lists")
+        .select("*")
+        .eq("user_id", canonicalUserId)
+        .eq("week_start", dateStart)
+        .maybeSingle();
+
+      if (!existingList) {
+        return NextResponse.json({ error: "No meals planned for this range" }, { status: 400 });
+      }
+
+      await admin
+        .from("grocery_items")
+        .delete()
+        .eq("list_id", existingList.id)
+        .eq("is_custom", false);
+
+      await admin
+        .from("grocery_lists")
+        .update({ generated_at: new Date().toISOString(), meal_count: 0 })
+        .eq("id", existingList.id)
+        .then(() => {}, () => {});
+
+      const finalItems = await fetchItems(admin, existingList.id);
+      const { data: updatedList } = await admin
+        .from("grocery_lists")
+        .select("*")
+        .eq("id", existingList.id)
+        .single();
+
+      return NextResponse.json({ list: updatedList ?? existingList, items: finalItems });
     }
 
     // ── Fetch pantry items ────────────────────────────────────────────────────
