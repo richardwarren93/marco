@@ -203,8 +203,10 @@ function NavbarInner() {
               </div>
             )}
 
-            {/* Right: Notifications + Profile */}
-            <div className="flex items-center gap-1.5 sm:gap-2 ml-auto sm:ml-0">
+            {/* Right: Notifications + Profile.
+                Position: relative so the desktop notification panel can
+                anchor to this cluster instead of the viewport edge. */}
+            <div className="relative flex items-center gap-1.5 sm:gap-2 ml-auto sm:ml-0">
               {user ? (
                 <>
                   {/* Notification bell — bigger */}
@@ -252,17 +254,17 @@ function NavbarInner() {
                   </Link>
                 </>
               )}
+
+              {/* Notification sheet — desktop drops from this cluster, mobile is full-width bottom sheet */}
+              <NotificationSheet
+                isOpen={showNotifications}
+                onClose={() => setShowNotifications(false)}
+                onUnreadChange={setUnreadCount}
+              />
             </div>
           </div>
         </div>
       </nav>
-
-      {/* Notification sheet */}
-      <NotificationSheet
-        isOpen={showNotifications}
-        onClose={() => setShowNotifications(false)}
-        onUnreadChange={setUnreadCount}
-      />
 
       {/* Import recipe sheet */}
       <ImportRecipeSheet
