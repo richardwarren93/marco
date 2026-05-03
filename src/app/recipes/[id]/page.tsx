@@ -429,7 +429,7 @@ export default function RecipeDetailPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5EEE2" }}>
       {/* ── 1. Hero Image ──────────────────────────────────────────────── */}
-      <div className="relative">
+      <div className="relative max-w-3xl mx-auto">
         {recipe.image_url ? (
           <div className="h-72 sm:h-96 bg-gray-100 relative">
             <img
