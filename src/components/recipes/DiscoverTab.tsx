@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useSWRConfig } from "swr";
 import { useTrending } from "@/lib/hooks/use-data";
 import type { PromptRecipeResult } from "@/lib/claude";
 import SharedRecipeCard from "./SharedRecipeCard";
@@ -211,6 +212,7 @@ export default function DiscoverTab({
 }) {
   const router = useRouter();
   const { showToast } = useToast();
+  const { mutate } = useSWRConfig();
 
   // ── Trending recipes ──
   const { data: trendingData, isLoading: trendingLoading } = useTrending();
@@ -568,6 +570,7 @@ export default function DiscoverTab({
         throw new Error(data.error || "Failed to save");
       }
       setExploreSavedIds((prev) => new Set(prev).add(index));
+      mutate("supabase:recipes");
     } catch (err) {
       setExploreError(err instanceof Error ? err.message : "Failed to save");
     } finally {

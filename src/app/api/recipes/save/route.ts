@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { rehostIfExpiring } from "@/lib/image-rehost";
+import { rehostIfExpiring, isExpiringCdn } from "@/lib/image-rehost";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -34,9 +34,12 @@ export async function POST(request: Request) {
       }
     }
 
-    // Re-host any image from an expiring CDN (Instagram, TikTok, etc.) to
-    // our Supabase storage so it never expires.
-    const persistentImageUrl = await rehostIfExpiring(body.image_url);
+    // Insert the recipe immediately with the original image URL so it
+    // shows up in the user's list right away. If the image is from an
+    // expiring CDN (Instagram, TikTok, etc.), rehost it in the background
+    // via after() and update the row once it's persisted to Supabase storage.
+    const originalImageUrl = body.image_url || null;
+    const needsRehost = isExpiringCdn(originalImageUrl);
 
     const { error, data } = await admin.from("recipes").insert({
       user_id: user.id,
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
       meal_type: body.meal_type || "dinner",
       source_url: body.source_url || null,
       source_platform: body.source_platform || null,
-      image_url: persistentImageUrl,
+      image_url: originalImageUrl,
       notes: body.notes || null,
       calories: body.calories || null,
       protein_g: body.protein_g || null,
@@ -71,6 +74,16 @@ export async function POST(request: Request) {
       });
     } catch {
       // Non-critical: don't fail recipe save if activity insert fails
+    }
+
+    if (needsRehost) {
+      const recipeId = data.id;
+      after(async () => {
+        const persistent = await rehostIfExpiring(originalImageUrl);
+        if (persistent && persistent !== originalImageUrl) {
+          await admin.from("recipes").update({ image_url: persistent }).eq("id", recipeId);
+        }
+      });
     }
 
     return NextResponse.json({ recipe: data });
