@@ -167,29 +167,36 @@ function NavbarInner() {
               );
             })()}
 
-            {/* Center: Page tabs (desktop only, on recipes page) */}
+            {/* Center: Page tabs (desktop only, on recipes page).
+                Mustard underline mirrors the bottom-nav active treatment —
+                tomato stays reserved for CTAs / the FAB / the punctum. */}
             {isRecipesPage && user && (
-              <div className="hidden sm:flex items-end gap-0.5 -mb-[1px]">
+              <div className="hidden sm:flex items-stretch h-full">
                 {TAB_CONFIG.map((tab) => {
                   const isActive = activeTab === tab.key;
                   return (
                     <Link
                       key={tab.key}
                       href={tab.key === "recipes" ? "/recipes" : `/recipes?tab=${tab.key}`}
-                      className="flex items-center gap-1.5 px-4 pt-2 pb-2.5 text-[13px] font-medium tracking-tight transition-all duration-200 relative"
-                      style={{
-                        background: isActive ? "#fff" : "transparent",
-                        color: isActive ? "#E5462E" : "var(--ink-soft, #4A4742)",
-                        borderRadius: "12px 12px 0 0",
-                        borderTop: isActive ? "2px solid #fb923c" : "2px solid transparent",
-                        borderLeft: isActive ? "1px solid #ede8e0" : "1px solid transparent",
-                        borderRight: isActive ? "1px solid #ede8e0" : "1px solid transparent",
-                        borderBottom: isActive ? "1px solid #fff" : "1px solid transparent",
-                        marginBottom: isActive ? "-1px" : "0",
+                      className="group relative flex items-center gap-1.5 px-4 text-[13px] font-medium tracking-tight transition-colors"
+                      style={{ color: isActive ? "var(--ink, #1C1A17)" : "var(--ink-soft, #4A4742)" }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) e.currentTarget.style.color = "var(--ink, #1C1A17)";
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) e.currentTarget.style.color = "var(--ink-soft, #4A4742)";
                       }}
                     >
                       <tab.Icon className="w-4 h-4" filled={isActive} />
                       {tab.label}
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-3 right-3 bottom-0 h-[2px] rounded-full transition-opacity duration-200"
+                        style={{
+                          background: "var(--mustard, #E8A33D)",
+                          opacity: isActive ? 1 : 0,
+                        }}
+                      />
                     </Link>
                   );
                 })}
