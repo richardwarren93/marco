@@ -90,27 +90,24 @@ export default function AnalyzeScreen({
         </div>
       </div>
 
-      {/* Loading state */}
+      {/* Loading state — Marco-native: signature with pulsing punctum,
+          Fraunces italic copy, mono-tracked hint. */}
       {loading && (
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-16">
-          <div className="relative mb-6">
-            {/* Animated ring */}
-            <svg className="w-28 h-28 animate-spin" style={{ animationDuration: "3s" }} viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r="42" fill="none" stroke="#f3f4f6" strokeWidth="6" />
-              <circle
-                cx="50" cy="50" r="42" fill="none"
-                stroke="#f97316" strokeWidth="6"
-                strokeDasharray="264" strokeDashoffset="198"
-                strokeLinecap="round"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl">🧑‍🍳</span>
-            </div>
-          </div>
-          <p className="text-sm font-medium text-gray-700 mb-1">Analyzing your week...</p>
-          <p className="text-xs text-gray-400 text-center max-w-[220px]">
-            Estimating nutrition and generating personalized insights
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-16 space-y-7">
+          <span className="marco-signature is-pulsing" style={{ fontSize: "4.5rem" }}>marco</span>
+          <p
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontStyle: "italic",
+              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+              fontSize: "20px",
+              color: "var(--ink, #1C1A17)",
+            }}
+          >
+            Reading your week
+          </p>
+          <p className="marco-mono text-center" style={{ maxWidth: "260px" }}>
+            Estimating nutrition · finding patterns
           </p>
         </div>
       )}

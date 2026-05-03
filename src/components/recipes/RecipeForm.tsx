@@ -645,54 +645,53 @@ function EditSection({
 }
 
 // ─── Extracting animation ────────────────────────────────────────────────────
+// Marco-native loader: signature wordmark with a pulsing punctum (the brand's
+// canonical motion), Fraunces italic phase copy, mono-tracked hint, tomato
+// dots for progress. No emoji, no generic spinner.
 function ExtractingAnimation() {
-  const [dots, setDots] = useState(0);
   const [phase, setPhase] = useState(0);
 
   const phases = [
-    { icon: "🌐", text: "Fetching recipe page" },
-    { icon: "🔍", text: "Analyzing ingredients" },
-    { icon: "📝", text: "Extracting steps" },
-    { icon: "✨", text: "Polishing details" },
+    "Fetching the page",
+    "Reading the ingredients",
+    "Pulling out the steps",
+    "Polishing the details",
   ];
 
   useEffect(() => {
-    const dotTimer = setInterval(() => setDots((d) => (d + 1) % 4), 400);
-    const phaseTimer = setInterval(() => setPhase((p) => Math.min(p + 1, phases.length - 1)), 2200);
-    return () => {
-      clearInterval(dotTimer);
-      clearInterval(phaseTimer);
-    };
+    const t = setInterval(() => setPhase((p) => Math.min(p + 1, phases.length - 1)), 2200);
+    return () => clearInterval(t);
   }, []);
 
-  const current = phases[phase];
-
   return (
-    <div className="flex flex-col items-center py-16 space-y-6 animate-slide-up">
-      <div className="relative">
-        <div className="w-20 h-20 rounded-full bg-orange-50 flex items-center justify-center">
-          <span className="text-3xl" key={phase} style={{ animation: "pop-in 0.3s ease-out" }}>
-            {current.icon}
-          </span>
-        </div>
-        <div className="absolute inset-0 rounded-full border-2 border-orange-300 border-t-transparent animate-spin" />
-      </div>
-      <div className="text-center space-y-1.5">
-        <p className="text-sm font-semibold text-gray-700">
-          {current.text}{".".repeat(dots)}
-        </p>
-        <p className="text-xs text-gray-400">
-          This usually takes 5-10 seconds
-        </p>
-      </div>
-      {/* Progress dots */}
+    <div className="flex flex-col items-center py-16 space-y-7 animate-slide-up">
+      <span className="marco-signature is-pulsing" style={{ fontSize: "4.5rem" }}>marco</span>
+
+      <p
+        key={phase}
+        style={{
+          fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+          fontStyle: "italic",
+          fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+          fontSize: "20px",
+          color: "var(--ink, #1C1A17)",
+          animation: "fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) both",
+        }}
+      >
+        {phases[phase]}
+      </p>
+
+      <p className="marco-mono">Usually 5–10 sec</p>
+
       <div className="flex gap-2">
         {phases.map((_, i) => (
-          <div
+          <span
             key={i}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              i <= phase ? "bg-orange-400 w-6" : "bg-gray-200 w-1.5"
-            }`}
+            aria-hidden="true"
+            className="w-1.5 h-1.5 rounded-full transition-colors duration-500"
+            style={{
+              background: i <= phase ? "var(--tomato, #E5462E)" : "var(--line, rgba(28,26,23,0.12))",
+            }}
           />
         ))}
       </div>

@@ -115,6 +115,16 @@
   animation: marco-punctum-pulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
+/* Loading state: gentle heartbeat on the signature's punctum.
+   This is the brand's canonical motion — see brand guidelines pulse. */
+@keyframes marco-signature-heartbeat {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.4; transform: scale(1.4); }
+}
+.marco-signature.is-pulsing::after {
+  animation: marco-signature-heartbeat 2s ease-in-out infinite;
+}
+
 html {
   /* Prevent iOS rubber-band bounce from shifting fixed-position elements */
   overscroll-behavior: none;
