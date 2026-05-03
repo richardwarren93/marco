@@ -189,14 +189,31 @@ function NavbarInner() {
                     >
                       <tab.Icon className="w-4 h-4" filled={isActive} />
                       {tab.label}
+                      {/* The underline — Marco's hand-drawn mustard wave.
+                          Per brand guidelines: "the equivalent of speaking
+                          a little louder." Used here as the active emphasis. */}
                       <span
                         aria-hidden="true"
-                        className="absolute left-3 right-3 bottom-0 h-[2px] rounded-full transition-opacity duration-200"
-                        style={{
-                          background: "var(--mustard, #E8A33D)",
-                          opacity: isActive ? 1 : 0,
-                        }}
-                      />
+                        className="absolute left-3 right-3 bottom-0 pointer-events-none transition-opacity duration-200"
+                        style={{ opacity: isActive ? 1 : 0 }}
+                      >
+                        <svg
+                          width="100%"
+                          height="6"
+                          viewBox="0 0 100 6"
+                          preserveAspectRatio="none"
+                          className="block"
+                        >
+                          <path
+                            d="M 2 2 Q 50 5.4, 98 2"
+                            stroke="var(--mustard, #E8A33D)"
+                            strokeWidth="2"
+                            fill="none"
+                            strokeLinecap="round"
+                            vectorEffect="non-scaling-stroke"
+                          />
+                        </svg>
+                      </span>
                     </Link>
                   );
                 })}
