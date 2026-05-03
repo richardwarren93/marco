@@ -230,11 +230,14 @@ export default function SignupPage() {
 
   // Main choose screen
   return (
-    <div className="flex flex-col" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
+    <div className="flex flex-col sm:justify-center" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
       {/* Hero — Marco signature wordmark + italic tagline. No emoji,
           no chef glyph circle, no orange hero band. The cream body is
-          the canvas; the wordmark is the brand. */}
-      <div className="relative flex-1 flex flex-col items-center justify-center overflow-hidden px-6 pt-10 pb-6">
+          the canvas; the wordmark is the brand.
+          On mobile the hero grows (flex-1) so buttons pin to the bottom
+          for thumb reachability. On desktop we drop the growth so the
+          buttons sit right under the tagline. */}
+      <div className="relative flex-1 sm:flex-none flex flex-col items-center justify-center overflow-hidden px-6 pt-10 pb-6">
         <div className="relative z-10 text-center">
           {/* The handwritten Marco wordmark with the tomato punctum */}
           <span className="marco-signature" style={{ fontSize: "clamp(4.5rem, 16vw, 6rem)" }}>marco</span>
