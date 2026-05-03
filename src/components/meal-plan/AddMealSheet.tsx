@@ -422,7 +422,14 @@ export default function AddMealSheet({
             <div className="px-4 pb-4 flex-shrink-0 text-center" style={{ borderTop: "1px solid #f0f0ee", paddingTop: 12 }}>
               <button onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}>
                 <span className="text-xs" style={{ color: "#a09890" }}>Or </span>
-                <span className="text-xs font-medium" style={{ color: "#c4642d" }}>plan multiple meals →</span>
+                <span className="text-xs font-medium inline-flex items-center gap-1.5" style={{ color: "var(--ink, #1C1A17)" }}>
+                plan multiple meals
+                {/* Tomato flourish ending in the punctum — per refined brand doc */}
+                <svg width="44" height="14" viewBox="0 0 145 45" fill="none" aria-hidden="true">
+                  <path d="M 3 20 Q 40 0, 70 20 Q 100 40, 138 10" stroke="var(--tomato, #E5462E)" strokeWidth="2" strokeLinecap="round" fill="none" vectorEffect="non-scaling-stroke" />
+                  <circle cx="138" cy="10" r="5" fill="var(--tomato, #E5462E)" />
+                </svg>
+              </span>
               </button>
             </div>
           )}
@@ -576,7 +583,14 @@ export default function AddMealSheet({
               className="w-full pt-3 pb-1 text-center"
             >
               <span className="text-xs" style={{ color: "#a09890" }}>Or </span>
-              <span className="text-xs font-medium" style={{ color: "#c4642d" }}>plan multiple meals →</span>
+              <span className="text-xs font-medium inline-flex items-center gap-1.5" style={{ color: "var(--ink, #1C1A17)" }}>
+                plan multiple meals
+                {/* Tomato flourish ending in the punctum — per refined brand doc */}
+                <svg width="44" height="14" viewBox="0 0 145 45" fill="none" aria-hidden="true">
+                  <path d="M 3 20 Q 40 0, 70 20 Q 100 40, 138 10" stroke="var(--tomato, #E5462E)" strokeWidth="2" strokeLinecap="round" fill="none" vectorEffect="non-scaling-stroke" />
+                  <circle cx="138" cy="10" r="5" fill="var(--tomato, #E5462E)" />
+                </svg>
+              </span>
             </button>
           )}
         </div>
