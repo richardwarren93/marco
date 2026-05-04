@@ -15,6 +15,7 @@ import {
 } from "@/components/icons/HandDrawnIcons";
 import NotificationSheet from "@/components/notifications/NotificationSheet";
 import ImportRecipeSheet from "@/components/recipes/ImportRecipeSheet";
+import MustardUnderline from "@/components/brand/MustardUnderline";
 
 // ── Tab config for the recipes page (rendered in navbar on desktop).
 // Per Marco design system: stroke-2 outline icons, no emoji. ───────────────────
@@ -197,22 +198,7 @@ function NavbarInner() {
                         className="absolute left-3 right-3 bottom-0 pointer-events-none transition-opacity duration-200"
                         style={{ opacity: isActive ? 1 : 0 }}
                       >
-                        <svg
-                          width="100%"
-                          height="6"
-                          viewBox="0 0 100 6"
-                          preserveAspectRatio="none"
-                          className="block"
-                        >
-                          <path
-                            d="M 2 2 Q 50 5.4, 98 2"
-                            stroke="var(--mustard, #E8A33D)"
-                            strokeWidth="2"
-                            fill="none"
-                            strokeLinecap="round"
-                            vectorEffect="non-scaling-stroke"
-                          />
-                        </svg>
+                        <MustardUnderline />
                       </span>
                     </Link>
                   );

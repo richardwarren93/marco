@@ -1,0 +1,208 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useTrending } from "@/lib/hooks/use-data";
+import SharedRecipeCard from "@/components/recipes/SharedRecipeCard";
+import TomatoFlourish from "@/components/brand/TomatoFlourish";
+import { useToast } from "@/components/ui/Toast";
+
+interface TrendingRecipe {
+  recipeId: string;
+  title: string;
+  description: string | null;
+  image_url: string | null;
+  tags: string[];
+  meal_type: string;
+  servings: number | null;
+  prep_time_minutes: number | null;
+  cook_time_minutes: number | null;
+  source_url: string | null;
+  saveCount: number;
+  userCount: number;
+}
+
+interface Props {
+  onTap: (recipeId: string) => void;
+  onLongPress: (recipeId: string, title: string) => (e: React.TouchEvent) => void;
+  onLongPressCancel: () => void;
+  onContextMenu: (recipeId: string, title: string) => (e: React.MouseEvent) => void;
+}
+
+/**
+ * Community-feed surface. A single editorial grid of trending recipes —
+ * no carousel, no categorized rows. Per the brand: a marco-mono eyebrow
+ * over a Fraunces title, with the tomato flourish as the divider.
+ */
+export default function CommunityFeed({
+  onTap,
+  onLongPress,
+  onLongPressCancel,
+  onContextMenu,
+}: Props) {
+  const router = useRouter();
+  const { showToast } = useToast();
+
+  const { data, isLoading } = useTrending();
+  const trending: TrendingRecipe[] = (data?.trending ?? []) as TrendingRecipe[];
+
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+
+  async function handleSave(recipe: TrendingRecipe) {
+    if (savedIds.has(recipe.recipeId) || savingIds.has(recipe.recipeId)) return;
+
+    setSavedIds((prev) => new Set(prev).add(recipe.recipeId));
+    showToast("Recipe saved!", {
+      duration: 5000,
+      action: {
+        label: "Add to meal plan",
+        onClick: () => router.push("/recipes?tab=meal-plan"),
+      },
+    });
+
+    setSavingIds((prev) => new Set(prev).add(recipe.recipeId));
+    try {
+      const detailRes = await fetch(`/api/recipes/${recipe.recipeId}`);
+      if (!detailRes.ok) throw new Error("Could not load recipe");
+      const detail = await detailRes.json();
+      const r = detail.recipe || detail;
+      const res = await fetch("/api/recipes/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: r.title,
+          description: r.description,
+          ingredients: r.ingredients,
+          steps: r.steps,
+          servings: r.servings,
+          prep_time_minutes: r.prep_time_minutes,
+          cook_time_minutes: r.cook_time_minutes,
+          tags: r.tags,
+          meal_type: r.meal_type,
+          source_url: r.source_url,
+          source_platform: r.source_platform,
+          image_url: r.image_url,
+          calories: r.calories,
+          protein_g: r.protein_g,
+          carbs_g: r.carbs_g,
+          fat_g: r.fat_g,
+          fiber_g: r.fiber_g,
+          notes: "Saved from Discover",
+        }),
+      });
+      if (!res.ok) {
+        const errData = await res.json();
+        if (!errData.duplicate) throw new Error(errData.error || "Failed to save");
+      }
+    } catch (err) {
+      console.error("[Discover] community save failed:", err);
+      setSavedIds((prev) => {
+        const n = new Set(prev);
+        n.delete(recipe.recipeId);
+        return n;
+      });
+      showToast("Failed to save recipe");
+    } finally {
+      setSavingIds((prev) => {
+        const n = new Set(prev);
+        n.delete(recipe.recipeId);
+        return n;
+      });
+    }
+  }
+
+  return (
+    <div>
+      {/* Section header with the tomato flourish divider */}
+      <header className="mb-6 sm:mb-8">
+        <p className="marco-mono mb-2">What&apos;s cooking</p>
+        <h2
+          className="mb-3"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 144, "SOFT" 100, "wght" 600',
+            fontSize: "clamp(1.5rem, 3vw, 2rem)",
+            letterSpacing: "-0.02em",
+            lineHeight: 1.05,
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
+          This week&apos;s table.
+        </h2>
+        <TomatoFlourish variant="divider" />
+      </header>
+
+      {isLoading && trending.length === 0 ? (
+        <div className="py-12 text-center">
+          <p className="marco-mono">Loading…</p>
+        </div>
+      ) : trending.length === 0 ? (
+        <div className="py-16 text-center">
+          <p
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontStyle: "italic",
+              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+              fontSize: "17px",
+              color: "var(--ink-soft, #4A4742)",
+            }}
+          >
+            nothing trending right now.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          {trending.map((recipe, i) => {
+            const isSaved = savedIds.has(recipe.recipeId);
+            const isSaving = savingIds.has(recipe.recipeId);
+            const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
+
+            return (
+              <div
+                key={recipe.recipeId}
+                onContextMenu={onContextMenu(recipe.recipeId, recipe.title)}
+                onTouchStart={onLongPress(recipe.recipeId, recipe.title)}
+                onTouchEnd={onLongPressCancel}
+                onTouchMove={onLongPressCancel}
+              >
+                <SharedRecipeCard
+                  title={recipe.title}
+                  imageUrl={recipe.image_url}
+                  mealType={recipe.meal_type}
+                  totalTime={totalTime}
+                  index={i}
+                  onClick={() => onTap(recipe.recipeId)}
+                  actions={[
+                    {
+                      icon: (
+                        <svg
+                          className="w-3.5 h-3.5"
+                          fill={isSaved ? "currentColor" : "none"}
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          style={{ color: isSaved ? "var(--tomato, #E5462E)" : "#fff" }}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                          />
+                        </svg>
+                      ),
+                      onClick: () => handleSave(recipe),
+                      label: isSaved ? "Saved" : "Save",
+                      active: isSaved,
+                      loading: isSaving,
+                    },
+                  ]}
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

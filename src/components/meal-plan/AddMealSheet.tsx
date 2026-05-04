@@ -7,6 +7,7 @@ import type { MealPlan, Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import { useToast } from "@/components/ui/Toast";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import TomatoFlourish from "@/components/brand/TomatoFlourish";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
 const ACCENT = "#E5462E";
@@ -425,17 +426,7 @@ export default function AddMealSheet({
                 <span className="text-xs font-medium inline-block align-baseline" style={{ color: "var(--ink, #1C1A17)" }}>
                 plan multiple meals
                 {/* Tomato flourish underneath, ending in the punctum — per refined brand doc */}
-                <svg
-                  aria-hidden="true"
-                  className="block pointer-events-none"
-                  style={{ marginTop: "2px", width: "100%", height: "8px" }}
-                  viewBox="0 0 130 10"
-                  preserveAspectRatio="none"
-                  fill="none"
-                >
-                  <path d="M 3 5 Q 30 1, 60 5 Q 90 9, 122 4" stroke="var(--tomato, #E5462E)" strokeWidth="2" strokeLinecap="round" fill="none" vectorEffect="non-scaling-stroke" />
-                  <circle cx="122" cy="4" r="3" fill="var(--tomato, #E5462E)" />
-                </svg>
+                <TomatoFlourish className="mt-0.5 pointer-events-none" />
               </span>
               </button>
             </div>
@@ -593,17 +584,7 @@ export default function AddMealSheet({
               <span className="text-xs font-medium inline-block align-baseline" style={{ color: "var(--ink, #1C1A17)" }}>
                 plan multiple meals
                 {/* Tomato flourish underneath, ending in the punctum — per refined brand doc */}
-                <svg
-                  aria-hidden="true"
-                  className="block pointer-events-none"
-                  style={{ marginTop: "2px", width: "100%", height: "8px" }}
-                  viewBox="0 0 130 10"
-                  preserveAspectRatio="none"
-                  fill="none"
-                >
-                  <path d="M 3 5 Q 30 1, 60 5 Q 90 9, 122 4" stroke="var(--tomato, #E5462E)" strokeWidth="2" strokeLinecap="round" fill="none" vectorEffect="non-scaling-stroke" />
-                  <circle cx="122" cy="4" r="3" fill="var(--tomato, #E5462E)" />
-                </svg>
+                <TomatoFlourish className="mt-0.5 pointer-events-none" />
               </span>
             </button>
           )}
