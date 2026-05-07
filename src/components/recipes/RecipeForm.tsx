@@ -359,7 +359,7 @@ export default function RecipeForm({
               />
 
               {/* Meal type pills */}
-              <div className="flex gap-1.5">
+              <div className="flex flex-wrap gap-1.5">
                 {(["breakfast", "lunch", "dinner", "snack"] as const).map((mt) => {
                   const isActive = mealType === mt;
                   return (
@@ -399,11 +399,35 @@ export default function RecipeForm({
                     <CookingPotIcon className="w-3.5 h-3.5" /> {cookTime}m cook
                   </span>
                 )}
+                {ingredients.length > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    {/* Bullet list — ingredients */}
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+                      <circle cx="5" cy="6" r="1.2" fill="currentColor" stroke="none" />
+                      <circle cx="5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+                      <circle cx="5" cy="18" r="1.2" fill="currentColor" stroke="none" />
+                      <path d="M10 6h10M10 12h10M10 18h7" />
+                    </svg>
+                    {ingredients.length} ingredient{ingredients.length === 1 ? "" : "s"}
+                  </span>
+                )}
+                {steps.length > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    {/* Numbered list — steps */}
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round">
+                      <text x="2" y="8.5" fontFamily="ui-monospace, 'Geist Mono', monospace" fontSize="6.5" fontWeight="600" fill="currentColor" stroke="none">1</text>
+                      <text x="2" y="14.5" fontFamily="ui-monospace, 'Geist Mono', monospace" fontSize="6.5" fontWeight="600" fill="currentColor" stroke="none">2</text>
+                      <text x="2" y="20.5" fontFamily="ui-monospace, 'Geist Mono', monospace" fontSize="6.5" fontWeight="600" fill="currentColor" stroke="none">3</text>
+                      <path d="M10 7h10M10 13h10M10 19h7" />
+                    </svg>
+                    {steps.length} step{steps.length === 1 ? "" : "s"}
+                  </span>
+                )}
               </div>
 
               {/* Tags */}
               {tags && (
-                <div className="flex flex-wrap gap-1.5">
+                <div className="flex flex-wrap gap-1.5 pt-1">
                   {tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 5).map((tag) => (
                     <span
                       key={tag}
@@ -418,47 +442,6 @@ export default function RecipeForm({
                   ))}
                 </div>
               )}
-
-              {/* Ingredients summary */}
-              <div className="pt-1">
-                <p
-                  className="mb-1.5"
-                  style={{
-                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
-                    fontSize: "10px",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: "var(--ink-soft, #4A4742)",
-                    opacity: 0.7,
-                  }}
-                >
-                  {ingredients.length} Ingredients
-                </p>
-                <p className="text-sm line-clamp-2" style={{ color: "var(--ink-soft, #4A4742)" }}>
-                  {ingredients.slice(0, 6).map((ing) => ing.name).join(", ")}
-                  {ingredients.length > 6 && ` +${ingredients.length - 6} more`}
-                </p>
-              </div>
-
-              {/* Steps summary */}
-              <div>
-                <p
-                  className="mb-1.5"
-                  style={{
-                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
-                    fontSize: "10px",
-                    letterSpacing: "0.15em",
-                    textTransform: "uppercase",
-                    color: "var(--ink-soft, #4A4742)",
-                    opacity: 0.7,
-                  }}
-                >
-                  {steps.length} Steps
-                </p>
-                <p className="text-sm line-clamp-2" style={{ color: "var(--ink-soft, #4A4742)" }}>
-                  {steps[0]}
-                </p>
-              </div>
             </div>
           </div>
 
