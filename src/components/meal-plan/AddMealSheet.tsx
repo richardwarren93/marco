@@ -221,8 +221,17 @@ export default function AddMealSheet({
   }, [recipeSearch, allRecipes]);
 
   function toggleMealType(mt: MealType) {
-    // Single-select: just replace
-    setSelectedMealTypes(new Set([mt]));
+    // Multi-select: lets users plan one recipe across multiple slots in a
+    // single confirm — e.g. dinner tonight + lunch tomorrow (leftovers).
+    setSelectedMealTypes((prev) => {
+      const next = new Set(prev);
+      if (next.has(mt)) {
+        if (next.size > 1) next.delete(mt); // never empty
+      } else {
+        next.add(mt);
+      }
+      return next;
+    });
   }
 
   function toggleDate(key: string) {
