@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { mutate as swrMutate } from "swr";
 import type { MealPlan, Recipe } from "@/types";
 import { useTrending, useRecipes } from "@/lib/hooks/use-data";
 import AddMealSheet from "./AddMealSheet";
@@ -370,6 +371,19 @@ export default function MealPlanListView({
       prev.some((r) => r.id === trending.recipeId) ? prev : [...prev, placeholder]
     );
 
+    // Inject the placeholder into the My Recipes SWR cache too so the user's
+    // library reflects the save *instantly*. We swap it for the real row once
+    // the save POST returns (or remove it on failure).
+    swrMutate(
+      "supabase:recipes",
+      (current: Recipe[] | undefined) => {
+        const list = current ?? [];
+        if (list.some((r) => r.id === trending.recipeId)) return list;
+        return [placeholder, ...list];
+      },
+      false,
+    );
+
     openAddSheetWithRecipe(selectedDate, trending.recipeId);
 
     if (pendingSaves.current.has(trending.recipeId)) return;
@@ -407,9 +421,11 @@ export default function MealPlanListView({
         });
 
         let savedId = trending.recipeId;
+        let savedRecipe: Recipe | null = null;
         if (res.ok) {
           const data = await res.json();
-          savedId = data.recipe?.id || trending.recipeId;
+          savedRecipe = (data.recipe as Recipe) ?? null;
+          savedId = savedRecipe?.id || trending.recipeId;
         } else if (res.status === 409) {
           const data = await res.json();
           savedId = data.recipeId || trending.recipeId;
@@ -417,6 +433,32 @@ export default function MealPlanListView({
           throw new Error("Save failed");
         }
         setSavedIdMap((m) => new Map(m).set(trending.recipeId, savedId));
+
+        // Swap the placeholder (trending.recipeId) for the real saved row, so
+        // My Recipes shows the canonical user-owned copy. For 409 we fall back
+        // to a revalidation since the real row may already be in the cache or
+        // need to be fetched.
+        if (savedRecipe) {
+          const realRow = savedRecipe;
+          swrMutate(
+            "supabase:recipes",
+            (current: Recipe[] | undefined) => {
+              const list = current ?? [];
+              const filtered = list.filter((r) => r.id !== trending.recipeId);
+              if (filtered.some((r) => r.id === realRow.id)) return filtered;
+              return [realRow, ...filtered];
+            },
+            false,
+          );
+        } else {
+          swrMutate(
+            "supabase:recipes",
+            (current: Recipe[] | undefined) =>
+              (current ?? []).filter((r) => r.id !== trending.recipeId),
+            false,
+          );
+          swrMutate("supabase:recipes");
+        }
         return { savedId };
       } catch (err) {
         setRecommendSavedIds((s) => {
@@ -424,6 +466,13 @@ export default function MealPlanListView({
           n.delete(trending.recipeId);
           return n;
         });
+        // Revert the optimistic injection.
+        swrMutate(
+          "supabase:recipes",
+          (current: Recipe[] | undefined) =>
+            (current ?? []).filter((r) => r.id !== trending.recipeId),
+          false,
+        );
         throw err;
       }
     })();
