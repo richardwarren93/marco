@@ -26,9 +26,6 @@ interface TrendingRecipe {
 
 interface Props {
   onTap: (recipeId: string) => void;
-  onLongPress: (recipeId: string, title: string) => (e: React.TouchEvent) => void;
-  onLongPressCancel: () => void;
-  onContextMenu: (recipeId: string, title: string) => (e: React.MouseEvent) => void;
   /** Open the AddToCollectionModal with the user's saved copy of the recipe. */
   onAddToCollection?: (savedRecipeId: string) => void;
 }
@@ -40,9 +37,6 @@ interface Props {
  */
 export default function CommunityFeed({
   onTap,
-  onLongPress,
-  onLongPressCancel,
-  onContextMenu,
   onAddToCollection,
 }: Props) {
   const router = useRouter();
@@ -262,13 +256,7 @@ export default function CommunityFeed({
             const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
 
             return (
-              <div
-                key={recipe.recipeId}
-                onContextMenu={onContextMenu(recipe.recipeId, recipe.title)}
-                onTouchStart={onLongPress(recipe.recipeId, recipe.title)}
-                onTouchEnd={onLongPressCancel}
-                onTouchMove={onLongPressCancel}
-              >
+              <div key={recipe.recipeId}>
                 <SharedRecipeCard
                   title={recipe.title}
                   imageUrl={recipe.image_url}

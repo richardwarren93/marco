@@ -1,6 +1,5 @@
 "use client";
 
-import { useRef } from "react";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import { ActionButton, type SharedCardAction } from "@/components/recipes/SharedRecipeCard";
 
@@ -41,9 +40,6 @@ export type FriendsFeedItem = {
 interface Props {
   item: FriendsFeedItem;
   onTap: (recipeId: string) => void;
-  onLongPress: (recipeId: string, title: string) => (e: React.TouchEvent) => void;
-  onLongPressCancel: () => void;
-  onContextMenu: (recipeId: string, title: string) => (e: React.MouseEvent) => void;
   /** Top-right overlay actions (bookmark / plus) — matches My Recipes pattern. */
   actions?: SharedCardAction[];
   /** Stagger animation index */
@@ -88,14 +84,9 @@ function formatPlannedDay(dateStr: string): string {
 export default function SignedRecipeCard({
   item,
   onTap,
-  onLongPress,
-  onLongPressCancel,
-  onContextMenu,
   actions,
   index = 0,
 }: Props) {
-  const tapRef = useRef<boolean>(false);
-
   const totalTime = (item.prepMinutes ?? 0) + (item.cookMinutes ?? 0);
   const microline =
     item.kind === "saved"
@@ -121,17 +112,7 @@ export default function SignedRecipeCard({
         border: "1px solid var(--line, rgba(28,26,23,0.12))",
         animation: `cardPop 0.4s ease ${index * 40}ms both`,
       }}
-      onClick={() => {
-        if (tapRef.current) return;
-        onTap(item.recipeId);
-      }}
-      onContextMenu={onContextMenu(item.recipeId, item.title)}
-      onTouchStart={(e) => {
-        tapRef.current = false;
-        onLongPress(item.recipeId, item.title)(e);
-      }}
-      onTouchEnd={onLongPressCancel}
-      onTouchMove={onLongPressCancel}
+      onClick={() => onTap(item.recipeId)}
     >
       {/* 16:9 image */}
       <div className="relative w-full" style={{ aspectRatio: "16 / 9", background: "var(--cream-warm, #EFE5D2)" }}>

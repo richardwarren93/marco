@@ -62,9 +62,6 @@ interface ActivityFeedResponse {
 
 interface Props {
   onTap: (recipeId: string) => void;
-  onLongPress: (recipeId: string, title: string) => (e: React.TouchEvent) => void;
-  onLongPressCancel: () => void;
-  onContextMenu: (recipeId: string, title: string) => (e: React.MouseEvent) => void;
   onSwitchToCommunity?: () => void;
   /** Open the AddToCollectionModal with the user's saved copy of the recipe. */
   onAddToCollection?: (savedRecipeId: string) => void;
@@ -72,9 +69,6 @@ interface Props {
 
 export default function FriendsFeed({
   onTap,
-  onLongPress,
-  onLongPressCancel,
-  onContextMenu,
   onSwitchToCommunity,
   onAddToCollection,
 }: Props) {
@@ -370,9 +364,6 @@ export default function FriendsFeed({
             item={item}
             index={i}
             onTap={onTap}
-            onLongPress={onLongPress}
-            onLongPressCancel={onLongPressCancel}
-            onContextMenu={onContextMenu}
             actions={actions}
           />
         );
