@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { extractRecipesFromDocument } from "@/lib/claude";
+import { findExistingRecipeByFingerprint } from "@/lib/recipes/dedup";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -94,11 +95,24 @@ export async function POST(request: Request) {
 
     for (const recipe of extractedRecipes) {
       try {
+        const title = recipe.title || "Untitled Recipe";
+
+        const existing = await findExistingRecipeByFingerprint(admin, user.id, {
+          title,
+          source_url: null,
+          image_url: null,
+        });
+
+        if (existing) {
+          savedRecipes.push(existing);
+          continue;
+        }
+
         const { data, error } = await admin
           .from("recipes")
           .insert({
             user_id: user.id,
-            title: recipe.title || "Untitled Recipe",
+            title,
             description: recipe.description || null,
             ingredients: recipe.ingredients || [],
             steps: recipe.steps || [],
@@ -134,7 +148,7 @@ export async function POST(request: Request) {
         } catch {
           // Non-critical
         }
-      } catch (err) {
+      } catch {
         errors.push(recipe.title || "Unknown recipe");
       }
     }

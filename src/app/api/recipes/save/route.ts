@@ -2,6 +2,7 @@ import { NextResponse, after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rehostIfExpiring, isExpiringCdn } from "@/lib/image-rehost";
+import { findExistingRecipeByFingerprint } from "@/lib/recipes/dedup";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -17,21 +18,17 @@ export async function POST(request: Request) {
     const body = await request.json();
     const admin = createAdminClient();
 
-    // Check for duplicate URL (same user + same source_url)
-    if (body.source_url) {
-      const { data: existing } = await admin
-        .from("recipes")
-        .select("id, title")
-        .eq("user_id", user.id)
-        .eq("source_url", body.source_url)
-        .maybeSingle();
+    const existing = await findExistingRecipeByFingerprint(admin, user.id, {
+      title: body.title,
+      source_url: body.source_url,
+      image_url: body.image_url,
+    });
 
-      if (existing) {
-        return NextResponse.json(
-          { error: `You've already saved this recipe: "${existing.title}"`, duplicate: true, recipeId: existing.id },
-          { status: 409 }
-        );
-      }
+    if (existing) {
+      return NextResponse.json(
+        { error: `You've already saved this recipe: "${existing.title}"`, duplicate: true, recipeId: existing.id },
+        { status: 409 }
+      );
     }
 
     // Insert the recipe immediately with the original image URL so it

@@ -324,6 +324,7 @@ export default function MealPlanListView({
 
   // Map trending recipe ID → user's saved copy ID
   const [savedIdMap, setSavedIdMap] = useState<Map<string, string>>(new Map());
+  const inFlightSaves = useRef<Set<string>>(new Set());
 
   const saveAndPlanRecommended = useCallback(async (recipeId: string) => {
     // If already saved, open sheet with the user's saved copy ID
@@ -332,6 +333,11 @@ export default function MealPlanListView({
       openAddSheetWithRecipe(selectedDate, savedId);
       return;
     }
+
+    // Synchronous in-flight guard — React state updates are async, so
+    // rapid taps in the same render frame would otherwise fire concurrent POSTs.
+    if (inFlightSaves.current.has(recipeId)) return;
+    inFlightSaves.current.add(recipeId);
 
     // Optimistic: immediately mark as saved
     setRecommendSavedIds((s) => new Set(s).add(recipeId));
@@ -372,10 +378,19 @@ export default function MealPlanListView({
         const savedId = data.recipe?.id || recipeId;
         setSavedIdMap((m) => new Map(m).set(recipeId, savedId));
         openAddSheetWithRecipe(selectedDate, savedId);
+      } else if (res.status === 409) {
+        const data = await res.json();
+        const existingId = data.recipeId || recipeId;
+        setSavedIdMap((m) => new Map(m).set(recipeId, existingId));
+        openAddSheetWithRecipe(selectedDate, existingId);
+      } else {
+        throw new Error("Save failed");
       }
     } catch {
       // Revert on failure
       setRecommendSavedIds((s) => { const n = new Set(s); n.delete(recipeId); return n; });
+    } finally {
+      inFlightSaves.current.delete(recipeId);
     }
   }, [recommendSavedIds, savedIdMap, selectedDate]);
 
