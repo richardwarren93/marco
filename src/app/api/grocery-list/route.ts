@@ -234,12 +234,19 @@ export async function POST(request: Request) {
       .eq("user_id", user.id);
 
     // ── Aggregate ingredients ─────────────────────────────────────────────────
-    const recipeIngredients = plans
-      .filter((p) => p.recipe)
-      .map((p) => ({
+    // Dedupe by recipe_id: leftovers (same recipe across multiple meal_plans
+    // rows) should count once toward groceries — one cook, one shopping run.
+    const seenRecipeIds = new Set<string>();
+    const recipeIngredients: { recipeTitle: string; ingredients: Ingredient[] }[] = [];
+    for (const p of plans) {
+      if (!p.recipe || !p.recipe_id) continue;
+      if (seenRecipeIds.has(p.recipe_id)) continue;
+      seenRecipeIds.add(p.recipe_id);
+      recipeIngredients.push({
         recipeTitle: (p.recipe as Recipe).title,
         ingredients: (p.recipe as Recipe).ingredients as Ingredient[],
-      }));
+      });
+    }
 
     const aggregated = aggregateIngredients(recipeIngredients, (pantryItems as PantryItem[]) || []);
 
