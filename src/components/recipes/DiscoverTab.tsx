@@ -161,6 +161,7 @@ export default function DiscoverTab({
           onLongPress={startLongPress}
           onLongPressCancel={cancelLongPress}
           onContextMenu={handleRightClick}
+          onAddToCollection={onAddToCollection}
         />
       )}
 

@@ -27,6 +27,8 @@ interface Props {
   onLongPress: (recipeId: string, title: string) => (e: React.TouchEvent) => void;
   onLongPressCancel: () => void;
   onContextMenu: (recipeId: string, title: string) => (e: React.MouseEvent) => void;
+  /** Open the AddToCollectionModal with the user's saved copy of the recipe. */
+  onAddToCollection?: (savedRecipeId: string) => void;
 }
 
 /**
@@ -39,6 +41,7 @@ export default function CommunityFeed({
   onLongPress,
   onLongPressCancel,
   onContextMenu,
+  onAddToCollection,
 }: Props) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -48,18 +51,26 @@ export default function CommunityFeed({
 
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
+  // Trending recipe ID → user's saved copy ID, captured from /api/recipes/save
+  // so the bookmark action can open AddToCollectionModal on the owned row.
+  const [savedIdMap, setSavedIdMap] = useState<Map<string, string>>(new Map());
 
-  async function handleSave(recipe: TrendingRecipe) {
-    if (savedIds.has(recipe.recipeId) || savingIds.has(recipe.recipeId)) return;
+  async function saveRecipe(recipe: TrendingRecipe, opts: { showToast?: boolean } = {}): Promise<string | null> {
+    if (savedIds.has(recipe.recipeId)) {
+      return savedIdMap.get(recipe.recipeId) ?? null;
+    }
+    if (savingIds.has(recipe.recipeId)) return null;
 
     setSavedIds((prev) => new Set(prev).add(recipe.recipeId));
-    showToast("Recipe saved!", {
-      duration: 5000,
-      action: {
-        label: "Add to meal plan",
-        onClick: () => router.push("/recipes?tab=meal-plan"),
-      },
-    });
+    if (opts.showToast !== false) {
+      showToast("Recipe saved!", {
+        duration: 5000,
+        action: {
+          label: "Add to meal plan",
+          onClick: () => router.push("/recipes?tab=meal-plan"),
+        },
+      });
+    }
 
     setSavingIds((prev) => new Set(prev).add(recipe.recipeId));
     try {
@@ -91,10 +102,22 @@ export default function CommunityFeed({
           notes: "Saved from Discover",
         }),
       });
-      if (!res.ok) {
+      let savedId: string | null = null;
+      if (res.ok) {
+        const data = await res.json();
+        savedId = data.recipe?.id ?? null;
+      } else {
         const errData = await res.json();
-        if (!errData.duplicate) throw new Error(errData.error || "Failed to save");
+        if (errData.duplicate && errData.recipeId) {
+          savedId = errData.recipeId;
+        } else {
+          throw new Error(errData.error || "Failed to save");
+        }
       }
+      if (savedId) {
+        setSavedIdMap((m) => new Map(m).set(recipe.recipeId, savedId!));
+      }
+      return savedId;
     } catch (err) {
       console.error("[Discover] community save failed:", err);
       setSavedIds((prev) => {
@@ -103,6 +126,7 @@ export default function CommunityFeed({
         return n;
       });
       showToast("Failed to save recipe");
+      return null;
     } finally {
       setSavingIds((prev) => {
         const n = new Set(prev);
@@ -110,6 +134,19 @@ export default function CommunityFeed({
         return n;
       });
     }
+  }
+
+  function handleSave(recipe: TrendingRecipe) {
+    void saveRecipe(recipe);
+  }
+
+  async function handleSaveToCollection(recipe: TrendingRecipe) {
+    if (!onAddToCollection) return;
+    // Suppress the standard "Recipe saved!" toast — the collection modal is
+    // its own feedback. Reuse the cached saved-id when available.
+    const cached = savedIdMap.get(recipe.recipeId);
+    const id = cached ?? (await saveRecipe(recipe, { showToast: false }));
+    if (id) onAddToCollection(id);
   }
 
   return (
@@ -174,25 +211,41 @@ export default function CommunityFeed({
                   index={i}
                   onClick={() => onTap(recipe.recipeId)}
                   actions={[
+                    ...(onAddToCollection
+                      ? [{
+                          icon: (
+                            <svg
+                              className="w-3.5 h-3.5 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                              />
+                            </svg>
+                          ),
+                          onClick: () => handleSaveToCollection(recipe),
+                          label: "Save to collection",
+                        }]
+                      : []),
                     {
                       icon: (
                         <svg
-                          className="w-3.5 h-3.5"
-                          fill={isSaved ? "currentColor" : "none"}
+                          className="w-3.5 h-3.5 text-white"
+                          fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
-                          strokeWidth={2}
-                          style={{ color: isSaved ? "var(--tomato, #E5462E)" : "#fff" }}
+                          strokeWidth={2.5}
                         >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-                          />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
                       ),
                       onClick: () => handleSave(recipe),
-                      label: isSaved ? "Saved" : "Save",
+                      label: isSaved ? "Saved" : "Save recipe",
                       active: isSaved,
                       loading: isSaving,
                     },
