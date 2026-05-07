@@ -361,12 +361,14 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             )}
           </div>
 
-          {/* Collections — first-class nav. Tap to open the Collections page. */}
+          {/* Collections — first-class nav. Tap to open the Collections page.
+              Teal anchors editorial layouts per brand guidelines — distinct
+              from tomato (CTAs) and mustard (accents). */}
           {props.mode === "library" && (
             <button
               onClick={() => router.push("/collections")}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 flex-shrink-0"
-              style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
+              style={{ background: "var(--teal, #0F4C5C)", color: "var(--cream, #F5EEE2)" }}
             >
               <CollectionsIcon className="w-3.5 h-3.5" />
               Collections
