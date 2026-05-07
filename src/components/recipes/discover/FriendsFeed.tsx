@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { mutate as swrMutate } from "swr";
+import type { Recipe } from "@/types";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import SignedRecipeCard, { type FriendsFeedItem } from "./SignedRecipeCard";
 import FriendsEmptyState from "./FriendsEmptyState";
@@ -83,7 +84,8 @@ export default function FriendsFeed({
   const [savingIds, setSavingIds] = useState<Set<string>>(new Set());
   const [savedIdMap, setSavedIdMap] = useState<Map<string, string>>(new Map());
 
-  async function saveRecipe(recipeId: string, opts: { showToast?: boolean } = {}): Promise<string | null> {
+  async function saveRecipe(item: FriendsFeedItem, opts: { showToast?: boolean } = {}): Promise<string | null> {
+    const recipeId = item.recipeId;
     if (savedIds.has(recipeId)) return savedIdMap.get(recipeId) ?? null;
     if (savingIds.has(recipeId)) return null;
 
@@ -97,6 +99,38 @@ export default function FriendsFeed({
         },
       });
     }
+
+    // Optimistically inject a placeholder into the My Recipes SWR cache so
+    // /recipes reflects the save instantly. Use the FriendsFeedItem fields we
+    // already have on screen — swapped for the real row when /save returns.
+    const placeholder: Recipe = {
+      id: recipeId,
+      user_id: "",
+      title: item.title,
+      source_url: null,
+      source_platform: null,
+      description: null,
+      ingredients: [],
+      steps: [],
+      servings: null,
+      prep_time_minutes: item.prepMinutes ?? null,
+      cook_time_minutes: item.cookMinutes ?? null,
+      tags: [],
+      meal_type: (item.mealType as Recipe["meal_type"]) || "dinner",
+      image_url: item.imageUrl,
+      notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    swrMutate(
+      "supabase:recipes",
+      (current: Recipe[] | undefined) => {
+        const list = current ?? [];
+        if (list.some((row) => row.id === recipeId)) return list;
+        return [placeholder, ...list];
+      },
+      false,
+    );
 
     setSavingIds((prev) => new Set(prev).add(recipeId));
     try {
@@ -129,9 +163,11 @@ export default function FriendsFeed({
         }),
       });
       let savedId: string | null = null;
+      let savedRecipe: Recipe | null = null;
       if (res.ok) {
         const data = await res.json();
-        savedId = data.recipe?.id ?? null;
+        savedRecipe = (data.recipe as Recipe) ?? null;
+        savedId = savedRecipe?.id ?? null;
       } else {
         const errData = await res.json();
         if (errData.duplicate && errData.recipeId) {
@@ -143,6 +179,26 @@ export default function FriendsFeed({
       if (savedId) {
         setSavedIdMap((m) => new Map(m).set(recipeId, savedId!));
       }
+      if (savedRecipe) {
+        const realRow = savedRecipe;
+        swrMutate(
+          "supabase:recipes",
+          (current: Recipe[] | undefined) => {
+            const list = (current ?? []).filter((row) => row.id !== recipeId);
+            if (list.some((row) => row.id === realRow.id)) return list;
+            return [realRow, ...list];
+          },
+          false,
+        );
+      } else {
+        swrMutate(
+          "supabase:recipes",
+          (current: Recipe[] | undefined) =>
+            (current ?? []).filter((row) => row.id !== recipeId),
+          false,
+        );
+        swrMutate("supabase:recipes");
+      }
       return savedId;
     } catch (err) {
       console.error("[Discover] friends save failed:", err);
@@ -151,6 +207,12 @@ export default function FriendsFeed({
         n.delete(recipeId);
         return n;
       });
+      swrMutate(
+        "supabase:recipes",
+        (current: Recipe[] | undefined) =>
+          (current ?? []).filter((row) => row.id !== recipeId),
+        false,
+      );
       showToast("Failed to save recipe");
       return null;
     } finally {
@@ -162,14 +224,14 @@ export default function FriendsFeed({
     }
   }
 
-  function handleSave(recipeId: string) {
-    void saveRecipe(recipeId);
+  function handleSave(item: FriendsFeedItem) {
+    void saveRecipe(item);
   }
 
-  async function handleSaveToCollection(recipeId: string) {
+  async function handleSaveToCollection(item: FriendsFeedItem) {
     if (!onAddToCollection) return;
-    const cached = savedIdMap.get(recipeId);
-    const id = cached ?? (await saveRecipe(recipeId, { showToast: false }));
+    const cached = savedIdMap.get(item.recipeId);
+    const id = cached ?? (await saveRecipe(item, { showToast: false }));
     if (id) onAddToCollection(id);
   }
   const { data: friendsData, isLoading: friendsLoading } = useSWR<FriendsActivityResponse>(
@@ -280,7 +342,7 @@ export default function FriendsFeed({
                     />
                   </svg>
                 ),
-                onClick: () => handleSaveToCollection(item.recipeId),
+                onClick: () => handleSaveToCollection(item),
                 label: "Save to collection",
               }]
             : []),
@@ -296,7 +358,7 @@ export default function FriendsFeed({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             ),
-            onClick: () => handleSave(item.recipeId),
+            onClick: () => handleSave(item),
             label: isSaved ? "Saved" : "Save recipe",
             active: isSaved,
             loading: isSaving,

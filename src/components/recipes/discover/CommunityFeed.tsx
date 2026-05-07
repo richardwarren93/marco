@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { mutate as swrMutate } from "swr";
+import type { Recipe } from "@/types";
 import { useTrending } from "@/lib/hooks/use-data";
 import SharedRecipeCard from "@/components/recipes/SharedRecipeCard";
 import TomatoFlourish from "@/components/brand/TomatoFlourish";
@@ -72,6 +74,38 @@ export default function CommunityFeed({
       });
     }
 
+    // Optimistically inject a placeholder into the My Recipes SWR cache so
+    // /recipes reflects the save instantly. Swapped for the real row when
+    // /save returns; reverted on failure.
+    const placeholder: Recipe = {
+      id: recipe.recipeId,
+      user_id: "",
+      title: recipe.title,
+      source_url: recipe.source_url ?? null,
+      source_platform: null,
+      description: recipe.description ?? null,
+      ingredients: [],
+      steps: [],
+      servings: recipe.servings ?? null,
+      prep_time_minutes: recipe.prep_time_minutes ?? null,
+      cook_time_minutes: recipe.cook_time_minutes ?? null,
+      tags: recipe.tags ?? [],
+      meal_type: (recipe.meal_type as Recipe["meal_type"]) || "dinner",
+      image_url: recipe.image_url ?? null,
+      notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    swrMutate(
+      "supabase:recipes",
+      (current: Recipe[] | undefined) => {
+        const list = current ?? [];
+        if (list.some((row) => row.id === recipe.recipeId)) return list;
+        return [placeholder, ...list];
+      },
+      false,
+    );
+
     setSavingIds((prev) => new Set(prev).add(recipe.recipeId));
     try {
       const detailRes = await fetch(`/api/recipes/${recipe.recipeId}`);
@@ -103,9 +137,11 @@ export default function CommunityFeed({
         }),
       });
       let savedId: string | null = null;
+      let savedRecipe: Recipe | null = null;
       if (res.ok) {
         const data = await res.json();
-        savedId = data.recipe?.id ?? null;
+        savedRecipe = (data.recipe as Recipe) ?? null;
+        savedId = savedRecipe?.id ?? null;
       } else {
         const errData = await res.json();
         if (errData.duplicate && errData.recipeId) {
@@ -117,6 +153,29 @@ export default function CommunityFeed({
       if (savedId) {
         setSavedIdMap((m) => new Map(m).set(recipe.recipeId, savedId!));
       }
+      // Swap the placeholder for the real saved row. On 409 the canonical row
+      // is already in the user's library — just remove the placeholder and
+      // trigger a revalidation so SWR picks it up.
+      if (savedRecipe) {
+        const realRow = savedRecipe;
+        swrMutate(
+          "supabase:recipes",
+          (current: Recipe[] | undefined) => {
+            const list = (current ?? []).filter((row) => row.id !== recipe.recipeId);
+            if (list.some((row) => row.id === realRow.id)) return list;
+            return [realRow, ...list];
+          },
+          false,
+        );
+      } else {
+        swrMutate(
+          "supabase:recipes",
+          (current: Recipe[] | undefined) =>
+            (current ?? []).filter((row) => row.id !== recipe.recipeId),
+          false,
+        );
+        swrMutate("supabase:recipes");
+      }
       return savedId;
     } catch (err) {
       console.error("[Discover] community save failed:", err);
@@ -125,6 +184,13 @@ export default function CommunityFeed({
         n.delete(recipe.recipeId);
         return n;
       });
+      // Revert the optimistic placeholder.
+      swrMutate(
+        "supabase:recipes",
+        (current: Recipe[] | undefined) =>
+          (current ?? []).filter((row) => row.id !== recipe.recipeId),
+        false,
+      );
       showToast("Failed to save recipe");
       return null;
     } finally {
