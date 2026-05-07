@@ -7,6 +7,7 @@ import type { Recipe } from "@/types";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import SignedRecipeCard, { type FriendsFeedItem } from "./SignedRecipeCard";
 import FriendsEmptyState from "./FriendsEmptyState";
+import TomatoFlourish from "@/components/brand/TomatoFlourish";
 import { useToast } from "@/components/ui/Toast";
 
 /**
@@ -295,27 +296,40 @@ export default function FriendsFeed({
   const loading = friendsLoading || activityLoading;
   const hasFriends = (friendsData?.friends?.length ?? 0) > 0;
 
-  if (loading && items.length === 0) {
-    return (
-      <div className="py-12 text-center">
-        <p className="marco-mono">Loading…</p>
-      </div>
-    );
-  }
-
-  if (!hasFriends) {
-    return <FriendsEmptyState hasFriends={false} />;
-  }
-
-  if (items.length === 0) {
-    return (
-      <FriendsEmptyState hasFriends={true} onSwitchToCommunity={onSwitchToCommunity} />
-    );
-  }
-
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-      {items.map((item, i) => {
+    <div>
+      {/* Same editorial header as Community — eyebrow + Fraunces title +
+          tomato flourish — so both views feel like one surface, just
+          different rooms. */}
+      <header className="mb-6 sm:mb-8">
+        <p className="marco-mono mb-2">What&apos;s cooking</p>
+        <h2
+          className="mb-3"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 144, "SOFT" 100, "wght" 600',
+            fontSize: "clamp(1.5rem, 3vw, 2rem)",
+            letterSpacing: "-0.02em",
+            lineHeight: 1.05,
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
+          This week&apos;s table.
+        </h2>
+        <TomatoFlourish variant="divider" />
+      </header>
+
+      {loading && items.length === 0 ? (
+        <div className="py-12 text-center">
+          <p className="marco-mono">Loading…</p>
+        </div>
+      ) : !hasFriends ? (
+        <FriendsEmptyState hasFriends={false} />
+      ) : items.length === 0 ? (
+        <FriendsEmptyState hasFriends={true} onSwitchToCommunity={onSwitchToCommunity} />
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+          {items.map((item, i) => {
         const isSaved = savedIds.has(item.recipeId);
         const isSaving = savingIds.has(item.recipeId);
         const actions = [
@@ -368,6 +382,8 @@ export default function FriendsFeed({
           />
         );
       })}
+        </div>
+      )}
     </div>
   );
 }
