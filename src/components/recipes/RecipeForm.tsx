@@ -8,6 +8,8 @@ import type { Ingredient, Recipe } from "@/types";
 import { useToast } from "@/components/ui/Toast";
 import { GENERIC_UNITS } from "@/data/ingredients";
 import { scrollIntoViewAboveKeyboard } from "@/lib/keyboard-scroll";
+import { MealTypeIcon } from "@/components/icons/MealIcons";
+import { ClockIcon, CookingPotIcon, ProfileIcon } from "@/components/icons/HandDrawnIcons";
 
 type Step = "url" | "extracting" | "preview" | "editing" | "saving";
 
@@ -201,10 +203,18 @@ export default function RecipeForm({
       {/* ── Step: URL Input ──────────────────────────────────────────────── */}
       {step === "url" && (
         <form onSubmit={handleExtract} className="space-y-5 animate-slide-up">
-          <div className="text-center space-y-2 py-4">
-            <div className="text-4xl">🔗</div>
-            <p className="text-sm text-gray-500">
-              Paste a link and we'll do the rest
+          <div className="text-center space-y-3 py-6">
+            <p
+              style={{
+                fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                fontStyle: "italic",
+                fontVariationSettings: '"opsz" 30, "SOFT" 100, "wght" 400',
+                fontSize: "20px",
+                color: "var(--ink, #1C1A17)",
+                lineHeight: 1.3,
+              }}
+            >
+              Paste a link, we'll do the rest.
             </p>
           </div>
 
@@ -214,28 +224,62 @@ export default function RecipeForm({
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               required
-              placeholder="Paste recipe URL..."
-              className="w-full px-4 py-3.5 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none bg-gray-50 focus:bg-white transition-all text-sm"
+              placeholder="Paste recipe URL…"
+              className="w-full px-4 py-3.5 rounded-2xl outline-none transition-all text-sm"
+              style={{
+                background: "var(--cream-warm, #EFE5D2)",
+                color: "var(--ink, #1C1A17)",
+                border: "1px solid transparent",
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.background = "#ffffff";
+                e.currentTarget.style.borderColor = "var(--tomato, #E5462E)";
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.background = "var(--cream-warm, #EFE5D2)";
+                e.currentTarget.style.borderColor = "transparent";
+              }}
             />
-            <div className="flex items-center gap-2 mt-2.5 px-1 text-[11px] text-gray-400">
-              <span className="font-medium">Works with:</span>
-              {[
-                { name: "Instagram", color: "text-pink-500" },
-                { name: "TikTok", color: "text-gray-600" },
-                { name: "NYT Cooking", color: "text-gray-600" },
-                { name: "Bon Appetit", color: "text-amber-600" },
-                { name: "& more", color: "text-gray-400" },
-              ].map((p) => (
-                <span key={p.name} className={`${p.color} font-medium`}>{p.name}</span>
-              ))}
+            <div
+              className="flex items-center flex-wrap gap-x-2 gap-y-1 mt-2.5 px-1"
+              style={{
+                fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                fontSize: "10px",
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: "var(--ink-soft, #4A4742)",
+                opacity: 0.7,
+              }}
+            >
+              <span>Works with</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>Instagram</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>TikTok</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>NYT Cooking</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>Bon Appétit</span>
+              <span style={{ opacity: 0.4 }}>·</span>
+              <span>& more</span>
             </div>
           </div>
 
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">
+            <div
+              className="p-3 rounded-xl text-sm"
+              style={{
+                background: "rgba(229, 70, 46, 0.08)",
+                color: "var(--tomato-dark, #B8331E)",
+              }}
+            >
               {error}
               {duplicateRecipeId && (
-                <Link href={`/recipes/${duplicateRecipeId}`} className="block mt-1 text-orange-600 font-medium hover:underline">
+                <Link
+                  href={`/recipes/${duplicateRecipeId}`}
+                  className="block mt-1 font-semibold hover:underline"
+                  style={{ color: "var(--tomato, #E5462E)" }}
+                >
                   View saved recipe →
                 </Link>
               )}
@@ -245,7 +289,8 @@ export default function RecipeForm({
           <button
             type="submit"
             disabled={!url.trim()}
-            className="w-full py-3.5 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 font-semibold text-sm transition-all"
+            className="w-full py-3.5 text-white rounded-2xl active:scale-[0.98] disabled:opacity-40 font-semibold text-sm transition-all"
+            style={{ background: "var(--tomato, #E5462E)" }}
           >
             Extract Recipe
           </button>
@@ -259,10 +304,20 @@ export default function RecipeForm({
       {(step === "preview" || step === "saving") && (
         <div className="space-y-4 animate-slide-up">
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">
+            <div
+              className="p-3 rounded-xl text-sm"
+              style={{
+                background: "rgba(229, 70, 46, 0.08)",
+                color: "var(--tomato-dark, #B8331E)",
+              }}
+            >
               {error}
               {duplicateRecipeId && (
-                <Link href={`/recipes/${duplicateRecipeId}`} className="block mt-1 text-orange-600 font-medium hover:underline">
+                <Link
+                  href={`/recipes/${duplicateRecipeId}`}
+                  className="block mt-1 font-semibold hover:underline"
+                  style={{ color: "var(--tomato, #E5462E)" }}
+                >
                   View saved recipe →
                 </Link>
               )}
@@ -270,9 +325,16 @@ export default function RecipeForm({
           )}
 
           {/* Hero card */}
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
+          <div
+            className="rounded-2xl overflow-hidden"
+            style={{
+              background: "#ffffff",
+              border: "1px solid var(--line, rgba(28,26,23,0.12))",
+              boxShadow: "0 2px 16px rgba(20,12,5,0.06)",
+            }}
+          >
             {imageUrl && (
-              <div className="relative h-52 bg-gray-100">
+              <div className="relative h-52" style={{ background: "var(--cream-warm, #EFE5D2)" }}>
                 <Image src={imageUrl} alt={title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 672px" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
               </div>
@@ -282,46 +344,59 @@ export default function RecipeForm({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-lg font-bold text-gray-900 bg-transparent outline-none border-b border-transparent focus:border-orange-300 transition-colors pb-1"
+                className="w-full bg-transparent outline-none border-b transition-colors pb-1"
+                style={{
+                  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                  fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
+                  fontSize: "22px",
+                  letterSpacing: "-0.015em",
+                  color: "var(--ink, #1C1A17)",
+                  borderColor: "transparent",
+                }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = "var(--tomato, #E5462E)"; }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = "transparent"; }}
                 placeholder="Recipe title"
               />
 
               {/* Meal type pills */}
               <div className="flex gap-1.5">
                 {(["breakfast", "lunch", "dinner", "snack"] as const).map((mt) => {
-                  const icons = { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍎" };
+                  const isActive = mealType === mt;
                   return (
                     <button
                       key={mt}
                       type="button"
                       onClick={() => setMealType(mt)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold capitalize transition-all ${
-                        mealType === mt
-                          ? "bg-orange-500 text-white scale-105"
-                          : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                      }`}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold capitalize transition-all ${isActive ? "scale-105" : ""}`}
+                      style={isActive
+                        ? { background: "var(--tomato, #E5462E)", color: "#ffffff" }
+                        : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
                     >
-                      {icons[mt]} {mt}
+                      <MealTypeIcon type={mt} className="w-3.5 h-3.5" strokeWidth={1.8} />
+                      {mt}
                     </button>
                   );
                 })}
               </div>
 
               {/* Stats row */}
-              <div className="flex items-center gap-4 text-xs text-gray-500 pt-1">
+              <div
+                className="flex items-center flex-wrap gap-x-4 gap-y-1 pt-1 text-xs"
+                style={{ color: "var(--ink-soft, #4A4742)" }}
+              >
                 {servings && (
-                  <span className="flex items-center gap-1">
-                    <span className="text-base">👤</span> {servings} servings
+                  <span className="flex items-center gap-1.5">
+                    <ProfileIcon className="w-3.5 h-3.5" /> {servings} servings
                   </span>
                 )}
                 {prepTime && (
-                  <span className="flex items-center gap-1">
-                    <span className="text-base">⏱️</span> {prepTime}m prep
+                  <span className="flex items-center gap-1.5">
+                    <ClockIcon className="w-3.5 h-3.5" /> {prepTime}m prep
                   </span>
                 )}
                 {cookTime && (
-                  <span className="flex items-center gap-1">
-                    <span className="text-base">🔥</span> {cookTime}m cook
+                  <span className="flex items-center gap-1.5">
+                    <CookingPotIcon className="w-3.5 h-3.5" /> {cookTime}m cook
                   </span>
                 )}
               </div>
@@ -330,7 +405,14 @@ export default function RecipeForm({
               {tags && (
                 <div className="flex flex-wrap gap-1.5">
                   {tags.split(",").map((t) => t.trim()).filter(Boolean).slice(0, 5).map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[11px] font-medium">
+                    <span
+                      key={tag}
+                      className="px-2 py-0.5 rounded-full text-[11px] font-medium"
+                      style={{
+                        background: "var(--cream-warm, #EFE5D2)",
+                        color: "var(--ink-soft, #4A4742)",
+                      }}
+                    >
                       {tag}
                     </span>
                   ))}
@@ -339,10 +421,20 @@ export default function RecipeForm({
 
               {/* Ingredients summary */}
               <div className="pt-1">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                <p
+                  className="mb-1.5"
+                  style={{
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                    fontSize: "10px",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "var(--ink-soft, #4A4742)",
+                    opacity: 0.7,
+                  }}
+                >
                   {ingredients.length} Ingredients
                 </p>
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-sm line-clamp-2" style={{ color: "var(--ink-soft, #4A4742)" }}>
                   {ingredients.slice(0, 6).map((ing) => ing.name).join(", ")}
                   {ingredients.length > 6 && ` +${ingredients.length - 6} more`}
                 </p>
@@ -350,10 +442,20 @@ export default function RecipeForm({
 
               {/* Steps summary */}
               <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                <p
+                  className="mb-1.5"
+                  style={{
+                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                    fontSize: "10px",
+                    letterSpacing: "0.15em",
+                    textTransform: "uppercase",
+                    color: "var(--ink-soft, #4A4742)",
+                    opacity: 0.7,
+                  }}
+                >
                   {steps.length} Steps
                 </p>
-                <p className="text-sm text-gray-600 line-clamp-2">
+                <p className="text-sm line-clamp-2" style={{ color: "var(--ink-soft, #4A4742)" }}>
                   {steps[0]}
                 </p>
               </div>
@@ -365,12 +467,13 @@ export default function RecipeForm({
             <button
               onClick={handleSave}
               disabled={step === "saving" || !title}
-              className="w-full py-3.5 bg-orange-500 text-white rounded-2xl hover:bg-orange-600 active:scale-[0.98] disabled:opacity-50 font-semibold text-sm transition-all flex items-center justify-center gap-2"
+              className="w-full py-3.5 text-white rounded-2xl active:scale-[0.98] disabled:opacity-50 font-semibold text-sm transition-all flex items-center justify-center gap-2"
+              style={{ background: "var(--tomato, #E5462E)" }}
             >
               {step === "saving" ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Saving...
+                  Saving…
                 </>
               ) : (
                 <>Save Recipe</>
@@ -379,7 +482,8 @@ export default function RecipeForm({
             <button
               onClick={() => setStep("editing")}
               disabled={step === "saving"}
-              className="w-full py-3 text-gray-500 text-sm font-medium hover:text-orange-600 transition-colors"
+              className="w-full py-3 text-sm font-medium transition-colors"
+              style={{ color: "var(--ink-soft, #4A4742)" }}
             >
               Edit details
             </button>
@@ -419,24 +523,34 @@ export default function RecipeForm({
 
           {/* Meal type */}
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+            <label
+              className="block mb-2"
+              style={{
+                fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                fontSize: "10px",
+                letterSpacing: "0.15em",
+                textTransform: "uppercase",
+                color: "var(--ink-soft, #4A4742)",
+                opacity: 0.7,
+              }}
+            >
               Meal Type
             </label>
             <div className="flex gap-1.5">
               {(["breakfast", "lunch", "dinner", "snack"] as const).map((mt) => {
-                const icons = { breakfast: "🌅", lunch: "☀️", dinner: "🌙", snack: "🍎" };
+                const isActive = mealType === mt;
                 return (
                   <button
                     key={mt}
                     type="button"
                     onClick={() => setMealType(mt)}
-                    className={`flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-all ${
-                      mealType === mt
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                    }`}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-all"
+                    style={isActive
+                      ? { background: "var(--tomato, #E5462E)", color: "#ffffff" }
+                      : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
                   >
-                    {icons[mt]} {mt}
+                    <MealTypeIcon type={mt} className="w-3.5 h-3.5" strokeWidth={1.8} />
+                    {mt}
                   </button>
                 );
               })}
@@ -599,7 +713,8 @@ export default function RecipeForm({
             <button
               onClick={handleSave}
               disabled={!title}
-              className="flex-1 py-3 bg-orange-500 text-white rounded-2xl text-sm font-semibold hover:bg-orange-600 active:scale-[0.98] disabled:opacity-40 transition-all"
+              className="flex-1 py-3 text-white rounded-2xl text-sm font-semibold active:scale-[0.98] disabled:opacity-40 transition-all"
+              style={{ background: "var(--tomato, #E5462E)" }}
             >
               {isEditing ? "Update" : "Save Recipe"}
             </button>
