@@ -189,7 +189,7 @@ export default function SharedRecipeCard({
  * action transitions to active (e.g. saving a recipe — tomato ripple
  * emanates outward as the brand's "save / cooked it" feedback).
  */
-function ActionButton({ action }: { action: SharedCardAction }) {
+export function ActionButton({ action }: { action: SharedCardAction }) {
   const [pulseKey, setPulseKey] = useState(0);
   const prevActiveRef = useRef(action.active);
 

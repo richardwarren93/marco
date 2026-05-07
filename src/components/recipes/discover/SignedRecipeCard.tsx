@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import { ActionButton, type SharedCardAction } from "@/components/recipes/SharedRecipeCard";
 
 /**
  * The Friends-feed card. Per the brand doc, "every recipe is signed by
@@ -43,6 +44,8 @@ interface Props {
   onLongPress: (recipeId: string, title: string) => (e: React.TouchEvent) => void;
   onLongPressCancel: () => void;
   onContextMenu: (recipeId: string, title: string) => (e: React.MouseEvent) => void;
+  /** Top-right overlay actions (bookmark / plus) — matches My Recipes pattern. */
+  actions?: SharedCardAction[];
   /** Stagger animation index */
   index?: number;
 }
@@ -88,6 +91,7 @@ export default function SignedRecipeCard({
   onLongPress,
   onLongPressCancel,
   onContextMenu,
+  actions,
   index = 0,
 }: Props) {
   const tapRef = useRef<boolean>(false);
@@ -152,6 +156,14 @@ export default function SignedRecipeCard({
             }}
           >
             <MealTypeIcon type={item.mealType} className="opacity-50" size={42} strokeWidth={1.5} />
+          </div>
+        )}
+
+        {actions && actions.length > 0 && (
+          <div className="absolute top-2.5 right-2.5 flex items-center gap-1.5 z-10">
+            {actions.map((action, i) => (
+              <ActionButton key={i} action={action} />
+            ))}
           </div>
         )}
       </div>

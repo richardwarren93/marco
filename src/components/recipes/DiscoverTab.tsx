@@ -154,6 +154,7 @@ export default function DiscoverTab({
           onLongPressCancel={cancelLongPress}
           onContextMenu={handleRightClick}
           onSwitchToCommunity={() => handleTabChange("community")}
+          onAddToCollection={onAddToCollection}
         />
       ) : (
         <CommunityFeed
