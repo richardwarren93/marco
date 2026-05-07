@@ -416,6 +416,27 @@ export default function GroceryList() {
   // Active meals (non-excluded) for display and stats
   const activeMeals = useMemo(() => meals.filter((m) => !excludedMealIds.has(m.id)), [meals, excludedMealIds]);
 
+  // Group meals by recipe so leftovers (one cook, multiple slots) render as a
+  // single card with the days combined in the badge — matches the grocery
+  // dedup model where each recipe contributes one shopping run.
+  const groupedMeals = useMemo(() => {
+    const groups = new Map<string, MealPlanSummaryItem[]>();
+    for (const m of meals) {
+      const key = m.recipe?.id ?? m.id;
+      const existing = groups.get(key);
+      if (existing) existing.push(m);
+      else groups.set(key, [m]);
+    }
+    return [...groups.values()];
+  }, [meals]);
+
+  // How many groups have at least one non-excluded meal — drives the
+  // "Meals (N)" header count after dedup.
+  const groupedActiveCount = useMemo(
+    () => groupedMeals.filter((g) => g.some((m) => !excludedMealIds.has(m.id))).length,
+    [groupedMeals, excludedMealIds],
+  );
+
   // The household grocery list is shared (single canonical owner) — `items`
   // already contains the full deduped list, no need to merge householdItems.
   const allItems: HouseholdGroceryItem[] = items;
@@ -668,7 +689,7 @@ export default function GroceryList() {
             className="flex items-center gap-2 w-full text-left py-2"
           >
             <h2 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
-              Meals ({activeMeals.length})
+              Meals ({groupedActiveCount})
             </h2>
             <svg
               className={`w-3.5 h-3.5 transition-transform ${mealsExpanded ? "rotate-180" : ""}`}
@@ -681,32 +702,50 @@ export default function GroceryList() {
 
           {mealsExpanded && (
             <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory" style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-              {meals.map((meal) => {
-                const isExcluded = excludedMealIds.has(meal.id);
-                const handleExclude = () => meal.is_household
-                  ? setExcludedMealIds((prev) => new Set(prev).add(meal.id))
-                  : handleRemoveMeal(meal.id);
+              {groupedMeals.map((group) => {
+                const primary = group[0];
+                const groupKey = primary.recipe?.id ?? primary.id;
+                const allMealIds = group.map((m) => m.id);
+                const isExcluded = group.every((m) => excludedMealIds.has(m.id));
+                const isHousehold = group.some((m) => m.is_household);
+
+                const handleExclude = () => {
+                  if (isHousehold) {
+                    setExcludedMealIds((prev) => {
+                      const n = new Set(prev);
+                      for (const id of allMealIds) n.add(id);
+                      return n;
+                    });
+                  } else {
+                    // One cook → remove every slot it covers.
+                    for (const id of allMealIds) handleRemoveMeal(id);
+                  }
+                };
                 const handleUnExclude = () => setExcludedMealIds((prev) => {
                   const n = new Set(prev);
-                  n.delete(meal.id);
+                  for (const id of allMealIds) n.delete(id);
                   return n;
                 });
 
-                const dayLabel = getDayLabel(meal.planned_date);
-                const metaText = meal.is_household && meal.owner_name
-                  ? `${meal.meal_type} · ${meal.owner_name}`
-                  : meal.meal_type ?? undefined;
+                // Combine day labels and meal types across the slots so the
+                // user sees both the cook event and where the leftovers land.
+                const dayLabel = [...new Set(group.map((m) => getDayLabel(m.planned_date)))].join(" · ");
+                const mealTypes = [...new Set(group.map((m) => m.meal_type).filter(Boolean))];
+                const ownerName = group.find((m) => m.owner_name)?.owner_name;
+                const metaText = isHousehold && ownerName
+                  ? `${mealTypes.join(" · ")} · ${ownerName}`
+                  : mealTypes.join(" · ") || undefined;
 
                 return (
                   <div
-                    key={meal.id}
+                    key={groupKey}
                     className="flex-shrink-0 snap-start"
                     style={{ width: 152 }}
                   >
                     <SharedRecipeCard
-                      title={meal.recipe?.title ?? ""}
-                      imageUrl={meal.recipe?.image_url ?? null}
-                      mealType={meal.meal_type ?? null}
+                      title={primary.recipe?.title ?? ""}
+                      imageUrl={primary.recipe?.image_url ?? null}
+                      mealType={primary.meal_type ?? null}
                       metaText={metaText}
                       excluded={isExcluded}
                       onUnExclude={handleUnExclude}
@@ -727,7 +766,7 @@ export default function GroceryList() {
                                   </svg>
                                 ),
                                 onClick: handleExclude,
-                                label: `Remove ${meal.recipe?.title}`,
+                                label: `Remove ${primary.recipe?.title}`,
                               },
                             ]
                           : []
