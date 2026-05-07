@@ -1000,13 +1000,28 @@ export default function RecipeDetailPage() {
                     }),
                   });
                   const data = await res.json();
-                  if (data?.recipe?.id) {
+                  const saved = data?.recipe as Recipe | undefined;
+                  if (saved?.id) {
+                    // Prepopulate caches so the destination page renders the
+                    // owned view immediately, no skeleton, no flash.
+                    swrMutate(["supabase:recipe", saved.id], saved, false);
+                    swrMutate(
+                      "supabase:recipes",
+                      (current: Recipe[] | undefined) => {
+                        const list = current ?? [];
+                        if (list.some((row) => row.id === saved.id)) return list;
+                        return [saved, ...list];
+                      },
+                      false,
+                    );
                     showToast("Recipe saved to your library");
-                    router.replace(`/recipes/${data.recipe.id}`);
+                    router.replace(`/recipes/${saved.id}`);
                   } else {
                     showToast("Could not save recipe");
+                    setSavingPublic(false);
                   }
-                } finally {
+                } catch {
+                  showToast("Could not save recipe");
                   setSavingPublic(false);
                 }
               }}
@@ -1052,6 +1067,41 @@ export default function RecipeDetailPage() {
           )}
         </div>
       </div>
+
+      {savingPublic && (
+        <div
+          className="fixed inset-0 z-[80] flex flex-col items-center justify-center"
+          style={{
+            background: "var(--cream, #F5EEE2)",
+            paddingBottom: "var(--safe-bottom, 0px)",
+          }}
+        >
+          <span
+            className="marco-signature is-pulsing"
+            style={{ fontSize: "4.5rem" }}
+          >
+            marco
+          </span>
+          <p
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontStyle: "italic",
+              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+              fontSize: "20px",
+              color: "var(--ink, #1C1A17)",
+              marginTop: "1.75rem",
+            }}
+          >
+            Saving to your library
+          </p>
+          <p
+            className="marco-mono"
+            style={{ marginTop: "0.75rem", color: "var(--ink-soft, #4A4742)" }}
+          >
+            One sec
+          </p>
+        </div>
+      )}
 
       {/* Cook with Marco Chat */}
       {showMarcoChat && recipe && (
