@@ -654,6 +654,23 @@ export default function GroceryList() {
               )}
             </div>
           </div>
+
+          {/* Right: filter — single-tap toggle that cycles between By Meal
+              (default) and By Category. Lives in the date row so the page
+              breaks cleanly into filters → recipes → list. */}
+          {!loading && (
+            <button
+              onClick={() => setGroupMode((m) => (m === "meal" ? "category" : "meal"))}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95"
+              style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
+              aria-label={`Group by ${groupMode === "meal" ? "category" : "meal"}`}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+              </svg>
+              {groupMode === "meal" ? "Meals" : "Category"}
+            </button>
+          )}
         </div>
       </div>
 
@@ -785,22 +802,6 @@ export default function GroceryList() {
           <h2 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
             List ({toBuyCount})
           </h2>
-        </div>
-      )}
-      {!loading && (
-        <div className="mx-4 mt-3 flex items-center justify-end">
-          {/* Single-tap toggle: cycles between By Meal (default) and By Category. */}
-          <button
-            onClick={() => setGroupMode((m) => (m === "meal" ? "category" : "meal"))}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95"
-            style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
-            aria-label={`Group by ${groupMode === "meal" ? "category" : "meal"}`}
-          >
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-            </svg>
-            {groupMode === "meal" ? "Meals" : "Category"}
-          </button>
         </div>
       )}
 
