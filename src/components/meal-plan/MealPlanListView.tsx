@@ -171,7 +171,7 @@ export default function MealPlanListView({
   const router = useRouter();
 
   // ─── View mode ──────────────────────────────────────────────────────────────
-  const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
+  const [viewMode, setViewMode] = useState<"daily" | "weekly">("weekly");
   const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
 
   // ─── Week & day state ────────────────────────────────────────────────────────
