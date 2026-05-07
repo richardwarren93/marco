@@ -324,75 +324,115 @@ export default function MealPlanListView({
 
   // Map trending recipe ID → user's saved copy ID
   const [savedIdMap, setSavedIdMap] = useState<Map<string, string>>(new Map());
-  const inFlightSaves = useRef<Set<string>>(new Set());
+  // Trending recipes the sheet should show before they exist in recipeLibrary.
+  const [extraRecipes, setExtraRecipes] = useState<Recipe[]>([]);
+  // Trending recipe ID → in-flight save promise. handleAdd awaits this so
+  // meal_plans.recipe_id always points at the user's own saved copy.
+  const pendingSaves = useRef<Map<string, Promise<{ savedId: string }>>>(new Map());
 
-  const saveAndPlanRecommended = useCallback(async (recipeId: string) => {
-    // If already saved, open sheet with the user's saved copy ID
-    if (recommendSavedIds.has(recipeId)) {
-      const savedId = savedIdMap.get(recipeId) || recipeId;
-      openAddSheetWithRecipe(selectedDate, savedId);
+  const planTrending = useCallback((trending: {
+    recipeId: string;
+    title: string;
+    image_url?: string | null;
+    prep_time_minutes?: number | null;
+    cook_time_minutes?: number | null;
+    meal_type?: string;
+  }) => {
+    // Already saved this session? Open sheet with the user's saved copy ID.
+    const knownSaved = savedIdMap.get(trending.recipeId);
+    if (knownSaved) {
+      openAddSheetWithRecipe(selectedDate, knownSaved);
       return;
     }
 
-    // Synchronous in-flight guard — React state updates are async, so
-    // rapid taps in the same render frame would otherwise fire concurrent POSTs.
-    if (inFlightSaves.current.has(recipeId)) return;
-    inFlightSaves.current.add(recipeId);
+    // Inject a minimal Recipe so AddMealSheet can render the row before the
+    // background save finishes populating recipeLibrary.
+    const placeholder: Recipe = {
+      id: trending.recipeId,
+      user_id: "",
+      title: trending.title,
+      source_url: null,
+      source_platform: null,
+      description: null,
+      ingredients: [],
+      steps: [],
+      servings: null,
+      prep_time_minutes: trending.prep_time_minutes ?? null,
+      cook_time_minutes: trending.cook_time_minutes ?? null,
+      tags: [],
+      meal_type: (trending.meal_type as Recipe["meal_type"]) || "dinner",
+      image_url: trending.image_url ?? null,
+      notes: null,
+      created_at: "",
+      updated_at: "",
+    };
+    setExtraRecipes((prev) =>
+      prev.some((r) => r.id === trending.recipeId) ? prev : [...prev, placeholder]
+    );
 
-    // Optimistic: immediately mark as saved
-    setRecommendSavedIds((s) => new Set(s).add(recipeId));
+    openAddSheetWithRecipe(selectedDate, trending.recipeId);
 
-    // Save in background, then open AddMealSheet with the NEW saved ID
-    try {
-      const detailRes = await fetch(`/api/recipes/${recipeId}`);
-      if (!detailRes.ok) throw new Error("Could not load recipe");
-      const detail = await detailRes.json();
-      const r = detail.recipe || detail;
+    if (pendingSaves.current.has(trending.recipeId)) return;
+    setRecommendSavedIds((s) => new Set(s).add(trending.recipeId));
 
-      const res = await fetch("/api/recipes/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: r.title,
-          description: r.description,
-          ingredients: r.ingredients,
-          steps: r.steps,
-          servings: r.servings,
-          prep_time_minutes: r.prep_time_minutes,
-          cook_time_minutes: r.cook_time_minutes,
-          tags: r.tags,
-          meal_type: r.meal_type,
-          source_url: r.source_url,
-          image_url: r.image_url,
-          calories: r.calories,
-          protein_g: r.protein_g,
-          carbs_g: r.carbs_g,
-          fat_g: r.fat_g,
-          fiber_g: r.fiber_g,
-          notes: "Saved from Meal Plan recommendations",
-        }),
-      });
+    const savePromise = (async () => {
+      try {
+        const detailRes = await fetch(`/api/recipes/${trending.recipeId}`);
+        if (!detailRes.ok) throw new Error("Could not load recipe");
+        const detail = await detailRes.json();
+        const r = detail.recipe || detail;
 
-      if (res.ok) {
-        const data = await res.json();
-        const savedId = data.recipe?.id || recipeId;
-        setSavedIdMap((m) => new Map(m).set(recipeId, savedId));
-        openAddSheetWithRecipe(selectedDate, savedId);
-      } else if (res.status === 409) {
-        const data = await res.json();
-        const existingId = data.recipeId || recipeId;
-        setSavedIdMap((m) => new Map(m).set(recipeId, existingId));
-        openAddSheetWithRecipe(selectedDate, existingId);
-      } else {
-        throw new Error("Save failed");
+        const res = await fetch("/api/recipes/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: r.title,
+            description: r.description,
+            ingredients: r.ingredients,
+            steps: r.steps,
+            servings: r.servings,
+            prep_time_minutes: r.prep_time_minutes,
+            cook_time_minutes: r.cook_time_minutes,
+            tags: r.tags,
+            meal_type: r.meal_type,
+            source_url: r.source_url,
+            image_url: r.image_url,
+            calories: r.calories,
+            protein_g: r.protein_g,
+            carbs_g: r.carbs_g,
+            fat_g: r.fat_g,
+            fiber_g: r.fiber_g,
+            notes: "Saved from Meal Plan recommendations",
+          }),
+        });
+
+        let savedId = trending.recipeId;
+        if (res.ok) {
+          const data = await res.json();
+          savedId = data.recipe?.id || trending.recipeId;
+        } else if (res.status === 409) {
+          const data = await res.json();
+          savedId = data.recipeId || trending.recipeId;
+        } else {
+          throw new Error("Save failed");
+        }
+        setSavedIdMap((m) => new Map(m).set(trending.recipeId, savedId));
+        return { savedId };
+      } catch (err) {
+        setRecommendSavedIds((s) => {
+          const n = new Set(s);
+          n.delete(trending.recipeId);
+          return n;
+        });
+        throw err;
       }
-    } catch {
-      // Revert on failure
-      setRecommendSavedIds((s) => { const n = new Set(s); n.delete(recipeId); return n; });
-    } finally {
-      inFlightSaves.current.delete(recipeId);
-    }
-  }, [recommendSavedIds, savedIdMap, selectedDate]);
+    })();
+
+    pendingSaves.current.set(trending.recipeId, savePromise);
+    savePromise
+      .catch(() => {})
+      .finally(() => pendingSaves.current.delete(trending.recipeId));
+  }, [savedIdMap, selectedDate]);
 
   // ─── Empty-state hero recipe (from library first, then trending) ────────────
   const heroRecipe = useMemo<{ recipe: Recipe; isTrending: boolean } | null>(() => {
@@ -503,7 +543,17 @@ export default function MealPlanListView({
   }
 
   async function handleAdd(recipeId: string, dates: string[], mealType: string, servings?: number) {
-    await onAddMeal(recipeId, dates, mealType, servings);
+    let resolvedId = savedIdMap.get(recipeId) ?? recipeId;
+    const pending = pendingSaves.current.get(recipeId);
+    if (pending) {
+      try {
+        const { savedId } = await pending;
+        resolvedId = savedId;
+      } catch {
+        return;
+      }
+    }
+    await onAddMeal(resolvedId, dates, mealType, servings);
   }
 
   // ─── Render meal row ──────────────────────────────────────────────────────────
@@ -596,7 +646,7 @@ export default function MealPlanListView({
                     key={recipe.id}
                     className="relative flex-shrink-0 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform group"
                     style={{ width: 170, height: 220, boxShadow: "0 4px 16px rgba(20,12,5,0.10)" }}
-                    onClick={() => openAddSheetWithRecipe(selectedDate, recipe.id)}
+                    onClick={() => router.push(`/recipes/${recipe.id}`)}
                   >
                     {recipe.image_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -686,7 +736,7 @@ export default function MealPlanListView({
                     key={recipe.recipeId}
                     className="relative flex-shrink-0 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform group"
                     style={{ width: 170, height: 220, boxShadow: "0 4px 16px rgba(20,12,5,0.10)" }}
-                    onClick={() => router.push(`/recipes?tab=discover`)}
+                    onClick={() => router.push(`/recipes/${recipe.recipeId}`)}
                   >
                     {/* Image fills card */}
                     {recipe.image_url ? (
@@ -717,7 +767,7 @@ export default function MealPlanListView({
                       }}
                     />
                     <button
-                      onClick={(e) => { e.stopPropagation(); saveAndPlanRecommended(recipe.recipeId); }}
+                      onClick={(e) => { e.stopPropagation(); planTrending(recipe); }}
                       className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 z-10"
                       aria-label="Add to meal plan"
                     >
@@ -1096,10 +1146,17 @@ export default function MealPlanListView({
         defaultRecipeId={addDefaultRecipeId}
         replacePlanId={replacePlanId}
         weekStart={weekStart}
-        allRecipes={recipeLibrary}
+        allRecipes={
+          extraRecipes.length === 0
+            ? recipeLibrary
+            : [
+                ...recipeLibrary,
+                ...extraRecipes.filter((e) => !recipeLibrary.some((r) => r.id === e.id)),
+              ]
+        }
         weekPickIds={weekPickIds}
         weekPlans={weekMealPlans}
-        onClose={() => setAddSheetOpen(false)}
+        onClose={() => { setAddSheetOpen(false); setExtraRecipes([]); }}
         onAdd={handleAdd}
         onRemove={onRemove}
         onPlanMultiple={(preSelectedId) => onPlanThisWeek?.(preSelectedId)}
