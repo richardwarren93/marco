@@ -3,10 +3,10 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Recipe, Collection } from "@/types";
+import type { Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import SharedRecipeCard from "./SharedRecipeCard";
-import { ClockIcon, CollectionsIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
+import { CollectionsIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
 import { MealIcon } from "@/components/icons/MealIcons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -16,14 +16,11 @@ type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 type LibraryMode = {
   mode: "library";
   recipes: Recipe[];
-  collections: Collection[];
   loading?: boolean;
   /** Called when user taps "+" on a card — parent opens AddMealSheet */
   onAddToMealPlan?: (recipeId: string) => void;
   /** Called when user taps bookmark on a card — parent opens AddToCollectionModal */
   onAddToCollection?: (recipeId: string) => void;
-  /** Revalidate collections after creation */
-  mutateCollections?: () => void;
   /** Set of recipe IDs that are in at least one collection */
   inCollectionIds?: Set<string>;
   /** Called after a collection change to refresh the inCollectionIds */
@@ -134,6 +131,7 @@ function BrowserCard({
 export default function RecipeBrowser(props: RecipeBrowserProps) {
   const { recipes } = props;
 
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeMealType, setActiveMealType] = useState<MealType | "all">("all");
   const [sort, setSort] = useState<"newest" | "prep_time">("newest");
@@ -142,22 +140,6 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const mealMenuRef = useRef<HTMLDivElement>(null);
 
-  // Collections dropdown state
-  const [showCollMenu, setShowCollMenu] = useState(false);
-  const [showCollSub, setShowCollSub] = useState(false);
-  const [showCollCreate, setShowCollCreate] = useState(false);
-  const [newCollName, setNewCollName] = useState("");
-  const [newCollDesc, setNewCollDesc] = useState("");
-  const [collCreating, setCollCreating] = useState(false);
-  const [collCreateError, setCollCreateError] = useState("");
-  const collMenuRef = useRef<HTMLDivElement>(null);
-  const collNameRef = useRef<HTMLInputElement>(null);
-
-  // Active collection filter
-  const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null);
-  const [collectionRecipes, setCollectionRecipes] = useState<Recipe[]>([]);
-  const [collectionLoading, setCollectionLoading] = useState(false);
-
   // Pick mode: which card is mid-selection
   const [selectingId, setSelectingId] = useState<string | null>(null);
 
@@ -165,23 +147,15 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   function closeAllMenus() {
     setShowSortMenu(false);
     setShowMealMenu(false);
-    setShowCollMenu(false);
-    setShowCollSub(false);
-    setShowCollCreate(false);
   }
 
   useEffect(() => {
-    const anyOpen = showSortMenu || showMealMenu || showCollMenu;
+    const anyOpen = showSortMenu || showMealMenu;
     if (!anyOpen) return;
     function onDown(e: MouseEvent | TouchEvent) {
       const target = e.target as Node;
       if (showSortMenu && sortMenuRef.current && !sortMenuRef.current.contains(target)) setShowSortMenu(false);
       if (showMealMenu && mealMenuRef.current && !mealMenuRef.current.contains(target)) setShowMealMenu(false);
-      if (showCollMenu && collMenuRef.current && !collMenuRef.current.contains(target)) {
-        setShowCollMenu(false);
-        setShowCollSub(false);
-        setShowCollCreate(false);
-      }
     }
     document.addEventListener("mousedown", onDown);
     document.addEventListener("touchstart", onDown);
@@ -189,65 +163,9 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
       document.removeEventListener("mousedown", onDown);
       document.removeEventListener("touchstart", onDown);
     };
-  }, [showSortMenu, showMealMenu, showCollMenu]);
+  }, [showSortMenu, showMealMenu]);
 
-  // Fetch collection recipes when a collection is selected
-  useEffect(() => {
-    if (!activeCollectionId) { setCollectionRecipes([]); return; }
-    let cancelled = false;
-    setCollectionLoading(true);
-    (async () => {
-      try {
-        const res = await fetch(`/api/collections/${activeCollectionId}`);
-        if (!res.ok || cancelled) return;
-        const data = await res.json();
-        if (!cancelled) setCollectionRecipes(data.recipes || []);
-      } catch { /* ignore */ } finally {
-        if (!cancelled) setCollectionLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [activeCollectionId]);
-
-  async function handleCollCreate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newCollName.trim()) return;
-    setCollCreating(true);
-    setCollCreateError("");
-    try {
-      const res = await fetch("/api/collections", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCollName.trim(), description: newCollDesc.trim() || null }),
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to create collection");
-      }
-      setNewCollName("");
-      setNewCollDesc("");
-      setShowCollCreate(false);
-      setShowCollMenu(false);
-      if (props.mode === "library") props.mutateCollections?.();
-    } catch (err) {
-      setCollCreateError(err instanceof Error ? err.message : "Failed to create collection");
-    } finally {
-      setCollCreating(false);
-    }
-  }
-
-  function selectCollection(id: string | null) {
-    setActiveCollectionId(id);
-    setShowCollMenu(false);
-    setShowCollSub(false);
-  }
-
-  const collections = props.mode === "library" ? props.collections : [];
-  const recentlyMade = collections.find((c) => c.name === "Recently Made");
-  const otherCollections = collections.filter((c) => c.name !== "Recently Made");
-  const activeCollectionName = collections.find((c) => c.id === activeCollectionId)?.name;
-
-  const hasFilters = !!(search.trim() || activeMealType !== "all" || activeCollectionId);
+  const hasFilters = !!(search.trim() || activeMealType !== "all");
 
   // Filtered recipe list (sorted newest first)
   const filtered = useMemo(() => {
@@ -275,7 +193,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
     return [...result].sort((a, b) => b.created_at.localeCompare(a.created_at));
   }, [recipes, search, activeMealType, sort]);
 
-  const displayRecipes = activeCollectionId ? collectionRecipes : filtered;
+  const displayRecipes = filtered;
 
   function clearFilters() {
     setSearch("");
@@ -376,7 +294,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           {/* Sort dropdown */}
           <div className="relative flex-shrink-0" ref={sortMenuRef}>
             <button
-              onClick={() => { setShowSortMenu((v) => !v); setShowMealMenu(false); setShowCollMenu(false); }}
+              onClick={() => { setShowSortMenu((v) => !v); setShowMealMenu(false); }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
               style={{ background: "#1C1A17", color: "#fff" }}
             >
@@ -410,7 +328,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           {/* Meal type dropdown */}
           <div className="relative flex-shrink-0" ref={mealMenuRef}>
             <button
-              onClick={() => { setShowMealMenu((v) => !v); setShowSortMenu(false); setShowCollMenu(false); }}
+              onClick={() => { setShowMealMenu((v) => !v); setShowSortMenu(false); }}
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
               style={activeMealType !== "all"
                 ? { background: "var(--tomato, #E5462E)", color: "#fff" }
@@ -443,157 +361,28 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             )}
           </div>
 
-          {/* Collections dropdown — pill caps the active label so a long
-              collection name doesn't blow the row off-screen. */}
-          {props.mode === "library" && collections.length > 0 && (
-            <div className="relative flex-shrink min-w-0" ref={collMenuRef} style={{ maxWidth: "60%" }}>
-              <button
-                onClick={() => { setShowCollMenu((v) => !v); setShowCollSub(false); setShowCollCreate(false); setShowSortMenu(false); setShowMealMenu(false); }}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 max-w-full"
-                style={activeCollectionId
-                  ? { background: "var(--tomato, #E5462E)", color: "#fff" }
-                  : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
-              >
-                <span className="truncate min-w-0">{activeCollectionName || "Collections"}</span>
-                <svg className={`w-3 h-3 opacity-60 transition-transform flex-shrink-0 ${showCollMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-
-              {showCollMenu && (
-                <div className="absolute top-full right-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[200px] overflow-visible"
-                  style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
-
-                  {/* All recipes (clear filter) */}
-                  {activeCollectionId && (
-                    <button
-                      onClick={() => selectCollection(null)}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-gray-500 hover:bg-orange-50 transition-colors"
-                    >
-                      <span>All recipes</span>
-                    </button>
-                  )}
-
-                  {/* Recently Made */}
-                  {recentlyMade && (
-                    <button
-                      onClick={() => selectCollection(recentlyMade.id)}
-                      className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold hover:bg-orange-50 transition-colors"
-                      style={{ color: activeCollectionId === recentlyMade.id ? "var(--tomato, #E5462E)" : "#374151" }}
-                    >
-                      <span className="flex items-center gap-2">
-                        <ClockIcon className="w-3.5 h-3.5" /> Recently Made
-                        {recentlyMade.recipe_count ? (
-                          <span className="text-[10px] text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded-full">{recentlyMade.recipe_count}</span>
-                        ) : null}
-                      </span>
-                      {activeCollectionId === recentlyMade.id && (
-                        <svg className="w-3.5 h-3.5" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </button>
-                  )}
-
-                  {/* My Collections → submenu */}
-                  {otherCollections.length > 0 && (
-                    <div className="relative">
-                      <button
-                        onClick={() => setShowCollSub((v) => !v)}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold text-gray-700 hover:bg-orange-50 transition-colors"
-                      >
-                        <span className="flex items-center gap-2">
-                          <CollectionsIcon className="w-3.5 h-3.5" /> My Collections
-                        </span>
-                        <svg className={`w-3 h-3 text-gray-400 transition-transform ${showCollSub ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                        </svg>
-                      </button>
-                      {showCollSub && (
-                        <div className="border-t border-gray-50">
-                          {otherCollections.map((col) => (
-                            <button
-                              key={col.id}
-                              onClick={() => selectCollection(col.id)}
-                              className="w-full flex items-center justify-between px-4 pl-10 py-2.5 text-xs font-semibold hover:bg-orange-50 transition-colors"
-                              style={{ color: activeCollectionId === col.id ? "var(--tomato, #E5462E)" : "#374151" }}
-                            >
-                              <span className="flex items-center gap-2 truncate">
-                                {col.name}
-                                {col.recipe_count ? (
-                                  <span className="text-[10px] text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded-full flex-shrink-0">{col.recipe_count}</span>
-                                ) : null}
-                              </span>
-                              {activeCollectionId === col.id && (
-                                <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Divider */}
-                  <div className="border-t border-gray-100 my-1" />
-
-                  {/* + New Collection */}
-                  {!showCollCreate ? (
-                    <button
-                      onClick={() => { setShowCollCreate(true); setTimeout(() => collNameRef.current?.focus(), 100); }}
-                      className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-gray-500 hover:bg-orange-50 transition-colors"
-                    >
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                      </svg>
-                      New Collection
-                    </button>
-                  ) : (
-                    <form onSubmit={handleCollCreate} className="px-3 py-2 space-y-2" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        ref={collNameRef}
-                        type="text"
-                        placeholder="Collection name"
-                        value={newCollName}
-                        onChange={(e) => setNewCollName(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-xs font-medium"
-                        required
-                      />
-                      <input
-                        type="text"
-                        placeholder="Description (optional)"
-                        value={newCollDesc}
-                        onChange={(e) => setNewCollDesc(e.target.value)}
-                        className="w-full px-2.5 py-1.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-xs text-gray-600"
-                      />
-                      <div className="flex gap-1.5">
-                        <button type="submit" disabled={collCreating || !newCollName.trim()} className="flex-1 bg-orange-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-orange-600 disabled:opacity-50 transition-colors">
-                          {collCreating ? "Creating..." : "Create"}
-                        </button>
-                        <button type="button" onClick={() => { setShowCollCreate(false); setNewCollName(""); setNewCollDesc(""); setCollCreateError(""); }} className="px-3 py-1.5 rounded-lg text-xs font-bold text-gray-500 bg-gray-100 hover:bg-gray-200 transition-colors">
-                          Cancel
-                        </button>
-                      </div>
-                      {collCreateError && <p className="text-red-500 text-[10px]">{collCreateError}</p>}
-                    </form>
-                  )}
-                </div>
-              )}
-            </div>
+          {/* Collections — first-class nav. Tap to open the Collections page. */}
+          {props.mode === "library" && (
+            <button
+              onClick={() => router.push("/collections")}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 flex-shrink-0"
+              style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
+            >
+              <CollectionsIcon className="w-3.5 h-3.5" />
+              Collections
+            </button>
           )}
 
           {/* Clear filters */}
           {hasFilters && (
-            <button onClick={() => { setActiveMealType("all"); setActiveCollectionId(null); setSearch(""); closeAllMenus(); }} className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap">
+            <button onClick={() => { setActiveMealType("all"); setSearch(""); closeAllMenus(); }} className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap">
               Clear
             </button>
           )}
         </div>
 
         {/* Backdrop overlay when any dropdown is open (mobile touch dismiss) */}
-        {(showSortMenu || showMealMenu || showCollMenu) && (
+        {(showSortMenu || showMealMenu) && (
           <div className="fixed inset-0 z-20 sm:hidden" onClick={closeAllMenus} />
         )}
         </div>{/* close max-w-5xl */}
@@ -605,28 +394,8 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
       >
 
-        {/* Collection header when filtered */}
-        {activeCollectionId && activeCollectionName && (
-          <div className="flex items-center justify-between mb-4 animate-fade-slide-up">
-            <div className="flex items-center gap-2">
-              <h3 className="text-sm font-black text-gray-900">{activeCollectionName}</h3>
-              {!collectionLoading && (
-                <span className="text-[10px] font-bold text-orange-400 bg-orange-50 px-1.5 py-0.5 rounded-full">
-                  {collectionRecipes.length}
-                </span>
-              )}
-            </div>
-            <Link
-              href={`/collections/${activeCollectionId}`}
-              className="text-[11px] font-bold text-orange-500 hover:text-orange-600 transition-colors"
-            >
-              Manage →
-            </Link>
-          </div>
-        )}
-
         {/* Loading skeleton */}
-        {(isLoading || collectionLoading) ? (
+        {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {[...Array(8)].map((_, i) => (
               <div key={i} className="rounded-3xl overflow-hidden" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}>
@@ -644,17 +413,17 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               {hasFilters ? <SearchIcon className="w-12 h-12" /> : <MealIcon className="w-12 h-12" strokeWidth={1.5} />}
             </div>
             <p className="font-bold text-gray-700 text-base mb-1">
-              {activeCollectionId ? "No recipes in this collection" : hasFilters ? "No matches" : "Nothing saved yet"}
+              {hasFilters ? "No matches" : "Nothing saved yet"}
             </p>
             <p className="text-gray-400 text-sm mb-5">
-              {activeCollectionId ? "Add recipes to this collection to see them here" : hasFilters ? "Try different filters" : "Save your first recipe to get started"}
+              {hasFilters ? "Try different filters" : "Save your first recipe to get started"}
             </p>
             {hasFilters && (
-              <button onClick={() => { clearFilters(); setActiveCollectionId(null); }} className="px-4 py-2 rounded-full text-sm font-bold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors">
+              <button onClick={clearFilters} className="px-4 py-2 rounded-full text-sm font-bold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors">
                 Clear filters
               </button>
             )}
-            {!hasFilters && !activeCollectionId && props.mode === "library" && (
+            {!hasFilters && props.mode === "library" && (
               <Link href="/recipes/new" className="px-4 py-2 rounded-full text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors">
                 Save a recipe →
               </Link>

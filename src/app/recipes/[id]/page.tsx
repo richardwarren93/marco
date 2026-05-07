@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
-import useSWR from "swr";
+import useSWR, { mutate as swrMutate } from "swr";
 import dynamic from "next/dynamic";
 import type { Recipe, Ingredient } from "@/types";
 import { useRecipe, useRecipes, apiFetcher } from "@/lib/hooks/use-data";
@@ -285,8 +285,19 @@ export default function RecipeDetailPage() {
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
     setDeleting(true);
-    await supabase.from("recipes").delete().eq("id", id);
+
+    swrMutate(
+      "supabase:recipes",
+      (current: Recipe[] | undefined) => (current ?? []).filter((r) => r.id !== id),
+      false,
+    );
     router.push("/recipes");
+
+    const { error: deleteError } = await supabase.from("recipes").delete().eq("id", id);
+    if (deleteError) {
+      swrMutate("supabase:recipes");
+      showToast("Failed to delete recipe");
+    }
   }
 
   async function handleMealSheetAdd(recipeId: string, dates: string[], mealType: string, servings?: number) {

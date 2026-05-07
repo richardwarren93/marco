@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
 import useSWR from "swr";
-import type { Recipe, Collection } from "@/types";
 import { useRecipes, useCollections, apiFetcher } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
 import MobileHeader from "@/components/layout/MobileHeader";
@@ -48,8 +47,7 @@ function RecipesInner() {
 
   // ── SWR data ────────────────────────────────────────────────────────────────
   const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
-  const { data: collectionsData, isLoading: collectionsLoading, mutate: mutateCollections } = useCollections();
-  const collections: Collection[] = collectionsData?.collections ?? [];
+  const { isLoading: collectionsLoading, mutate: mutateCollections } = useCollections();
   const loading = recipesLoading || collectionsLoading;
 
   // Fetch all recipe IDs that are in any collection
@@ -117,9 +115,7 @@ function RecipesInner() {
         <RecipeBrowser
           mode="library"
           recipes={recipes}
-          collections={collections}
           loading={loading}
-          mutateCollections={mutateCollections}
           onAddToMealPlan={(id) => {
             const recipe = recipes.find((r) => r.id === id);
             setAddSheetRecipeId(id);
