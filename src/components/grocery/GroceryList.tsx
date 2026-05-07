@@ -119,7 +119,6 @@ interface MealPlanSummaryItem {
   };
 }
 
-type FilterMode = "to_buy" | "checked" | "all";
 type GroupMode = "category" | "meal";
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -134,11 +133,8 @@ export default function GroceryList() {
   });
   const [rangePickerOpen, setRangePickerOpen] = useState(false);
 
-  // Filter & grouping
-  const [filter, setFilter] = useState<FilterMode>("to_buy");
-  const [groupMode, setGroupMode] = useState<GroupMode>("category");
-  const [groupMenuOpen, setGroupMenuOpen] = useState(false);
-  const groupMenuRef = useRef<HTMLDivElement>(null);
+  // Grouping — Meal is the default per brand UX (one cook = one shopping run).
+  const [groupMode, setGroupMode] = useState<GroupMode>("meal");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
   // Meal plan summary
@@ -452,19 +448,9 @@ export default function GroceryList() {
     });
   }, [allItems, excludedRecipeTitles]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // For Buy tab: unchecked items shown normally; checked items shown crossed out at bottom
-  // For Have tab: only checked items
-  const filteredItems = useMemo(() => {
-    if (filter === "to_buy") return activeItems.filter((i) => !i.checked);
-    if (filter === "checked") return activeItems.filter((i) => i.checked);
-    return activeItems;
-  }, [activeItems, filter]);
-
-  // "Have" items to show crossed out at the bottom of Buy tab
-  const haveItemsForBuyTab = useMemo(() => {
-    if (filter !== "to_buy") return [];
-    return activeItems.filter((i) => i.checked);
-  }, [activeItems, filter]);
+  // Unified single-list view: every item stays in place; checked rows render
+  // with the brand strike-through line so the user sees what's already done.
+  const filteredItems = activeItems;
 
   // Auto-fetch cost summary when items change
   const toBuyItems = useMemo(() => activeItems.filter((i) => !i.checked), [activeItems]);
@@ -537,7 +523,6 @@ export default function GroceryList() {
   const grouped = groupMode === "category" ? groupedByCategory : groupedByMeal;
 
   const toBuyCount = allItems.filter((i) => !i.checked).length;
-  const checkedCount = allItems.filter((i) => i.checked).length;
 
 
   // Navigate week with smart preset detection
@@ -803,72 +788,19 @@ export default function GroceryList() {
         </div>
       )}
       {!loading && (
-        <div className="mx-4 mt-3">
-          <div className="flex items-center gap-2">
-            {/* Full-width sliding pill toggle */}
-            <div className="flex flex-1 bg-gray-100 rounded-2xl p-1 relative overflow-hidden">
-              <div
-                className="absolute top-1 bottom-1 rounded-xl bg-white shadow-sm transition-all duration-300 ease-out"
-                style={{
-                  width: "calc(50% - 4px)",
-                  left: filter === "to_buy" ? 4 : "calc(50% + 0px)",
-                }}
-              />
-              {([
-                { key: "to_buy",  label: `Buy${toBuyCount > 0 ? ` (${toBuyCount})` : ""}` },
-                { key: "checked", label: `Have${checkedCount > 0 ? ` (${checkedCount})` : ""}` },
-              ] as { key: FilterMode; label: string }[]).map(({ key, label }) => (
-                <button
-                  key={key}
-                  onClick={() => setFilter(key)}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold transition-colors duration-200 relative z-10 ${
-                    filter === key ? "text-gray-900" : "text-gray-400"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {/* View mode dropdown */}
-            <div className="relative flex-shrink-0" ref={groupMenuRef}>
-              <button
-                onClick={() => setGroupMenuOpen((v) => !v)}
-                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-full transition-colors"
-                style={{ background: "#f0ede8", color: "#7a7068" }}
-              >
-                {groupMode === "category" ? "Category" : "Meal"}
-                <svg className={`w-3 h-3 opacity-60 transition-transform ${groupMenuOpen ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              {groupMenuOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setGroupMenuOpen(false)} />
-                  <div className="absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 overflow-hidden"
-                    style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
-                    {([
-                      { key: "category", label: "By Category" },
-                      { key: "meal", label: "By Meal" },
-                    ] as { key: GroupMode; label: string }[]).map(({ key, label }) => (
-                      <button
-                        key={key}
-                        onClick={() => { setGroupMode(key); setGroupMenuOpen(false); }}
-                        className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-gray-50"
-                        style={{ color: groupMode === key ? "#1C1A17" : "#6b6560" }}
-                      >
-                        <span>{label}</span>
-                        {groupMode === key && (
-                          <svg className="w-3.5 h-3.5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
+        <div className="mx-4 mt-3 flex items-center justify-end">
+          {/* Single-tap toggle: cycles between By Meal (default) and By Category. */}
+          <button
+            onClick={() => setGroupMode((m) => (m === "meal" ? "category" : "meal"))}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95"
+            style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
+            aria-label={`Group by ${groupMode === "meal" ? "category" : "meal"}`}
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+            {groupMode === "meal" ? "Meals" : "Category"}
+          </button>
         </div>
       )}
 
@@ -940,22 +872,20 @@ export default function GroceryList() {
         </div>
 
       ) : grouped.length === 0 ? (
-        <div className="mx-4 mt-3 text-center">
-          {filter === "to_buy" && allItems.some((i) => i.checked) ? (
-            <div className="bg-white rounded-2xl border border-gray-100 px-6 py-8">
-              <p className="text-3xl mb-3">🎉</p>
-              <p className="text-gray-800 font-semibold text-sm">All done!</p>
-              <p className="text-gray-400 text-xs mt-0.5">Everything is checked off.</p>
-            </div>
-          ) : filter === "checked" ? (
-            <div className="py-8">
-              <p className="text-gray-400 text-sm">Nothing marked as have yet.</p>
-            </div>
-          ) : (
-            <div className="py-8">
-              <p className="text-gray-400 text-sm leading-relaxed px-6">No items yet. Add meals to get started and to see how much you can save by shopping with us.</p>
-            </div>
-          )}
+        <div className="mx-4 mt-3 text-center py-8">
+          <p
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontStyle: "italic",
+              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+              fontSize: "16px",
+              color: "var(--ink-soft, #4A4742)",
+              padding: "0 1.5rem",
+              lineHeight: 1.5,
+            }}
+          >
+            No items yet — add meals to your plan to see what you'll need this week.
+          </p>
         </div>
 
       ) : (
@@ -1051,7 +981,6 @@ export default function GroceryList() {
                         onEdit={setEditItem}
                         onDelete={handleDelete}
                         ownerName={item.owner_name}
-                        haveMode={filter === "checked"}
                       />
                     ))}
                   </div>
@@ -1060,83 +989,8 @@ export default function GroceryList() {
             );
           })}
 
-          {/* "Already Have" section — shown at bottom of Buy tab */}
-          {filter === "to_buy" && haveItemsForBuyTab.length > 0 && (() => {
-            const haveKey = "__already_have__";
-            const isHaveExpanded = expandedGroups.has(haveKey);
-            const toggleHave = () => setExpandedGroups((prev) => {
-              const next = new Set(prev);
-              if (next.has(haveKey)) next.delete(haveKey);
-              else next.add(haveKey);
-              return next;
-            });
-            return (
-              <div
-                className="bg-white rounded-3xl overflow-hidden"
-                style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
-              >
-                <button
-                  onClick={toggleHave}
-                  className="w-full flex items-center justify-between px-4 pt-3.5 pb-2"
-                >
-                  <div className="flex items-center gap-2">
-                    <h3 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
-                      ✅ Already have
-                    </h3>
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: "#f0ede8", color: "#a09890" }}>
-                      {haveItemsForBuyTab.length}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <svg
-                      className={`w-4 h-4 transition-transform duration-200 ${isHaveExpanded ? "rotate-180" : ""}`}
-                      style={{ color: "#c0b8b0" }}
-                      fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </button>
-                {isHaveExpanded && (
-                  <div className="px-4 pb-3">
-                    {haveItemsForBuyTab.map((item) => {
-                      const displayName = item.name_override ?? item.name;
-                      const displayAmount = item.amount_override ?? item.amount;
-                      const displayUnit = item.unit_override ?? item.unit;
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-2.5 py-1.5"
-                          style={{ borderBottom: "1px solid #f5f3f0" }}
-                        >
-                          <svg className="w-3.5 h-3.5 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                          <span className="text-sm text-gray-400 line-through capitalize flex-1 min-w-0 truncate">
-                            {displayName}
-                          </span>
-                          {displayAmount && (
-                            <span className="text-xs text-gray-300 flex-shrink-0">
-                              {displayAmount}{displayUnit ? ` ${displayUnit}` : ""}
-                            </span>
-                          )}
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggle(item.id, false); }}
-                            className="text-[10px] font-semibold text-orange-400 hover:text-orange-600 flex-shrink-0 px-1"
-                          >
-                            Need
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })()}
-
           {/* Cost estimate result */}
-          {filter === "to_buy" && costEstimate && (
+          {costEstimate && (
             <div
               className="bg-white rounded-3xl overflow-hidden"
               style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
@@ -1199,19 +1053,6 @@ export default function GroceryList() {
             </div>
           )}
 
-          {/* Bottom action — Add Item (Have tab) */}
-          {filter === "checked" && (
-            <button
-              onClick={() => setAddSheetOpen(true)}
-              className="w-full flex items-center justify-center gap-2.5 py-3.5 bg-white rounded-3xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-colors"
-              style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
-            >
-              <svg className="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span className="text-sm font-semibold text-gray-700">Add item</span>
-            </button>
-          )}
         </div>
       )}
 
