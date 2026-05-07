@@ -666,7 +666,6 @@ export default function MealPlanListView({
             >
               {recommendedRecipes.map((recipe: { recipeId: string; title: string; image_url?: string | null; prep_time_minutes?: number | null; cook_time_minutes?: number | null; meal_type?: string }) => {
                 const totalTime = (recipe.prep_time_minutes || 0) + (recipe.cook_time_minutes || 0);
-                const isSaved = recommendSavedIds.has(recipe.recipeId);
                 return (
                   <div
                     key={recipe.recipeId}
@@ -702,21 +701,14 @@ export default function MealPlanListView({
                         background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)",
                       }}
                     />
-                    {/* Heart (unsaved) or Plus (saved) button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); saveAndPlanRecommended(recipe.recipeId); }}
                       className="absolute top-2.5 right-2.5 w-7 h-7 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md transition-all active:scale-90 z-10"
-                      aria-label={isSaved ? "Add to meal plan" : "Save recipe"}
+                      aria-label="Add to meal plan"
                     >
-                      {isSaved ? (
-                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                      ) : (
-                        <svg className="w-3.5 h-3.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                      )}
+                      <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
                     </button>
                     {/* Title + time at bottom — Marco editorial voice */}
                     <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-6 z-10">
