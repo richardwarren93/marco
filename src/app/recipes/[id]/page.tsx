@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
@@ -256,11 +256,36 @@ export default function RecipeDetailPage() {
   const isPublicView = Boolean((recipe as { is_public_view?: boolean } | null)?.is_public_view);
   const { data: allRecipesData = [] } = useRecipes();
   const { data: savedRecipesData = [] } = useRecipes();
-  const alreadySaved = isPublicView && Array.isArray(savedRecipesData)
-    ? (savedRecipesData as { title?: string }[]).some(
-        (r) => (r.title || "").trim().toLowerCase() === (recipe?.title || "").trim().toLowerCase()
-      )
-    : false;
+
+  // When viewing someone else's copy of a recipe we already own, find that
+  // saved row so we can redirect to it instead of stranding the user on the
+  // public-view dead end.
+  const savedCopy = useMemo<Recipe | null>(() => {
+    if (!isPublicView || !recipe || !Array.isArray(savedRecipesData)) return null;
+    const list = savedRecipesData as Recipe[];
+    const norm = (s?: string | null) => (s ?? "").trim().toLowerCase();
+    if (recipe.source_url) {
+      const m = list.find((r) => r.source_url === recipe.source_url);
+      if (m) return m;
+    }
+    if (recipe.image_url) {
+      const m = list.find(
+        (r) => norm(r.title) === norm(recipe.title) && r.image_url === recipe.image_url,
+      );
+      if (m) return m;
+    }
+    return list.find((r) => norm(r.title) === norm(recipe.title)) ?? null;
+  }, [isPublicView, recipe, savedRecipesData]);
+  const alreadySaved = !!savedCopy;
+
+  // Auto-redirect to the user's own copy when they hit a public URL for a
+  // recipe they've already saved — keeps Edit/Notes/Add to Meal Plan etc.
+  // available instead of the disabled "Already in your library" chip.
+  useEffect(() => {
+    if (isPublicView && savedCopy) {
+      router.replace(`/recipes/${savedCopy.id}`);
+    }
+  }, [isPublicView, savedCopy, router]);
   const [savingPublic, setSavingPublic] = useState(false);
 
   // Compute current week start (Monday) and today's date for AddMealSheet
