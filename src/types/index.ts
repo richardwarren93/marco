@@ -261,32 +261,6 @@ export interface RecipeNutrition {
   model_version: string | null;
 }
 
-// Meal Plan Insights
-export interface MealPlanInsights {
-  overallScore: number;
-  scoreLabel: string;
-  headline: string;
-  nutritionAnalysis: {
-    dailyCalorieAvg: number;
-    calorieAssessment: string;
-    macroBalance: string;
-    fiberAssessment: string;
-    proteinAdequacy: string;
-  };
-  balanceInsights: Array<{
-    icon: string;
-    title: string;
-    detail: string;
-    severity: "positive" | "suggestion" | "warning";
-  }>;
-  recommendations: Array<{
-    emoji: string;
-    text: string;
-  }>;
-  varietyScore: number;
-  varietyNote: string;
-}
-
 export type FriendshipStatus = "pending" | "accepted" | "declined";
 
 export interface Friendship {

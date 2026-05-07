@@ -7,7 +7,6 @@ import { useRecipes, useMealPlans } from "@/lib/hooks/use-data";
 import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
 import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
 import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
-import AnalyzeScreen from "@/components/meal-plan/AnalyzeScreen";
 import AssignDaysScreen, { type DayAssignment } from "@/components/meal-plan/AssignDaysScreen";
 import type { MealPlan, Recipe } from "@/types";
 
@@ -35,7 +34,7 @@ export default function MealPlanPageContent() {
 function MealPlanInner() {
   const searchParams = useSearchParams();
 
-  const [step, setStep] = useState<1 | 2 | "assign" | 3 | "insights">(3);
+  const [step, setStep] = useState<1 | 2 | "assign" | 3>(3);
 
   const [calendarWeek, setCalendarWeek] = useState<Date>(() => {
     const dateParam = searchParams.get("date");
@@ -243,15 +242,6 @@ function MealPlanInner() {
     );
   }
 
-  if (step === "insights") {
-    return (
-      <AnalyzeScreen
-        onBack={() => setStep(3)}
-        calendarWeek={calendarWeek}
-      />
-    );
-  }
-
   return (
     <>
       {error && (
@@ -267,7 +257,6 @@ function MealPlanInner() {
         onRemoveMeal={handleCalendarRemove}
         onEditMeal={handleEditMealSave}
         onPlanThisWeek={handlePlanThisWeek}
-        onShowInsights={() => setStep("insights")}
         calendarWeek={calendarWeek}
         onCalendarWeekChange={setCalendarWeek}
       />

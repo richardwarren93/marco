@@ -153,7 +153,6 @@ export default function MealPlanListView({
   weekStart: weekStartProp,
   onWeekChange,
   onPlanThisWeek,
-  onShowInsights,
 }: {
   mealPlans: MealPlan[];
   householdPlans?: MealPlan[];
@@ -161,7 +160,6 @@ export default function MealPlanListView({
   onRemove: (planId: string) => void;
   onEditMeal?: (planId: string, updates: { meal_type?: string; recipe_id?: string; servings?: number }) => Promise<void>;
   recipePool?: Recipe[];
-  onShowInsights?: () => void;
   allRecipes?: Recipe[];
   weekPickIds?: string[];
   weekStart: Date;
@@ -1016,33 +1014,6 @@ export default function MealPlanListView({
             </div>
           </div>
 
-          {/* Right: Insights (weekly only). Bell + avatar live in MobileHeader at top of page. */}
-          <div className="flex items-center gap-2">
-          {viewMode === "weekly" && onShowInsights && (
-            <button
-              onClick={onShowInsights}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all active:scale-95"
-              style={{
-                background: "linear-gradient(135deg, #fff8f0, #fff3e0)",
-                border: "1.5px solid #f0a050",
-                boxShadow: "0 0 8px rgba(240,160,80,0.2)",
-                animation: "insightsWiggle 3s ease-in-out infinite",
-              }}
-            >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="#e8890a"
-                strokeWidth={2}
-                style={{ animation: "insightsSparkle 2s ease-in-out infinite" }}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z" />
-              </svg>
-              <span className="text-[11px] font-bold" style={{ color: "#e8890a" }}>Insights</span>
-            </button>
-          )}
-          </div>
         </div>
 
       </div>

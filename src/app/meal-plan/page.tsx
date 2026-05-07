@@ -7,7 +7,6 @@ import { useRecipes, useMealPlans } from "@/lib/hooks/use-data";
 import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
 import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
 import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
-import AnalyzeScreen from "@/components/meal-plan/AnalyzeScreen";
 import AssignDaysScreen, { type DayAssignment } from "@/components/meal-plan/AssignDaysScreen";
 import MobileHeader from "@/components/layout/MobileHeader";
 import type { MealPlan, Recipe } from "@/types";
@@ -41,7 +40,7 @@ function MealPlanInner() {
   // ─── Step flow ───────────────────────────────────────────────────────────────
   // Default: step 3 (Schedule) — the app's main surface
   // If ?step=build, start in build mode (e.g. returning from recipe detail)
-  const [step, setStep] = useState<1 | 2 | "assign" | 3 | "insights">(() => {
+  const [step, setStep] = useState<1 | 2 | "assign" | 3>(() => {
     const stepParam = searchParams.get("step");
     if (stepParam === "build") return 1;
     return 3;
@@ -284,16 +283,6 @@ function MealPlanInner() {
     );
   }
 
-  // ─── Insights ────────────────────────────────────────────────────────────────
-  if (step === "insights") {
-    return (
-      <AnalyzeScreen
-        onBack={() => setStep(3)}
-        calendarWeek={calendarWeek}
-      />
-    );
-  }
-
   // ─── Step 3: Schedule (default) ───────────────────────────────────────────────
   return (
     <>
@@ -311,7 +300,6 @@ function MealPlanInner() {
         onRemoveMeal={handleCalendarRemove}
         onEditMeal={handleEditMealSave}
         onPlanThisWeek={handlePlanThisWeek}
-        onShowInsights={() => setStep("insights")}
         calendarWeek={calendarWeek}
         onCalendarWeekChange={setCalendarWeek}
       />
