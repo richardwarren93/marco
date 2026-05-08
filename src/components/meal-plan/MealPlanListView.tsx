@@ -9,6 +9,7 @@ import { useTrending, useRecipes } from "@/lib/hooks/use-data";
 import AddMealSheet from "./AddMealSheet";
 import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
+import CoordinationView from "./CoordinationView";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 
@@ -332,6 +333,10 @@ export default function MealPlanListView({
       .filter((t: { recipeId: string; image_url?: string | null }) => !libraryIds.has(t.recipeId) && t.image_url)
       .slice(0, 8);
   }, [trendingData, recipeLibrary]);
+
+  // Coordination overlay — when set, the day's plans render through
+  // CoordinationView so the user can anchor a serve time.
+  const [coordinatePlans, setCoordinatePlans] = useState<MealPlan[] | null>(null);
 
   // Map trending recipe ID → user's saved copy ID
   const [savedIdMap, setSavedIdMap] = useState<Map<string, string>>(new Map());
@@ -940,15 +945,37 @@ export default function MealPlanListView({
                     </span>
                   )}
                 </div>
-                <button
-                  onClick={() => openAddSheet(dateKey)}
-                  className="w-7 h-7 rounded-full border flex items-center justify-center transition-colors touch-manipulation"
-                  style={{ borderColor: BORDER, color: TEXT_2, opacity: isPast ? 0.5 : 1 }}
-                >
-                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                  </svg>
-                </button>
+                <div className="flex items-center gap-1.5">
+                  {/* Coordinate — only on Today, only when there's actually
+                      something to schedule (2+ recipes). Recipe-level
+                      coordination is the v1; per-step granularity comes
+                      later. */}
+                  {isToday && plans.length >= 2 && (
+                    <button
+                      onClick={() => setCoordinatePlans(plans)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all active:scale-95"
+                      style={{
+                        background: "var(--ink, #1C1A17)",
+                        color: "var(--cream, #F5EEE2)",
+                      }}
+                    >
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <circle cx="12" cy="12" r="10" />
+                        <path strokeLinecap="round" d="M12 6v6l4 2" />
+                      </svg>
+                      Coordinate
+                    </button>
+                  )}
+                  <button
+                    onClick={() => openAddSheet(dateKey)}
+                    className="w-7 h-7 rounded-full border flex items-center justify-center transition-colors touch-manipulation"
+                    style={{ borderColor: BORDER, color: TEXT_2, opacity: isPast ? 0.5 : 1 }}
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               {/* Meals */}
@@ -1141,6 +1168,14 @@ export default function MealPlanListView({
         onEdit={onEditMeal ? (plan) => setEditingPlan(plan) : undefined}
         onDelete={previewPlan ? () => { onRemove(previewPlan.id); setPreviewPlan(null); } : undefined}
       />
+
+      {/* ── CoordinationView ──────────────────────────────────────────── */}
+      {coordinatePlans && (
+        <CoordinationView
+          plans={coordinatePlans}
+          onClose={() => setCoordinatePlans(null)}
+        />
+      )}
 
       {/* ── EditMealSheet ─────────────────────────────────────────────────────── */}
       {onEditMeal && (
