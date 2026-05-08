@@ -13,6 +13,7 @@ import MobileHeader from "@/components/layout/MobileHeader";
 import BadgesCard from "@/components/gamification/BadgesCard";
 import TasteProfileCard from "@/components/gamification/TasteProfileCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
+import PhoneCard from "@/components/phone/PhoneCard";
 
 export default function ProfilePage() {
   const { data: profileData, isLoading: profileLoading, mutate: mutateProfile } = useProfile();
@@ -390,6 +391,11 @@ export default function ProfilePage() {
       {/* ── Household ── */}
       <div className="px-4 pt-4">
         <HouseholdCard />
+      </div>
+
+      {/* ── Text Marco (SMS) ── */}
+      <div className="px-4 pt-4">
+        <PhoneCard />
       </div>
 
       {/* ── Log out ── */}

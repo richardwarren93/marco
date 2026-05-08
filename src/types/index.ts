@@ -127,6 +127,8 @@ export interface UserProfile {
   avatar_url: string | null;
   friend_code: string;
   tomato_balance: number;
+  phone: string | null;
+  phone_verified_at: string | null;
   created_at: string;
   updated_at: string;
 }
