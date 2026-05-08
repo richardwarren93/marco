@@ -29,9 +29,12 @@ interface Props {
   /** The ingredient the user tapped. Null when the sheet is closed. */
   target: Ingredient | null;
   onClose: () => void;
+  /** Called after a standing preference is saved so the parent can refresh
+   *  its standing-subs list and re-apply silently across all ingredients. */
+  onStandingPrefAdded?: () => void;
 }
 
-export default function SubstitutionSheet({ recipeId, target, onClose }: Props) {
+export default function SubstitutionSheet({ recipeId, target, onClose, onStandingPrefAdded }: Props) {
   if (!target) return null;
   // Key the inner component on the target name so re-tapping a different
   // ingredient remounts cleanly — fresh fetch, fresh state, no in-effect
@@ -42,6 +45,7 @@ export default function SubstitutionSheet({ recipeId, target, onClose }: Props) 
       recipeId={recipeId}
       target={target}
       onClose={onClose}
+      onStandingPrefAdded={onStandingPrefAdded}
     />
   );
 }
@@ -50,13 +54,16 @@ function SubstitutionSheetInner({
   recipeId,
   target,
   onClose,
+  onStandingPrefAdded,
 }: {
   recipeId: string;
   target: Ingredient;
   onClose: () => void;
+  onStandingPrefAdded?: () => void;
 }) {
   const [data, setData] = useState<SubstitutionResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingPref, setSavingPref] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -211,12 +218,52 @@ function SubstitutionSheetInner({
           )}
         </div>
 
-        {/* Footer — placeholder for the standing-pref hookup in Phase 2. */}
-        <div className="px-5 pt-3 pb-4">
+        {/* Footer — Phase 2 standing prefs. The link saves whichever option
+            is marked "best" (or the first option if no best) as a profile-
+            level always-sub-X-for-Y rule. Recipe detail picks it up next
+            render via the standing-subs hook. */}
+        <div className="px-5 pt-3 pb-4 flex items-center gap-2">
+          {data && data.options.length > 0 && (
+            <button
+              type="button"
+              disabled={savingPref}
+              onClick={async () => {
+                const best = data.options.find((o) => o.quality === "best") ?? data.options[0];
+                if (!best) return;
+                setSavingPref(true);
+                try {
+                  const res = await fetch("/api/user/standing-subs", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      fromName: target.name,
+                      toName: best.name,
+                      toAmount: best.amount,
+                      toUnit: best.unit,
+                      ratioNote: best.ratioNote,
+                      reasoning: best.reasoning,
+                    }),
+                  });
+                  if (!res.ok) throw new Error("save failed");
+                  onStandingPrefAdded?.();
+                  onClose();
+                } catch {
+                  setSavingPref(false);
+                }
+              }}
+              className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold transition-colors disabled:opacity-50"
+              style={{
+                background: "var(--cream-warm, #EFE5D2)",
+                color: "var(--tomato, #E5462E)",
+              }}
+            >
+              {savingPref ? "Saving…" : "↳ Make this a standing preference"}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 text-[13px] font-medium transition-colors"
+            className="py-2.5 px-3 text-[13px] font-medium transition-colors"
             style={{ color: "var(--ink-soft, #4A4742)" }}
           >
             Close

@@ -53,6 +53,31 @@ const CookMode = dynamic(() => import("@/components/recipes/CookMode"), { ssr: f
 const SubstitutionSheet = dynamic(() => import("@/components/recipes/SubstitutionSheet"), { ssr: false });
 
 
+/* ── Standing substitution preferences (Phase 2) ─────────────────────── */
+interface StandingSub {
+  id: string;
+  from_name: string;
+  to_name: string;
+  to_amount: string | null;
+  to_unit: string | null;
+  ratio_note: string | null;
+  reasoning: string | null;
+}
+
+/** Match an ingredient against the user's standing prefs. Same case-insensitive
+ *  substring approach the voice "how much" lookup uses, so prefs apply
+ *  consistently across surfaces. */
+function findStandingSub(ingredientName: string, subs: StandingSub[]): StandingSub | null {
+  const norm = (ingredientName || "").toLowerCase().trim();
+  if (!norm) return null;
+  const matches = subs
+    .map((s) => ({ s, key: s.from_name.toLowerCase().trim() }))
+    .filter((m) => norm.includes(m.key) || m.key.includes(norm))
+    .sort((a, b) => b.key.length - a.key.length);
+  return matches[0]?.s ?? null;
+}
+
+
 /* ── Unit conversion maps ────────────────────────────────────────────── */
 type UnitSystem = "imperial" | "metric";
 
@@ -261,6 +286,15 @@ export default function RecipeDetailPage() {
   const isPublicView = Boolean((recipe as { is_public_view?: boolean } | null)?.is_public_view);
   const { data: allRecipesData = [] } = useRecipes();
   const { data: savedRecipesData = [] } = useRecipes();
+
+  // Standing substitution preferences — applied silently when rendering
+  // ingredients. The ↳ marker is the only visible affordance; tap to revert.
+  const { data: standingSubsData, mutate: mutateStandingSubs } = useSWR<{ subs: StandingSub[] }>(
+    "/api/user/standing-subs",
+    apiFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30000 },
+  );
+  const standingSubs: StandingSub[] = standingSubsData?.subs ?? [];
 
   // When viewing someone else's copy of a recipe we already own, find that
   // saved row so we can redirect to it instead of stranding the user on the
@@ -808,10 +842,23 @@ export default function RecipeDetailPage() {
                 {/* Ingredient list */}
                 <ul className="space-y-3">
                   {ingredients.map((ing, i) => {
-                    const scaledAmount = scaleAmount(ing.amount, ratio);
+                    // Standing-pref substitution applied silently. The ↳
+                    // marker is the only visible affordance; the recipe's
+                    // original ingredient is preserved in `ing` and shown
+                    // when the user expands the marker.
+                    const standingSub = findStandingSub(ing.name, standingSubs);
+                    const effective = standingSub
+                      ? {
+                          name: standingSub.to_name,
+                          amount: standingSub.to_amount ?? ing.amount,
+                          unit: standingSub.to_unit ?? ing.unit ?? "",
+                        }
+                      : ing;
+
+                    const scaledAmount = scaleAmount(effective.amount, ratio);
                     const numericAmount = (() => {
-                      if (!ing.amount) return null;
-                      const raw = ing.amount.trim();
+                      if (!effective.amount) return null;
+                      const raw = effective.amount.trim();
                       const mixedMatch = raw.match(/^(\d+)\s+(\d+)\/(\d+)$/);
                       if (mixedMatch) return (parseInt(mixedMatch[1]) + parseInt(mixedMatch[2]) / parseInt(mixedMatch[3])) * ratio;
                       const fracMatch = raw.match(/^(\d+)\/(\d+)$/);
@@ -821,11 +868,11 @@ export default function RecipeDetailPage() {
                     })();
 
                     let displayAmount = scaledAmount;
-                    let displayUnit = ing.unit || "";
+                    let displayUnit = effective.unit || "";
                     let wasConverted = false;
 
-                    if (unitSystem && numericAmount && ing.unit) {
-                      const converted = convertUnit(numericAmount, ing.unit, unitSystem);
+                    if (unitSystem && numericAmount && effective.unit) {
+                      const converted = convertUnit(numericAmount, effective.unit, unitSystem);
                       if (converted) {
                         displayAmount = formatAmount(converted.amount);
                         displayUnit = converted.unit;
@@ -836,24 +883,44 @@ export default function RecipeDetailPage() {
                     return (
                       <li key={i} className="flex items-baseline gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#1C1A17] flex-shrink-0 mt-1.5" />
-                        <button
-                          type="button"
-                          onClick={() => setSubstituteIngredient(ing)}
-                          className="text-sm text-gray-800 text-left flex-1 -my-1 py-1 transition-colors hover:bg-[rgba(229,70,46,0.04)] rounded-md -mx-1 px-1"
-                          aria-label={`Substitute ${ing.name}`}
-                        >
-                          {displayAmount && (
-                            <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[#e8530a]" : ""}`}>
-                              {displayAmount}{" "}
-                            </span>
+                        <div className="flex-1 -my-1 flex items-baseline gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setSubstituteIngredient(ing)}
+                            className="text-sm text-gray-800 text-left flex-1 py-1 transition-colors hover:bg-[rgba(229,70,46,0.04)] rounded-md -mx-1 px-1"
+                            aria-label={standingSub ? `Substitute ${effective.name} (was ${ing.name})` : `Substitute ${ing.name}`}
+                          >
+                            {displayAmount && (
+                              <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[#e8530a]" : ""}`}>
+                                {displayAmount}{" "}
+                              </span>
+                            )}
+                            {displayUnit && (
+                              <span className={`${wasConverted ? "text-[#e8530a] font-medium" : "text-gray-500"}`}>
+                                {displayUnit}{" "}
+                              </span>
+                            )}
+                            {effective.name}
+                          </button>
+                          {standingSub && (
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                await fetch(`/api/user/standing-subs/${standingSub.id}`, { method: "DELETE" });
+                                mutateStandingSubs();
+                              }}
+                              className="flex-shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors hover:opacity-80"
+                              style={{
+                                background: "var(--cream-warm, #EFE5D2)",
+                                color: "var(--tomato, #E5462E)",
+                              }}
+                              aria-label={`Standing sub: was ${ing.amount} ${ing.unit ?? ""} ${ing.name}. Tap to revert.`}
+                              title={`Originally: ${ing.amount}${ing.unit ? " " + ing.unit : ""} ${ing.name}. Tap to revert.`}
+                            >
+                              ↳
+                            </button>
                           )}
-                          {displayUnit && (
-                            <span className={`${wasConverted ? "text-[#e8530a] font-medium" : "text-gray-500"}`}>
-                              {displayUnit}{" "}
-                            </span>
-                          )}
-                          {ing.name}
-                        </button>
+                        </div>
                       </li>
                     );
                   })}
@@ -1130,6 +1197,7 @@ export default function RecipeDetailPage() {
           recipeId={recipe.id}
           target={substituteIngredient}
           onClose={() => setSubstituteIngredient(null)}
+          onStandingPrefAdded={() => mutateStandingSubs()}
         />
       )}
     </div>
