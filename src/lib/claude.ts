@@ -670,3 +670,92 @@ Return ONLY valid JSON. No markdown, no code blocks.`,
   }
 }
 
+
+
+// ─── Ingredient substitutions ─────────────────────────────────────────────
+
+export interface SubstitutionOption {
+  name: string;
+  amount: string;
+  unit: string;
+  ratioNote?: string;
+  reasoning: string;
+  quality: "best" | "good" | "ok";
+}
+
+export interface SubstitutionResult {
+  /** What role the original ingredient plays in this recipe (best-effort tag). */
+  role: string;
+  options: SubstitutionOption[];
+}
+
+/**
+ * Ask Claude for 2–3 ranked substitutes for a single ingredient inside a
+ * specific recipe. The grounding (recipe title + full ingredient list +
+ * brief step context) is what makes this differentiated from a generic
+ * Google search — the same swap question gets a different answer depending
+ * on what the ingredient is doing here.
+ */
+export async function suggestSubstitutions(
+  recipe: { title: string; ingredients: Ingredient[]; steps: string[] },
+  target: { name: string; amount: string; unit: string },
+): Promise<SubstitutionResult> {
+  const otherIngredients = recipe.ingredients
+    .filter((i) => i.name !== target.name)
+    .map((i) => `- ${i.amount}${i.unit ? " " + i.unit : ""} ${i.name}`)
+    .join("\n");
+
+  const stepSummary = recipe.steps.slice(0, 6).map((s, idx) => `${idx + 1}. ${s}`).join("\n");
+
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 1200,
+    system: `You are a cooking assistant suggesting ingredient substitutions. You ALWAYS respond with valid JSON only — no explanations, no markdown.
+
+Your goal is role-aware substitution: identify what role the target ingredient is playing in THIS recipe (acid, fat, binder, aromatic, leavener, structure, sweetener, liquid, or similar) and rank substitutes by how well they preserve that role HERE. Greek yogurt for sour cream is great as a topping but problematic in baking — your ranking should reflect that distinction.
+
+Tone: encouraging and specific. "Rest 5 min" is better than "let it sit". One-line reasoning like "preserves both acid and tenderizing" beats vague "good substitute".`,
+    messages: [
+      {
+        role: "user",
+        content: `Recipe: ${recipe.title}
+
+Other ingredients:
+${otherIngredients || "(none)"}
+
+First few steps:
+${stepSummary || "(none)"}
+
+Substitute for: ${target.amount}${target.unit ? " " + target.unit : ""} ${target.name}
+
+Return JSON:
+{
+  "role": "string — single short tag for what role this ingredient plays here, e.g. \\"acid + leavener tenderizer\\", \\"binder\\", \\"aromatic\\"",
+  "options": [
+    {
+      "name": "substitute ingredient",
+      "amount": "amount as a string (e.g. \\"230\\", \\"1\\", \\"3/4\\")",
+      "unit": "unit (e.g. \\"ml\\", \\"cup\\", \\"tbsp\\") or empty string if implied",
+      "ratioNote": "optional short hint like \\"rest 5 min\\" or empty",
+      "reasoning": "one short sentence — why this works HERE, grounded in the role",
+      "quality": "best" | "good" | "ok"
+    }
+  ]
+}
+
+Provide 2–3 options total, ranked from best to ok. Only ONE option may be \\"best\\". Return ONLY valid JSON.`,
+      },
+    ],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(cleaned) as SubstitutionResult;
+    return parsed;
+  } catch {
+    console.error("Claude returned non-JSON for substitutions:", cleaned.slice(0, 200));
+    return { role: "ingredient", options: [] };
+  }
+}

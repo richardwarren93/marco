@@ -50,6 +50,7 @@ const CookPhotosGallery = dynamic(() => import("@/components/recipes/CookPhotosG
 // question logic comes back as voice features inside Cook mode in Phase 2.
 // Until then the recipe-detail "Cook with marco" button opens CookMode instead.
 const CookMode = dynamic(() => import("@/components/recipes/CookMode"), { ssr: false });
+const SubstitutionSheet = dynamic(() => import("@/components/recipes/SubstitutionSheet"), { ssr: false });
 
 
 /* ── Unit conversion maps ────────────────────────────────────────────── */
@@ -240,6 +241,7 @@ export default function RecipeDetailPage() {
   const [unitSystem, setUnitSystem] = useState<UnitSystem | null>(null); // null = original
   const [photoRefreshKey, setPhotoRefreshKey] = useState(0);
   const [showMarcoChat, setShowMarcoChat] = useState(false);
+  const [substituteIngredient, setSubstituteIngredient] = useState<Ingredient | null>(null);
   const [cameraUploading, setCameraUploading] = useState(false);
   const cameraFileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -834,7 +836,12 @@ export default function RecipeDetailPage() {
                     return (
                       <li key={i} className="flex items-baseline gap-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-[#1C1A17] flex-shrink-0 mt-1.5" />
-                        <span className="text-sm text-gray-800">
+                        <button
+                          type="button"
+                          onClick={() => setSubstituteIngredient(ing)}
+                          className="text-sm text-gray-800 text-left flex-1 -my-1 py-1 transition-colors hover:bg-[rgba(229,70,46,0.04)] rounded-md -mx-1 px-1"
+                          aria-label={`Substitute ${ing.name}`}
+                        >
                           {displayAmount && (
                             <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[#e8530a]" : ""}`}>
                               {displayAmount}{" "}
@@ -846,7 +853,7 @@ export default function RecipeDetailPage() {
                             </span>
                           )}
                           {ing.name}
-                        </span>
+                        </button>
                       </li>
                     );
                   })}
@@ -1113,6 +1120,16 @@ export default function RecipeDetailPage() {
         <CookMode
           recipe={recipe}
           onClose={() => setShowMarcoChat(false)}
+        />
+      )}
+
+      {/* Substitution sheet — Phase 1 one-time-swap. Tap any ingredient
+          on the Ingredients tab to open this. */}
+      {recipe && substituteIngredient && (
+        <SubstitutionSheet
+          recipeId={recipe.id}
+          target={substituteIngredient}
+          onClose={() => setSubstituteIngredient(null)}
         />
       )}
     </div>
