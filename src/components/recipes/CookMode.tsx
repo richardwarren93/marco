@@ -34,14 +34,25 @@ export default function CookMode({ recipe, onClose }: Props) {
   // the order they were checked, so the "completed above" stack reads
   // chronologically.
   const [completed, setCompleted] = useState<number[]>([]);
-  // Running timers, keyed by `${stepIndex}:${tokenSlot}`. Including the step
-  // index in the key means switching steps naturally hides previous timers
-  // from the active render without having to clear state. Cross-step
-  // visibility (the dock) is its own separate task.
-  const [timers, setTimers] = useState<Map<string, { remaining: number; total: number; finished: boolean }>>(new Map());
+  // Running timers, keyed by `${stepIndex}:${tokenSlot}` so each duration
+  // chip in the active step has a stable lookup. Timers persist across step
+  // changes — chips from previous steps no longer render, but the dock keeps
+  // the timer visible and dismissable. Cross-recipe persistence + push
+  // notifications are explicitly the Phase 2 multi-timer-dock-plus task.
+  type CookTimer = {
+    remaining: number;
+    total: number;
+    finished: boolean;
+    name: string;
+    stepIndex: number;
+    startedAt: number;
+  };
+  const [timers, setTimers] = useState<Map<string, CookTimer>>(new Map());
   const upNextRef = useRef<HTMLDivElement>(null);
 
-  // Tick all running timers once per second.
+  // Tick all running timers once per second. Decrement-from-state rather
+  // than recompute-from-clock is fine for a foreground overlay; if we ever
+  // need to handle backgrounded tabs accurately, switch to startedAt+total.
   useEffect(() => {
     if (timers.size === 0) return;
     const handle = setInterval(() => {
@@ -62,10 +73,17 @@ export default function CookMode({ recipe, onClose }: Props) {
     return () => clearInterval(handle);
   }, [timers.size]);
 
-  function startTimer(key: string, seconds: number) {
+  function startTimer(key: string, seconds: number, name: string, stepIndex: number) {
     setTimers((prev) => {
       const next = new Map(prev);
-      next.set(key, { remaining: seconds, total: seconds, finished: false });
+      next.set(key, {
+        remaining: seconds,
+        total: seconds,
+        finished: false,
+        name,
+        stepIndex,
+        startedAt: Date.now(),
+      });
       return next;
     });
   }
@@ -77,6 +95,15 @@ export default function CookMode({ recipe, onClose }: Props) {
       return next;
     });
   }
+
+  // Dock list — sort by startedAt so the order matches the user's mental
+  // model ("the one I tapped first goes first"). Finished timers stay
+  // visible at their position so the user can confirm and dismiss.
+  const dockTimers = useMemo(() => {
+    return [...timers.entries()]
+      .map(([key, t]) => ({ key, ...t }))
+      .sort((a, b) => a.startedAt - b.startedAt);
+  }, [timers]);
 
   // Parse the active step once per change so the chip components are stable.
   const activeTokens = useMemo<StepToken[]>(() => {
@@ -307,7 +334,7 @@ export default function CookMode({ recipe, onClose }: Props) {
                       label={tok.label}
                       seconds={tok.seconds}
                       timer={t}
-                      onStart={() => startTimer(key, tok.seconds)}
+                      onStart={() => startTimer(key, tok.seconds, tok.label, activeIndex)}
                       onDismiss={() => dismissTimer(key)}
                     />
                   );
@@ -338,6 +365,77 @@ export default function CookMode({ recipe, onClose }: Props) {
             >
               {upNext}
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Multi-timer dock — running timers persist across step changes here.
+          Hidden when no timers are active. Dismiss a timer by tapping its X. */}
+      {dockTimers.length > 0 && (
+        <div
+          className="px-5 pt-3 pb-1"
+          style={{ borderTop: "1px solid var(--line, rgba(28,26,23,0.06))" }}
+        >
+          <p
+            className="marco-mono mb-2"
+            style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.6 }}
+          >
+            Timers
+          </p>
+          <div
+            className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1"
+            style={{ scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}
+          >
+            {dockTimers.map((t) => {
+              const isFinished = t.finished;
+              return (
+                <div
+                  key={t.key}
+                  className="flex-shrink-0 inline-flex items-center gap-2 rounded-full"
+                  style={{
+                    padding: "6px 4px 6px 12px",
+                    background: isFinished
+                      ? "var(--ink-soft, #4A4742)"
+                      : "var(--tomato, #E5462E)",
+                    color: "#fff",
+                  }}
+                >
+                  <span className="flex flex-col leading-tight">
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        letterSpacing: "0.04em",
+                        opacity: 0.85,
+                      }}
+                    >
+                      {t.name}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {isFinished ? "done" : formatCountdown(t.remaining)}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => dismissTimer(t.key)}
+                    aria-label={`Dismiss ${t.name} timer`}
+                    className="w-6 h-6 flex items-center justify-center rounded-full transition-colors active:scale-90"
+                    style={{ background: "rgba(255,255,255,0.18)" }}
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
