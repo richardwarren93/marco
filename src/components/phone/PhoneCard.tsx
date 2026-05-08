@@ -125,6 +125,12 @@ export default function PhoneCard() {
             autoFocus
             className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
           />
+          <p className="text-[11px] leading-relaxed" style={{ color: "#a09890" }}>
+            By tapping &quot;Send code&quot; you agree to receive transactional and conversational SMS from Marco
+            (verification codes, recipe save confirmations, and replies to messages you initiate).
+            Frequency varies by usage. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help.
+            See our <a href="/privacy" target="_blank" className="underline">Privacy Policy</a> and <a href="/terms" target="_blank" className="underline">Terms</a>.
+          </p>
           <div className="flex gap-2">
             <button
               type="submit"

@@ -202,9 +202,9 @@ export default function SignupPage() {
               </button>
               <p className="text-xs text-gray-500 leading-relaxed">
                 I&apos;ve read and agree with the{" "}
-                <span className="underline text-gray-700 font-medium">Terms</span>
+                <Link href="/terms" target="_blank" className="underline text-gray-700 font-medium">Terms</Link>
                 {" "}and{" "}
-                <span className="underline text-gray-700 font-medium">Privacy Policy</span>
+                <Link href="/privacy" target="_blank" className="underline text-gray-700 font-medium">Privacy Policy</Link>
               </p>
             </div>
 
