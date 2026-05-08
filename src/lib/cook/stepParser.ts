@@ -206,3 +206,138 @@ export function parseStep(text: string, ingredients: Ingredient[]): StepToken[] 
   }
   return tokens;
 }
+
+// ─── Track classification ─────────────────────────────────────────────────
+//
+// Phase 2 of the design spec — "Prep · Cook · Plate is a sensible default
+// partition." Heuristic: keyword match first, position fallback second.
+// Per-recipe context (steps array) gives us the position fallback —
+// otherwise a recipe with steps like "Stir flour and salt" would all read
+// as Cook even though the first step is clearly Prep.
+//
+// Tradeoffs:
+// - Keyword lists are short on purpose. Long lists drift toward false
+//   positives ("season the steaks before searing" — season is Prep, but
+//   "searing" is Cook).
+// - When both Prep and Cook keywords appear, Cook wins (the active verb
+//   in mid-recipe steps usually does).
+// - Plate keywords are most specific so they win outright.
+// - The position fallback only kicks in when no keyword matches. That
+//   keeps the heuristic predictable for explicit step text.
+
+export type StepTrack = "prep" | "cook" | "plate";
+
+const PLATE_PATTERNS = [
+  /\bserve\b/,
+  /\bplate\b/, // "transfer to plates" / "plate the fish"
+  /\bdivide\b/,
+  /\bgarnish\b/,
+  /\bdrizzle\b/,
+  /\btop with\b/,
+  /\bsprinkle\b/,
+  /\bdust with\b/,
+  /\bfinish with\b/,
+];
+
+const PREP_PATTERNS = [
+  /\bchop\b/,
+  /\bdice\b/,
+  /\bmince\b/,
+  /\bslice\b/,
+  /\bpeel\b/,
+  /\bgrate\b/,
+  /\bzest\b/,
+  /\bjuice\b/,
+  /\btrim\b/,
+  /\bwash\b/,
+  /\brinse\b/,
+  /\bdrain\b/,
+  /\bmeasure\b/,
+  /\bweigh\b/,
+  /\bpreheat\b/,
+  /\bmarinate\b/,
+  /\bseason\b/,
+  /\bcombine\b/,
+  /\bgather\b/,
+  /\bmise en place\b/,
+];
+
+const COOK_PATTERNS = [
+  /\bcook\b/,
+  /\bboil\b/,
+  /\bsimmer\b/,
+  /\bsaut[eé]\b/,
+  /\bfry\b/,
+  /\bbroil\b/,
+  /\broast\b/,
+  /\bbake\b/,
+  /\bgrill\b/,
+  /\bsear\b/,
+  /\bsteam\b/,
+  /\bblanch\b/,
+  /\bpoach\b/,
+  /\bbraise\b/,
+  /\bstir\b/,
+  /\bfold\b/,
+  /\bwhisk\b/,
+  /\bbeat\b/,
+  /\bheat\b/,
+  /\breduce\b/,
+  /\bdeglaze\b/,
+  /\btoss\b/,
+  /\bmix\b/,
+  /\bblend\b/,
+  /\bpur[eé]e\b/,
+];
+
+function matchesAny(text: string, patterns: RegExp[]): boolean {
+  return patterns.some((p) => p.test(text));
+}
+
+/**
+ * Classify a single step into Prep / Cook / Plate using keyword heuristics
+ * plus an optional position hint. The position hint biases the default
+ * (no-keyword) case: early steps lean Prep, late steps lean Plate, middle
+ * steps lean Cook. Pass index + total to enable; omit for "Cook" default.
+ */
+export function classifyStepTrack(
+  text: string,
+  position?: { index: number; total: number },
+): StepTrack {
+  const lower = text.toLowerCase();
+
+  // Plate keywords are the most specific — finishing verbs rarely double
+  // as cooking instructions, so they win outright.
+  if (matchesAny(lower, PLATE_PATTERNS)) return "plate";
+
+  // Cook beats Prep on tie. Mid-recipe steps that mix prep + cook verbs
+  // ("season the steaks, then sear in a hot pan") are Cook in spirit.
+  if (matchesAny(lower, COOK_PATTERNS)) return "cook";
+  if (matchesAny(lower, PREP_PATTERNS)) return "prep";
+
+  // Position fallback. First 25% lean Prep, last 15% lean Plate, the rest
+  // is Cook. Ratios picked so a 4-step recipe: step 1 = Prep, 2-3 = Cook,
+  // 4 = Plate, which matches the typical TikTok-recipe rhythm.
+  if (position && position.total > 0) {
+    const ratio = position.index / position.total;
+    if (ratio < 0.25) return "prep";
+    if (ratio > 0.85) return "plate";
+  }
+  return "cook";
+}
+
+/**
+ * Classify every step in a recipe in one pass, returning the tracks in the
+ * same order. Cheap, deterministic, no async — call from useMemo.
+ */
+export function classifyAllSteps(steps: string[]): StepTrack[] {
+  return steps.map((text, index) =>
+    classifyStepTrack(text, { index, total: steps.length }),
+  );
+}
+
+export const TRACK_LABELS: Record<StepTrack, string> = {
+  prep: "Prep",
+  cook: "Cook",
+  plate: "Plate",
+};

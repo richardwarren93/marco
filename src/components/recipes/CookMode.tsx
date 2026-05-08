@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import type { Recipe } from "@/types";
-import { parseStep, formatCountdown, type StepToken } from "@/lib/cook/stepParser";
+import { parseStep, formatCountdown, classifyAllSteps, TRACK_LABELS, type StepToken, type StepTrack } from "@/lib/cook/stepParser";
 
 /**
  * Cook with Marco — Phase 1 spine.
@@ -111,6 +111,25 @@ export default function CookMode({ recipe, onClose }: Props) {
     return parseStep(steps[activeIndex] ?? "", ingredients);
   }, [activeIndex, totalSteps, steps, ingredients]);
 
+  // Classify every step into prep / cook / plate. Heuristic-only — cheap,
+  // deterministic, run once per recipe and reuse for both the active card
+  // eyebrow and the Prep · Cook · Plate summary row at the top.
+  const stepTracks = useMemo<StepTrack[]>(() => classifyAllSteps(steps), [steps]);
+  const activeTrack: StepTrack | null = activeIndex < totalSteps ? stepTracks[activeIndex] : null;
+  const trackCounts = useMemo(() => {
+    const counts: Record<StepTrack, { total: number; done: number }> = {
+      prep: { total: 0, done: 0 },
+      cook: { total: 0, done: 0 },
+      plate: { total: 0, done: 0 },
+    };
+    const completedSet = new Set(completed);
+    stepTracks.forEach((t, i) => {
+      counts[t].total += 1;
+      if (completedSet.has(i)) counts[t].done += 1;
+    });
+    return counts;
+  }, [stepTracks, completed]);
+
   // ESC closes the overlay — keyboards happen even in cooking-mode previews
   // (until we add the dedicated kitchen UI).
   useEffect(() => {
@@ -208,6 +227,45 @@ export default function CookMode({ recipe, onClose }: Props) {
         </div>
       )}
 
+      {/* Track summary — Prep · Cook · Plate with done/total counts. Mono
+          tags so they read as metadata, not interactive controls. The
+          current track is tinted tomato to match the active step's
+          eyebrow. Tracks with zero steps are dropped to avoid empty pills. */}
+      {totalSteps > 0 && (
+        <div
+          className="px-5 mt-3 flex flex-wrap items-center gap-x-3 gap-y-1"
+          style={{
+            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+            fontSize: "10px",
+            letterSpacing: "0.13em",
+            textTransform: "uppercase",
+            color: "var(--ink-soft, #4A4742)",
+          }}
+        >
+          {(["prep", "cook", "plate"] as StepTrack[]).map((t, i, arr) => {
+            const c = trackCounts[t];
+            if (c.total === 0) return null;
+            const isCurrent = activeTrack === t;
+            const isDone = c.done === c.total;
+            const color = isCurrent
+              ? "var(--tomato, #E5462E)"
+              : isDone
+                ? "var(--teal, #0F4C5C)"
+                : "var(--ink-soft, #4A4742)";
+            return (
+              <span key={t} className="inline-flex items-center gap-2">
+                <span style={{ color, opacity: isCurrent ? 1 : 0.7 }}>
+                  {TRACK_LABELS[t]} <span style={{ opacity: 0.6 }}>{c.done}/{c.total}</span>
+                </span>
+                {i < arr.length - 1 && (
+                  <span aria-hidden="true" style={{ opacity: 0.35 }}>·</span>
+                )}
+              </span>
+            );
+          })}
+        </div>
+      )}
+
       {/* Empty state — recipe with no steps */}
       {totalSteps === 0 && (
         <div className="flex-1 flex items-center justify-center px-6 text-center">
@@ -279,7 +337,7 @@ export default function CookMode({ recipe, onClose }: Props) {
               style={{ width: 3, background: "var(--tomato, #E5462E)" }}
             />
             <p className="marco-mono mb-3" style={{ color: "var(--tomato, #E5462E)" }}>
-              Now
+              {activeTrack ? `Now · ${TRACK_LABELS[activeTrack]}` : "Now"}
             </p>
             <p
               style={{
