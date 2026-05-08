@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import type { Recipe } from "@/types";
+import { parseStep, formatCountdown, type StepToken } from "@/lib/cook/stepParser";
 
 /**
  * Cook with Marco — Phase 1 spine.
@@ -20,42 +21,78 @@ import type { Recipe } from "@/types";
 
 interface Props {
   recipe: Recipe;
-  isOpen: boolean;
   onClose: () => void;
 }
 
-export default function CookMode({ recipe, isOpen, onClose }: Props) {
-  const steps = recipe.steps ?? [];
+export default function CookMode({ recipe, onClose }: Props) {
+  const steps = useMemo(() => recipe.steps ?? [], [recipe.steps]);
   const totalSteps = steps.length;
+  const ingredients = useMemo(() => recipe.ingredients ?? [], [recipe.ingredients]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   // Track which steps the user has completed. Order in the array preserves
   // the order they were checked, so the "completed above" stack reads
   // chronologically.
   const [completed, setCompleted] = useState<number[]>([]);
+  // Running timers, keyed by `${stepIndex}:${tokenSlot}`. Including the step
+  // index in the key means switching steps naturally hides previous timers
+  // from the active render without having to clear state. Cross-step
+  // visibility (the dock) is its own separate task.
+  const [timers, setTimers] = useState<Map<string, { remaining: number; total: number; finished: boolean }>>(new Map());
   const upNextRef = useRef<HTMLDivElement>(null);
 
-  // Reset state every time the sheet opens — a fresh cook session shouldn't
-  // pick up stale progress from a previous open.
+  // Tick all running timers once per second.
   useEffect(() => {
-    if (isOpen) {
-      setActiveIndex(0);
-      setCompleted([]);
-    }
-  }, [isOpen]);
+    if (timers.size === 0) return;
+    const handle = setInterval(() => {
+      setTimers((prev) => {
+        let mutated = false;
+        const next = new Map(prev);
+        for (const [key, t] of next) {
+          if (t.finished) continue;
+          const remaining = Math.max(0, t.remaining - 1);
+          if (remaining !== t.remaining) {
+            next.set(key, { ...t, remaining, finished: remaining === 0 });
+            mutated = true;
+          }
+        }
+        return mutated ? next : prev;
+      });
+    }, 1000);
+    return () => clearInterval(handle);
+  }, [timers.size]);
+
+  function startTimer(key: string, seconds: number) {
+    setTimers((prev) => {
+      const next = new Map(prev);
+      next.set(key, { remaining: seconds, total: seconds, finished: false });
+      return next;
+    });
+  }
+
+  function dismissTimer(key: string) {
+    setTimers((prev) => {
+      const next = new Map(prev);
+      next.delete(key);
+      return next;
+    });
+  }
+
+  // Parse the active step once per change so the chip components are stable.
+  const activeTokens = useMemo<StepToken[]>(() => {
+    if (activeIndex >= totalSteps) return [];
+    return parseStep(steps[activeIndex] ?? "", ingredients);
+  }, [activeIndex, totalSteps, steps, ingredients]);
 
   // ESC closes the overlay — keyboards happen even in cooking-mode previews
   // (until we add the dedicated kitchen UI).
   useEffect(() => {
-    if (!isOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  }, [onClose]);
 
   const activeStep = steps[activeIndex];
   const upNext = activeIndex + 1 < totalSteps ? steps[activeIndex + 1] : null;
@@ -156,7 +193,7 @@ export default function CookMode({ recipe, isOpen, onClose }: Props) {
               color: "var(--ink-soft, #4A4742)",
             }}
           >
-            This recipe doesn't have any steps yet.
+            This recipe doesn&apos;t have any steps yet.
           </p>
         </div>
       )}
@@ -222,12 +259,61 @@ export default function CookMode({ recipe, isOpen, onClose }: Props) {
                 fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
                 fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
                 fontSize: "22px",
-                lineHeight: 1.3,
+                lineHeight: 1.4,
                 letterSpacing: "-0.01em",
                 color: "var(--ink, #1C1A17)",
               }}
             >
-              {activeStep}
+              {activeTokens.map((tok, i) => {
+                if (tok.type === "text") {
+                  return <span key={i}>{tok.content}</span>;
+                }
+                if (tok.type === "ingredient") {
+                  // Display "[matched word][space][amount unit]" as a chip
+                  // — the matched word stays in the sentence flow, the
+                  // amount gets a tomato-tinted pill so the eye picks up
+                  // "what / how much" at a glance.
+                  const amountLabel = [tok.amount, tok.unit].filter(Boolean).join(" ").trim();
+                  return (
+                    <span key={i}>
+                      {tok.matchedText}
+                      {amountLabel ? (
+                        <span
+                          className="inline-flex items-baseline ml-1.5 align-baseline"
+                          style={{
+                            fontFamily: "var(--font-sans, 'Geist', system-ui, sans-serif)",
+                            fontSize: "13px",
+                            fontWeight: 600,
+                            background: "var(--cream-warm, #EFE5D2)",
+                            color: "var(--tomato-dark, #B8331E)",
+                            padding: "1px 8px",
+                            borderRadius: "999px",
+                            letterSpacing: 0,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {amountLabel}
+                        </span>
+                      ) : null}
+                    </span>
+                  );
+                }
+                if (tok.type === "duration") {
+                  const key = `${activeIndex}:${i}`;
+                  const t = timers.get(key);
+                  return (
+                    <DurationChip
+                      key={i}
+                      label={tok.label}
+                      seconds={tok.seconds}
+                      timer={t}
+                      onStart={() => startTimer(key, tok.seconds)}
+                      onDismiss={() => dismissTimer(key)}
+                    />
+                  );
+                }
+                return null;
+              })}
             </p>
           </div>
         </div>
@@ -292,5 +378,96 @@ export default function CookMode({ recipe, isOpen, onClose }: Props) {
         </div>
       )}
     </div>
+  );
+}
+
+// ─── DurationChip ─────────────────────────────────────────────────────────
+//
+// Idle state: outlined tomato pill with a clock icon and the parsed label
+// ("8 min"). Tap → it flips to a live MM:SS countdown filled in tomato. At
+// zero it bounces and dims to ink-soft; tapping again dismisses it back to
+// idle. Per-step lifetime — the parent clears running timers on step change
+// (cross-step persistence is the multi-timer dock task).
+
+interface DurationChipProps {
+  label: string;
+  seconds: number;
+  timer: { remaining: number; total: number; finished: boolean } | undefined;
+  onStart: () => void;
+  onDismiss: () => void;
+}
+
+function DurationChip({ label, timer, onStart, onDismiss }: DurationChipProps) {
+  const running = !!timer && !timer.finished;
+  const finished = !!timer?.finished;
+
+  if (running && timer) {
+    return (
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="inline-flex items-baseline gap-1 mx-1 align-baseline transition-transform active:scale-95"
+        style={{
+          fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+          fontSize: "12px",
+          fontWeight: 600,
+          letterSpacing: "0.02em",
+          background: "var(--tomato, #E5462E)",
+          color: "#fff",
+          padding: "2px 10px",
+          borderRadius: "999px",
+          whiteSpace: "nowrap",
+        }}
+        aria-label={`Stop timer (${formatCountdown(timer.remaining)} remaining)`}
+      >
+        {formatCountdown(timer.remaining)}
+      </button>
+    );
+  }
+
+  if (finished) {
+    return (
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="inline-flex items-baseline gap-1 mx-1 align-baseline"
+        style={{
+          fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+          fontSize: "12px",
+          fontWeight: 600,
+          background: "var(--ink-soft, #4A4742)",
+          color: "var(--cream, #F5EEE2)",
+          padding: "2px 10px",
+          borderRadius: "999px",
+          whiteSpace: "nowrap",
+        }}
+        aria-label="Timer finished — tap to dismiss"
+      >
+        done · 0:00
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onStart}
+      className="inline-flex items-baseline gap-1 mx-1 align-baseline transition-transform active:scale-95"
+      style={{
+        fontFamily: "var(--font-sans, 'Geist', system-ui, sans-serif)",
+        fontSize: "13px",
+        fontWeight: 600,
+        background: "transparent",
+        color: "var(--tomato, #E5462E)",
+        padding: "1px 9px",
+        borderRadius: "999px",
+        border: "1px solid var(--tomato, #E5462E)",
+        whiteSpace: "nowrap",
+      }}
+      aria-label={`Start ${label} timer`}
+    >
+      <span aria-hidden="true" style={{ fontSize: "11px", marginRight: 1 }}>◷</span>
+      {label}
+    </button>
   );
 }

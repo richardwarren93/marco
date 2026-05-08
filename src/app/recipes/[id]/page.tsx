@@ -1106,11 +1106,12 @@ export default function RecipeDetailPage() {
         </div>
       )}
 
-      {/* Cook with Marco — Phase 1 now-playing step view */}
-      {recipe && (
+      {/* Cook with Marco — Phase 1 now-playing step view. Conditionally
+          rendered (rather than passing isOpen) so state resets cleanly
+          between cook sessions via unmount/remount. */}
+      {recipe && showMarcoChat && (
         <CookMode
           recipe={recipe}
-          isOpen={showMarcoChat}
           onClose={() => setShowMarcoChat(false)}
         />
       )}
