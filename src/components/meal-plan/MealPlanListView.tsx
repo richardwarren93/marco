@@ -58,11 +58,14 @@ function MealRow({
   onTap,
   onRemove,
   compact = false,
+  done = false,
 }: {
   plan: MealPlan;
   onTap: () => void;
   onRemove: (id: string) => void;
   compact?: boolean;
+  /** Past-date / cooked treatment — strike-through title, faded thumbnail. */
+  done?: boolean;
 }) {
   return compact ? (
     /* ── Compact layout (weekly view): small left thumbnail ── */
@@ -70,15 +73,24 @@ function MealRow({
       <div
         onClick={onTap}
         className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-gray-50/40"
-        style={{ background: SURFACE }}
+        style={{ background: SURFACE, opacity: done ? 0.5 : 1 }}
       >
         <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#f0f0ee" }}>
           {plan.recipe?.image_url
-            ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
+            ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" style={done ? { filter: "grayscale(0.6)" } : undefined} />
             : <MealTypeIcon type={plan.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+          <p
+            className="text-[13px] font-semibold line-clamp-1"
+            style={{
+              color: plan.owner_name ? "#888" : TEXT_1,
+              textDecoration: done ? "line-through" : "none",
+              textDecorationColor: "var(--tomato, #E5462E)",
+              textDecorationThickness: "1.5px",
+              textDecorationSkipInk: "none",
+            }}
+          >
             {plan.recipe?.title || "Untitled"}
           </p>
           <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b8" }}>
@@ -592,7 +604,7 @@ export default function MealPlanListView({
   }
 
   // ─── Render meal row ──────────────────────────────────────────────────────────
-  function renderMealRow(plan: MealPlan, compact = false) {
+  function renderMealRow(plan: MealPlan, compact = false, done = false) {
     return (
       <MealRow
         key={plan.id}
@@ -600,6 +612,7 @@ export default function MealPlanListView({
         compact={compact}
         onTap={() => setPreviewPlan(plan)}
         onRemove={onRemove}
+        done={done}
       />
     );
   }
@@ -879,6 +892,7 @@ export default function MealPlanListView({
         {/* Day cards */}
         {sortedDates.map((dateKey) => {
           const isToday = dateKey === today;
+          const isPast = dateKey < today;
           const date = new Date(dateKey + "T12:00:00");
           const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
           const dayNum = date.getDate();
@@ -897,20 +911,39 @@ export default function MealPlanListView({
               {/* Day header */}
               <div
                 className="flex items-center justify-between px-4 py-3"
-                style={{ background: isToday ? "#fffbf8" : "#fafaf9" }}
+                style={{ background: isToday ? "#fffbf8" : isPast ? "#f5f3ef" : "#fafaf9" }}
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-[13px] font-semibold" style={{ color: TEXT_1 }}>{weekday} {dayNum}</span>
+                  <span
+                    className="text-[13px] font-semibold"
+                    style={{ color: isPast ? "var(--ink-soft, #4A4742)" : TEXT_1, opacity: isPast ? 0.6 : 1 }}
+                  >
+                    {weekday} {dayNum}
+                  </span>
                   {isToday && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: ACCENT_LIGHT, color: ACCENT }}>
                       Today
+                    </span>
+                  )}
+                  {isPast && plans.length > 0 && (
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{
+                        background: "var(--cream-warm, #EFE5D2)",
+                        color: "var(--teal, #0F4C5C)",
+                      }}
+                    >
+                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                      done
                     </span>
                   )}
                 </div>
                 <button
                   onClick={() => openAddSheet(dateKey)}
                   className="w-7 h-7 rounded-full border flex items-center justify-center transition-colors touch-manipulation"
-                  style={{ borderColor: BORDER, color: TEXT_2 }}
+                  style={{ borderColor: BORDER, color: TEXT_2, opacity: isPast ? 0.5 : 1 }}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -920,12 +953,17 @@ export default function MealPlanListView({
 
               {/* Meals */}
               {plans.length === 0 ? (
-                <p className="text-[11px] text-center py-3" style={{ color: "#d0d0ce" }}>Nothing planned</p>
+                <p
+                  className="text-[11px] text-center py-3"
+                  style={{ color: "#d0d0ce", opacity: isPast ? 0.6 : 1 }}
+                >
+                  Nothing planned
+                </p>
               ) : (
                 <div>
-                  {plans.map((plan, i) => (
+                  {plans.map((plan) => (
                     <div key={plan.id}>
-                      {renderMealRow(plan, true)}
+                      {renderMealRow(plan, true, isPast)}
                     </div>
                   ))}
                 </div>
