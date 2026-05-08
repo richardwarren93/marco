@@ -46,7 +46,10 @@ const ShareWithFriendsModal = dynamic(() => import("@/components/friends/ShareWi
 const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
 const CommunitySection = dynamic(() => import("@/components/community/CommunitySection"));
 const CookPhotosGallery = dynamic(() => import("@/components/recipes/CookPhotosGallery"));
-const CookWithMarcoChat = dynamic(() => import("@/components/recipes/CookWithMarcoChat"), { ssr: false });
+// CookWithMarcoChat is deliberately quarantined — its substitution / technique-
+// question logic comes back as voice features inside Cook mode in Phase 2.
+// Until then the recipe-detail "Cook with marco" button opens CookMode instead.
+const CookMode = dynamic(() => import("@/components/recipes/CookMode"), { ssr: false });
 
 
 /* ── Unit conversion maps ────────────────────────────────────────────── */
@@ -1103,10 +1106,11 @@ export default function RecipeDetailPage() {
         </div>
       )}
 
-      {/* Cook with Marco Chat */}
-      {showMarcoChat && recipe && (
-        <CookWithMarcoChat
+      {/* Cook with Marco — Phase 1 now-playing step view */}
+      {recipe && (
+        <CookMode
           recipe={recipe}
+          isOpen={showMarcoChat}
           onClose={() => setShowMarcoChat(false)}
         />
       )}
