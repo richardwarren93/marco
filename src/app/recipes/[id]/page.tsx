@@ -8,6 +8,7 @@ import useSWR, { mutate as swrMutate } from "swr";
 import dynamic from "next/dynamic";
 import type { Recipe, Ingredient } from "@/types";
 import { useRecipe, useRecipes, apiFetcher } from "@/lib/hooks/use-data";
+import { findDietaryConflicts } from "@/lib/cook/dietary";
 import SocialEmbed from "@/components/recipes/SocialEmbed";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
@@ -295,6 +296,16 @@ export default function RecipeDetailPage() {
     { revalidateOnFocus: false, dedupingInterval: 30000 },
   );
   const standingSubs: StandingSub[] = standingSubsData?.subs ?? [];
+
+  // Dietary filters — keyword-detected against the *effective* (post-standing-
+  // sub) ingredient name. A small "needs swap" pill flags conflicts so the
+  // user knows to tap and pick a substitute.
+  const { data: dietaryData } = useSWR<{ filters: string[] }>(
+    "/api/user/dietary",
+    apiFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 },
+  );
+  const dietaryFilters: string[] = dietaryData?.filters ?? [];
 
   // When viewing someone else's copy of a recipe we already own, find that
   // saved row so we can redirect to it instead of stranding the user on the
@@ -867,6 +878,12 @@ export default function RecipeDetailPage() {
                       return isNaN(num) ? null : num * ratio;
                     })();
 
+                    // Dietary conflicts are computed against the *effective*
+                    // (post-standing-sub) name so applying a sub silently
+                    // clears the flag — same mental model as the substitution
+                    // sheet's role/reasoning text.
+                    const dietaryConflicts = findDietaryConflicts(effective.name, dietaryFilters);
+
                     let displayAmount = scaledAmount;
                     let displayUnit = effective.unit || "";
                     let wasConverted = false;
@@ -918,6 +935,22 @@ export default function RecipeDetailPage() {
                               title={`Originally: ${ing.amount}${ing.unit ? " " + ing.unit : ""} ${ing.name}. Tap to revert.`}
                             >
                               ↳
+                            </button>
+                          )}
+                          {dietaryConflicts.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setSubstituteIngredient(ing)}
+                              className="flex-shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-colors hover:opacity-80"
+                              style={{
+                                background: "rgba(229, 70, 46, 0.10)",
+                                color: "var(--tomato, #E5462E)",
+                                letterSpacing: "0.08em",
+                              }}
+                              aria-label={`Conflicts with ${dietaryConflicts.map((c) => c.label).join(", ")} — tap to find a substitute`}
+                              title={`Doesn't fit: ${dietaryConflicts.map((c) => c.label).join(", ")}. Tap to swap.`}
+                            >
+                              Needs swap
                             </button>
                           )}
                         </div>

@@ -14,6 +14,7 @@ import BadgesCard from "@/components/gamification/BadgesCard";
 import TasteProfileCard from "@/components/gamification/TasteProfileCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
 import PhoneCard from "@/components/phone/PhoneCard";
+import DietaryFiltersCard from "@/components/dietary/DietaryFiltersCard";
 
 export default function ProfilePage() {
   const { data: profileData, isLoading: profileLoading, mutate: mutateProfile } = useProfile();
@@ -386,6 +387,11 @@ export default function ProfilePage() {
       {/* ── Badges — Showcase ── */}
       <div className="px-4 pt-4">
         <BadgesCard />
+      </div>
+
+      {/* ── Dietary filters ── */}
+      <div className="px-4 pt-4">
+        <DietaryFiltersCard />
       </div>
 
       {/* ── Household ── */}

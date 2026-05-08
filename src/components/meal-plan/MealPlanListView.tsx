@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { mutate as swrMutate } from "swr";
-import type { MealPlan, Recipe } from "@/types";
-import { useTrending, useRecipes } from "@/lib/hooks/use-data";
+import useSWR, { mutate as swrMutate } from "swr";
+import type { MealPlan, Recipe, Ingredient } from "@/types";
+import { useTrending, useRecipes, apiFetcher } from "@/lib/hooks/use-data";
+import { findDietaryConflicts } from "@/lib/cook/dietary";
 import AddMealSheet from "./AddMealSheet";
 import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
@@ -180,6 +181,17 @@ export default function MealPlanListView({
   onPlanThisWeek?: (preSelectedRecipeId?: string) => void;
 }) {
   const router = useRouter();
+
+  // Dietary filters — used to mark days where any planned recipe contains an
+  // ingredient that conflicts with the user's profile-level filters. The
+  // badge is a soft heads-up; the recipe detail's per-row pill is the
+  // authoritative call (it also accounts for standing subs).
+  const { data: dietaryData } = useSWR<{ filters: string[] }>(
+    "/api/user/dietary",
+    apiFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 },
+  );
+  const dietaryFilters: string[] = dietaryData?.filters ?? [];
 
   // ─── View mode ──────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<"daily" | "weekly">("weekly");
@@ -903,6 +915,17 @@ export default function MealPlanListView({
           const dayNum = date.getDate();
           const plans = sortMeals(byDate[dateKey] || []);
 
+          // Day-level dietary heads-up. True if any planned recipe contains
+          // an ingredient that hits one of the active filters. Past days
+          // skip the check — already cooked, no swap to make.
+          const dayHasDietaryConflict =
+            !isPast &&
+            dietaryFilters.length > 0 &&
+            plans.some((p) => {
+              const ings = (p.recipe?.ingredients as Ingredient[] | undefined) ?? [];
+              return ings.some((ing) => findDietaryConflicts(ing.name, dietaryFilters).length > 0);
+            });
+
           return (
             <div
               key={dateKey}
@@ -928,6 +951,15 @@ export default function MealPlanListView({
                   {isToday && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: ACCENT_LIGHT, color: ACCENT }}>
                       Today
+                    </span>
+                  )}
+                  {dayHasDietaryConflict && (
+                    <span
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ background: "rgba(232, 163, 61, 0.18)", color: "#8A6418" }}
+                      title="One of today's recipes has an ingredient that doesn't fit your dietary filters."
+                    >
+                      Needs swap
                     </span>
                   )}
                   {isPast && plans.length > 0 && (
