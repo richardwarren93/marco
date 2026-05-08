@@ -1,8 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
-import type { Recipe } from "@/types";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import type { Recipe, Ingredient } from "@/types";
 import { parseStep, formatCountdown, classifyAllSteps, TRACK_LABELS, type StepToken, type StepTrack } from "@/lib/cook/stepParser";
+import {
+  isVoiceSupported,
+  createVoiceController,
+  parseIntent,
+  speak,
+  stopSpeaking,
+  VOICE_HINTS,
+  type VoiceController,
+  type VoiceIntent,
+} from "@/lib/cook/voice";
 
 /**
  * Cook with Marco — Phase 1 spine.
@@ -156,6 +166,155 @@ export default function CookMode({ recipe, onClose }: Props) {
     }
   }
 
+  // ─── Tier 1 voice ────────────────────────────────────────────────────────
+  // Per the spec: cooking-mode toggle activation, on-device intent matching,
+  // no LLM call. ~6 commands for v1: next / previous / repeat / set-timer /
+  // cancel-timer / how-much-{ingredient}. The mic button is the only entry —
+  // explicit opt-in, mic stays open for the duration, no false activations
+  // from kitchen chatter.
+  const voiceSupported = useMemo(() => isVoiceSupported(), []);
+  const [voiceListening, setVoiceListening] = useState(false);
+  const [voiceTranscript, setVoiceTranscript] = useState<string>("");
+  const [voiceNote, setVoiceNote] = useState<string>("");
+  const voiceCtrlRef = useRef<VoiceController | null>(null);
+  const voiceTimerCounterRef = useRef(0);
+
+  // Stable ref to the latest intent handler. The voice controller is built
+  // once per session; keeping the dispatcher in a ref means we don't have
+  // to tear down and rebuild recognition every time activeIndex changes.
+  const handleVoiceIntentRef = useRef<(intent: VoiceIntent) => void>(() => {});
+
+  // Resolve a spoken ingredient phrase against the recipe's ingredient list.
+  // Strips articles, lowercases, and accepts substrings — "butter" matches
+  // "unsalted butter", "the eggs" matches "eggs", etc.
+  const findIngredient = useCallback((spoken: string): Ingredient | null => {
+    const norm = spoken.toLowerCase().replace(/^(the|a|an|some|of)\s+/i, "").trim();
+    if (!norm) return null;
+    // Prefer longer matches so "egg whites" beats "eggs" when both appear.
+    const candidates = ingredients
+      .map((ing) => ({ ing, name: ing.name.toLowerCase() }))
+      .filter((c) => c.name.includes(norm) || norm.includes(c.name))
+      .sort((a, b) => b.name.length - a.name.length);
+    return candidates[0]?.ing ?? null;
+  }, [ingredients]);
+
+  // Define the dispatcher as a fresh closure every render — no
+  // useCallback. The voice controller only ever invokes it via the ref
+  // below, so a stable reference doesn't matter. Skipping memoization
+  // sidesteps both exhaustive-deps and preserve-manual-memoization
+  // warnings without losing any actual stability.
+  function handleVoiceIntent(intent: VoiceIntent) {
+    setVoiceTranscript(""); // clear preview the moment a final intent fires
+    switch (intent.type) {
+      case "next":
+        if (activeIndex < totalSteps) {
+          setVoiceNote("Next step");
+          handleDone();
+        }
+        return;
+      case "previous":
+        if (activeIndex > 0) {
+          setVoiceNote("Going back");
+          setCompleted((prev) => prev.filter((i) => i !== activeIndex - 1));
+          setActiveIndex(activeIndex - 1);
+        }
+        return;
+      case "repeat": {
+        const text = steps[activeIndex];
+        if (text) {
+          setVoiceNote("Reading the step");
+          speak(text);
+        }
+        return;
+      }
+      case "set_timer": {
+        voiceTimerCounterRef.current += 1;
+        const key = `voice:${voiceTimerCounterRef.current}`;
+        startTimer(key, intent.seconds, intent.label, activeIndex);
+        setVoiceNote(`${intent.label} timer started`);
+        speak(`Setting a ${intent.label} timer`);
+        return;
+      }
+      case "cancel_timer": {
+        // Cancel the most recently started timer — the spec calls out
+        // ambiguity disambiguation for "stop the timer" with multiple, but
+        // that's the Phase 2 confirmation-patterns task. v1 cancels newest.
+        const newest = [...timers.entries()].sort((a, b) => b[1].startedAt - a[1].startedAt)[0];
+        if (newest) {
+          dismissTimer(newest[0]);
+          setVoiceNote(`Cancelled ${newest[1].name}`);
+          speak("Timer cancelled");
+        }
+        return;
+      }
+      case "how_much": {
+        const match = findIngredient(intent.ingredient);
+        if (match) {
+          const parts = [match.amount, match.unit, match.name].filter(Boolean).join(" ");
+          setVoiceNote(parts);
+          speak(parts || `${intent.ingredient}: not in the list`);
+        } else {
+          setVoiceNote(`No ${intent.ingredient} in this recipe`);
+          speak(`I don't see ${intent.ingredient} in this recipe`);
+        }
+        return;
+      }
+    }
+  }
+  // Update the ref each render (in an effect, not during render) so the
+  // controller's onTranscript callback always invokes the latest dispatcher.
+  useEffect(() => {
+    handleVoiceIntentRef.current = handleVoiceIntent;
+  });
+
+  // Auto-clear the inline voice-note after a few seconds so the screen
+  // doesn't carry "Going back" forever.
+  useEffect(() => {
+    if (!voiceNote) return;
+    const handle = setTimeout(() => setVoiceNote(""), 3000);
+    return () => clearTimeout(handle);
+  }, [voiceNote]);
+
+  // Build the controller once. Toggle drives start/stop. Cleanup on unmount.
+  useEffect(() => {
+    if (!voiceSupported) return;
+    const ctrl = createVoiceController({
+      onTranscript: (text) => {
+        const intent = parseIntent(text);
+        if (intent) {
+          handleVoiceIntentRef.current(intent);
+        } else {
+          // Surface the heard phrase briefly so the user knows it tried
+          // but didn't match. Helps debugging early.
+          setVoiceNote(`Heard: ${text}`);
+        }
+      },
+      onInterim: (text) => setVoiceTranscript(text),
+      onError: (err) => setVoiceNote(`Mic error: ${err}`),
+      onListeningChange: (listening) => {
+        if (!listening) setVoiceTranscript("");
+      },
+    });
+    voiceCtrlRef.current = ctrl;
+    return () => {
+      ctrl?.stop();
+      stopSpeaking();
+    };
+  }, [voiceSupported]);
+
+  function toggleVoice() {
+    const ctrl = voiceCtrlRef.current;
+    if (!ctrl) return;
+    if (voiceListening) {
+      ctrl.stop();
+      setVoiceListening(false);
+      stopSpeaking();
+    } else {
+      ctrl.start();
+      setVoiceListening(true);
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-[80] flex flex-col"
@@ -190,17 +349,108 @@ export default function CookMode({ recipe, onClose }: Props) {
               : `Step ${activeIndex + 1} of ${totalSteps}`}
           </p>
         </div>
-        <button
-          onClick={onClose}
-          aria-label="Exit cooking mode"
-          className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-full transition-colors active:scale-95"
-          style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {voiceSupported && (
+            <button
+              onClick={toggleVoice}
+              aria-label={voiceListening ? "Turn off voice" : "Turn on voice commands"}
+              aria-pressed={voiceListening}
+              className="relative w-9 h-9 flex items-center justify-center rounded-full transition-colors active:scale-95"
+              style={
+                voiceListening
+                  ? { background: "var(--tomato, #E5462E)", color: "#fff" }
+                  : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }
+              }
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <rect x="9" y="3" width="6" height="11" rx="3" />
+                <path strokeLinecap="round" d="M5 11a7 7 0 0014 0M12 18v3" />
+              </svg>
+              {voiceListening && (
+                <span
+                  aria-hidden="true"
+                  className="absolute inline-flex rounded-full"
+                  style={{
+                    inset: -3,
+                    border: "1.5px solid var(--tomato, #E5462E)",
+                    opacity: 0.55,
+                    animation: "marco-punctum-pulse 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+                  }}
+                />
+              )}
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            aria-label="Exit cooking mode"
+            className="w-9 h-9 flex items-center justify-center rounded-full transition-colors active:scale-95"
+            style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
+
+      {/* Voice listening band — visible when the mic is on. Shows the live
+          transcript preview, the most recent action note, and the canonical
+          hint chips so the user knows what to say. */}
+      {voiceListening && (
+        <div
+          className="mx-5 mt-3 px-3 py-2 rounded-xl"
+          style={{
+            background: "var(--cream-warm, #EFE5D2)",
+            border: "1px solid var(--line, rgba(28,26,23,0.10))",
+          }}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <span
+              className="marco-mono"
+              style={{ color: "var(--tomato, #E5462E)", letterSpacing: "0.18em" }}
+            >
+              ● Listening
+            </span>
+            {voiceNote && (
+              <span
+                className="text-[12px] truncate ml-2"
+                style={{
+                  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                  fontStyle: "italic",
+                  color: "var(--ink-soft, #4A4742)",
+                  maxWidth: "60%",
+                }}
+              >
+                {voiceNote}
+              </span>
+            )}
+          </div>
+          {voiceTranscript ? (
+            <p
+              className="text-[12.5px] mt-1 truncate"
+              style={{
+                fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                color: "var(--ink-soft, #4A4742)",
+                opacity: 0.8,
+              }}
+            >
+              {voiceTranscript}
+            </p>
+          ) : (
+            <p
+              className="text-[11px] mt-1 truncate"
+              style={{
+                color: "var(--ink-soft, #4A4742)",
+                opacity: 0.65,
+                fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+                letterSpacing: "0.04em",
+              }}
+            >
+              try {VOICE_HINTS.join(" · ")}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Progress dots — one per step, filled if complete or active. */}
       {totalSteps > 0 && (
