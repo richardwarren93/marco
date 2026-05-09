@@ -31,6 +31,27 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
   },
+  plugins: {
+    SplashScreen: {
+      // Cream background matches the Marco brand palette so the splash
+      // doesn't flash white before the web app paints. Auto-hide once the
+      // WebView has finished loading the home page.
+      launchShowDuration: 1200,
+      launchAutoHide: true,
+      backgroundColor: "#F5EEE2",
+      androidSplashResourceName: "splash",
+      androidScaleType: "CENTER_CROP",
+      showSpinner: false,
+      splashFullScreen: true,
+      splashImmersive: true,
+    },
+    StatusBar: {
+      // Light content (dark text) since the Marco background is cream.
+      style: "LIGHT",
+      backgroundColor: "#F5EEE2",
+      overlaysWebView: false,
+    },
+  },
 };
 
 export default config;
