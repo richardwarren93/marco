@@ -74,12 +74,7 @@ workflows:
       - android/app/build/outputs/**/*.aab
       - android/app/build/outputs/**/*.apk
     publishing:
-      email:
-        recipients:
-          - $CM_EMAIL_TO  # set per project; falls back to project owner
-        notify:
-          success: true
-          failure: true
+      # Codemagic emails the account owner on success/failure by default.
       # Uncomment once a Google Play service account is uploaded to Codemagic:
       # google_play:
       #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
@@ -132,12 +127,7 @@ workflows:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
     publishing:
-      email:
-        recipients:
-          - $CM_EMAIL_TO
-        notify:
-          success: true
-          failure: true
+      # Codemagic emails the account owner on success/failure by default.
       app_store_connect:
         # Auto-submit to TestFlight on every build. Manual App Store
         # submission still happens through App Store Connect.
