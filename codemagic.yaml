@@ -1,0 +1,139 @@
+# Codemagic CI — cloud builds for the Marco mobile shells.
+#
+# Two workflows:
+#   - android-build  → produces a signed .aab for Google Play (or .apk for
+#                       direct sideload on BlueStacks/devices). Works today.
+#   - ios-build      → produces a signed .ipa and ships it to TestFlight.
+#                       Requires Apple Developer Program membership; the
+#                       Codemagic side-config (App Store Connect API key,
+#                       provisioning profile) must be uploaded to Codemagic
+#                       before this workflow can succeed.
+#
+# Trigger model: by default neither workflow auto-runs on push. Both are
+# `manual` so you click "Run workflow" in Codemagic when you want a build.
+# Switch `triggering.events` to `[push]` and set `branch_patterns` once you
+# want every merge to main to ship a build.
+
+workflows:
+  android-build:
+    name: Android — signed AAB + APK
+    instance_type: linux_x2
+    max_build_duration: 60
+    environment:
+      node: 22
+      java: 21
+      vars:
+        # Bump this on each release — Google Play won't accept a duplicate
+        # versionCode. Codemagic also exposes BUILD_NUMBER which we can
+        # auto-increment; using the env var here so it's explicit.
+        PACKAGE_NAME: app.marco.mobile
+      groups:
+        # Defined in Codemagic → Teams → Marco → Variables and secrets:
+        #   ANDROID_KEYSTORE          — uploaded keystore reference (Codemagic UI)
+        #   CM_KEYSTORE_PASSWORD      — keystore password
+        #   CM_KEY_ALIAS              — key alias inside the keystore
+        #   CM_KEY_ALIAS_PASSWORD     — alias password
+        #   GCLOUD_SERVICE_ACCOUNT_CREDENTIALS — JSON for Play submission (optional)
+        - marco_android_signing
+    triggering:
+      events: []  # manual; switch to [push] + branch_patterns when ready
+    scripts:
+      - name: Install Node deps
+        script: |
+          npm ci
+      - name: Sync Capacitor → Android
+        script: |
+          npx cap sync android
+      - name: Set up Android signing
+        script: |
+          # Codemagic injects the keystore via env; write it into a local
+          # keystore.properties file the Gradle build references.
+          cat > "$CM_BUILD_DIR/android/keystore.properties" <<EOF
+          storeFile=$CM_KEYSTORE_PATH
+          storePassword=$CM_KEYSTORE_PASSWORD
+          keyAlias=$CM_KEY_ALIAS
+          keyPassword=$CM_KEY_ALIAS_PASSWORD
+          EOF
+      - name: Build signed AAB (Play Store)
+        script: |
+          cd android
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=$CM_KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$CM_KEY_ALIAS_PASSWORD
+      - name: Build signed APK (sideload / BlueStacks)
+        script: |
+          cd android
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$CM_KEYSTORE_PATH \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$CM_KEY_ALIAS_PASSWORD
+    artifacts:
+      - android/app/build/outputs/**/*.aab
+      - android/app/build/outputs/**/*.apk
+    publishing:
+      # Codemagic emails the account owner on success/failure by default.
+      # Uncomment once a Google Play service account is uploaded to Codemagic:
+      # google_play:
+      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+      #   track: internal
+      #   submit_as_draft: false
+
+  ios-build:
+    name: iOS — signed IPA + TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      # Set this up in Codemagic → Teams → Marco → Integrations once the
+      # Apple Developer Program membership is approved. The integration
+      # holds the App Store Connect API key + automatic code signing.
+      app_store_connect: marco_app_store_connect
+    environment:
+      node: 22
+      xcode: latest
+      cocoapods: default
+      vars:
+        XCODE_WORKSPACE: ios/App/App.xcworkspace
+        XCODE_SCHEME: App
+        BUNDLE_ID: app.marco.mobile
+    triggering:
+      events: []  # manual until Apple approves the dev account
+    scripts:
+      - name: Install Node deps
+        script: |
+          npm ci
+      - name: Sync Capacitor → iOS
+        script: |
+          npx cap sync ios
+      - name: Install CocoaPods
+        script: |
+          cd ios/App
+          pod install
+      - name: Set up code signing (managed by Codemagic)
+        script: |
+          xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $(($BUILD_NUMBER + 1))
+      - name: Build .ipa
+        script: |
+          xcode-project build-ipa \
+            --workspace "$XCODE_WORKSPACE" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      # Codemagic emails the account owner on success/failure by default.
+      app_store_connect:
+        # Auto-submit to TestFlight on every build. Manual App Store
+        # submission still happens through App Store Connect.
+        auth: integration
+        submit_to_testflight: true
+        # Once you have an internal TestFlight group named e.g. "Friends",
+        # uncomment to auto-distribute:
+        # beta_groups:
+        #   - Friends
