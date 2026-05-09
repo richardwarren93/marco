@@ -73,23 +73,21 @@ workflows:
     artifacts:
       - android/app/build/outputs/**/*.aab
       - android/app/build/outputs/**/*.apk
-    publishing:
-      # Codemagic emails the account owner on success/failure by default.
-      # Uncomment once a Google Play service account is uploaded to Codemagic:
-      # google_play:
-      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-      #   track: internal
-      #   submit_as_draft: false
+    # Codemagic emails the account owner on build success/failure by default.
+    # When ready to auto-publish to Google Play, add:
+    # publishing:
+    #   google_play:
+    #     credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+    #     track: internal
 
   ios-build:
     name: iOS — signed IPA + TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 60
-    integrations:
-      # Set this up in Codemagic → Teams → Marco → Integrations once the
-      # Apple Developer Program membership is approved. The integration
-      # holds the App Store Connect API key + automatic code signing.
-      app_store_connect: marco_app_store_connect
+    # Once the Apple Developer Program membership is approved, set up
+    # Codemagic → Teams → Marco → Integrations and uncomment:
+    # integrations:
+    #   app_store_connect: marco_app_store_connect
     environment:
       node: 22
       xcode: latest
@@ -126,14 +124,10 @@ workflows:
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
-    publishing:
-      # Codemagic emails the account owner on success/failure by default.
-      app_store_connect:
-        # Auto-submit to TestFlight on every build. Manual App Store
-        # submission still happens through App Store Connect.
-        auth: integration
-        submit_to_testflight: true
-        # Once you have an internal TestFlight group named e.g. "Friends",
-        # uncomment to auto-distribute:
-        # beta_groups:
-        #   - Friends
+    # Once the App Store Connect integration is set up, add publishing:
+    # publishing:
+    #   app_store_connect:
+    #     auth: integration
+    #     submit_to_testflight: true
+    #     beta_groups:
+    #       - Friends
