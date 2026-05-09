@@ -17,11 +17,13 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  themeColor: "#F5EEE2",
 };
 
 export const metadata: Metadata = {
   title: "Marco - Save & Plan Recipes",
   description: "Save recipes from Instagram and TikTok, manage your pantry, and plan meals with AI.",
+  manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
