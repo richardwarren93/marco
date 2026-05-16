@@ -90,13 +90,14 @@ workflows:
     environment:
       node: 22
       xcode: latest
-      cocoapods: default
+      # No `cocoapods` line: Capacitor 6+ uses Swift Package Manager
+      # (see `ios/App/CapApp-SPM/`). There is no Podfile to install.
       vars:
-        XCODE_WORKSPACE: ios/App/App.xcworkspace
+        XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
         BUNDLE_ID: com.ACGC.crave
     triggering:
-      events: []  # manual until Apple approves the dev account
+      events: []  # manual until we want every merge to ship a build
     scripts:
       - name: Install Node deps
         script: |
@@ -104,10 +105,6 @@ workflows:
       - name: Sync Capacitor → iOS
         script: |
           npx cap sync ios
-      - name: Install CocoaPods
-        script: |
-          cd ios/App
-          pod install
       - name: Set up code signing (managed by Codemagic)
         script: |
           xcode-project use-profiles
@@ -118,7 +115,7 @@ workflows:
       - name: Build .ipa
         script: |
           xcode-project build-ipa \
-            --workspace "$XCODE_WORKSPACE" \
+            --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
