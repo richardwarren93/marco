@@ -73,13 +73,10 @@ workflows:
     artifacts:
       - android/app/build/outputs/**/*.aab
       - android/app/build/outputs/**/*.apk
-    publishing:
-      # Codemagic emails the account owner on success/failure by default.
-      # Uncomment once a Google Play service account is uploaded to Codemagic:
-      # google_play:
-      #   credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
-      #   track: internal
-      #   submit_as_draft: false
+    # No `publishing` block: Codemagic emails the account owner on
+    # success/failure by default. Once a Google Play service account is
+    # uploaded to Codemagic, add a `publishing:` block here with a
+    # `google_play:` entry pointing at $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS.
 
   ios-build:
     name: iOS — signed IPA + TestFlight
