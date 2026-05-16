@@ -107,14 +107,20 @@ workflows:
           npx cap sync ios
       - name: Set up code signing (explicit fetch + create)
         script: |
-          # The implicit auto-signing via `integrations: app_store_connect`
-          # was producing provisioning profiles missing the Push
-          # Notifications capability. Explicit `fetch-signing-files --create`
-          # calls into the App Store Connect API and (a) reuses cert + profile
-          # if they already exist for the bundle ID, (b) generates new ones
-          # if not, including ALL capabilities currently enabled on the App
-          # ID. Both cert and profile then persist to Apple's portal.
+          # Apple's API requires a CSR (built from a private RSA key) to
+          # issue a Distribution certificate. The first attempt failed
+          # because no private key was available — fetch-signing-files
+          # fell back to ad-hoc signing with no profile, and the archive
+          # step rejected it. We generate a fresh key inline.
+          #
+          # TODO: once the first build succeeds and a Distribution cert
+          # exists on Apple's side, save the contents of /tmp/codemagic_key
+          # to a Codemagic environment variable named
+          # CERTIFICATE_PRIVATE_KEY so subsequent builds reuse the same
+          # Apple cert instead of stacking new ones.
           keychain initialize
+          ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/codemagic_key -q -N ""
+          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/codemagic_key)
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
