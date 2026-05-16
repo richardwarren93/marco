@@ -94,7 +94,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: ios/App/App.xcworkspace
         XCODE_SCHEME: App
-        BUNDLE_ID: app.marco.mobile
+        BUNDLE_ID: com.ACGC.crave
     triggering:
       events: []  # manual until Apple approves the dev account
     scripts:
