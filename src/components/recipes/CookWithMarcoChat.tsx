@@ -279,7 +279,7 @@ export default function CookWithMarcoChat({
           <span className="text-2xl shrink-0">{"\u{1F9D1}\u200D\u{1F373}"}</span>
           <div className="min-w-0">
             <h2 className="text-sm font-semibold text-gray-900 truncate">
-              Cook with Marco
+              Cook with Salt & Spoon
             </h2>
             <p className="text-xs text-gray-500 truncate">{recipe.title}</p>
           </div>
@@ -481,7 +481,7 @@ export default function CookWithMarcoChat({
                   inputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
                 }, 300);
               }}
-              placeholder="Ask Marco anything..."
+              placeholder="Ask Salt & Spoon anything..."
               disabled={isStreaming}
               rows={1}
               className="w-full resize-none rounded-2xl border px-4 py-2.5 text-sm outline-none transition-colors disabled:opacity-50 placeholder:text-gray-400"

@@ -42,7 +42,7 @@ const socials = [
   },
   {
     name: "Discord",
-    handle: "Marco Community",
+    handle: "Salt & Spoon Community",
     url: "https://discord.gg/marco",
     color: "from-indigo-500 to-indigo-600",
     bgColor: "bg-gradient-to-br from-indigo-50 to-violet-50",

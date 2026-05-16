@@ -16,7 +16,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
   appId: "app.marco.mobile",
-  appName: "Marco",
+  appName: "Salt & Spoon",
   // The local `webDir` exists for the case where we ever bundle a static
   // shell. For now the app loads `server.url` directly, so this points at
   // a placeholder build output that we'll generate on demand.

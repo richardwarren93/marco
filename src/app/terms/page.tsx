@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Terms of Service · Marco",
+  title: "Terms of Service · Salt & Spoon",
 };
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
       <div className="max-w-2xl mx-auto px-5 py-10">
-        <Link href="/" className="text-sm font-semibold" style={{ color: "#e8530a" }}>← Marco</Link>
+        <Link href="/" className="text-sm font-semibold" style={{ color: "#e8530a" }}>← Salt & Spoon</Link>
         <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
           Terms of Service
         </h1>
@@ -16,7 +16,7 @@ export default function TermsPage() {
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed" style={{ color: "#1C1A17" }}>
           <Section title="1. Acceptance">
-            By creating an account or using Marco (the &quot;Service&quot;), you agree to these Terms.
+            By creating an account or using Salt & Spoon (the &quot;Service&quot;), you agree to these Terms.
             If you don&apos;t agree, don&apos;t use the Service.
           </Section>
 
@@ -26,20 +26,20 @@ export default function TermsPage() {
           </Section>
 
           <Section title="3. Your content">
-            Recipes, photos, notes, and other content you save are yours. You grant Marco a
+            Recipes, photos, notes, and other content you save are yours. You grant Salt & Spoon a
             limited license to store, display, and process that content for the purpose of
             running the Service. We don&apos;t sell your content.
           </Section>
 
           <Section title="4. Acceptable use">
-            Don&apos;t use Marco to break the law, infringe others&apos; rights, send spam,
+            Don&apos;t use Salt & Spoon to break the law, infringe others&apos; rights, send spam,
             or interfere with the Service. We may suspend accounts that do.
           </Section>
 
           <Section title="5. SMS messaging">
-            Marco offers an optional SMS interface. By verifying your phone number on your
+            Salt & Spoon offers an optional SMS interface. By verifying your phone number on your
             Profile page, you consent to receive transactional and conversational SMS messages
-            from Marco — including verification codes, recipe save confirmations, recipe
+            from Salt & Spoon — including verification codes, recipe save confirmations, recipe
             retrievals, and replies to cooking questions you initiate. Message frequency
             varies based on your usage. Message and data rates may apply. You can opt out at
             any time by replying STOP. Reply HELP for help. We never share your phone number
@@ -47,7 +47,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="6. Third-party services">
-            Marco uses third-party services (Supabase for data, Anthropic for AI, Twilio for
+            Salt & Spoon uses third-party services (Supabase for data, Anthropic for AI, Twilio for
             SMS, Vercel for hosting) to operate. Their handling of your data is covered by
             our <Link href="/privacy" className="underline">Privacy Policy</Link>.
           </Section>
@@ -59,7 +59,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="8. Limitation of liability">
-            To the fullest extent allowed by law, Marco isn&apos;t liable for indirect,
+            To the fullest extent allowed by law, Salt & Spoon isn&apos;t liable for indirect,
             incidental, or consequential damages arising from your use of the Service.
           </Section>
 

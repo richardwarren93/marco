@@ -185,7 +185,7 @@ export default function ProfilePage() {
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
             <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#a09890" }}>
-              Add an email to access Marco from any device and never lose your recipes.
+              Add an email to access Salt & Spoon from any device and never lose your recipes.
             </p>
             <button
               onClick={() => setShowUpgrade(true)}

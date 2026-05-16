@@ -147,8 +147,8 @@ function NavbarInner() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-10 sm:h-14 items-center">
             {/* Left: Page title on mobile, Marco signature wordmark on desktop */}
-            <Link href={user ? "/recipes" : "/"} className="hidden sm:inline-flex items-end" aria-label="Marco — home">
-              <span className="marco-signature" style={{ fontSize: "2.25rem" }}>marco</span>
+            <Link href={user ? "/recipes" : "/"} className="hidden sm:inline-flex items-end" aria-label="Salt & Spoon — home">
+              <span className="marco-signature" style={{ fontSize: "2.25rem" }}>salt & spoon</span>
             </Link>
             {(() => {
               const mobileTitle = user

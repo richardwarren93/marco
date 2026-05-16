@@ -51,7 +51,7 @@ export default function LoginPage() {
         className="relative flex items-center justify-center px-4"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)", paddingBottom: "1.5rem" }}
       >
-        <span className="marco-signature" style={{ fontSize: "3rem" }}>marco</span>
+        <span className="marco-signature" style={{ fontSize: "3rem" }}>salt & spoon</span>
       </div>
 
       {/* Form */}

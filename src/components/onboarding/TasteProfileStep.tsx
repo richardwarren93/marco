@@ -190,7 +190,7 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
           style={{ background: "#E5462E" }}
         >
-          Enter Marco
+          Enter Salt & Spoon
         </button>
       </div>
 
@@ -220,7 +220,7 @@ export default function TasteProfileStep({ likedRecipeIds, kitchenPal, onNext }:
 
             <button
               onClick={async () => {
-                const text = `My Marco taste profile: ${topTraits.slice(0, 4).map((t) => t.label).join(", ")}`;
+                const text = `My Salt & Spoon taste profile: ${topTraits.slice(0, 4).map((t) => t.label).join(", ")}`;
                 if (navigator.share) {
                   try {
                     await navigator.share({ title: "My Taste Profile", text });
