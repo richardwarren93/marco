@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     .maybeSingle();
   if (claimed && claimed.user_id !== user.id) {
     return NextResponse.json(
-      { error: "This phone is already linked to another Marco account." },
+      { error: "This phone is already linked to another Salt & Spoon account." },
       { status: 409 }
     );
   }
@@ -70,7 +70,7 @@ export async function POST(request: Request) {
 
   if (smsConfigured()) {
     try {
-      await sendSms(phone, `Your Marco verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
+      await sendSms(phone, `Your Salt & Spoon verification code is ${code}. It expires in ${CODE_TTL_MINUTES} minutes.`);
     } catch (err) {
       console.error("[phone/start] sendSms failed:", err);
       return NextResponse.json({ error: "Failed to send SMS" }, { status: 502 });

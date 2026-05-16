@@ -1157,7 +1157,7 @@ export default function RecipeDetailPage() {
               >
                 <span>Cook with</span>
                 {/* Marco signature mark with the tomato punctum \u2014 replaces the chef emoji */}
-                <span className="marco-signature" style={{ fontSize: "1.25rem" }}>marco</span>
+                <span className="marco-signature" style={{ fontSize: "1.25rem" }}>salt & spoon</span>
                 <span
                   className="ml-0.5 px-1.5 py-0.5 rounded-full align-middle"
                   style={{
@@ -1190,7 +1190,7 @@ export default function RecipeDetailPage() {
             className="marco-signature is-pulsing"
             style={{ fontSize: "4.5rem" }}
           >
-            marco
+            salt & spoon
           </span>
           <p
             style={{

@@ -1,6 +1,6 @@
 {
-  "name": "Marco",
-  "short_name": "Marco",
+  "name": "Salt & Spoon",
+  "short_name": "Salt & Spoon",
   "description": "Save recipes from anywhere. Plan meals in seconds. Shop and earn back.",
   "start_url": "/recipes",
   "scope": "/",

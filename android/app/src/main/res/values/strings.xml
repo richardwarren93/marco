@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Marco</string>
-    <string name="title_activity_main">Marco</string>
+    <string name="app_name">Salt &amp; Spoon</string>
+    <string name="title_activity_main">Salt &amp; Spoon</string>
     <string name="package_name">app.marco.mobile</string>
     <string name="custom_url_scheme">app.marco.mobile</string>
 </resources>

@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     if (profile?.household_size && profile.household_size > 1) userContext.push(`Household size: ${profile.household_size} people`);
     if (prefs?.allergies?.length) userContext.push(`ALLERGIES (critical — never suggest these): ${prefs.allergies.join(", ")}`);
     if (prefs?.meal_planning_priority) userContext.push(`Cooking priority: ${prefs.meal_planning_priority}`);
-    if (prefs?.motivation) userContext.push(`Why they use Marco: ${prefs.motivation}`);
+    if (prefs?.motivation) userContext.push(`Why they use Salt & Spoon: ${prefs.motivation}`);
     if (prefs?.household_type) userContext.push(`Household type: ${prefs.household_type}`);
     if (prefs?.taste_profile) {
       const tp = prefs.taste_profile;
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
         ? `\nNutrition per serving: ${recipe.calories} cal, ${recipe.protein_g ?? "?"}g protein, ${recipe.carbs_g ?? "?"}g carbs, ${recipe.fat_g ?? "?"}g fat`
         : "";
 
-    const systemPrompt = `You are Marco, a friendly and knowledgeable cooking assistant in the Marco recipe app. You're helping the user cook this specific recipe. You know their food preferences better than anyone and get smarter about their taste over time.
+    const systemPrompt = `You are Salt & Spoon, a friendly and knowledgeable cooking assistant in the Salt & Spoon recipe app. You're helping the user cook this specific recipe. You know their food preferences better than anyone and get smarter about their taste over time.
 
 RECIPE: ${recipe.title}
 Servings: ${recipe.servings ?? "Not specified"}

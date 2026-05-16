@@ -28,8 +28,8 @@ export default function FriendCodeCard({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Add me on Marco!",
-          text: `Add me on Marco! My friend code is ${friendCode}`,
+          title: "Add me on Salt & Spoon!",
+          text: `Add me on Salt & Spoon! My friend code is ${friendCode}`,
           url: shareUrl,
         });
       } catch {
@@ -38,7 +38,7 @@ export default function FriendCodeCard({
     } else {
       // Fallback: copy the full message
       await navigator.clipboard.writeText(
-        `Add me on Marco! My friend code is ${friendCode} — ${shareUrl}`
+        `Add me on Salt & Spoon! My friend code is ${friendCode} — ${shareUrl}`
       );
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);

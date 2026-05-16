@@ -763,7 +763,7 @@ function ExtractingAnimation() {
 
   return (
     <div className="flex flex-col items-center py-16 space-y-7 animate-slide-up">
-      <span className="marco-signature is-pulsing" style={{ fontSize: "4.5rem" }}>marco</span>
+      <span className="marco-signature is-pulsing" style={{ fontSize: "4.5rem" }}>salt & spoon</span>
 
       <p
         key={phase}

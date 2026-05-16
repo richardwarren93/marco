@@ -21,13 +21,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Marco - Save & Plan Recipes",
+  title: "Salt & Spoon - Save & Plan Recipes",
   description: "Save recipes from Instagram and TikTok, manage your pantry, and plan meals with AI.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Marco",
+    title: "Salt & Spoon",
   },
   icons: {
     icon: [

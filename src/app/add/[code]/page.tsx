@@ -82,14 +82,14 @@ export default function AddFriendPage() {
             Code not found
           </h1>
           <p className="text-gray-600 text-sm mb-6">
-            The friend code &quot;{code}&quot; doesn&apos;t match any Marco
+            The friend code &quot;{code}&quot; doesn&apos;t match any Salt & Spoon
             user. Double-check the code and try again.
           </p>
           <Link
             href={user ? "/friends" : "/"}
             className="text-orange-600 hover:text-orange-700 font-medium text-sm"
           >
-            {user ? "Go to Friends" : "Go to Marco"}
+            {user ? "Go to Friends" : "Go to Salt & Spoon"}
           </Link>
         </div>
       </div>
@@ -108,7 +108,7 @@ export default function AddFriendPage() {
             .toUpperCase() || "?"}
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-1">{friendName}</h1>
-        <p className="text-sm text-gray-500 mb-6">wants to connect on Marco</p>
+        <p className="text-sm text-gray-500 mb-6">wants to connect on Salt & Spoon</p>
 
         {user ? (
           <>

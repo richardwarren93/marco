@@ -77,7 +77,7 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
         <div className="text-center space-y-4 max-w-sm">
-          <span className="marco-signature block" style={{ fontSize: "4rem" }}>marco</span>
+          <span className="marco-signature block" style={{ fontSize: "4rem" }}>salt & spoon</span>
           <h1
             style={{
               fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
@@ -120,7 +120,7 @@ export default function SignupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="marco-signature" style={{ fontSize: "1.75rem" }}>marco</span>
+          <span className="marco-signature" style={{ fontSize: "1.75rem" }}>salt & spoon</span>
           <div className="w-9 h-9" aria-hidden="true" />
         </div>
 
@@ -240,7 +240,7 @@ export default function SignupPage() {
       <div className="relative flex-1 sm:flex-none flex flex-col items-center justify-center overflow-hidden px-6 pt-10 pb-6">
         <div className="relative z-10 text-center">
           {/* The handwritten Marco wordmark with the tomato punctum */}
-          <span className="marco-signature" style={{ fontSize: "clamp(4.5rem, 16vw, 6rem)" }}>marco</span>
+          <span className="marco-signature" style={{ fontSize: "clamp(4.5rem, 16vw, 6rem)" }}>salt & spoon</span>
 
           {/* Italic tagline — Fraunces, calm and editorial */}
           <p

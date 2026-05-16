@@ -336,7 +336,7 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
       <div className="px-5 pb-6 pt-3 space-y-3">
         <button
           onClick={async () => {
-            const text = `My Marco Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
+            const text = `My Salt & Spoon Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
             if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
               try { await navigator.share({ title: "My Taste DNA", text }); } catch { /* cancelled */ }
             } else if (typeof navigator !== "undefined") {
@@ -366,7 +366,7 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
             </div>
             <button
               onClick={async () => {
-                const text = `My Marco Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
+                const text = `My Salt & Spoon Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
                 if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
                   try { await navigator.share({ title: "My Taste DNA", text }); } catch { /* cancelled */ }
                 } else if (typeof navigator !== "undefined") { await navigator.clipboard.writeText(text); }
