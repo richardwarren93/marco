@@ -105,8 +105,20 @@ workflows:
       - name: Sync Capacitor → iOS
         script: |
           npx cap sync ios
-      - name: Set up code signing (managed by Codemagic)
+      - name: Set up code signing (explicit fetch + create)
         script: |
+          # The implicit auto-signing via `integrations: app_store_connect`
+          # was producing provisioning profiles missing the Push
+          # Notifications capability. Explicit `fetch-signing-files --create`
+          # calls into the App Store Connect API and (a) reuses cert + profile
+          # if they already exist for the bundle ID, (b) generates new ones
+          # if not, including ALL capabilities currently enabled on the App
+          # ID. Both cert and profile then persist to Apple's portal.
+          keychain initialize
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+          keychain add-certificates
           xcode-project use-profiles
       - name: Increment build number
         script: |
