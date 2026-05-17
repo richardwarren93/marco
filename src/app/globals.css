@@ -131,9 +131,10 @@ html {
   overscroll-behavior: none;
   /* Use the full screen including notch/home-indicator areas */
   height: 100%;
-  /* Safe-area inset that only applies in PWA standalone mode.
-     In a regular Safari browser, the bottom toolbar already covers
-     the home-indicator area, so we don't need extra padding. */
+  /* Safe-area inset only matters in chromeless environments — PWA
+     standalone and Capacitor native. In a regular Safari browser the
+     bottom URL toolbar already covers the home-indicator area, so we
+     stay at 0px and avoid double-padding. */
   --safe-bottom: 0px;
 }
 
@@ -141,6 +142,13 @@ html {
   html {
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
+}
+
+/* Capacitor WebView reports display-mode: browser (not standalone), so
+   the @media rule above doesn't catch it. We detect Capacitor in the
+   inline script in layout.tsx and add this class on <html>. */
+html.capacitor-native {
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 body {

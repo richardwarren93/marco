@@ -62,6 +62,12 @@ export default function RootLayout({
               }
             });
           }
+          // Flag the document when running inside the Capacitor native shell so
+          // CSS can pick up safe-area insets (display-mode: standalone doesn't
+          // match in Capacitor WebView — see globals.css :root rule).
+          if (window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform()) {
+            document.documentElement.classList.add('capacitor-native');
+          }
         `}</Script>
 <Providers>
 <Navbar />
