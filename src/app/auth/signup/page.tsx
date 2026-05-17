@@ -60,8 +60,14 @@ export default function SignupPage() {
     }
   }
 
+  // Apple Sign in is required by App Store guideline 4.8 whenever any
+  // third-party social sign-in is offered. We enable Apple here so the
+  // option is in place; the Supabase Auth provider config (Services ID,
+  // Team ID, Key ID, private key) must be filled in via the Supabase
+  // dashboard before the button can complete a real sign-in. Google
+  // stays disabled until we wire its provider config too.
   const GOOGLE_ENABLED = false;
-  const APPLE_ENABLED = false;
+  const APPLE_ENABLED = true;
 
   async function handleOAuth(provider: "google" | "apple") {
     await supabase.auth.signInWithOAuth({

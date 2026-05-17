@@ -26,16 +26,22 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   ios: {
-    contentInset: "always",
+    // `never` lets the WebView extend behind the status bar / home
+    // indicator. Combined with `overlaysWebView: true` on the StatusBar
+    // plugin, this gives the web layer a single source of truth for
+    // safe areas: env(safe-area-inset-*). Previously `always` plus
+    // `overlaysWebView: false` produced double-padding at the top
+    // because both native chrome and CSS env() reserved the same space.
+    contentInset: "never",
   },
   android: {
     allowMixedContent: false,
   },
   plugins: {
     SplashScreen: {
-      // Cream background matches the Marco brand palette so the splash
-      // doesn't flash white before the web app paints. Auto-hide once the
-      // WebView has finished loading the home page.
+      // Cream background matches the brand palette so the splash
+      // doesn't flash white before the web app paints. Auto-hide once
+      // the WebView has finished loading the home page.
       launchShowDuration: 1200,
       launchAutoHide: true,
       backgroundColor: "#F5EEE2",
@@ -46,10 +52,17 @@ const config: CapacitorConfig = {
       splashImmersive: true,
     },
     StatusBar: {
-      // Light content (dark text) since the Marco background is cream.
-      style: "LIGHT",
+      // Background is cream (#F5EEE2 — light). Status bar text needs to
+      // be DARK to be readable. Capacitor's `Dark` style means dark
+      // icons/text (counterintuitive naming — `Light` means light text
+      // for dark backgrounds). Prior `LIGHT` rendered near-invisible.
+      style: "DARK",
+      // With `overlaysWebView: true` the WebView paints behind the
+      // status bar area. The body's cream background shows through;
+      // the StatusBar.backgroundColor here is only used as a fallback
+      // on Android when the WebView doesn't paint that region.
       backgroundColor: "#F5EEE2",
-      overlaysWebView: false,
+      overlaysWebView: true,
     },
   },
 };

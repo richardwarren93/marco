@@ -76,6 +76,10 @@ export default function ProfilePage() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showGoalPicker, setShowGoalPicker] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
+  const [showDelete, setShowDelete] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const goalTarget = goal?.weekly_target ?? 0;
@@ -405,7 +409,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Log out ── */}
-      <div className="px-4 pt-8 pb-12">
+      <div className="px-4 pt-8">
         <button
           onClick={async () => {
             const supabase = createClient();
@@ -419,6 +423,103 @@ export default function ProfilePage() {
           Log out
         </button>
       </div>
+
+      {/* ── Delete account ── separated visually so it's clearly the
+          point of no return. Guests can't hit it (no password to
+          confirm and no data worth losing). */}
+      {!isGuest && (
+        <div className="px-4 pt-3 pb-12">
+          <button
+            onClick={() => { setShowDelete(true); setDeleteConfirmText(""); setDeleteError(""); }}
+            className="w-full py-3 rounded-2xl text-sm font-medium transition-colors active:scale-[0.98]"
+            style={{ color: "rgba(28,26,23,0.45)", background: "transparent" }}
+          >
+            Delete account
+          </button>
+        </div>
+      )}
+
+      {showDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0"
+          style={{ background: "rgba(0,0,0,0.45)" }}
+          onClick={() => !deleting && setShowDelete(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-3xl p-6 shadow-xl"
+            style={{ background: "#F5EEE2" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              className="mb-2"
+              style={{
+                fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+                fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+                fontSize: "22px",
+                color: "var(--ink, #1C1A17)",
+              }}
+            >
+              Delete your account?
+            </h3>
+            <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--ink-soft, #4A4742)" }}>
+              This wipes your recipes, meal plans, household membership, friend connections, and saved
+              groceries. We can&apos;t bring it back.
+            </p>
+
+            <label htmlFor="delete-confirm" className="block text-xs font-medium mb-1.5" style={{ color: "var(--ink-soft, #4A4742)" }}>
+              Type <span style={{ fontFamily: "monospace", color: "var(--ink, #1C1A17)" }}>DELETE</span> to confirm
+            </label>
+            <input
+              id="delete-confirm"
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              disabled={deleting}
+              className="w-full px-4 py-3 rounded-2xl outline-none text-sm bg-white"
+              style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
+              autoComplete="off"
+              autoCapitalize="characters"
+            />
+
+            {deleteError && (
+              <div className="mt-3 bg-red-50 text-red-600 p-3 rounded-xl text-sm">{deleteError}</div>
+            )}
+
+            <div className="flex gap-3 mt-5">
+              <button
+                onClick={() => setShowDelete(false)}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-2xl text-sm font-medium transition-colors disabled:opacity-50"
+                style={{ background: "rgba(28,26,23,0.06)", color: "var(--ink, #1C1A17)" }}
+              >
+                Keep my account
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  setDeleteError("");
+                  const res = await fetch("/api/auth/delete", { method: "POST" });
+                  if (!res.ok) {
+                    const body = await res.json().catch(() => ({}));
+                    setDeleteError(body.error || "Couldn't delete the account. Try again?");
+                    setDeleting(false);
+                    return;
+                  }
+                  document.cookie = "marco_onboarded=; path=/; max-age=0";
+                  const supabase = createClient();
+                  await supabase.auth.signOut();
+                  window.location.href = "/auth/signup";
+                }}
+                disabled={deleting || deleteConfirmText !== "DELETE"}
+                className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
+                style={{ background: "#E5462E" }}
+              >
+                {deleting ? "Deleting..." : "Delete forever"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
