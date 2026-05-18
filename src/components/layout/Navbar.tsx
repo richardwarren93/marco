@@ -53,7 +53,7 @@ function NavbarInner() {
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding");
+  const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot");
   const isProfilePage = pathname === "/profile";
   const isRecipesPage = pathname === "/recipes" || pathname.startsWith("/recipes") || pathname.startsWith("/collections");
   const activeTab = searchParams.get("tab") || "recipes";

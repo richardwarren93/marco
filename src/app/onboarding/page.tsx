@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import OnboardingShell from "@/components/onboarding/OnboardingShell";
-import MotivationStep from "@/components/onboarding/MotivationStep";
+import CookbookOpening from "@/components/onboarding/cookbook/CookbookOpening";
 import PriorityStep from "@/components/onboarding/PriorityStep";
 import MealsPerWeekStep from "@/components/onboarding/MealsPerWeekStep";
 import JoinHouseholdStep from "@/components/onboarding/JoinHouseholdStep";
@@ -161,10 +161,21 @@ export default function OnboardingPage() {
     );
   }
 
+  // Step 0 (CookbookOpening) provides its own full-screen chrome — cover
+  // + page-turn + cookbook-styled motivation question — so it lives
+  // outside the standard OnboardingShell. After the user picks a
+  // motivation and continues, step 1+ falls back to the normal shell.
+  if (step === 0) {
+    return (
+      <CookbookOpening
+        value={data.motivation}
+        onNext={(motivation) => { update({ motivation }); goForward(); }}
+      />
+    );
+  }
+
   const renderStep = () => {
     switch (step) {
-      case 0:
-        return <MotivationStep value={data.motivation} onNext={(motivation) => { update({ motivation }); goForward(); }} />;
       case 1:
         return <PriorityStep value={data.priority} onNext={(priority) => { update({ priority }); goForward(); }} />;
       case 2:
@@ -214,7 +225,7 @@ export default function OnboardingPage() {
   };
 
   return (
-    <OnboardingShell step={step} totalSteps={TOTAL_STEPS} direction={direction} onBack={goBack} hideBack={step === 0 || step === 6 || step === 8}>
+    <OnboardingShell step={step} totalSteps={TOTAL_STEPS} direction={direction} onBack={goBack} hideBack={step === 6 || step === 8}>
       {renderStep()}
     </OnboardingShell>
   );
