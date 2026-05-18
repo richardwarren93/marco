@@ -436,9 +436,9 @@ function SampleStepPage({ onBack }: { onBack: () => void }) {
             caption={null}
             width={210}
             aspectRatio="4 / 5"
-            rotation={-5}
+            rotation={-3}
             tapeOffset={38}
-            tapeRotation={-8}
+            tapeRotation={-6}
             grayscale
           />
         </div>
