@@ -22,14 +22,14 @@ export default function ResetPasswordConfirmPage() {
   useEffect(() => {
     // Supabase puts the recovery token in the URL hash on email-link redirect.
     // The browser client picks it up and emits PASSWORD_RECOVERY via onAuthStateChange.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: string) => {
       if (event === "PASSWORD_RECOVERY") {
         setHasRecoverySession(true);
       }
     });
     // Belt-and-suspenders: also check for an existing session in case the
     // event fired before this effect attached.
-    supabase.auth.getSession().then(({ data }) => {
+    supabase.auth.getSession().then(({ data }: { data: { session: unknown } }) => {
       if (data.session) setHasRecoverySession(true);
     });
     return () => subscription.unsubscribe();
