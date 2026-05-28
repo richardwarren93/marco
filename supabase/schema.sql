@@ -6,7 +6,7 @@ CREATE TABLE recipes (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   title TEXT NOT NULL,
   source_url TEXT,
-  source_platform TEXT CHECK (source_platform IN ('instagram', 'tiktok', 'other')),
+  source_platform TEXT CHECK (source_platform IN ('instagram', 'tiktok', 'youtube', 'other')),
   description TEXT,
   ingredients JSONB NOT NULL DEFAULT '[]',
   steps JSONB NOT NULL DEFAULT '[]',
