@@ -25,7 +25,7 @@ export interface Recipe {
   user_id: string;
   title: string;
   source_url: string | null;
-  source_platform: "instagram" | "tiktok" | "other" | null;
+  source_platform: "instagram" | "tiktok" | "youtube" | "other" | null;
   description: string | null;
   ingredients: Ingredient[];
   steps: string[];

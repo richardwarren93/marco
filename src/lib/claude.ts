@@ -14,12 +14,13 @@ export async function extractRecipe(
     max_tokens: 2000,
     system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the content is minimal, vague, or incomplete, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.
 
-CRITICAL: Social media recipe posts (especially Instagram Reels and TikTok) often have very limited scrapeable text. When the content is minimal:
-- Use hashtags, captions, author names, and any clues to identify the dish
+CRITICAL: Social media recipe posts (especially Instagram Reels, TikTok, and YouTube videos/Shorts) often have very limited scrapeable text. When the content is minimal:
+- Use hashtags, captions, author names, video titles, transcripts, and any clues to identify the dish
 - If you can identify the dish name, provide a reasonable set of common ingredients and basic cooking steps for that dish
 - Extract any mentioned ingredients or techniques, even from hashtags (e.g. #chickenpasta → chicken, pasta)
+- For YouTube content, the "Title" field at the top of the scraped content is the video title — use it as the primary signal for the dish name. The "Transcript" field captures spoken ingredients and steps verbatim and should drive the recipe contents.
 - Make your best educated guess about what the recipe is — a reasonable guess is far more useful than empty fields
-- NEVER return generic titles like "Instagram Recipe" or "Social Media Recipe" — always try to identify the actual dish`,
+- NEVER return generic titles like "Instagram Recipe", "TikTok Recipe", "YouTube Recipe", or "Social Media Recipe" — always try to identify the actual dish`,
     messages: [
       {
         role: "user",
@@ -31,7 +32,7 @@ Scraped Content:
 ${scrapedContent}
 
 Return a JSON object with these fields:
-- title (string): The actual recipe/dish name — infer from captions, hashtags, description, or any available clues. NEVER use generic names like "Instagram Recipe".
+- title (string): The actual recipe/dish name — infer from the video title, captions, hashtags, transcript, description, or any available clues. NEVER use generic names like "Instagram Recipe", "TikTok Recipe", or "YouTube Recipe".
 - description (string): Brief description of the dish — use context clues to describe what this dish is
 - ingredients (array of {name, amount, unit}): All ingredients mentioned. If you can identify the dish but no specific ingredients are listed, provide the standard/common ingredients for that dish with "to taste" amounts.
 - steps (array of strings): Ordered cooking steps — if you can identify the dish, provide reasonable standard steps for making it

@@ -17,7 +17,14 @@ const tagColors = [
 const platformStyles: Record<string, string> = {
   instagram: "bg-gradient-to-r from-purple-500 to-pink-500",
   tiktok: "bg-gray-900",
+  youtube: "bg-red-600",
   other: "bg-gray-500",
+};
+
+const platformLabels: Record<string, string> = {
+  instagram: "IG",
+  tiktok: "TikTok",
+  youtube: "YT",
 };
 
 export default function RecipeCard({ recipe }: { recipe: Recipe }) {
@@ -35,7 +42,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
           <div className="absolute top-2 left-2 flex gap-1">
             {recipe.source_platform && recipe.source_platform !== "other" && (
               <span className={`text-white text-[10px] font-semibold px-2 py-0.5 rounded-full ${platformStyles[recipe.source_platform]}`}>
-                {recipe.source_platform === "instagram" ? "IG" : "TikTok"}
+                {platformLabels[recipe.source_platform] ?? "Link"}
               </span>
             )}
           </div>

@@ -13,7 +13,20 @@ export async function scrapeUrl(url: string): Promise<ScrapeResult> {
   if (url.includes("tiktok.com")) {
     return scrapeTikTok(url);
   }
+  if (isYouTubeUrl(url)) {
+    return scrapeYouTube(url);
+  }
   return scrapeGeneric(url);
+}
+
+function isYouTubeUrl(url: string): boolean {
+  return (
+    url.includes("youtube.com/watch") ||
+    url.includes("youtube.com/shorts/") ||
+    url.includes("youtube.com/embed/") ||
+    url.includes("youtu.be/") ||
+    url.includes("m.youtube.com/")
+  );
 }
 
 async function scrapeInstagram(url: string): Promise<ScrapeResult> {
@@ -377,6 +390,238 @@ async function scrapeTikTok(url: string): Promise<ScrapeResult> {
   };
 }
 
+/**
+ * YouTube extraction. The watch page is a SPA — meta tags alone give us
+ * almost nothing. The real recipe data lives in three places, in order of
+ * value:
+ *   1. ytInitialPlayerResponse (inline JSON on the page) — full title,
+ *      description, author, thumbnails, AND the URL to the caption track.
+ *   2. The caption-track XML — the actual transcript. For YouTube Shorts
+ *      and recipe videos where ingredients are spoken not written, this
+ *      is where the recipe lives.
+ *   3. oEmbed — title, author, thumbnail as a last-resort fallback (works
+ *      even when the page itself is age-gated).
+ */
+async function scrapeYouTube(url: string): Promise<ScrapeResult> {
+  const videoId = extractYouTubeVideoId(url);
+  const canonicalUrl = videoId
+    ? `https://www.youtube.com/watch?v=${videoId}`
+    : url;
+
+  const parts: string[] = [];
+  let image_url: string | null = null;
+
+  // Strategy 1: oEmbed — cheap, no API key, returns title/author/thumbnail.
+  // Done in parallel with the page fetch so we never wait on it.
+  const oembedPromise = fetch(
+    `https://www.youtube.com/oembed?url=${encodeURIComponent(canonicalUrl)}&format=json`,
+    { signal: AbortSignal.timeout(8000) }
+  )
+    .then(async (resp) => (resp.ok ? await resp.json() : null))
+    .catch(() => null);
+
+  // Strategy 2: Scrape the watch page for ytInitialPlayerResponse — the
+  // SPA's hydration blob has the full description + caption track URLs.
+  let captionBaseUrl: string | null = null;
+  try {
+    const html = await fetchPage(canonicalUrl);
+    const blob = extractJsBlob(html, "ytInitialPlayerResponse");
+
+    if (blob) {
+      try {
+        const data = JSON.parse(blob) as {
+          videoDetails?: {
+            title?: string;
+            shortDescription?: string;
+            author?: string;
+            thumbnail?: { thumbnails?: { url: string; width?: number }[] };
+            keywords?: string[];
+            lengthSeconds?: string;
+          };
+          captions?: {
+            playerCaptionsTracklistRenderer?: {
+              captionTracks?: {
+                baseUrl: string;
+                languageCode?: string;
+                kind?: string;
+              }[];
+            };
+          };
+          microformat?: {
+            playerMicroformatRenderer?: {
+              description?: { simpleText?: string };
+              category?: string;
+            };
+          };
+        };
+
+        const vd = data.videoDetails;
+        if (vd?.title) parts.push(`Title: ${vd.title}`);
+        if (vd?.author) parts.push(`Author: ${vd.author}`);
+
+        const description =
+          vd?.shortDescription ||
+          data.microformat?.playerMicroformatRenderer?.description?.simpleText ||
+          "";
+        if (description) parts.push(`Description:\n${description}`);
+
+        if (vd?.keywords?.length) {
+          parts.push(`Keywords: ${vd.keywords.slice(0, 20).join(", ")}`);
+        }
+
+        const category = data.microformat?.playerMicroformatRenderer?.category;
+        if (category) parts.push(`Category: ${category}`);
+
+        const thumbs = vd?.thumbnail?.thumbnails;
+        if (thumbs?.length) {
+          // Pick the widest thumbnail
+          const widest = thumbs.reduce((a, b) =>
+            (b.width ?? 0) > (a.width ?? 0) ? b : a
+          );
+          image_url = widest.url;
+        }
+
+        // Prefer English manual captions, fall back to first track of any
+        // kind (auto-generated still readable).
+        const tracks =
+          data.captions?.playerCaptionsTracklistRenderer?.captionTracks ?? [];
+        const englishManual = tracks.find(
+          (t) => t.languageCode?.startsWith("en") && t.kind !== "asr"
+        );
+        const englishAuto = tracks.find((t) => t.languageCode?.startsWith("en"));
+        const fallback = tracks[0];
+        const chosen = englishManual || englishAuto || fallback;
+        captionBaseUrl = chosen?.baseUrl ?? null;
+      } catch (err) {
+        console.error("YouTube hydration JSON parse failed:", err);
+      }
+    }
+  } catch {
+    // page fetch failed — fall through to oEmbed
+  }
+
+  // Strategy 3: Resolve oEmbed (joined with whatever we already have)
+  const oembed = await oembedPromise;
+  if (oembed) {
+    if (!parts.some((p) => p.startsWith("Title:")) && oembed.title) {
+      parts.unshift(`Title: ${oembed.title}`);
+    }
+    if (!parts.some((p) => p.startsWith("Author:")) && oembed.author_name) {
+      parts.push(`Author: ${oembed.author_name}`);
+    }
+    if (!image_url && oembed.thumbnail_url) image_url = oembed.thumbnail_url;
+  }
+
+  // Strategy 4: Fetch the caption transcript if we found a track URL. This
+  // is the gold mine for Shorts and any video where the creator speaks the
+  // recipe instead of pasting ingredients in the description.
+  if (captionBaseUrl) {
+    try {
+      // Force JSON format — easier to parse than the default XML and
+      // YouTube serves both off the same baseUrl with a ?fmt=json3 param.
+      const transcriptUrl = `${captionBaseUrl}&fmt=json3`;
+      const transcriptResp = await fetch(transcriptUrl, {
+        signal: AbortSignal.timeout(10000),
+      });
+      if (transcriptResp.ok) {
+        const transcript = parseYouTubeTranscript(await transcriptResp.text());
+        if (transcript) {
+          // Cap at 8000 chars so we don't blow Claude's context. Most
+          // recipe walkthroughs fit easily under this; longer videos get
+          // truncated but still cover the ingredient list at the top.
+          parts.push(`Transcript:\n${transcript.slice(0, 8000)}`);
+        }
+      }
+    } catch {
+      // transcript fetch failed — we still have title + description
+    }
+  }
+
+  const content = parts.join("\n\n");
+
+  return {
+    content:
+      content ||
+      "Could not extract content from YouTube URL. Please provide the best recipe interpretation based on the URL.",
+    image_url,
+  };
+}
+
+/** Pull a video ID out of any common YouTube URL form. */
+function extractYouTubeVideoId(url: string): string | null {
+  // youtu.be/<id>
+  let m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/watch?v=<id>
+  m = url.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/shorts/<id> or /embed/<id>
+  m = url.match(/(?:shorts|embed)\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  return null;
+}
+
+/** Brace-balanced extractor for inline JS objects like
+ *  `var ytInitialPlayerResponse = { ... };` — regex can't match nested
+ *  braces, so we walk the string respecting string literals. */
+function extractJsBlob(html: string, markerName: string): string | null {
+  const markerIdx = html.indexOf(markerName);
+  if (markerIdx === -1) return null;
+  const objStart = html.indexOf("{", markerIdx);
+  if (objStart === -1) return null;
+
+  let depth = 0;
+  let inStr = false;
+  let escape = false;
+  for (let i = objStart; i < html.length; i++) {
+    const ch = html[i];
+    if (escape) {
+      escape = false;
+      continue;
+    }
+    if (inStr) {
+      if (ch === "\\") escape = true;
+      else if (ch === '"') inStr = false;
+      continue;
+    }
+    if (ch === '"') {
+      inStr = true;
+      continue;
+    }
+    if (ch === "{") depth++;
+    else if (ch === "}") {
+      depth--;
+      if (depth === 0) return html.slice(objStart, i + 1);
+    }
+  }
+  return null;
+}
+
+/** YouTube's json3 caption format: { events: [{ segs: [{ utf8: "word" }] }] }.
+ *  We flatten to a single string with newlines between events so spoken
+ *  pauses survive as light structure. */
+function parseYouTubeTranscript(json: string): string {
+  try {
+    const data = JSON.parse(json) as {
+      events?: { segs?: { utf8?: string }[] }[];
+    };
+    if (!data.events) return "";
+    const lines: string[] = [];
+    for (const ev of data.events) {
+      if (!ev.segs) continue;
+      const line = ev.segs
+        .map((s) => s.utf8 ?? "")
+        .join("")
+        .replace(/\s+/g, " ")
+        .trim();
+      if (line) lines.push(line);
+    }
+    return lines.join("\n");
+  } catch {
+    return "";
+  }
+}
+
 async function scrapeGeneric(url: string): Promise<ScrapeResult> {
   const pageContent = await fetchPage(url);
   const meta = extractMetaTags(pageContent);
@@ -484,8 +729,9 @@ function extractJsonLd(html: string): string {
 
 export function detectPlatform(
   url: string
-): "instagram" | "tiktok" | "other" {
+): "instagram" | "tiktok" | "youtube" | "other" {
   if (url.includes("instagram.com")) return "instagram";
   if (url.includes("tiktok.com")) return "tiktok";
+  if (isYouTubeUrl(url)) return "youtube";
   return "other";
 }

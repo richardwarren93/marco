@@ -13,6 +13,19 @@ function extractTikTokVideoId(url: string): string | null {
   return match ? match[1] : null;
 }
 
+function extractYouTubeVideoId(url: string): string | null {
+  // youtu.be/<id>
+  let m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/watch?v=<id>
+  m = url.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  // youtube.com/shorts/<id> or /embed/<id>
+  m = url.match(/(?:shorts|embed)\/([A-Za-z0-9_-]{11})/);
+  if (m) return m[1];
+  return null;
+}
+
 function cleanInstagramUrl(url: string): string {
   // Remove query params and ensure trailing slash
   const clean = url.split("?")[0];
@@ -54,18 +67,23 @@ export default function SocialEmbed({
         };
         document.body.appendChild(script);
       }
-    } else if (sourcePlatform === "tiktok") {
-      // TikTok uses an iframe — no script needed
+    } else if (sourcePlatform === "tiktok" || sourcePlatform === "youtube") {
+      // Iframe-based embed — no script needed
       setLoaded(true);
     }
   }, [sourcePlatform, sourceUrl]);
 
-  if (sourcePlatform !== "instagram" && sourcePlatform !== "tiktok") {
+  if (
+    sourcePlatform !== "instagram" &&
+    sourcePlatform !== "tiktok" &&
+    sourcePlatform !== "youtube"
+  ) {
     return null;
   }
 
   const cleanUrl = cleanInstagramUrl(sourceUrl);
   const tiktokVideoId = extractTikTokVideoId(sourceUrl);
+  const youtubeVideoId = extractYouTubeVideoId(sourceUrl);
 
   return (
     <div>
@@ -122,6 +140,33 @@ export default function SocialEmbed({
             className="text-orange-600 hover:underline"
           >
             View on TikTok →
+          </a>
+        )}
+
+        {sourcePlatform === "youtube" && youtubeVideoId && (
+          <iframe
+            src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+            style={{
+              width: "100%",
+              maxWidth: "560px",
+              aspectRatio: "16 / 9",
+              border: "none",
+              borderRadius: "12px",
+            }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            title="YouTube video"
+          />
+        )}
+
+        {sourcePlatform === "youtube" && !youtubeVideoId && (
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-red-600 hover:underline"
+          >
+            View on YouTube →
           </a>
         )}
       </div>

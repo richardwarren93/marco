@@ -82,9 +82,15 @@ function CollectionRecipeCard({
             <span className={`absolute top-2 right-2 text-white text-[10px] font-semibold px-2 py-0.5 rounded-full ${
               recipe.source_platform === "instagram"
                 ? "bg-gradient-to-r from-purple-500 to-pink-500"
-                : "bg-gray-900"
+                : recipe.source_platform === "youtube"
+                  ? "bg-red-600"
+                  : "bg-gray-900"
             }`}>
-              {recipe.source_platform === "instagram" ? "IG" : "TikTok"}
+              {recipe.source_platform === "instagram"
+                ? "IG"
+                : recipe.source_platform === "youtube"
+                  ? "YT"
+                  : "TikTok"}
             </span>
           )}
         </div>
