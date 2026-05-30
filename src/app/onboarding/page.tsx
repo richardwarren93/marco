@@ -74,11 +74,14 @@ export default function OnboardingPage() {
         return;
       }
 
+      // Always start at the cover (step 0) so a new account / guest reliably
+      // sees the "Build My Recipe Book" opening. We restore saved *answers*
+      // (so nothing is lost) but never the saved step — resuming past the
+      // cover was hiding it for anyone who'd entered onboarding before.
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.step !== undefined) setStep(parsed.step);
           if (parsed.data) {
             setData({ ...defaultState, ...parsed.data, rankedRecipes: parsed.data.rankedRecipes || [], importedRecipes: parsed.data.importedRecipes || [] });
           }
