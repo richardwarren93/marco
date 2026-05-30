@@ -97,7 +97,7 @@ export default function OnboardingPage() {
   }, [step, data, ready]);
 
   const goForward = useCallback(() => setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1)), []);
-  const goBack = useCallback(() => setStep((prev) => Math.max(prev - 1, 1)), []); // never return to the one-way cover (0)
+  const goBack = useCallback(() => setStep((prev) => Math.max(prev - 1, 0)), []);
 
   const update = useCallback((partial: Partial<OnboardingState>) => {
     setData((prev) => ({ ...prev, ...partial }));
@@ -197,6 +197,7 @@ export default function OnboardingPage() {
           rankedRecipes={data.rankedRecipes}
           signatureDish={data.signatureDish}
           allergies={data.allergies}
+          onBack={goBack}
           onComplete={handleComplete}
         />
       );

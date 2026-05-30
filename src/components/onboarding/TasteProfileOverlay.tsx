@@ -17,6 +17,7 @@ interface Props {
   rankedRecipes: RankingRecipe[];
   signatureDish: string;
   allergies: string[];
+  onBack?: () => void;
   onComplete: (tasteScores?: TasteScores, cuisinePreferences?: string[]) => void;
 }
 
@@ -169,7 +170,7 @@ function generateInsights(topTraits: ReturnType<typeof getTopTraits>): { emoji: 
   return items.slice(0, 4);
 }
 
-export default function TasteProfileOverlay({ rankedRecipes, signatureDish, allergies, onComplete }: Props) {
+export default function TasteProfileOverlay({ rankedRecipes, signatureDish, allergies, onBack, onComplete }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<"loading" | "profile" | "import">("loading");
   const [showShare, setShowShare] = useState(false);
@@ -245,7 +246,19 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, alle
     <div className="max-w-2xl mx-auto w-full flex flex-col">
       <div className="flex-1">
         {/* Header */}
-        <div className="pt-6 pb-2 px-6 text-center">
+        <div className="relative pt-6 pb-2 px-6 text-center">
+          {onBack && (
+            <button
+              onClick={onBack}
+              aria-label="Go back"
+              className="absolute left-4 top-5 w-9 h-9 flex items-center justify-center rounded-full active:scale-95 transition-transform"
+              style={{ color: "#4A4742" }}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
           <h1 className="text-[32px] font-black leading-none" style={{ color: "#1C1A17" }}>Taste DNA</h1>
         </div>
 

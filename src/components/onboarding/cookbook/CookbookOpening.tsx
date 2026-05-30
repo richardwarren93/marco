@@ -1,16 +1,13 @@
 "use client";
 
-// Cookbook-styled onboarding cover — step 0. The hero is the "Build My Recipe
-// Book" cover; tapping "build my book" plays a page-turn and then advances to
-// the first real step (recipe import — the magic moment). The motivation
-// question that used to live here now has its own cookbook page (MotivationStep).
-//
-// Once the user has seen the cover (`marco_cookbook_opened` in localStorage),
-// reopening mid-onboarding skips the cover and advances immediately so they
-// don't re-watch the intro every time.
+// Cookbook-styled onboarding cover — step 0, shown whenever onboarding starts
+// (new account or guest). The hero is the "Build My Recipe Book" cover; tapping
+// "build my book" plays a page-turn and advances to the first real step (recipe
+// import — the magic moment). Mid-onboarding reloads resume at the saved step
+// (handled in page.tsx), so the cover only appears at the true start.
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   CookbookKeyframes,
   PaperTextureFilters,
@@ -20,8 +17,6 @@ import {
   HandUnderline,
 } from "./CookbookOrnaments";
 
-const OPENED_KEY = "marco_cookbook_opened";
-
 interface Props {
   onOpen: () => void;
 }
@@ -29,25 +24,9 @@ interface Props {
 export default function CookbookOpening({ onOpen }: Props) {
   const [flipping, setFlipping] = useState(false);
 
-  useEffect(() => {
-    try {
-      if (localStorage.getItem(OPENED_KEY) === "1") {
-        onOpen();
-      }
-    } catch {
-      /* localStorage may be unavailable in some embedded contexts */
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function openBook() {
     if (flipping) return;
     setFlipping(true);
-    try {
-      localStorage.setItem(OPENED_KEY, "1");
-    } catch {
-      /* noop */
-    }
     // Advance once the page-turn has carried most of the way through.
     window.setTimeout(() => onOpen(), 620);
   }
