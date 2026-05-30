@@ -1,105 +1,75 @@
 "use client";
 
 import { useState, useRef } from "react";
+import CookbookPage from "./cookbook/CookbookPage";
+import { CookbookButton } from "./cookbook/CookbookControls";
 
 interface Props {
   value: string;
+  pageNumber: number;
+  onBack?: () => void;
   onNext: (dish: string) => void;
 }
 
-export default function SignatureDishStep({ value, onNext }: Props) {
+export default function SignatureDishStep({ value, pageNumber, onBack, onNext }: Props) {
   const [dish, setDish] = useState(value || "");
   const inputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <div
-      className="flex flex-col h-full pb-24"
-      style={{ background: "#F5EEE2" }}
+    <CookbookPage
+      sectionLabel="Your taste"
+      questionLabel="Dream meal"
+      dropCap="W"
+      title={
+        <>
+          hat&apos;s your{" "}
+          <em style={{ color: "#E5462E", fontStyle: "italic" }}>dream meal?</em>
+        </>
+      }
+      subtitle="If you could eat one meal for the rest of your life, what would it be?"
+      pageNumber={pageNumber}
+      onBack={onBack}
+      footer={
+        <CookbookButton onClick={() => onNext(dish)} disabled={!dish.trim()}>
+          Continue
+        </CookbookButton>
+      }
     >
-      <div className="flex-1 flex flex-col items-center justify-center px-6">
-        {/* Emoji */}
-        <div
-          className="text-6xl mb-6 animate-stagger-in"
-          style={{ animationDelay: "0.1s" }}
-        >
-          👨‍🍳
-        </div>
-
-        {/* Title */}
-        <h1
-          className="text-[28px] font-black tracking-tight text-center mb-2 animate-stagger-in"
-          style={{ color: "#1C1A17", animationDelay: "0.15s" }}
-        >
-          What&apos;s your{" "}
-          <span style={{ color: "#E5462E" }}>Dream Meal</span>?
-        </h1>
-
+      <div className="flex flex-col items-center justify-center h-full py-6">
+        <div className="text-5xl mb-6">👨‍🍳</div>
+        <input
+          ref={inputRef}
+          type="text"
+          value={dish}
+          onChange={(e) => setDish(e.target.value)}
+          onFocus={() => {
+            setTimeout(() => {
+              inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }, 300);
+          }}
+          placeholder="e.g. Grandma's lasagna, Thai green curry..."
+          className="w-full px-5 py-4 rounded-2xl outline-none text-center"
+          style={{
+            background: "rgba(255, 253, 247, 0.7)",
+            border: "1px solid rgba(28, 26, 23, 0.18)",
+            fontFamily: "var(--font-display, Georgia, serif)",
+            fontSize: "16px",
+            color: "#1C1A17",
+            scrollMarginBottom: "120px",
+          }}
+        />
         <p
-          className="text-sm text-center mb-8 animate-stagger-in"
-          style={{ color: "#a09890", animationDelay: "0.2s" }}
-        >
-          If you could eat one meal for the rest of your life, what would it be?
-        </p>
-
-        {/* Input */}
-        <div
-          className="w-full max-w-sm animate-stagger-in"
-          style={{ animationDelay: "0.3s" }}
-        >
-          <input
-            ref={inputRef}
-            type="text"
-            value={dish}
-            onChange={(e) => setDish(e.target.value)}
-            onFocus={() => {
-              setTimeout(() => {
-                inputRef.current?.scrollIntoView({
-                  behavior: "smooth",
-                  block: "center",
-                });
-              }, 300);
-            }}
-            placeholder="e.g. Grandma's lasagna, Thai green curry..."
-            className="w-full px-5 py-4 rounded-2xl text-base bg-white outline-none text-center font-medium"
-            style={{
-              border: "2px solid #e8ddd3",
-              color: "#1C1A17",
-              scrollMarginBottom: "120px",
-            }}
-            autoFocus
-          />
-        </div>
-
-        <p
-          className="text-xs text-center mt-4 animate-stagger-in"
-          style={{ color: "#c4b8aa", animationDelay: "0.4s" }}
+          className="mt-4 text-center"
+          style={{
+            fontFamily: "var(--font-display, Georgia, serif)",
+            fontStyle: "italic",
+            fontSize: "13px",
+            color: "rgba(28, 26, 23, 0.5)",
+          }}
         >
           This will appear on your Taste DNA profile
         </p>
       </div>
-
-      {/* Continue */}
-      <div className="px-6 pt-2">
-        <button
-          onClick={() => onNext(dish)}
-          className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]"
-          style={{
-            background: dish.trim() ? "#E5462E" : "#e8ddd3",
-            color: dish.trim() ? "white" : "#c4b8aa",
-          }}
-        >
-          Continue
-        </button>
-        {!dish.trim() && (
-          <button
-            onClick={() => onNext("")}
-            className="w-full py-3 text-sm font-medium mt-2 transition-colors"
-            style={{ color: "#a09890" }}
-          >
-            Skip for now
-          </button>
-        )}
-      </div>
-    </div>
+    </CookbookPage>
   );
 }

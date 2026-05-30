@@ -1155,9 +1155,7 @@ export default function RecipeDetailPage() {
                 className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border inline-flex items-center justify-center gap-2"
                 style={{ borderColor: "var(--line, rgba(28,26,23,0.12))", color: "var(--ink, #1C1A17)", background: "white" }}
               >
-                <span>Cook with</span>
-                {/* Marco signature mark with the tomato punctum \u2014 replaces the chef emoji */}
-                <span className="marco-signature" style={{ fontSize: "1.25rem" }}>salt & spoon</span>
+                <span>Cook with Sous Chef</span>
                 <span
                   className="ml-0.5 px-1.5 py-0.5 rounded-full align-middle"
                   style={{

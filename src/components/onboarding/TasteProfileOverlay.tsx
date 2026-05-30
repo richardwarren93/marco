@@ -16,6 +16,7 @@ interface Props {
   rankedIds: string[];
   rankedRecipes: RankingRecipe[];
   signatureDish: string;
+  allergies: string[];
   onComplete: (tasteScores?: TasteScores, cuisinePreferences?: string[]) => void;
 }
 
@@ -168,7 +169,7 @@ function generateInsights(topTraits: ReturnType<typeof getTopTraits>): { emoji: 
   return items.slice(0, 4);
 }
 
-export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onComplete }: Props) {
+export default function TasteProfileOverlay({ rankedRecipes, signatureDish, allergies, onComplete }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<"loading" | "profile" | "import">("loading");
   const [showShare, setShowShare] = useState(false);
@@ -255,6 +256,22 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
           <p className="text-sm leading-relaxed" style={{ color: "#555" }}>{chefMatch.description}</p>
         </div>
 
+        {/* Your Top Picks — the dinner-ranking comparisons */}
+        {rankedRecipes.length > 0 && (
+          <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.05s", background: "white", border: "1px solid #eae7e2" }}>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>You&apos;d Reach For These First</p>
+            <div className="space-y-2.5">
+              {rankedRecipes.slice(0, 3).map((r, i) => (
+                <div key={r.id} className="flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[11px]" style={{ background: i === 0 ? "#E5462E" : i === 1 ? "#f07828" : "#f5a05c", color: "white" }}>{i + 1}</span>
+                  <span className="text-lg">{r.emoji}</span>
+                  <span className="text-sm font-semibold" style={{ color: "#1C1A17" }}>{r.title}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Top Cuisines */}
         {topCuisines.length > 0 && (
           <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.08s", background: "white", border: "1px solid #eae7e2" }}>
@@ -327,7 +344,24 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, onCo
           </div>
         )}
 
-        <p className="text-center text-[10px] pb-4" style={{ color: "#c4b8af" }}>
+        {/* Allergies — collected on the Allergies step, surfaced here */}
+        <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.42s", background: "white", border: "1px solid #eae7e2" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Keeping Out</p>
+          {allergies.length > 0 ? (
+            <div className="flex gap-2 flex-wrap">
+              {allergies.map((a) => (
+                <div key={a} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full" style={{ background: "#fef2f2", border: "1px solid #fecaca" }}>
+                  <span className="text-xs">🚫</span>
+                  <span className="text-xs font-semibold" style={{ color: "#b91c1c" }}>{a}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: "#a09890" }}>No allergies noted — we&apos;ll suggest freely.</p>
+          )}
+        </div>
+
+        <p className="text-center text-[10px] pb-4 pt-4" style={{ color: "#c4b8af" }}>
           Save more recipes to unlock deeper insights
         </p>
       </div>

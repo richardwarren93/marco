@@ -77,6 +77,68 @@ IMPORTANT: Even if the content is very limited, use your knowledge to fill in re
   }
 }
 
+// Extract every distinct recipe from one blob of scraped content. Handles both
+// the single-recipe case (returns a 1-element array) and collections / roundups
+// / chat exports that contain many. Falls back to single-recipe extraction if
+// the model returns non-JSON.
+export async function extractMultipleRecipes(
+  scrapedContent: string,
+  sourceUrl: string
+): Promise<Partial<Recipe>[]> {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 8000,
+    system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Always produce JSON.
+
+IMPORTANT: Extract ALL distinct recipes found in the content. This could be:
+- A single recipe from a recipe website
+- Multiple recipes from a ChatGPT conversation or AI chat export
+- Multiple recipes from a recipe collection, roundup, or meal plan document
+- Multiple recipes from a NY Times Cooking collection or similar
+
+If the content contains multiple distinct recipes, extract ALL of them (up to 100).
+If it contains only one recipe, return an array with that single recipe.
+Never return an empty array if any recipe-like content exists — always make your best attempt.`,
+    messages: [
+      {
+        role: "user",
+        content: `Extract ALL distinct recipes from this content. Source URL: ${sourceUrl}
+
+Content:
+${scrapedContent.slice(0, 50000)}
+
+Return a JSON object with a "recipes" array. Each recipe should have:
+- title (string): The actual recipe/dish name — never use generic names
+- description (string): Brief 1-2 sentence description
+- ingredients (array of {name, amount, unit}): All ingredients with quantities
+- steps (array of strings): Ordered cooking steps
+- servings (number or null)
+- prep_time_minutes (number or null)
+- cook_time_minutes (number or null)
+- tags (array of strings): cuisine, dietary info, etc.
+- meal_type (string): REQUIRED — must be exactly "breakfast", "lunch", "dinner", or "snack"
+
+Return ONLY valid JSON: {"recipes": [...]}. No markdown, no code blocks, no extra text.`,
+      },
+    ],
+  });
+
+  const text = response.content[0].type === "text" ? response.content[0].text : "";
+  const cleaned = text.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    const recipes: Partial<Recipe>[] = Array.isArray(parsed)
+      ? parsed
+      : parsed.recipes || [];
+    return recipes.slice(0, 100);
+  } catch {
+    console.error("Claude returned non-JSON for multi-recipe extraction:", cleaned.slice(0, 200));
+    const single = await extractRecipe(scrapedContent, sourceUrl);
+    return [single];
+  }
+}
+
 export async function extractRecipeFromCarousel(
   imageUrls: string[],
   caption: string

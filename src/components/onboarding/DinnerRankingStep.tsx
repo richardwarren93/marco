@@ -3,8 +3,11 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import Image from "next/image";
 import RANKING_RECIPES, { type RankingRecipe } from "./data/ranking-recipes";
+import CookbookPage from "./cookbook/CookbookPage";
 
 interface Props {
+  pageNumber: number;
+  onBack?: () => void;
   onNext: (rankedIds: string[], recipes: RankingRecipe[]) => void;
 }
 
@@ -88,7 +91,7 @@ const MIN_MATCHES = 10;
 
 /* ── Component ───────────────────────────────────────────────── */
 
-export default function DinnerRankingStep({ onNext }: Props) {
+export default function DinnerRankingStep({ pageNumber, onBack, onNext }: Props) {
   const [ratings, setRatings] = useState<Map<string, number>>(() => {
     const m = new Map<string, number>();
     RANKING_RECIPES.forEach((r) => m.set(r.id, 1000));
@@ -217,89 +220,72 @@ export default function DinnerRankingStep({ onNext }: Props) {
 
   if (phase === "generating") {
     return (
-      <div
-        className="flex flex-col h-full pb-24"
-        style={{ background: "#F5EEE2" }}
+      <CookbookPage
+        sectionLabel="Your taste"
+        questionLabel="Taste DNA"
+        dropCap="G"
+        title={
+          <>
+            enerating your{" "}
+            <em style={{ color: "#E5462E", fontStyle: "italic" }}>Taste DNA</em>
+          </>
+        }
+        subtitle="Based on your rankings."
+        pageNumber={pageNumber}
+        hideBack
       >
-        <div className="flex-1 flex flex-col items-center justify-center px-6">
-          {/* Animated header */}
-          <div className="text-4xl mb-4 animate-bounce-slow">🧬</div>
-          <h2
-            className="text-xl font-black text-center mb-2 animate-stagger-in"
-            style={{ color: "#1C1A17" }}
-          >
-            Generating your{" "}
-            <span style={{ color: "#E5462E" }}>Taste DNA</span>
-          </h2>
-          <p
-            className="text-sm text-center mb-6 animate-stagger-in"
-            style={{ color: "#a09890", animationDelay: "0.1s" }}
-          >
-            Based on your rankings
-          </p>
+        <div className="flex flex-col items-center justify-center h-full py-4">
+          <div className="text-4xl mb-5 animate-bounce-slow">🧬</div>
 
           {/* Progress bar */}
-          <div
-            className="w-full max-w-xs h-2 rounded-full overflow-hidden mb-8"
-            style={{ background: "#f0ebe4" }}
-          >
+          <div className="w-full max-w-xs h-2 rounded-full overflow-hidden mb-7" style={{ background: "rgba(28, 26, 23, 0.1)" }}>
             <div
               className="h-full rounded-full transition-all duration-100 ease-linear"
-              style={{
-                background: "linear-gradient(90deg, #E5462E, #f59e0b)",
-                width: `${generatingProgress}%`,
-              }}
+              style={{ background: "linear-gradient(90deg, #E5462E, #f59e0b)", width: `${generatingProgress}%` }}
             />
           </div>
 
-          {/* Rankings reveal */}
           {showRankings && (
-            <div className="w-full max-w-sm">
-              <div className="space-y-2">
-                {sortedRecipes.map((recipe, i) => (
+            <div className="w-full max-w-sm space-y-2">
+              {sortedRecipes.map((recipe, i) => (
+                <div key={recipe.id} className="flex items-center gap-3 animate-stagger-in" style={{ animationDelay: `${i * 0.08}s` }}>
                   <div
-                    key={recipe.id}
-                    className="flex items-center gap-3 animate-stagger-in"
-                    style={{ animationDelay: `${i * 0.08}s` }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[10px]"
+                    style={{
+                      background: i === 0 ? "#E5462E" : i === 1 ? "#f07828" : i === 2 ? "#f5a05c" : "rgba(28, 26, 23, 0.1)",
+                      color: i <= 2 ? "white" : "rgba(28, 26, 23, 0.5)",
+                    }}
                   >
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[10px]"
-                      style={{
-                        background:
-                          i === 0
-                            ? "#E5462E"
-                            : i === 1
-                              ? "#f07828"
-                              : i === 2
-                                ? "#f5a05c"
-                                : "#f0ebe4",
-                        color: i <= 2 ? "white" : "#999",
-                      }}
-                    >
-                      {i + 1}
-                    </div>
-                    <span
-                      className="text-sm font-medium"
-                      style={{ color: i <= 2 ? "#1C1A17" : "#a09890" }}
-                    >
-                      {recipe.title}
-                    </span>
+                    {i + 1}
                   </div>
-                ))}
-              </div>
+                  <span
+                    style={{
+                      fontFamily: "var(--font-display, Georgia, serif)",
+                      fontVariationSettings: '"opsz" 14, "wght" 500',
+                      fontSize: "14px",
+                      color: i <= 2 ? "#1C1A17" : "rgba(28, 26, 23, 0.5)",
+                    }}
+                  >
+                    {recipe.title}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
 
-          {/* Tip */}
           <p
-            className="text-xs text-center mt-8 px-8 animate-stagger-in"
-            style={{ color: "#c4b8aa", animationDelay: "0.8s" }}
+            className="text-center mt-7 px-6"
+            style={{
+              fontFamily: "var(--font-display, Georgia, serif)",
+              fontStyle: "italic",
+              fontSize: "12.5px",
+              color: "rgba(28, 26, 23, 0.5)",
+            }}
           >
-            The more recipes you save and meals you plan, the more accurate your
-            taste profile becomes
+            The more recipes you save and meals you plan, the more accurate your taste profile becomes.
           </p>
         </div>
-      </div>
+      </CookbookPage>
     );
   }
 
@@ -310,46 +296,30 @@ export default function DinnerRankingStep({ onNext }: Props) {
   const [recipeA, recipeB] = currentPair;
 
   return (
-    <div
-      className="flex flex-col h-full pb-24"
-      style={{ background: "#F5EEE2" }}
+    <CookbookPage
+      sectionLabel="Your taste"
+      questionLabel="Rather eat"
+      timeLabel={showHint ? "Tap one" : undefined}
+      dropCap="W"
+      title={
+        <>
+          hich would you{" "}
+          <em style={{ color: "#E5462E", fontStyle: "italic" }}>rather eat?</em>
+        </>
+      }
+      pageNumber={pageNumber}
+      onBack={onBack}
     >
-      {/* Progress bar only (no counter) */}
-      <div className="px-6 pt-4 pb-1">
+      {/* Match progress */}
+      <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "rgba(28, 26, 23, 0.1)" }}>
         <div
-          className="h-1.5 rounded-full overflow-hidden"
-          style={{ background: "#f0ebe4" }}
-        >
-          <div
-            className="h-full rounded-full transition-all duration-500 ease-out"
-            style={{
-              background: "#E5462E",
-              width: `${(matchCount / MAX_MATCHES) * 100}%`,
-            }}
-          />
-        </div>
-      </div>
-
-      {/* Header */}
-      <div className="pt-2 pb-2 px-6 text-center">
-        <h1
-          className="text-[22px] font-black tracking-tight"
-          style={{ color: "#1C1A17" }}
-        >
-          Which would you <span style={{ color: "#E5462E" }}>rather eat</span>?
-        </h1>
-        {showHint && (
-          <p
-            className="text-xs mt-1 animate-stagger-in"
-            style={{ color: "#c4b8aa" }}
-          >
-            Tap the dish you prefer
-          </p>
-        )}
+          className="h-full rounded-full transition-all duration-500 ease-out"
+          style={{ background: "#E5462E", width: `${(matchCount / MAX_MATCHES) * 100}%` }}
+        />
       </div>
 
       {/* Cards */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-3 px-5 relative">
+      <div className="flex flex-col items-center justify-center gap-3 h-full relative">
         {[recipeA, recipeB].map((recipe, idx) => {
           const isWinner = winnerId === recipe.id;
           const isLoser = loserId === recipe.id;
@@ -459,6 +429,6 @@ export default function DinnerRankingStep({ onNext }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </CookbookPage>
   );
 }
