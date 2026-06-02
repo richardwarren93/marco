@@ -53,7 +53,7 @@ function NavbarInner() {
   const searchParams = useSearchParams();
   const supabase = createClient();
 
-  const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot");
+  const isAuthPage = pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot") || pathname.startsWith("/cooking-is-family");
   const isProfilePage = pathname === "/profile";
   const isRecipesPage = pathname === "/recipes" || pathname.startsWith("/recipes") || pathname.startsWith("/collections");
   const activeTab = searchParams.get("tab") || "recipes";

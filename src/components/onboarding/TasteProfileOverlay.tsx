@@ -79,9 +79,6 @@ function computeCuisineScores(rankedRecipes: RankingRecipe[]) {
     }));
 }
 
-const STYLE_EMOJIS: Record<string, string> = {
-  quick_meals: "\u{23F1}\uFE0F", one_pan: "\u{1F373}", baked: "\u{1F36A}", grilled: "\u{1F525}",
-};
 
 function inferProfile(rankedRecipes: RankingRecipe[]) {
   const scores: Record<string, Record<string, number>> = {};
@@ -157,41 +154,27 @@ function matchChef(topTraits: ReturnType<typeof getTopTraits>): ChefMatch {
   return bestMatch;
 }
 
-function generateInsights(topTraits: ReturnType<typeof getTopTraits>): { emoji: string; text: string }[] {
-  const items: { emoji: string; text: string }[] = [];
-  const flavors = topTraits.filter((t) => t.dimKey === "flavor").slice(0, 2);
-  if (flavors.length > 0) items.push({ emoji: "\u{1F525}", text: `Crave ${flavors.map((f) => f.label.toLowerCase()).join(", ")} flavors` });
-  const textures = topTraits.filter((t) => t.dimKey === "texture").slice(0, 1);
-  if (textures.length > 0) items.push({ emoji: "\u{2728}", text: `Love ${textures[0].label.toLowerCase()} textures` });
-  const styles = topTraits.filter((t) => t.dimKey === "cookingStyle").slice(0, 1);
-  if (styles.length > 0) items.push({ emoji: "\u{23F1}\uFE0F", text: `Lean toward ${styles[0].label.toLowerCase()} cooking` });
-  const ingr = topTraits.filter((t) => t.dimKey === "ingredients").slice(0, 1);
-  if (ingr.length > 0) items.push({ emoji: "\u{2764}\uFE0F", text: `${ingr[0].label} vibes` });
-  return items.slice(0, 4);
-}
-
-export default function TasteProfileOverlay({ rankedRecipes, signatureDish, allergies, onBack, onComplete }: Props) {
+export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, onComplete }: Props) {
   const router = useRouter();
-  const [phase, setPhase] = useState<"loading" | "profile" | "import">("loading");
+  const [phase, setPhase] = useState<"loading" | "profile">("loading");
   const [showShare, setShowShare] = useState(false);
   const scores = useMemo(() => inferProfile(rankedRecipes), [rankedRecipes]);
   const topTraits = useMemo(() => getTopTraits(scores), [scores]);
   const chefMatch = useMemo(() => matchChef(topTraits), [topTraits]);
-  const insights = useMemo(() => generateInsights(topTraits), [topTraits]);
 
-  // New 4-dimension flavor scores
+  // 4-dimension flavor scores
   const flavorScores = useMemo(() => computeFlavorScores(rankedRecipes), [rankedRecipes]);
 
   // Cuisine preferences from recipe.cuisine field
   const topCuisines = useMemo(() => computeCuisineScores(rankedRecipes), [rankedRecipes]);
 
-  const topStyles = useMemo(() => {
-    return Object.entries(scores.cookingStyle || {}).filter(([, s]) => s > 0).sort(([, a], [, b]) => b - a).slice(0, 4)
-      .map(([id]) => ({
-        id, label: TASTE_DIMENSIONS.find((d) => d.key === "cookingStyle")?.values.find((v) => v.id === id)?.label || id,
-        emoji: STYLE_EMOJIS[id] || "\u{1F374}",
-      }));
-  }, [scores]);
+  const finish = () => {
+    onComplete(flavorScores, topCuisines.map((c) => c.id));
+    router.replace("/recipes");
+    // Land on the (now populated) recipes page and pop the "add" bottom sheet
+    // so they can keep adding — BottomTabBar listens for this event.
+    setTimeout(() => { try { window.dispatchEvent(new CustomEvent("openFabImport")); } catch { /* noop */ } }, 800);
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setPhase("profile"), 2800);
@@ -218,33 +201,11 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, alle
     );
   }
 
-  // ─── Import modal ───
-  if (phase === "import") {
-    return (
-      <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
-        <div className="w-full max-w-sm mx-auto p-8 text-center bg-white rounded-2xl shadow-sm border border-gray-100">
-          <span className="text-6xl block mb-4">{"\u{1F389}"}</span>
-          <h2 className="text-2xl font-black mb-2" style={{ color: "#1C1A17" }}>You&apos;re all set!</h2>
-          <p className="text-sm mb-6" style={{ color: "#a09890" }}>Import your first recipe to get started</p>
-          <button
-            onClick={() => { onComplete(flavorScores, topCuisines.map((c) => c.id)); router.replace("/recipes"); setTimeout(() => { window.dispatchEvent(new CustomEvent("openFabImport")); }, 800); }}
-            className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98] mb-3"
-            style={{ background: "#E5462E" }}
-          >
-            Import my first recipe
-          </button>
-          <button onClick={() => { onComplete(flavorScores, topCuisines.map((c) => c.id)); router.replace("/recipes"); }} className="w-full py-3 text-sm font-semibold" style={{ color: "#a09890" }}>
-            Skip for now
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   // ─── Taste Profile ───
   return (
-    <div className="max-w-2xl mx-auto w-full flex flex-col">
-      <div className="flex-1">
+    <div className="max-w-md mx-auto w-full flex flex-col min-h-[100svh]">
+      <div className="flex-1 flex flex-col justify-center">
         {/* Header */}
         <div className="relative pt-6 pb-2 px-6 text-center">
           {onBack && (
@@ -262,63 +223,18 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, alle
           <h1 className="text-[32px] font-black leading-none" style={{ color: "#1C1A17" }}>Taste DNA</h1>
         </div>
 
-        {/* Your Taste Look-A-Like */}
-        <div className="mx-5 mt-5 rounded-2xl p-5 animate-stagger-in" style={{ background: "white", border: "1px solid #eae7e2" }}>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#E5462E" }}>Your Taste Look-A-Like</p>
-          <p className="text-lg font-black mb-1" style={{ color: "#1C1A17" }}>{chefMatch.name}</p>
-          <p className="text-sm leading-relaxed" style={{ color: "#555" }}>{chefMatch.description}</p>
+        {/* Taste look-a-like */}
+        <div className="mx-5 mt-3 rounded-2xl p-4 animate-stagger-in" style={{ background: "white", border: "1px solid #eae7e2" }}>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5" style={{ color: "#E5462E" }}>Your taste look-a-like</p>
+          <p className="text-lg font-black mb-0.5" style={{ color: "#1C1A17" }}>{chefMatch.name}</p>
+          <p className="text-[12.5px] leading-snug line-clamp-2" style={{ color: "#555" }}>{chefMatch.description}</p>
         </div>
 
-        {/* Your Top Picks — the dinner-ranking comparisons */}
-        {rankedRecipes.length > 0 && (
-          <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.05s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>You&apos;d Reach For These First</p>
-            <div className="space-y-2.5">
-              {rankedRecipes.slice(0, 3).map((r, i) => (
-                <div key={r.id} className="flex items-center gap-3">
-                  <span className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[11px]" style={{ background: i === 0 ? "#E5462E" : i === 1 ? "#f07828" : "#f5a05c", color: "white" }}>{i + 1}</span>
-                  <span className="text-lg">{r.emoji}</span>
-                  <span className="text-sm font-semibold" style={{ color: "#1C1A17" }}>{r.title}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Top Cuisines */}
-        {topCuisines.length > 0 && (
-          <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.08s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Top Cuisines</p>
-            <div className="flex gap-2 flex-wrap">
-              {topCuisines.map((c) => (
-                <div key={c.id} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full" style={{ background: "#f3f2ef" }}>
-                  <span className="text-sm">{c.flag}</span>
-                  <span className="text-xs font-semibold" style={{ color: "#1C1A17" }}>{c.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* You Tend To + Flavor Profile */}
+        {/* Flavor profile + top picks (or cuisines) */}
         <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
-          {/* You tend to */}
-          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.15s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>You tend to...</p>
-            <div className="space-y-2.5">
-              {insights.map((item, i) => (
-                <div key={i} className="flex items-start gap-1.5">
-                  <span className="text-xs flex-shrink-0">{item.emoji}</span>
-                  <span className="text-[11px] leading-tight" style={{ color: "#555" }}>{item.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Flavor profile — 4 unified dimensions */}
-          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.2s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Flavor Profile</p>
-            <div className="space-y-2.5">
+          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.08s", background: "white", border: "1px solid #eae7e2" }}>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-2.5" style={{ color: "#E5462E" }}>Flavor profile</p>
+            <div className="space-y-2">
               {FLAVOR_DIMENSIONS.map((dim) => (
                 <div key={dim.key}>
                   <span className="text-[10px] font-medium" style={{ color: "#1C1A17" }}>{dim.label}</span>
@@ -329,54 +245,32 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, alle
               ))}
             </div>
           </div>
+          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.12s", background: "white", border: "1px solid #eae7e2" }}>
+            <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-2.5" style={{ color: "#E5462E" }}>{rankedRecipes.length > 0 ? "Top picks" : "Top cuisines"}</p>
+            {rankedRecipes.length > 0 ? (
+              <div className="space-y-2">
+                {rankedRecipes.slice(0, 3).map((r, i) => (
+                  <div key={r.id} className="flex items-center gap-2">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[10px]" style={{ background: i === 0 ? "#E5462E" : i === 1 ? "#f07828" : "#f5a05c", color: "white" }}>{i + 1}</span>
+                    <span className="text-[12px] font-semibold truncate" style={{ color: "#1C1A17" }}>{r.title}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex gap-1.5 flex-wrap">
+                {topCuisines.map((c) => (<span key={c.id} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#f3f2ef", color: "#1C1A17" }}>{c.flag} {c.label}</span>))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Cooking Style */}
-        {topStyles.length > 0 && (
-          <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.28s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Cooking Style</p>
-            <div className="flex gap-2 flex-wrap">
-              {topStyles.map((s) => (
-                <div key={s.id} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full" style={{ background: "#f3f2ef" }}>
-                  <span className="text-xs">{s.emoji}</span>
-                  <span className="text-xs font-medium" style={{ color: "#1C1A17" }}>{s.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Dream Meal */}
-        {signatureDish && (
-          <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.35s", background: "white", border: "1px solid #eae7e2" }}>
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: "#E5462E" }}>Dream Meal</p>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{"\u{1F451}"}</span>
-              <p className="text-base font-bold" style={{ color: "#1C1A17" }}>{signatureDish}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Allergies — collected on the Allergies step, surfaced here */}
-        <div className="mx-5 mt-3 rounded-2xl p-5 animate-stagger-in" style={{ animationDelay: "0.42s", background: "white", border: "1px solid #eae7e2" }}>
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-3" style={{ color: "#E5462E" }}>Keeping Out</p>
-          {allergies.length > 0 ? (
-            <div className="flex gap-2 flex-wrap">
-              {allergies.map((a) => (
-                <div key={a} className="flex items-center gap-1.5 px-3.5 py-2 rounded-full" style={{ background: "#fef2f2", border: "1px solid #fecaca" }}>
-                  <span className="text-xs">🚫</span>
-                  <span className="text-xs font-semibold" style={{ color: "#b91c1c" }}>{a}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm" style={{ color: "#a09890" }}>No allergies noted — we&apos;ll suggest freely.</p>
-          )}
+        {/* Allergies — compact, single row */}
+        <div className="mx-5 mt-3 rounded-2xl px-4 py-3 animate-stagger-in flex items-center gap-2 flex-wrap" style={{ animationDelay: "0.16s", background: "white", border: "1px solid #eae7e2" }}>
+          <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: "#E5462E" }}>Keeping out</span>
+          {allergies.length > 0 ? allergies.map((a) => (
+            <span key={a} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" }}>🚫 {a}</span>
+          )) : <span className="text-[12px]" style={{ color: "#a09890" }}>Nothing — we&apos;ll suggest freely.</span>}
         </div>
-
-        <p className="text-center text-[10px] pb-4 pt-4" style={{ color: "#c4b8af" }}>
-          Save more recipes to unlock deeper insights
-        </p>
       </div>
 
       {/* Footer */}
@@ -395,8 +289,8 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, alle
         >
           🔗 Share my Taste DNA
         </button>
-        <button onClick={() => setPhase("import")} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#E5462E" }}>
-          Continue
+        <button onClick={finish} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#E5462E" }}>
+          Take me to my recipes
         </button>
       </div>
 

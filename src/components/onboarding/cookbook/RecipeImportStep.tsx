@@ -9,11 +9,19 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import CookbookPage from "./CookbookPage";
 import { CookbookButton } from "./CookbookControls";
+import { SEED_REEL_URL, SEED_RECIPE, SEED_DETAIL } from "../data/seed-recipe";
 
 export interface SavedRecipe {
   id: string;
   title: string;
   image_url: string | null;
+  // Optional full detail, carried through when we have it (e.g. photo import)
+  // so the guided flow can show the user's real ingredients/steps.
+  ingredients?: { name: string; amount: string; unit: string }[];
+  steps?: string[];
+  prep_time_minutes?: number | null;
+  cook_time_minutes?: number | null;
+  servings?: number | null;
 }
 
 interface Props {
@@ -30,7 +38,7 @@ function parseUrls(raw: string): string[] {
 }
 
 export default function RecipeImportStep({ pageNumber, onBack, onNext }: Props) {
-  const [text, setText] = useState("");
+  const [text, setText] = useState(SEED_REEL_URL);
   const [added, setAdded] = useState<SavedRecipe[]>([]);
   const [importing, setImporting] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -60,7 +68,19 @@ export default function RecipeImportStep({ pageNumber, onBack, onNext }: Props) 
         });
         const saveData = await saveRes.json();
         if (saveRes.ok && saveData?.recipe) {
-          setAdded((prev) => [...prev, { id: saveData.recipe.id, title: saveData.recipe.title, image_url: saveData.recipe.image_url }]);
+          const ex = exData.recipe;
+          setAdded((prev) => [...prev, {
+            id: saveData.recipe.id,
+            title: saveData.recipe.title,
+            image_url: saveData.recipe.image_url,
+            ingredients: ex.ingredients,
+            steps: ex.steps,
+            prep_time_minutes: ex.prep_time_minutes,
+            cook_time_minutes: ex.cook_time_minutes,
+            servings: ex.servings,
+          }]);
+          // Their photo replaces the preset seed — clear the pre-filled link.
+          setText((t) => (t.trim() === SEED_REEL_URL ? "" : t));
         }
       } catch {
         /* skip this photo */
@@ -71,30 +91,66 @@ export default function RecipeImportStep({ pageNumber, onBack, onNext }: Props) 
 
   async function handleSubmit() {
     if (!canSubmit) return;
-    if (typedUrls.length === 0) {
+    const realUrls = typedUrls.filter((u) => !u.includes("instagram.com/reel/DSxK2m_jL-5"));
+
+    // 1) Real pasted links → live import, merged with any photos.
+    if (realUrls.length > 0) {
+      setImporting(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/onboarding/import-recipes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ urls: realUrls.slice(0, 10) }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          setError(data?.error || "Couldn't import those links. Try again.");
+          setImporting(false);
+          return;
+        }
+        const fromLinks: SavedRecipe[] = (data?.recipes || []).map((r: SavedRecipe) => ({ id: r.id, title: r.title, image_url: r.image_url }));
+        onNext([...added, ...fromLinks]);
+      } catch {
+        setError("Something went wrong. Try again.");
+        setImporting(false);
+      }
+      return;
+    }
+
+    // 2) Photo import takes priority over the preset seed — use the user's own.
+    if (added.length > 0) {
       onNext(added);
       return;
     }
-    setImporting(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/onboarding/import-recipes", {
+
+    // 3) Only the seeded reel: bulletproof scripted extraction (no live
+    // scrape/AI) so the moment is instant + can't fail, and we persist it so
+    // it's really in the cookbook on /recipes.
+    if (typedUrls.length > 0) {
+      setImporting(true);
+      setError(null);
+      fetch("/api/recipes/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ urls: typedUrls.slice(0, 10) }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data?.error || "Couldn't import those links. Try again or skip for now.");
-        setImporting(false);
-        return;
-      }
-      const fromLinks: SavedRecipe[] = (data?.recipes || []).map((r: SavedRecipe) => ({ id: r.id, title: r.title, image_url: r.image_url }));
-      onNext([...added, ...fromLinks]);
-    } catch {
-      setError("Something went wrong. Try again or skip for now.");
-      setImporting(false);
+        body: JSON.stringify({
+          title: SEED_RECIPE.title,
+          image_url: SEED_RECIPE.image_url,
+          ingredients: SEED_DETAIL.ingredients.map((i) => ({ name: i.name, amount: i.amt, unit: "" })),
+          steps: SEED_DETAIL.steps,
+          meal_type: "dinner",
+          prep_time_minutes: SEED_DETAIL.prep,
+          cook_time_minutes: SEED_DETAIL.cook,
+          servings: SEED_DETAIL.servings,
+          source_url: SEED_REEL_URL,
+          source_platform: "instagram",
+        }),
+      }).catch(() => {});
+      setTimeout(() => onNext([SEED_RECIPE]), 1400);
+      return;
     }
+
+    onNext(added);
   }
 
   const totalPending = typedUrls.length + added.length;
@@ -116,7 +172,7 @@ export default function RecipeImportStep({ pageNumber, onBack, onNext }: Props) 
           <em style={{ color: "#E5462E", fontStyle: "italic" }}>book.</em>
         </>
       }
-      subtitle="Paste recipe links — Instagram, TikTok, YouTube, a blog — or snap a photo of a recipe. We'll read them and copy them in."
+      subtitle="We dropped a recipe in to try — just tap below to add it. (Or paste your own link, or snap a photo.)"
       pageNumber={pageNumber}
       onBack={onBack}
       hideBack={!onBack}

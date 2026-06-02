@@ -58,7 +58,7 @@ function BottomTabBarInner() {
     setImportExpanded(false);
   }, [pathname]);
 
-  if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot")) {
+  if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot") || pathname.startsWith("/cooking-is-family")) {
     return null;
   }
 

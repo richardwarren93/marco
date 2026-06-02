@@ -6,19 +6,20 @@ import { createClient } from "@/lib/supabase/client";
 import CookbookOpening from "@/components/onboarding/cookbook/CookbookOpening";
 import CreateHouseholdStep from "@/components/onboarding/cookbook/CreateHouseholdStep";
 import RecipeImportStep, { type SavedRecipe } from "@/components/onboarding/cookbook/RecipeImportStep";
-import DemoStep from "@/components/onboarding/cookbook/DemoStep";
+import GuidedDemo from "@/components/onboarding/cookbook/GuidedDemo";
 import AllergiesStep from "@/components/onboarding/AllergiesStep";
 import SignatureDishStep from "@/components/onboarding/SignatureDishStep";
 import DinnerRankingStep from "@/components/onboarding/DinnerRankingStep";
 import TasteProfileOverlay from "@/components/onboarding/TasteProfileOverlay";
 import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes";
 
-// Step map (the AutoDemo "video" step is intentionally removed — kept in repo,
-// unreferenced. DemoStep is the new personalized walkthrough):
+// Step map (the old AutoDemo/DemoStep auto-playing demos are superseded by the
+// interactive GuidedDemo; the passive DemoStep stays in repo for marketing use):
 //   0  Cover (CookbookOpening)
 //   1  Create a household (join by code or start new + size/type)
 //   2  Add to your cookbook — paste links / photos, saves to account
-//   3  Demo — personalized walkthrough using the recipes they just added
+//   3  Guided first-run — user taps through the seeded recipe (add to plan,
+//      grocery, cook with Sous Chef) + family-feed view
 //   4  Allergies
 //   5  Signature dish
 //   6  Dinner ranking
@@ -160,11 +161,11 @@ export default function OnboardingPage() {
       );
     case 3:
       return (
-        <DemoStep
+        <GuidedDemo
           recipes={data.importedRecipes}
           pageNumber={3}
           onBack={goBack}
-          onNext={goForward}
+          onComplete={goForward}
         />
       );
     case 4:
