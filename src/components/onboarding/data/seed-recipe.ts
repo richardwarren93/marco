@@ -2,8 +2,9 @@
 // to leave the app to find something to import. Its "extraction" is hardcoded
 // (no live scrape/AI) so the magic moment is instant and can never fail.
 //
-// PLACEHOLDER: title/image/ingredients are a stand-in for the actual Instagram
-// reel below — swap them to match the reel's real dish.
+// Matched to the actual reel (SEED_REEL_URL): "Viral Hot Honey Beef Taco Bowls".
+// NOTE: image is a stand-in (we don't have the reel's photo) — swap the file at
+// the path below for the real shot when available.
 
 import type { SavedRecipe } from "@/components/onboarding/cookbook/RecipeImportStep";
 
@@ -11,29 +12,31 @@ export const SEED_REEL_URL = "https://www.instagram.com/reel/DSxK2m_jL-5/";
 
 export const SEED_RECIPE: SavedRecipe = {
   id: "seed-reel",
-  title: "Teriyaki Salmon",
-  image_url: "/onboarding/recipes/salmon terriyaki.jpg",
+  title: "Hot Honey Beef Taco Bowls",
+  image_url: "/onboarding/recipes/smoked-brisket.jpg",
 };
 
 export const SEED_DETAIL = {
   mealType: "Dinner",
   prep: 10,
-  cook: 15,
-  servings: 4,
+  cook: 20,
+  servings: 2,
   ingredients: [
-    { amt: "2 tbsp", name: "Olive oil" },
-    { amt: "4 fillets", name: "Salmon" },
-    { amt: "3 tbsp", name: "Soy sauce" },
-    { amt: "2 tbsp", name: "Honey" },
-    { amt: "3 cloves", name: "Garlic, minced" },
-    { amt: "1 tsp", name: "Fresh ginger" },
+    { amt: "200g", name: "Sweet potato" },
+    { amt: "150g", name: "Lean beef mince (5%)" },
+    { amt: "1 tbsp", name: "Tomato purée" },
+    { amt: "2 tbsp", name: "Cottage cheese + Greek yogurt" },
+    { amt: "½", name: "Avocado" },
+    { amt: "1 tbsp", name: "Honey" },
+    { amt: "1 tsp", name: "Sriracha" },
+    { amt: "1 tsp", name: "Taco spice blend" },
   ],
   steps: [
-    "Pat the salmon dry and season with salt and pepper.",
-    "Whisk soy sauce, honey, garlic and ginger into a glaze.",
-    "Sear the salmon skin-side down over medium-high, 4 minutes.",
-    "Flip, pour in the glaze, and spoon over until glossy.",
-    "Rest 2 minutes, then serve over rice with the pan sauce.",
+    "Microwave the sweet potato until soft, then crisp it in the air fryer.",
+    "Brown the beef mince with the spice blend (paprika, cumin, garlic & onion powder, chili) and tomato purée.",
+    "Mix the cottage cheese with Greek yogurt for a creamy, high-protein base.",
+    "Stir honey, sriracha and chili flakes together for the hot honey drizzle.",
+    "Build the bowl — sweet potato, beef, avocado — and finish with the hot honey.",
   ],
-  grocery: ["Salmon fillets", "Soy sauce", "Honey", "Garlic", "Fresh ginger", "Jasmine rice"],
+  grocery: ["Sweet potato", "Lean beef mince", "Cottage cheese", "Greek yogurt", "Avocado", "Hot honey"],
 };
