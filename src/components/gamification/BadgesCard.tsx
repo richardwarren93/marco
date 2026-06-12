@@ -7,7 +7,9 @@ import { TIER_COLORS, CATEGORY_LABELS } from "@/lib/badges";
 
 /** Renders the badge artwork — either the hand-drawn imageUrl when present,
  *  or the legacy emoji glyph as a fallback. The grayscale/opacity treatment
- *  for unearned badges is shared. */
+ *  for unearned badges is shared. If the image fails to load (flaky mobile
+ *  connections leave a permanent broken-image icon in WKWebView), fall back
+ *  to the emoji instead. */
 function BadgeIcon({
   badge,
   earned,
@@ -19,7 +21,9 @@ function BadgeIcon({
   pixelSize: number;
   emojiClassName: string;
 }) {
-  if (badge.imageUrl) {
+  const [imageFailed, setImageFailed] = useState(false);
+
+  if (badge.imageUrl && !imageFailed) {
     return (
       <Image
         src={badge.imageUrl}
@@ -27,6 +31,7 @@ function BadgeIcon({
         width={pixelSize}
         height={pixelSize}
         unoptimized={badge.imageUrl.endsWith(".svg")}
+        onError={() => setImageFailed(true)}
         className={`object-contain transition-transform duration-200 ${earned ? "" : "grayscale opacity-25"}`}
       />
     );
