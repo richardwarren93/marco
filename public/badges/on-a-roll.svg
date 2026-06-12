@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- cinnamon roll with swirl -->
+  <path fill="#DDA15E" d="M50 25 C65 24 77 36 77 52 C77 67 65 79 50 79 C34 80 23 67 23 52 C23 37 35 26 50 25 Z"/>
+  <path fill="none" stroke="#8A5A2B" stroke-width="5" stroke-linecap="round" d="M50 52 C56 50 58 56 53 59 C46 62 40 56 43 48 C46 40 58 39 64 46 C70 53 67 65 57 69 C46 73 34 67 31 56"/>
+  <path fill="#EBC08C" d="M39 33 C42 31 46 32 46 35 C46 38 42 40 39 38 C37 37 37 34 39 33 Z"/>
+</svg>

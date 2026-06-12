@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- sun with marker-stroke rays -->
+  <g stroke="#F07818" stroke-width="6" stroke-linecap="round">
+    <path d="M77 52 L86 51"/>
+    <path d="M69 71 L75 78"/>
+    <path d="M50 79 L49 88"/>
+    <path d="M31 70 L25 77"/>
+    <path d="M23 52 L14 53"/>
+    <path d="M32 34 L25 27"/>
+    <path d="M50 25 L51 16"/>
+    <path d="M68 34 L75 26"/>
+  </g>
+  <path fill="#F4C430" d="M50 33 C59 32 68 40 68 51 C68 61 60 70 50 70 C39 71 32 62 32 51 C32 41 40 34 50 33 Z"/>
+  <path fill="#F9E27D" d="M43 41 C46 39 50 40 50 44 C50 47 46 49 43 47 C41 46 41 42 43 41 Z"/>
+</svg>

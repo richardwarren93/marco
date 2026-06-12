@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- tomato with green sprigs, like the persimmon -->
+  <g stroke="#2F8F46" stroke-width="3.5" stroke-linecap="round" fill="none">
+    <path d="M50 28 C49 23 51 19 50 14"/>
+    <path d="M48 28 C45 24 40 23 38 19"/>
+    <path d="M52 28 C55 24 60 23 62 19"/>
+  </g>
+  <path fill="#E5462E" d="M50 27 C65 25 77 35 78 49 C79 63 68 76 52 77 C36 78 23 68 22 54 C21 40 33 29 50 27 Z"/>
+  <path fill="#F0705A" d="M37 37 C41 34 46 36 46 40 C46 44 41 47 37 45 C34 43 34 39 37 37 Z"/>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- carrot, lemon, eggplant trio -->
+  <g stroke="#2F8F46" stroke-width="3.5" stroke-linecap="round" fill="none">
+    <path d="M32 34 C31 29 34 26 33 22"/>
+    <path d="M36 35 C38 30 42 29 43 25"/>
+    <path d="M28 35 C26 31 22 30 21 26"/>
+  </g>
+  <path fill="#F07818" d="M30 36 C36 33 42 37 41 44 C40 54 36 64 31 70 C28 73 24 71 24 67 C25 56 26 45 27 39 C28 37 29 36 30 36 Z"/>
+  <path fill="#F4C430" d="M53 36 C55 30 67 28 72 33 C76 37 74 43 67 45 C59 47 51 42 53 36 Z"/>
+  <path fill="#F9E27D" d="M58 34 C60 32 63 33 63 35 C63 37 60 38 58 37 C57 36 57 35 58 34 Z"/>
+  <path fill="#6B3FA0" d="M55 58 C60 54 68 56 72 62 C76 68 73 75 66 76 C58 77 51 71 52 64 C52 61 53 59 55 58 Z"/>
+  <path fill="#2F8F46" d="M52 56 C54 53 58 53 59 56 C60 58 57 60 54 60 C52 60 51 58 52 56 Z"/>
+</svg>

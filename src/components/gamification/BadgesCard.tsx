@@ -26,6 +26,7 @@ function BadgeIcon({
         alt={badge.name}
         width={pixelSize}
         height={pixelSize}
+        unoptimized={badge.imageUrl.endsWith(".svg")}
         className={`object-contain transition-transform duration-200 ${earned ? "" : "grayscale opacity-25"}`}
       />
     );

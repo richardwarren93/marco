@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- travel suitcase with stickers -->
+  <path fill="none" stroke="#6E4218" stroke-width="5" stroke-linecap="round" d="M40 35 C40 26 60 26 60 35"/>
+  <path fill="#8A5A2B" d="M27 36 C42 33 59 33 74 36 C79 37 82 40 82 45 L81 68 C81 73 78 76 73 76 L28 76 C23 76 20 73 20 68 L19 45 C19 40 22 37 27 36 Z"/>
+  <path fill="#6E4218" d="M19.5 50 C40 47 61 47 81.5 50 L81.5 58 C61 55 40 55 19.5 58 Z"/>
+  <path fill="#A8743F" d="M28 41 C31 39 35 40 35 43 C35 46 31 48 28 47 C25 46 25 42 28 41 Z"/>
+  <path fill="#F6EEDD" d="M64 60 C67 59 70 61 70 64 C70 67 67 69 64 68 C61 67 61 61 64 60 Z"/>
+  <path fill="#E8A33D" d="M36 63 C38 62 40 63 40 65 C40 67 38 68 36 67 C34 66 34 64 36 63 Z"/>
+</svg>

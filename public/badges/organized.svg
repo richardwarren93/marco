@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- recipe card box with cards peeking out -->
+  <path fill="#F6EEDD" d="M30 29 L52 26 C53 26 54 27 54 28 L55 50 L32 53 L30 31 C30 30 30 29 30 29 Z"/>
+  <path fill="#0F4C5C" d="M33 30 L43 28.6 L43.6 34 L33.6 35.4 Z"/>
+  <path fill="#EFE0C4" d="M50 31 L69 29 C70 29 71 30 71 31 L72 50 L52 52 L50 33 C50 32 50 31 50 31 Z"/>
+  <path fill="#B5722A" d="M25 49 C42 46 59 46 76 49 C79 50 81 52 81 56 L80 71 C80 75 77 78 72 78 L29 78 C24 78 21 75 21 71 L20 56 C20 52 22 50 25 49 Z"/>
+  <path fill="#8F5818" d="M20.5 53 C40 50 61 50 80.5 53 L80.5 59 C61 56 40 56 20.5 59 Z"/>
+  <path fill="#F6EEDD" d="M43 63 C48 62 53 62 58 63 C60 63 60 70 58 70 C53 71 48 71 43 70 C41 70 41 63 43 63 Z"/>
+  <circle cx="50.5" cy="66.5" r="2.2" fill="#E5462E"/>
+</svg>

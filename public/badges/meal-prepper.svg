@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- bento meal-prep container -->
+  <path fill="#0F4C5C" d="M25 34 C42 31 59 31 76 34 C80 35 82 38 82 42 L81 64 C81 69 78 72 73 72 L28 72 C23 72 20 69 20 64 L19 42 C19 38 21 35 25 34 Z"/>
+  <g stroke="#2E7286" stroke-width="3" stroke-linecap="round">
+    <path d="M52 36 L52 70"/>
+    <path d="M53 53 L79 53"/>
+  </g>
+  <path fill="#F2C77A" d="M36 44 C42 43 47 47 47 53 C47 59 42 64 35 63 C29 62 25 57 26 51 C27 46 31 45 36 44 Z"/>
+  <path fill="#E5462E" d="M65 41 C69 40 72 43 72 46 C72 49 69 51 65 50 C62 49 61 43 65 41 Z"/>
+  <path fill="#3EB650" d="M64 59 C68 57 72 59 72 63 C72 66 68 68 64 67 C61 66 61 61 64 59 Z"/>
+</svg>

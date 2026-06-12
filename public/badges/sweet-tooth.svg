@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- cake slice with pink frosting and cherry -->
+  <path fill="#F2C77A" d="M20 62 C36 50 55 38 73 30 C76 29 78 31 78 34 L78 68 C78 72 75 74 71 74 L28 74 C22 74 18 68 20 62 Z"/>
+  <path fill="#F28DB2" d="M20 62 C36 50 55 38 73 30 C76 29 78 31 78 34 L78 41 C71 43 66 49 60 48 C55 47 52 52 46 54 C39 56 34 62 27 65 C24 66 21 64 20 62 Z"/>
+  <path fill="none" stroke="#2F8F46" stroke-width="2.5" stroke-linecap="round" d="M66 25 C68 22 67 19 70 17"/>
+  <path fill="#E5462E" d="M64 24 C67 22 71 24 71 27 C71 30 67 32 64 30 C62 29 62 26 64 24 Z"/>
+</svg>
