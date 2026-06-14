@@ -98,14 +98,13 @@ export async function purchasePlus(plan: PlanKey): Promise<PurchaseResult> {
     plan === "annual" ? PLUS_PRICING.annual.productId : PLUS_PRICING.monthly.productId;
   try {
     const offerings = await Purchases.getOfferings();
-    // The plugin types aren't resolvable until the package is installed, so type
-    // the package shape we rely on explicitly.
-    const packages: Array<{ product: { identifier: string }; packageType: string }> =
-      offerings.current?.availablePackages ?? [];
+    const packages = offerings.current?.availablePackages ?? [];
+    // RevenueCat's standard package-type string for the chosen plan, used as a
+    // fallback when the store product id doesn't match directly.
+    const wantedType = plan === "annual" ? "ANNUAL" : "MONTHLY";
     const pkg =
       packages.find((p) => p.product.identifier === wantedProductId) ??
-      // Fall back to RevenueCat's standard package types if ids don't match.
-      packages.find((p) => (plan === "annual" ? p.packageType === "ANNUAL" : p.packageType === "MONTHLY"));
+      packages.find((p) => String(p.packageType) === wantedType);
     if (!pkg) return { active: false, error: "Plan not available" };
 
     const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
