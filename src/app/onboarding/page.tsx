@@ -11,7 +11,15 @@ import AllergiesStep from "@/components/onboarding/AllergiesStep";
 import SignatureDishStep from "@/components/onboarding/SignatureDishStep";
 import DinnerRankingStep from "@/components/onboarding/DinnerRankingStep";
 import TasteProfileOverlay from "@/components/onboarding/TasteProfileOverlay";
+import PlusUpsell from "@/components/onboarding/paywall/PlusUpsell";
+import { purchasePlus } from "@/lib/purchases";
+import { invalidateEntitlement } from "@/lib/useEntitlement";
 import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes";
+
+// Phase 0: the post–Taste DNA Plus upsell is built and wired but OFF until
+// RevenueCat is integrated (Phase 2). Flip to true to preview the live flow.
+// When false the onboarding completion path is unchanged.
+const PAYWALL_ENABLED = false;
 
 // Step map (the old AutoDemo/DemoStep auto-playing demos are superseded by the
 // interactive GuidedDemo; the passive DemoStep stays in repo for marketing use):
@@ -24,8 +32,9 @@ import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes
 //   5  Signature dish
 //   6  Dinner ranking
 //   7  Taste profile reveal (full overlay)
-const TOTAL_STEPS = 8;
 const PROFILE_STEP = 7;
+const PAYWALL_STEP = 8;
+const TOTAL_STEPS = PAYWALL_ENABLED ? 9 : 8;
 const STORAGE_KEY = "marco_onboarding";
 
 interface OnboardingState {
@@ -123,6 +132,25 @@ export default function OnboardingPage() {
     localStorage.removeItem(STORAGE_KEY);
   }, [data]);
 
+  // Final landing into the app. With the paywall off, TasteProfileOverlay still
+  // handles this itself; with it on, the paywall step calls this on skip/start.
+  const landInApp = useCallback(() => {
+    router.replace("/recipes");
+    setTimeout(() => { try { window.dispatchEvent(new CustomEvent("openFabImport")); } catch { /* noop */ } }, 800);
+  }, [router]);
+
+  // Start the trial via RevenueCat. On native: run the StoreKit purchase, and
+  // only on a real cancellation do we keep the user on the paywall. On web (or
+  // if purchases are unavailable) we fall through to the app so the flow never
+  // dead-ends. The webhook is the source of truth for entitlement; we just
+  // invalidate the client cache so the next read reflects Plus.
+  const handleStartTrial = useCallback(async (plan: "annual" | "monthly") => {
+    const result = await purchasePlus(plan);
+    if (result.cancelled) return; // stay on the paywall
+    if (result.active) invalidateEntitlement();
+    landInApp();
+  }, [landInApp]);
+
   if (!ready) {
     return (
       <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
@@ -203,6 +231,14 @@ export default function OnboardingPage() {
           allergies={data.allergies}
           onBack={goBack}
           onComplete={handleComplete}
+          onShowPaywall={PAYWALL_ENABLED ? goForward : undefined}
+        />
+      );
+    case PAYWALL_STEP:
+      return (
+        <PlusUpsell
+          onStartTrial={(plan) => handleStartTrial(plan)}
+          onSkip={() => landInApp()}
         />
       );
     default:

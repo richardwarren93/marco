@@ -1,0 +1,132 @@
+"use client";
+
+// RevenueCat wrapper for Marco Plus. RevenueCat bridges to native StoreKit, so
+// these calls only do real work inside the Capacitor native shell — in a plain
+// web browser every function is a safe no-op (returns "not available"), letting
+// the paywall UI run in the web preview without purchasing. Mirrors the guarded
+// dynamic-import pattern used by PushNotificationManager.
+//
+// Setup that must exist for this to function on device (see PHASE2-SETUP.md):
+//   - NEXT_PUBLIC_REVENUECAT_IOS_KEY env var (RevenueCat public SDK key)
+//   - RevenueCat "offering" with packages whose product ids match
+//     PLUS_PRICING.{annual,monthly}.productId in plus-config.ts
+//   - An entitlement named PLUS_ENTITLEMENT_ID in the RevenueCat dashboard
+
+import { PLUS_PRICING } from "@/components/onboarding/paywall/plus-config";
+
+// The entitlement identifier configured in the RevenueCat dashboard. A customer
+// who owns it is "Plus".
+export const PLUS_ENTITLEMENT_ID = "plus";
+
+export type PlanKey = "annual" | "monthly";
+
+export interface PurchaseResult {
+  /** true if the user now holds the Plus entitlement. */
+  active: boolean;
+  /** true when running somewhere purchases can't happen (web preview). */
+  unavailable?: boolean;
+  /** true if the native flow was cancelled by the user. */
+  cancelled?: boolean;
+  error?: string;
+}
+
+// Lazily resolve the native plugin; returns null on web so callers no-op.
+async function getPlugin() {
+  try {
+    const { Capacitor } = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ "@capacitor/core");
+    if (!Capacitor.isNativePlatform()) return null;
+    return await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ "@revenuecat/purchases-capacitor");
+  } catch {
+    return null;
+  }
+}
+
+let configured = false;
+
+/** Configure RevenueCat and bind the customer to our Supabase user id so the
+ *  webhook can map store events back to the right account. Safe to call on
+ *  every sign-in; re-binds via logIn if already configured. */
+export async function configurePurchases(supabaseUserId: string): Promise<boolean> {
+  const mod = await getPlugin();
+  if (!mod) return false;
+  const apiKey = process.env.NEXT_PUBLIC_REVENUECAT_IOS_KEY;
+  if (!apiKey) return false;
+  const { Purchases, LOG_LEVEL } = mod;
+  try {
+    if (!configured) {
+      await Purchases.setLogLevel({ level: LOG_LEVEL.WARN });
+      await Purchases.configure({ apiKey, appUserID: supabaseUserId });
+      configured = true;
+    } else {
+      await Purchases.logIn({ appUserID: supabaseUserId });
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function entitlementActive(customerInfo: unknown): boolean {
+  try {
+    const active = (customerInfo as { entitlements?: { active?: Record<string, unknown> } })?.entitlements?.active ?? {};
+    return Object.prototype.hasOwnProperty.call(active, PLUS_ENTITLEMENT_ID);
+  } catch {
+    return false;
+  }
+}
+
+/** Whether the current customer already holds Plus (e.g. resubscribe / restore
+ *  on a fresh install). No-op false on web. */
+export async function isPlusActive(): Promise<boolean> {
+  const mod = await getPlugin();
+  if (!mod) return false;
+  try {
+    const { customerInfo } = await mod.Purchases.getCustomerInfo();
+    return entitlementActive(customerInfo);
+  } catch {
+    return false;
+  }
+}
+
+/** Kick off the native purchase for the chosen plan. Picks the matching package
+ *  out of the current offering by store product id. */
+export async function purchasePlus(plan: PlanKey): Promise<PurchaseResult> {
+  const mod = await getPlugin();
+  if (!mod) return { active: false, unavailable: true };
+  const { Purchases } = mod;
+  const wantedProductId =
+    plan === "annual" ? PLUS_PRICING.annual.productId : PLUS_PRICING.monthly.productId;
+  try {
+    const offerings = await Purchases.getOfferings();
+    // The plugin types aren't resolvable until the package is installed, so type
+    // the package shape we rely on explicitly.
+    const packages: Array<{ product: { identifier: string }; packageType: string }> =
+      offerings.current?.availablePackages ?? [];
+    const pkg =
+      packages.find((p) => p.product.identifier === wantedProductId) ??
+      // Fall back to RevenueCat's standard package types if ids don't match.
+      packages.find((p) => (plan === "annual" ? p.packageType === "ANNUAL" : p.packageType === "MONTHLY"));
+    if (!pkg) return { active: false, error: "Plan not available" };
+
+    const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
+    return { active: entitlementActive(customerInfo) };
+  } catch (e: unknown) {
+    const err = e as { code?: string; userCancelled?: boolean; message?: string };
+    if (err?.userCancelled || err?.code === "PURCHASE_CANCELLED") {
+      return { active: false, cancelled: true };
+    }
+    return { active: false, error: err?.message || "Purchase failed" };
+  }
+}
+
+/** Restore prior purchases (App Store requirement). No-op false on web. */
+export async function restorePurchases(): Promise<PurchaseResult> {
+  const mod = await getPlugin();
+  if (!mod) return { active: false, unavailable: true };
+  try {
+    const { customerInfo } = await mod.Purchases.restorePurchases();
+    return { active: entitlementActive(customerInfo) };
+  } catch (e: unknown) {
+    return { active: false, error: (e as { message?: string })?.message || "Restore failed" };
+  }
+}

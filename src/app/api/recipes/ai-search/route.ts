@@ -2,9 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getUserTier, aiDailyLimitFor } from "@/lib/entitlements-server";
 import type { Recipe } from "@/types";
-
-const HAIKU_DAILY_LIMIT = 25;
 
 const anthropic = new Anthropic();
 
@@ -18,12 +17,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { allowed } = await checkRateLimit(user.id, "ai-search", HAIKU_DAILY_LIMIT);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: `Daily AI search limit reached (${HAIKU_DAILY_LIMIT}/day). Try again tomorrow.` },
-      { status: 429 }
-    );
+  // Plus users are unlimited; free users keep the daily cap. (Tier-aware but
+  // identical to today's behavior until ENFORCE_ENTITLEMENTS turns on.)
+  const tier = await getUserTier(supabase, user.id);
+  const dailyLimit = aiDailyLimitFor(tier, "ai_search");
+  if (dailyLimit !== null) {
+    const { allowed } = await checkRateLimit(user.id, "ai-search", dailyLimit);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: `Daily AI search limit reached (${dailyLimit}/day). Try again tomorrow.` },
+        { status: 429 }
+      );
+    }
   }
 
   const { query, meal_type } = await request.json();

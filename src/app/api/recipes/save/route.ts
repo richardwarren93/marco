@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { rehostIfExpiring, isExpiringCdn } from "@/lib/image-rehost";
 import { findExistingRecipeByFingerprint } from "@/lib/recipes/dedup";
+import { getUserTier, checkRecipeSaveAllowed } from "@/lib/entitlements-server";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -17,6 +18,14 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const admin = createAdminClient();
+
+    // Marco Plus gate: free users are capped at FREE_LIMITS.maxSavedRecipes.
+    // No-op while ENFORCE_ENTITLEMENTS is false (Phase 1).
+    const tier = await getUserTier(supabase, user.id);
+    const gate = await checkRecipeSaveAllowed(supabase, user.id, tier);
+    if (gate.block) {
+      return NextResponse.json(gate.block, { status: 403 });
+    }
 
     const existing = await findExistingRecipeByFingerprint(admin, user.id, {
       title: body.title,

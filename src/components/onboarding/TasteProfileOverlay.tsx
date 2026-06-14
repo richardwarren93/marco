@@ -19,6 +19,9 @@ interface Props {
   allergies: string[];
   onBack?: () => void;
   onComplete: (tasteScores?: TasteScores, cuisinePreferences?: string[]) => void;
+  /** When provided (paywall enabled), finishing saves the profile and hands
+   *  off to the Plus upsell instead of navigating straight to /recipes. */
+  onShowPaywall?: () => void;
 }
 
 const CUISINE_FLAGS: Record<string, string> = {
@@ -154,7 +157,7 @@ function matchChef(topTraits: ReturnType<typeof getTopTraits>): ChefMatch {
   return bestMatch;
 }
 
-export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, onComplete }: Props) {
+export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, onComplete, onShowPaywall }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<"loading" | "profile">("loading");
   const [showShare, setShowShare] = useState(false);
@@ -170,6 +173,9 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, 
 
   const finish = () => {
     onComplete(flavorScores, topCuisines.map((c) => c.id));
+    // Paywall enabled: save the profile, then hand control to the Plus upsell
+    // (the parent owns the final navigation into the app).
+    if (onShowPaywall) { onShowPaywall(); return; }
     router.replace("/recipes");
     // Land on the (now populated) recipes page and pop the "add" bottom sheet
     // so they can keep adding — BottomTabBar listens for this event.

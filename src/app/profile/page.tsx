@@ -15,6 +15,7 @@ import TasteProfileCard from "@/components/gamification/TasteProfileCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
 import PhoneCard from "@/components/phone/PhoneCard";
 import DietaryFiltersCard from "@/components/dietary/DietaryFiltersCard";
+import RestorePurchasesButton from "@/components/purchases/RestorePurchasesButton";
 
 export default function ProfilePage() {
   const { data: profileData, isLoading: profileLoading, mutate: mutateProfile } = useProfile();
@@ -408,8 +409,13 @@ export default function ProfilePage() {
         <PhoneCard />
       </div>
 
-      {/* ── Log out ── */}
+      {/* ── Restore purchases (App Store requirement) ── */}
       <div className="px-4 pt-8">
+        <RestorePurchasesButton />
+      </div>
+
+      {/* ── Log out ── */}
+      <div className="px-4 pt-3">
         <button
           onClick={async () => {
             const supabase = createClient();

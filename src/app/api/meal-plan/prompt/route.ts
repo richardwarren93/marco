@@ -3,9 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { promptRecipes } from "@/lib/claude";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getUserTier, aiDailyLimitFor } from "@/lib/entitlements-server";
 import type { PantryItem, Recipe } from "@/types";
-
-const DISCOVER_DAILY_LIMIT = 10;
 
 /** Fetch the og:image from a URL by doing a lightweight HEAD-style fetch */
 async function fetchOgImage(url: string): Promise<string | null> {
@@ -65,12 +64,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { allowed, remaining } = await checkRateLimit(user.id, "discover", DISCOVER_DAILY_LIMIT);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: `Daily Discover limit reached (${DISCOVER_DAILY_LIMIT}/day). Try again tomorrow.` },
-      { status: 429 }
-    );
+  // Plus users are unlimited; free users keep the daily cap. Identical to
+  // today's behavior until ENFORCE_ENTITLEMENTS turns on.
+  const tier = await getUserTier(supabase, user.id);
+  const discoverLimit = aiDailyLimitFor(tier, "ai_discover");
+  let remaining = 9999; // sentinel for "unlimited" in the response header
+  if (discoverLimit !== null) {
+    const rl = await checkRateLimit(user.id, "discover", discoverLimit);
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: `Daily Discover limit reached (${discoverLimit}/day). Try again tomorrow.` },
+        { status: 429 }
+      );
+    }
+    remaining = rl.remaining;
   }
 
   try {

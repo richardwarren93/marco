@@ -4,6 +4,7 @@ import { SWRConfig } from "swr";
 import { ToastProvider } from "./Toast";
 import BadgeChecker from "@/components/gamification/BadgeChecker";
 import PushNotificationManager from "@/components/push/PushNotificationManager";
+import PurchasesManager from "@/components/purchases/PurchasesManager";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -17,6 +18,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <ToastProvider>
         <BadgeChecker />
         <PushNotificationManager />
+        <PurchasesManager />
         {children}
       </ToastProvider>
     </SWRConfig>

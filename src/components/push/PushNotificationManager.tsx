@@ -37,14 +37,14 @@ export default function PushNotificationManager() {
     async function tryRegister() {
       if (registered.current || cancelled) return;
 
-      const { Capacitor } = await import("@capacitor/core");
+      const { Capacitor } = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ "@capacitor/core");
       if (!Capacitor.isNativePlatform()) return;
 
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled) return;
 
-      const { PushNotifications } = await import("@capacitor/push-notifications");
+      const { PushNotifications } = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ "@capacitor/push-notifications");
 
       // Permission. On iOS this triggers the system dialog if it
       // hasn't been answered yet. If the user has already denied, we
