@@ -34,7 +34,6 @@ function BottomTabBarInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [fabOpen, setFabOpen] = useState(false);
-  const [importExpanded, setImportExpanded] = useState(false);
   const [photoUploading, setPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
@@ -42,7 +41,6 @@ function BottomTabBarInner() {
   useEffect(() => {
     function handleOpenFabImport() {
       setFabOpen(true);
-      setImportExpanded(true);
     }
     window.addEventListener("openFabImport", handleOpenFabImport);
     return () => window.removeEventListener("openFabImport", handleOpenFabImport);
@@ -55,7 +53,6 @@ function BottomTabBarInner() {
   useEffect(() => {
     setPhotoUploading(false);
     setFabOpen(false);
-    setImportExpanded(false);
   }, [pathname]);
 
   if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot") || pathname.startsWith("/cooking-is-family")) {
@@ -75,16 +72,6 @@ function BottomTabBarInner() {
 
   function closeFab() {
     setFabOpen(false);
-    setImportExpanded(false);
-  }
-
-  function handleAddMeal() {
-    closeFab();
-    if (isOnMealPlan) {
-      window.dispatchEvent(new CustomEvent("openMealAddSheet"));
-    } else {
-      router.push("/recipes?tab=meal-plan");
-    }
   }
 
   function handleImportLink() {
@@ -144,7 +131,7 @@ function BottomTabBarInner() {
             animation: "fabMenuIn 0.22s cubic-bezier(0.34,1.2,0.64,1) both",
           }}
         >
-          {/* Outer clip — fixed width, hides the offscreen panel */}
+          {/* Import options — the plus opens straight to Paste link / Photo / Text */}
           <div
             style={{
               width: 224,
@@ -152,112 +139,51 @@ function BottomTabBarInner() {
               borderRadius: 18,
               background: "white",
               boxShadow: "0 8px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)",
-              height: importExpanded ? 220 : 121,
-              transition: "height 0.22s cubic-bezier(0.4,0,0.2,1)",
             }}
           >
-            {/* Sliding track — two panels side by side */}
-            <div
-              style={{
-                display: "flex",
-                width: "200%",
-                transform: importExpanded ? "translateX(-50%)" : "translateX(0)",
-                transition: "transform 0.22s cubic-bezier(0.4,0,0.2,1)",
-              }}
+            {/* Paste link */}
+            <button
+              onClick={handleImportLink}
+              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
             >
-              {/* ── Panel 1: Main menu ── */}
-              <div style={{ width: "50%", flexShrink: 0 }}>
-                {/* Add meal */}
-                <button
-                  onClick={handleAddMeal}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f4f4f2" }}>
-                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">Add meal</p>
-                </button>
-
-                <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
-
-                {/* Import recipe → */}
-                <button
-                  onClick={() => setImportExpanded(true)}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
-                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900 flex-1">Import recipe</p>
-                  <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
+                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
               </div>
+              <p className="text-sm font-semibold text-gray-900">Paste link</p>
+            </button>
 
-              {/* ── Panel 2: Import sub-options ── */}
-              <div style={{ width: "50%", flexShrink: 0 }}>
-                {/* Back row */}
-                <button
-                  onClick={() => setImportExpanded(false)}
-                  className="flex items-center gap-2 px-4 py-3 w-full hover:bg-gray-50 active:bg-gray-100 transition-colors"
-                  style={{ borderBottom: "1px solid #f0f0ee" }}
-                >
-                  <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                  </svg>
-                  <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "#aaa" }}>Import</p>
-                </button>
+            <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
 
-                {/* Paste link */}
-                <button
-                  onClick={handleImportLink}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
-                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">Paste link</p>
-                </button>
-
-                <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
-
-                {/* Photo */}
-                <button
-                  onClick={handleImportPhoto}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
-                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">Photo</p>
-                </button>
-
-                <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
-
-                {/* Text */}
-                <button
-                  onClick={handleImportText}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
-                >
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
-                    <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">Text</p>
-                </button>
+            {/* Photo */}
+            <button
+              onClick={handleImportPhoto}
+              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
+            >
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
+                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
               </div>
-            </div>
+              <p className="text-sm font-semibold text-gray-900">Photo</p>
+            </button>
+
+            <div className="mx-4" style={{ height: 1, background: "#f0f0ee" }} />
+
+            {/* Text */}
+            <button
+              onClick={handleImportText}
+              className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full"
+            >
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>
+                <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <p className="text-sm font-semibold text-gray-900">Text</p>
+            </button>
           </div>
         </div>
       )}
