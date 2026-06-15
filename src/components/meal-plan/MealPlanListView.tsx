@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import useSWR, { mutate as swrMutate } from "swr";
@@ -155,6 +155,36 @@ function MealRow({
   );
 }
 
+// ─── Expanded-day meal action (Swap / Edit / Remove) ─────────────────────────
+function MealAction({
+  label,
+  onClick,
+  icon,
+  danger = false,
+}: {
+  label: string;
+  onClick: () => void;
+  icon: ReactNode;
+  danger?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-semibold transition-all active:scale-95"
+      style={{
+        background: danger ? "rgba(229,70,46,0.05)" : "rgba(28,26,23,0.04)",
+        color: danger ? "#E5462E" : "#4A4742",
+        border: danger ? "1px solid rgba(229,70,46,0.20)" : "1px solid rgba(28,26,23,0.08)",
+      }}
+    >
+      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        {icon}
+      </svg>
+      {label}
+    </button>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MealPlanListView({
   mealPlans,
@@ -198,6 +228,11 @@ export default function MealPlanListView({
   const [viewMode, setViewMode] = useState<"daily" | "weekly">("weekly");
   const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
 
+  // Weekly view: per-day expand/collapse. A day not in the map defaults to
+  // expanded when it has meals, collapsed when empty. Reset when the week
+  // changes so the default applies to the new week's data.
+  const [expandedOverride, setExpandedOverride] = useState<Record<string, boolean>>({});
+
   // ─── Week & day state ────────────────────────────────────────────────────────
   const [weekStart, setWeekStart] = useState<Date>(weekStartProp);
   const today = formatDateKey(new Date());
@@ -207,7 +242,7 @@ export default function MealPlanListView({
   // Suggested recipe carousel index (resets on day change)
   const [suggestedIdx, setSuggestedIdx] = useState(0);
 
-  useEffect(() => { setWeekStart(weekStartProp); }, [weekStartProp]);
+  useEffect(() => { setWeekStart(weekStartProp); setExpandedOverride({}); }, [weekStartProp]);
   useEffect(() => { setSuggestedIdx(0); }, [selectedDate]);
 
   // ─── FAB "Add meal" event listener ───────────────────────────────────────────
@@ -887,38 +922,86 @@ export default function MealPlanListView({
 
   // ─── Weekly view ──────────────────────────────────────────────────────────────
   function renderWeeklyView() {
+    const GOAL = 14; // 2 meals/day × 7 days
+    const planned = totalVisibleMeals;
+    const progressPct = Math.min(100, Math.round((planned / GOAL) * 100));
+    const mealTime = (p: MealPlan) => (p.recipe?.prep_time_minutes ?? 0) + (p.recipe?.cook_time_minutes ?? 0);
+    const dayHasMeals = (dk: string) => (byDate[dk]?.length ?? 0) > 0;
+    const isDayExpanded = (dk: string) => expandedOverride[dk] ?? dayHasMeals(dk);
+    const anyExpanded = sortedDates.some((dk) => isDayExpanded(dk));
+    const toggleDay = (dk: string) =>
+      setExpandedOverride((prev) => ({ ...prev, [dk]: !(prev[dk] ?? dayHasMeals(dk)) }));
+    const toggleAll = () => {
+      const target = !anyExpanded;
+      const next: Record<string, boolean> = {};
+      sortedDates.forEach((dk) => { next[dk] = target; });
+      setExpandedOverride(next);
+    };
+
     return (
       <div className="space-y-2.5">
 
-        {/* Empty state */}
-        {totalVisibleMeals === 0 && (
-          <div className="text-center py-12 space-y-3">
-            <p className="text-2xl">🍽️</p>
-            <p className="text-sm font-semibold" style={{ color: TEXT_2 }}>No meals planned this week</p>
-            {onPlanThisWeek && (
-              <button
-                onClick={() => onPlanThisWeek?.()}
-                className="mt-1 px-5 py-2.5 rounded-full text-sm font-semibold transition-all active:scale-[0.97]"
-                style={{ background: ACCENT, color: "white" }}
-              >
-                Plan your week
-              </button>
-            )}
+        {/* ── Progress header ─────────────────────────────────────────── */}
+        <div
+          className="flex items-center gap-3 rounded-2xl px-4 py-3"
+          style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
+        >
+          <span
+            className="flex items-center justify-center rounded-full flex-shrink-0"
+            style={{ width: 38, height: 38, background: planned >= GOAL ? "rgba(22,163,74,0.12)" : ACCENT_LIGHT }}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={planned >= GOAL ? "#16a34a" : ACCENT} strokeWidth={2.2} strokeLinecap="round">
+              <path d="M5 20V10M12 20V4M19 20v-6" />
+            </svg>
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-[13px] font-semibold" style={{ color: TEXT_1 }}>
+              You&apos;ve planned {planned} of {GOAL} meals
+            </p>
+            <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(28,26,23,0.08)" }}>
+              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%`, background: planned >= GOAL ? "#16a34a" : ACCENT }} />
+            </div>
           </div>
-        )}
+          {onPlanThisWeek && (
+            <button
+              onClick={() => onPlanThisWeek?.()}
+              className="flex items-center gap-1 pl-2 pr-2.5 py-2 rounded-full text-[12px] font-semibold transition-all active:scale-95 flex-shrink-0"
+              style={{ background: "var(--ink, #1C1A17)", color: "var(--cream, #F5EEE2)" }}
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5L13 3z" />
+              </svg>
+              Plan my week
+            </button>
+          )}
+        </div>
 
-        {/* Day cards */}
+        {/* ── This Week + collapse-all ────────────────────────────────── */}
+        <div className="flex items-center justify-between px-1 pt-1">
+          <h2 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: "18px", letterSpacing: "-0.015em", color: TEXT_1 }}>
+            This Week
+          </h2>
+          <button onClick={toggleAll} className="flex items-center gap-1 text-[12.5px] font-semibold active:scale-95" style={{ color: TEXT_2 }}>
+            {anyExpanded ? "Show fewer" : "Show more"}
+            <svg className={`w-3.5 h-3.5 transition-transform ${anyExpanded ? "" : "rotate-180"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 15l-7-7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+        {/* ── Day cards ───────────────────────────────────────────────── */}
         {sortedDates.map((dateKey) => {
           const isToday = dateKey === today;
           const isPast = dateKey < today;
           const date = new Date(dateKey + "T12:00:00");
           const weekday = date.toLocaleDateString("en-US", { weekday: "short" });
+          const dayLong = date.toLocaleDateString("en-US", { weekday: "long" });
           const dayNum = date.getDate();
           const plans = sortMeals(byDate[dateKey] || []);
+          const expanded = isDayExpanded(dateKey);
+          const dayMin = plans.reduce((s, p) => s + mealTime(p), 0);
+          const fullyPlanned = plans.length >= 2;
 
-          // Day-level dietary heads-up. True if any planned recipe contains
-          // an ingredient that hits one of the active filters. Past days
-          // skip the check — already cooked, no swap to make.
           const dayHasDietaryConflict =
             !isPast &&
             dietaryFilters.length > 0 &&
@@ -932,100 +1015,109 @@ export default function MealPlanListView({
               key={dateKey}
               id={`day-${dateKey}`}
               className="rounded-2xl overflow-hidden"
-              style={{
-                background: SURFACE,
-                boxShadow: CARD_SHADOW,
-              }}
+              style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
             >
-              {/* Day header */}
-              <div
-                className="flex items-center justify-between px-4 py-3"
-                style={{ background: isToday ? "#fffbf8" : isPast ? "#f5f3ef" : "#fafaf9" }}
+              {/* Day header — tap to expand/collapse */}
+              <button
+                onClick={() => toggleDay(dateKey)}
+                className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-black/[0.015]"
               >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-[13px] font-semibold"
-                    style={{ color: isPast ? "var(--ink-soft, #4A4742)" : TEXT_1, opacity: isPast ? 0.6 : 1 }}
-                  >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-[14px] font-semibold flex-shrink-0" style={{ color: isPast ? "var(--ink-soft, #4A4742)" : TEXT_1, opacity: isPast ? 0.6 : 1 }}>
                     {weekday} {dayNum}
                   </span>
                   {isToday && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: ACCENT_LIGHT, color: ACCENT }}>
-                      Today
-                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: ACCENT_LIGHT, color: ACCENT }}>Today</span>
                   )}
                   {dayHasDietaryConflict && (
-                    <span
-                      className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: "rgba(232, 163, 61, 0.18)", color: "#8A6418" }}
-                      title="One of today's recipes has an ingredient that doesn't fit your dietary filters."
-                    >
-                      Needs swap
-                    </span>
-                  )}
-                  {isPast && plans.length > 0 && (
-                    <span
-                      className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{
-                        background: "var(--cream-warm, #EFE5D2)",
-                        color: "var(--teal, #0F4C5C)",
-                      }}
-                    >
-                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                      done
-                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(232, 163, 61, 0.18)", color: "#8A6418" }} title="One of this day's recipes doesn't fit your dietary filters.">Needs swap</span>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5">
-                  {/* Coordinate — only on Today, only when there's actually
-                      something to schedule (2+ recipes). Recipe-level
-                      coordination is the v1; per-step granularity comes
-                      later. */}
+                <div className="flex items-center gap-2.5 flex-shrink-0">
+                  <span className="text-[12.5px]" style={{ color: TEXT_2 }}>
+                    {plans.length === 0 ? "0 meals" : `${plans.length} ${plans.length === 1 ? "meal" : "meals"}${dayMin > 0 ? ` · ${dayMin} min` : ""}`}
+                  </span>
+                  <span
+                    className="w-6 h-6 rounded-full flex items-center justify-center"
+                    style={{ background: fullyPlanned ? "rgba(22,163,74,0.12)" : "rgba(28,26,23,0.05)", color: fullyPlanned ? "#16a34a" : TEXT_2 }}
+                  >
+                    <svg className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </span>
+                </div>
+              </button>
+
+              {/* Expanded: meals + actions + add */}
+              {expanded && (
+                <div className="px-3 pb-3 pt-0.5" style={{ borderTop: `1px solid ${BORDER}` }}>
+                  {plans.map((plan) => {
+                    const t = mealTime(plan);
+                    return (
+                      <div key={plan.id} className="pt-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-1.5 px-1" style={{ color: TEXT_2, fontFamily: "var(--font-mono, 'Geist Mono', monospace)" }}>
+                          {plan.meal_type}
+                        </p>
+                        <button
+                          onClick={() => setPreviewPlan(plan)}
+                          className="w-full flex items-center gap-3 p-2 rounded-xl text-left active:scale-[0.99] transition-transform"
+                          style={{ background: "var(--cream, #F5EEE2)" }}
+                        >
+                          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#eeecea" }}>
+                            {plan.recipe?.image_url
+                              ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" style={isPast ? { filter: "grayscale(0.6)" } : undefined} />
+                              : <MealTypeIcon type={plan.meal_type} className="w-6 h-6 opacity-50" strokeWidth={1.6} />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13.5px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+                              {plan.recipe?.title || "Untitled"}
+                            </p>
+                            <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
+                              {t > 0 ? `${t} min · ${plan.meal_type}` : plan.meal_type}
+                              {plan.owner_name ? ` · ${plan.owner_name}` : ""}
+                            </p>
+                          </div>
+                        </button>
+                        {/* Swap / Edit / Remove */}
+                        {!plan.owner_name && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <MealAction label="Swap" onClick={() => handleReplace(plan)} icon={<path strokeLinecap="round" strokeLinejoin="round" d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />} />
+                            <MealAction label="Edit" onClick={() => setEditingPlan(plan)} icon={<path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />} />
+                            <MealAction label="Remove" danger onClick={() => onRemove(plan.id)} icon={<path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />} />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Add a meal */}
+                  {!isPast && (
+                    <button
+                      onClick={() => openAddSheet(dateKey)}
+                      className="w-full mt-3 flex items-center justify-center gap-2 py-3 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98]"
+                      style={{ border: `1px dashed ${BORDER}`, color: TEXT_2, background: "transparent" }}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add a meal to {dayLong}
+                    </button>
+                  )}
+
+                  {/* Coordinate (Today, 2+ meals) */}
                   {isToday && plans.length >= 2 && (
                     <button
                       onClick={() => setCoordinatePlans(plans)}
-                      className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full transition-all active:scale-95"
-                      style={{
-                        background: "var(--ink, #1C1A17)",
-                        color: "var(--cream, #F5EEE2)",
-                      }}
+                      className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-semibold transition-all active:scale-[0.98]"
+                      style={{ background: "var(--ink, #1C1A17)", color: "var(--cream, #F5EEE2)" }}
                     >
-                      <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <circle cx="12" cy="12" r="10" />
                         <path strokeLinecap="round" d="M12 6v6l4 2" />
                       </svg>
-                      Coordinate
+                      Coordinate today&apos;s cooking
                     </button>
                   )}
-                  <button
-                    onClick={() => openAddSheet(dateKey)}
-                    className="w-7 h-7 rounded-full border flex items-center justify-center transition-colors touch-manipulation"
-                    style={{ borderColor: BORDER, color: TEXT_2, opacity: isPast ? 0.5 : 1 }}
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              {/* Meals */}
-              {plans.length === 0 ? (
-                <p
-                  className="text-[11px] text-center py-3"
-                  style={{ color: "#d0d0ce", opacity: isPast ? 0.6 : 1 }}
-                >
-                  Nothing planned
-                </p>
-              ) : (
-                <div>
-                  {plans.map((plan) => (
-                    <div key={plan.id}>
-                      {renderMealRow(plan, true, isPast)}
-                    </div>
-                  ))}
                 </div>
               )}
             </div>
