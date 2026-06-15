@@ -3,7 +3,10 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeForm from "@/components/recipes/RecipeForm";
+import ExtractBackButton from "@/components/recipes/ExtractBackButton";
 import type { Ingredient } from "@/types";
+
+const SAFE_TOP = { paddingTop: "max(env(safe-area-inset-top, 0px), 12px)" } as const;
 
 interface ExtractedRecipe {
   title?: string;
@@ -117,11 +120,8 @@ function NewRecipeInner() {
   // Text paste mode — show text input inline
   if (isTextMode && !extractedRecipe) {
     return (
-      <div className="max-w-2xl mx-auto px-4 py-6">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm text-gray-500 mb-6">
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/></svg>
-          Back
-        </button>
+      <div className="max-w-2xl mx-auto px-4 pb-6" style={SAFE_TOP}>
+        <ExtractBackButton />
         <h1 className="text-xl font-bold text-gray-900 mb-1">Paste a recipe</h1>
         <p className="text-sm text-gray-500 mb-5">Paste any recipe text and we&apos;ll extract it automatically.</p>
         <textarea
@@ -175,7 +175,7 @@ function NewRecipeInner() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-6">
+    <div className="max-w-4xl mx-auto px-4 pb-6" style={SAFE_TOP}>
       {extractedRecipe ? (
         <RecipeForm
           recipe={{

@@ -10,6 +10,7 @@ import { GENERIC_UNITS } from "@/data/ingredients";
 import { scrollIntoViewAboveKeyboard } from "@/lib/keyboard-scroll";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import { ClockIcon, CookingPotIcon, ProfileIcon } from "@/components/icons/HandDrawnIcons";
+import ExtractBackButton from "@/components/recipes/ExtractBackButton";
 
 type Step = "url" | "extracting" | "preview" | "editing" | "saving";
 
@@ -203,7 +204,8 @@ export default function RecipeForm({
       {/* ── Step: URL Input ──────────────────────────────────────────────── */}
       {step === "url" && (
         <form onSubmit={handleExtract} className="space-y-5 animate-slide-up">
-          <div className="text-center space-y-3 py-6">
+          <ExtractBackButton onClick={onCancel ?? (() => router.back())} />
+          <div className="text-center space-y-3 py-2">
             <p
               style={{
                 fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
