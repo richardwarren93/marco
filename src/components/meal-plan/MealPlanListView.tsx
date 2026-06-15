@@ -12,6 +12,7 @@ import RecipePreviewSheet from "./RecipePreviewSheet";
 import EditMealSheet from "./EditMealSheet";
 import CoordinationView from "./CoordinationView";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
+import { GroceryIcon } from "@/components/icons/HandDrawnIcons";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
@@ -1053,7 +1054,7 @@ export default function MealPlanListView({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{weekLabel}</span>
+            <span className="text-3xl marco-h1 whitespace-nowrap" style={{ color: "#1C1A17" }}>{weekLabel}</span>
             <button
               onClick={() => changeWeek(addDays(weekStart, 7))}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
@@ -1110,6 +1111,17 @@ export default function MealPlanListView({
               )}
             </div>
           </div>
+
+          {/* Right: jump to the grocery list for this plan */}
+          <button
+            onClick={() => router.push("/recipes?tab=grocery")}
+            className="flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full transition-all active:scale-95 flex-shrink-0"
+            style={{ background: "var(--cream-warm, #EFE5D2)", color: "#1C1A17" }}
+            aria-label="View grocery list"
+          >
+            <GroceryIcon className="w-4 h-4" />
+            <span className="text-[13px] font-semibold whitespace-nowrap">Grocery</span>
+          </button>
 
         </div>
 
