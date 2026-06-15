@@ -31,7 +31,15 @@ export default function CollectionsPage() {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 sm:py-8 space-y-5 animate-fade-slide-up" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
+    <div
+      className="max-w-2xl mx-auto px-4 space-y-5 animate-fade-slide-up"
+      style={{
+        background: "#F5EEE2",
+        minHeight: "100vh",
+        paddingTop: "max(env(safe-area-inset-top, 0px), 20px)",
+        paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)",
+      }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -71,7 +79,7 @@ export default function CollectionsPage() {
       )}
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {[...Array(3)].map((_, i) => (
             <div key={i} className="h-48 skeleton-warm rounded-3xl" />
           ))}
@@ -88,7 +96,7 @@ export default function CollectionsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           {collections.map((collection) => (
             <CollectionCard key={collection.id} collection={collection} />
           ))}
