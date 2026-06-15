@@ -1,13 +1,26 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo, useRef, useEffect, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Recipe } from "@/types";
+import type { Recipe, Collection } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import SharedRecipeCard from "./SharedRecipeCard";
+import CollectionCard from "@/components/collections/CollectionCard";
 import { CollectionsIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
 import { MealIcon } from "@/components/icons/MealIcons";
+
+// How many recipes the "Recently added" preview shows before "View all".
+const RECENT_LIMIT = 6;
+
+// Section heading — Fraunces display, matching the app's editorial voice.
+const SECTION_HEADING: CSSProperties = {
+  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+  fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+  fontSize: "19px",
+  letterSpacing: "-0.015em",
+  color: "var(--ink, #1C1A17)",
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -25,6 +38,8 @@ type LibraryMode = {
   inCollectionIds?: Set<string>;
   /** Called after a collection change to refresh the inCollectionIds */
   onCollectionChanged?: () => void;
+  /** Collections to surface in the bottom section */
+  collections?: Collection[];
 };
 
 type PickMode = {
@@ -58,6 +73,7 @@ function BrowserCard({
   onPick,
   isPicking,
   index = 0,
+  aspect,
 }: {
   recipe: Recipe;
   mode: "library" | "pick";
@@ -67,6 +83,7 @@ function BrowserCard({
   onPick?: () => void;
   isPicking?: boolean;
   index?: number;
+  aspect?: string;
 }) {
   const router = useRouter();
   const totalTime = (recipe.prep_time_minutes ?? 0) + (recipe.cook_time_minutes ?? 0);
@@ -122,6 +139,7 @@ function BrowserCard({
         ) : undefined
       }
       index={index}
+      aspect={aspect}
     />
   );
 }
@@ -137,6 +155,8 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const [sort, setSort] = useState<"newest" | "prep_time">("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showMealMenu, setShowMealMenu] = useState(false);
+  // "Recently added" preview vs. expanded full list
+  const [showAll, setShowAll] = useState(false);
   const sortMenuRef = useRef<HTMLDivElement>(null);
   const mealMenuRef = useRef<HTMLDivElement>(null);
 
@@ -194,6 +214,15 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   }, [recipes, search, activeMealType, sort]);
 
   const displayRecipes = filtered;
+
+  // Sectioned layout (library only, no active filters): show a "Recently
+  // added" preview that expands via "View all", plus a Collections section.
+  const isLibrary = props.mode === "library";
+  const collections = isLibrary ? (props.collections ?? []) : [];
+  const showSections = isLibrary && !hasFilters;
+  const canExpand = showSections && displayRecipes.length > RECENT_LIMIT;
+  const gridRecipes = showSections && !showAll ? displayRecipes.slice(0, RECENT_LIMIT) : displayRecipes;
+  const cardAspect = isLibrary ? "1 / 1" : undefined;
 
   function clearFilters() {
     setSearch("");
@@ -432,21 +461,69 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-            {displayRecipes.map((recipe, i) => (
-              <BrowserCard
-                key={recipe.id}
-                recipe={recipe}
-                index={i}
-                mode={props.mode}
-                onAdd={props.mode === "library" && props.onAddToMealPlan ? () => props.onAddToMealPlan!(recipe.id) : undefined}
-                onCollection={props.mode === "library" && props.onAddToCollection ? () => props.onAddToCollection!(recipe.id) : undefined}
-                isInCollection={props.mode === "library" && props.inCollectionIds ? props.inCollectionIds.has(recipe.id) : false}
-                onPick={props.mode === "pick" ? () => handlePick(recipe.id) : undefined}
-                isPicking={selectingId === recipe.id}
-              />
-            ))}
-          </div>
+          <>
+            {/* "Recently added" header + inline View all / Show less */}
+            {showSections && (
+              <div className="flex items-center justify-between mb-3">
+                <h2 style={SECTION_HEADING}>Recently added</h2>
+                {canExpand && (
+                  <button
+                    onClick={() => setShowAll((v) => !v)}
+                    className="flex items-center gap-1 text-[13px] font-semibold transition-colors active:scale-95"
+                    style={{ color: "var(--ink-soft, #4A4742)" }}
+                  >
+                    {showAll ? "Show less" : "View all"}
+                    <svg className={`w-3.5 h-3.5 transition-transform ${showAll ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+              {gridRecipes.map((recipe, i) => (
+                <BrowserCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  index={i}
+                  mode={props.mode}
+                  aspect={cardAspect}
+                  onAdd={props.mode === "library" && props.onAddToMealPlan ? () => props.onAddToMealPlan!(recipe.id) : undefined}
+                  onCollection={props.mode === "library" && props.onAddToCollection ? () => props.onAddToCollection!(recipe.id) : undefined}
+                  isInCollection={props.mode === "library" && props.inCollectionIds ? props.inCollectionIds.has(recipe.id) : false}
+                  onPick={props.mode === "pick" ? () => handlePick(recipe.id) : undefined}
+                  isPicking={selectingId === recipe.id}
+                />
+              ))}
+            </div>
+
+            {/* ── Collections section ─────────────────────────────────── */}
+            {showSections && collections.length > 0 && (
+              <div className="mt-8">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 style={SECTION_HEADING}>Collections</h2>
+                  <button
+                    onClick={() => router.push("/collections")}
+                    className="flex items-center gap-1 text-[13px] font-semibold transition-colors active:scale-95"
+                    style={{ color: "var(--ink-soft, #4A4742)" }}
+                  >
+                    View all
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                  {collections.slice(0, 10).map((c) => (
+                    <div key={c.id} className="w-44 flex-shrink-0">
+                      <CollectionCard collection={c} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
 

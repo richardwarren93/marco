@@ -47,7 +47,8 @@ function RecipesInner() {
 
   // ── SWR data ────────────────────────────────────────────────────────────────
   const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
-  const { isLoading: collectionsLoading, mutate: mutateCollections } = useCollections();
+  const { data: collectionsData, isLoading: collectionsLoading, mutate: mutateCollections } = useCollections();
+  const collections = collectionsData?.collections ?? [];
   const loading = recipesLoading || collectionsLoading;
 
   // Fetch all recipe IDs that are in any collection
@@ -125,6 +126,7 @@ function RecipesInner() {
           onAddToCollection={(id) => setCollectionRecipeId(id)}
           inCollectionIds={inCollectionIds}
           onCollectionChanged={() => mutateCollRecipes()}
+          collections={collections}
         />
       )}
 

@@ -49,6 +49,9 @@ export interface SharedRecipeCardProps {
   index?: number;
   /** Outer className override (animations, scroll snap, etc.) */
   className?: string;
+  /** CSS aspect-ratio for the card. Defaults to the 4:5 portrait; pass a
+   *  shorter ratio (e.g. "1 / 1") where a more compact card is wanted. */
+  aspect?: string;
 }
 
 export default function SharedRecipeCard({
@@ -64,12 +67,13 @@ export default function SharedRecipeCard({
   onUnExclude,
   index = 0,
   className = "",
+  aspect = "4 / 5",
 }: SharedRecipeCardProps) {
   return (
     <div
       className={`relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-transform duration-200 active:scale-[0.97] ${excluded ? "opacity-50 grayscale" : ""} ${className}`}
       style={{
-        aspectRatio: "4 / 5",
+        aspectRatio: aspect,
         boxShadow: "0 4px 16px rgba(20,12,5,0.10)",
         animation: `cardPop 0.4s ease ${index * 40}ms both`,
       }}
