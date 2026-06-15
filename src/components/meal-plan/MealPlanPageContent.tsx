@@ -157,7 +157,7 @@ function MealPlanInner() {
 
   async function handleEditMealSave(
     planId: string,
-    updates: { meal_type?: string; recipe_id?: string; servings?: number }
+    updates: { meal_type?: string; recipe_id?: string; servings?: number; planned_date?: string }
   ) {
     const { error: updateError } = await supabase
       .from("meal_plans")

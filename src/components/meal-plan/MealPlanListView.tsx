@@ -1,6 +1,19 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, type ReactNode, type CSSProperties } from "react";
+import {
+  DndContext,
+  DragOverlay,
+  useDraggable,
+  useDroppable,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import useSWR, { mutate as swrMutate } from "swr";
@@ -185,6 +198,63 @@ function MealAction({
   );
 }
 
+// ─── Presentational meal card (used in the expanded day + drag overlay) ──────
+function MealVisual({ plan, isPast = false, dragging = false }: { plan: MealPlan; isPast?: boolean; dragging?: boolean }) {
+  const t = (plan.recipe?.prep_time_minutes ?? 0) + (plan.recipe?.cook_time_minutes ?? 0);
+  return (
+    <div
+      className="w-full flex items-center gap-3 p-2 rounded-xl"
+      style={{ background: dragging ? "#ffffff" : "var(--cream, #F5EEE2)", boxShadow: dragging ? "0 12px 30px rgba(20,12,5,0.24)" : undefined }}
+    >
+      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#eeecea" }}>
+        {plan.recipe?.image_url
+          ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" style={isPast ? { filter: "grayscale(0.6)" } : undefined} />
+          : <MealTypeIcon type={plan.meal_type} className="w-6 h-6 opacity-50" strokeWidth={1.6} />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13.5px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>{plan.recipe?.title || "Untitled"}</p>
+        <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
+          {t > 0 ? `${t} min · ${plan.meal_type}` : plan.meal_type}{plan.owner_name ? ` · ${plan.owner_name}` : ""}
+        </p>
+      </div>
+      {!plan.owner_name && (
+        <span className="flex-shrink-0 pr-0.5" style={{ color: "#d0cabf" }} aria-hidden>
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="6" r="1.4" /><circle cx="15" cy="6" r="1.4" />
+            <circle cx="9" cy="12" r="1.4" /><circle cx="15" cy="12" r="1.4" />
+            <circle cx="9" cy="18" r="1.4" /><circle cx="15" cy="18" r="1.4" />
+          </svg>
+        </span>
+      )}
+    </div>
+  );
+}
+
+// ─── Draggable wrapper for a meal (long-press on touch, drag on desktop) ──────
+function DraggableMeal({ id, disabled = false, children }: { id: string; disabled?: boolean; children: ReactNode }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id, disabled });
+  return (
+    <div ref={setNodeRef} {...attributes} {...listeners} style={{ opacity: isDragging ? 0.4 : 1 }}>
+      {children}
+    </div>
+  );
+}
+
+// ─── Droppable day card — accepts a meal dropped onto it ─────────────────────
+function DroppableDay({ dateKey, domId, className, style, children }: { dateKey: string; domId?: string; className?: string; style?: CSSProperties; children: ReactNode }) {
+  const { setNodeRef, isOver } = useDroppable({ id: `day:${dateKey}` });
+  return (
+    <div
+      ref={setNodeRef}
+      id={domId}
+      className={className}
+      style={{ ...style, outline: isOver ? "2px solid var(--tomato, #E5462E)" : "2px solid transparent", outlineOffset: -2, transition: "outline-color 0.12s ease" }}
+    >
+      {children}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MealPlanListView({
   mealPlans,
@@ -203,7 +273,7 @@ export default function MealPlanListView({
   householdPlans?: MealPlan[];
   onAddMeal: (recipeId: string, dates: string[], mealType: string, servings?: number) => Promise<void>;
   onRemove: (planId: string) => void;
-  onEditMeal?: (planId: string, updates: { meal_type?: string; recipe_id?: string; servings?: number }) => Promise<void>;
+  onEditMeal?: (planId: string, updates: { meal_type?: string; recipe_id?: string; servings?: number; planned_date?: string }) => Promise<void>;
   recipePool?: Recipe[];
   allRecipes?: Recipe[];
   weekPickIds?: string[];
@@ -233,6 +303,36 @@ export default function MealPlanListView({
   // changes so the default applies to the new week's data.
   const [expandedOverride, setExpandedOverride] = useState<Record<string, boolean>>({});
 
+  // ─── Drag-and-drop (move a meal to another day) ──────────────────────────────
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  // planId → optimistic target date, so a dropped meal jumps instantly before
+  // the server round-trip; cleared once the real data reflects the move.
+  const [optimisticMoves, setOptimisticMoves] = useState<Record<string, string>>({});
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 6 } }),
+  );
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragId(String(event.active.id));
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const overId = String(over.id);
+    if (!overId.startsWith("day:")) return;
+    const targetDate = overId.slice(4);
+    const planId = String(active.id);
+    const plan = mealPlans.find((p) => p.id === planId);
+    if (!plan) return;
+    const currentDate = optimisticMoves[planId] ?? plan.planned_date;
+    if (currentDate === targetDate) return;
+    setOptimisticMoves((prev) => ({ ...prev, [planId]: targetDate }));
+    onEditMeal?.(planId, { planned_date: targetDate });
+  }
+
   // ─── Week & day state ────────────────────────────────────────────────────────
   const [weekStart, setWeekStart] = useState<Date>(weekStartProp);
   const today = formatDateKey(new Date());
@@ -244,6 +344,21 @@ export default function MealPlanListView({
 
   useEffect(() => { setWeekStart(weekStartProp); setExpandedOverride({}); }, [weekStartProp]);
   useEffect(() => { setSuggestedIdx(0); }, [selectedDate]);
+
+  // Drop optimistic moves once the persisted plan reflects the new date (or the
+  // plan disappeared), so we stop overriding real data.
+  useEffect(() => {
+    setOptimisticMoves((prev) => {
+      if (Object.keys(prev).length === 0) return prev;
+      let changed = false;
+      const next = { ...prev };
+      for (const pid of Object.keys(prev)) {
+        const p = mealPlans.find((m) => m.id === pid);
+        if (!p || p.planned_date === prev[pid]) { delete next[pid]; changed = true; }
+      }
+      return changed ? next : prev;
+    });
+  }, [mealPlans]);
 
   // ─── FAB "Add meal" event listener ───────────────────────────────────────────
   useEffect(() => {
@@ -344,9 +459,11 @@ export default function MealPlanListView({
 
   const byDate: Record<string, MealPlan[]> = {};
   for (const plan of [...mealPlans, ...householdPlans]) {
-    if (!sortedDates.includes(plan.planned_date)) continue;
-    if (!byDate[plan.planned_date]) byDate[plan.planned_date] = [];
-    byDate[plan.planned_date].push(plan);
+    // Apply any in-flight optimistic move so a dropped meal shows on its new day.
+    const date = optimisticMoves[plan.id] ?? plan.planned_date;
+    if (!sortedDates.includes(date)) continue;
+    if (!byDate[date]) byDate[date] = [];
+    byDate[date].push(date === plan.planned_date ? plan : { ...plan, planned_date: date });
   }
 
   const totalVisibleMeals = Object.values(byDate).reduce((s, p) => s + p.length, 0);
@@ -938,7 +1055,17 @@ export default function MealPlanListView({
       setExpandedOverride(next);
     };
 
+    const activeDragPlan = activeDragId ? mealPlans.find((p) => p.id === activeDragId) ?? null : null;
+
     return (
+      <DndContext
+        id="mealplan-dnd"
+        sensors={dndSensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={() => setActiveDragId(null)}
+      >
       <div className="space-y-2.5">
 
         {/* ── Progress header ─────────────────────────────────────────── */}
@@ -1011,9 +1138,10 @@ export default function MealPlanListView({
             });
 
           return (
-            <div
+            <DroppableDay
               key={dateKey}
-              id={`day-${dateKey}`}
+              dateKey={dateKey}
+              domId={`day-${dateKey}`}
               className="rounded-2xl overflow-hidden"
               style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
             >
@@ -1052,32 +1180,19 @@ export default function MealPlanListView({
               {expanded && (
                 <div className="px-3 pb-3 pt-0.5" style={{ borderTop: `1px solid ${BORDER}` }}>
                   {plans.map((plan) => {
-                    const t = mealTime(plan);
                     return (
                       <div key={plan.id} className="pt-3">
                         <p className="text-[10px] font-semibold uppercase tracking-[0.12em] mb-1.5 px-1" style={{ color: TEXT_2, fontFamily: "var(--font-mono, 'Geist Mono', monospace)" }}>
                           {plan.meal_type}
                         </p>
-                        <button
-                          onClick={() => setPreviewPlan(plan)}
-                          className="w-full flex items-center gap-3 p-2 rounded-xl text-left active:scale-[0.99] transition-transform"
-                          style={{ background: "var(--cream, #F5EEE2)" }}
-                        >
-                          <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#eeecea" }}>
-                            {plan.recipe?.image_url
-                              ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" style={isPast ? { filter: "grayscale(0.6)" } : undefined} />
-                              : <MealTypeIcon type={plan.meal_type} className="w-6 h-6 opacity-50" strokeWidth={1.6} />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[13.5px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
-                              {plan.recipe?.title || "Untitled"}
-                            </p>
-                            <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
-                              {t > 0 ? `${t} min · ${plan.meal_type}` : plan.meal_type}
-                              {plan.owner_name ? ` · ${plan.owner_name}` : ""}
-                            </p>
-                          </div>
-                        </button>
+                        <DraggableMeal id={plan.id} disabled={!!plan.owner_name}>
+                          <button
+                            onClick={() => setPreviewPlan(plan)}
+                            className="w-full text-left active:scale-[0.99] transition-transform"
+                          >
+                            <MealVisual plan={plan} isPast={isPast} />
+                          </button>
+                        </DraggableMeal>
                         {/* Swap / Edit / Remove */}
                         {!plan.owner_name && (
                           <div className="flex items-center gap-2 mt-2">
@@ -1120,11 +1235,16 @@ export default function MealPlanListView({
                   )}
                 </div>
               )}
-            </div>
+            </DroppableDay>
           );
         })}
 
       </div>
+
+      <DragOverlay dropAnimation={null}>
+        {activeDragPlan ? <MealVisual plan={activeDragPlan} dragging /> : null}
+      </DragOverlay>
+      </DndContext>
     );
   }
 
