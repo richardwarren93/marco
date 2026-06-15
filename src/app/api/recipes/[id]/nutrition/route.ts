@@ -93,7 +93,7 @@ export async function POST(
           confidence: estimate.confidence,
           notes: estimate.notes,
           estimated_at: new Date().toISOString(),
-          model_version: "claude-sonnet-4-20250514",
+          model_version: "claude-sonnet-4-6",
         },
         { onConflict: "recipe_id,user_id" }
       )

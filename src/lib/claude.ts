@@ -10,7 +10,7 @@ export async function extractRecipe(
   sourceUrl: string
 ): Promise<Partial<Recipe>> {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 2000,
     system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the content is minimal, vague, or incomplete, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.
 
@@ -86,7 +86,7 @@ export async function extractMultipleRecipes(
   sourceUrl: string
 ): Promise<Partial<Recipe>[]> {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 8000,
     system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Always produce JSON.
 
@@ -190,7 +190,7 @@ export async function extractRecipeFromCarousel(
   }
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 3000,
     system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Always produce JSON.
 
@@ -264,7 +264,7 @@ export async function extractRecipeFromImage(
   mimeType: string
 ): Promise<Partial<Recipe>> {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 3000,
     system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the image is blurry or partially visible, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.
 
@@ -357,7 +357,7 @@ export async function suggestMeals(
     .join("\n");
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 3000,
     system: `You are a meal planning assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the data is limited, you must return a JSON array. Never refuse. Never say "I cannot". Always produce JSON.`,
     messages: [
@@ -549,7 +549,7 @@ export async function discoverRecipes(
   const pantryList = pantryItems.map((p) => p.name).join(", ");
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 4000,
     system: `You are a creative home chef assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Never say "I cannot". Always produce JSON.`,
     messages: [
@@ -595,7 +595,7 @@ export async function extractRecipesFromDocument(
   text: string
 ): Promise<Partial<Recipe>[]> {
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 8000,
     system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Never refuse. Never say "I cannot". Always produce JSON.
 
@@ -681,7 +681,7 @@ export async function estimateNutrition(
     .join("\n");
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 1000,
     system: `You are a nutrition estimation assistant. You ALWAYS respond with valid JSON only — no explanations, no markdown. You estimate nutritional values per serving based on ingredients. Use standard USDA nutritional data as your reference. Be accurate but acknowledge uncertainty.`,
     messages: [
@@ -771,7 +771,7 @@ export async function suggestSubstitutions(
   const stepSummary = recipe.steps.slice(0, 6).map((s, idx) => `${idx + 1}. ${s}`).join("\n");
 
   const response = await anthropic.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-6",
     max_tokens: 1200,
     system: `You are a cooking assistant suggesting ingredient substitutions. You ALWAYS respond with valid JSON only — no explanations, no markdown.
 

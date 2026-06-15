@@ -32,7 +32,7 @@ export async function POST(request: Request) {
       .join("\n");
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: 1500,
       system: `You are a grocery cost estimator. Given a list of grocery items with quantities, estimate the cost of each item in USD based on typical US grocery store prices (2025). Be practical and realistic.
 
