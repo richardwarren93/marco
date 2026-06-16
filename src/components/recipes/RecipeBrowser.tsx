@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect, type CSSProperties } from "react";
+import { useState, useMemo, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Recipe, Collection } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import SharedRecipeCard from "./SharedRecipeCard";
+import RecipeFilterSheet, { type RecipeFilters, recipeFilterCount } from "./RecipeFilterSheet";
 import { CollectionsIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
 import { MealIcon } from "@/components/icons/MealIcons";
+
+const INK = "#1C1A17";
+const ACCENT = "#E5462E";
 
 // How many recipes the "Recently added" preview shows before "View all".
 const RECENT_LIMIT = 4;
@@ -22,8 +26,6 @@ const SECTION_HEADING: CSSProperties = {
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-
-type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 type LibraryMode = {
   mode: "library";
@@ -49,17 +51,6 @@ type PickMode = {
 };
 
 export type RecipeBrowserProps = LibraryMode | PickMode;
-
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-const MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
-
-const MEAL_TYPE_LABELS: Record<MealType, string> = {
-  breakfast: "Breakfast",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  snack: "Snack",
-};
 
 // ─── Recipe card ──────────────────────────────────────────────────────────────
 
@@ -150,56 +141,29 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
 
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [activeMealType, setActiveMealType] = useState<MealType | "all">("all");
-  const [sort, setSort] = useState<"newest" | "prep_time">("newest");
-  const [showSortMenu, setShowSortMenu] = useState(false);
-  const [showMealMenu, setShowMealMenu] = useState(false);
+  const [filters, setFilters] = useState<RecipeFilters>({ sort: "newest", mealTypes: [] });
+  const [sheetOpen, setSheetOpen] = useState(false);
   // "Recently added" preview vs. expanded full list
   const [showAll, setShowAll] = useState(false);
-  const sortMenuRef = useRef<HTMLDivElement>(null);
-  const mealMenuRef = useRef<HTMLDivElement>(null);
 
   // Pick mode: which card is mid-selection
   const [selectingId, setSelectingId] = useState<string | null>(null);
 
-  // Close any open dropdown on outside click/touch
-  function closeAllMenus() {
-    setShowSortMenu(false);
-    setShowMealMenu(false);
-  }
+  const filterCount = recipeFilterCount(filters);
+  const hasFilters = !!(search.trim() || filters.mealTypes.length > 0 || filters.sort !== "newest");
 
-  useEffect(() => {
-    const anyOpen = showSortMenu || showMealMenu;
-    if (!anyOpen) return;
-    function onDown(e: MouseEvent | TouchEvent) {
-      const target = e.target as Node;
-      if (showSortMenu && sortMenuRef.current && !sortMenuRef.current.contains(target)) setShowSortMenu(false);
-      if (showMealMenu && mealMenuRef.current && !mealMenuRef.current.contains(target)) setShowMealMenu(false);
-    }
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("touchstart", onDown);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("touchstart", onDown);
-    };
-  }, [showSortMenu, showMealMenu]);
-
-  const hasFilters = !!(search.trim() || activeMealType !== "all");
-
-  // Filtered recipe list (sorted newest first)
+  // Filtered recipe list
   const filtered = useMemo(() => {
     let result = recipes;
 
     if (search.trim()) {
       result = result.filter((r) => recipeMatchesQuery(r, search));
     }
-    if (activeMealType !== "all") {
-      result = result.filter((r) =>
-        (r.meal_type ?? "dinner") === activeMealType
-      );
+    if (filters.mealTypes.length > 0) {
+      result = result.filter((r) => filters.mealTypes.includes(r.meal_type ?? "dinner"));
     }
 
-    if (sort === "prep_time") {
+    if (filters.sort === "prep_time") {
       return [...result].sort((a, b) => {
         const aTime = (a.prep_time_minutes ?? 0) + (a.cook_time_minutes ?? 0);
         const bTime = (b.prep_time_minutes ?? 0) + (b.cook_time_minutes ?? 0);
@@ -210,7 +174,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
       });
     }
     return [...result].sort((a, b) => b.created_at.localeCompare(a.created_at));
-  }, [recipes, search, activeMealType, sort]);
+  }, [recipes, search, filters]);
 
   const displayRecipes = filtered;
 
@@ -225,7 +189,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
 
   function clearFilters() {
     setSearch("");
-    setActiveMealType("all");
+    setFilters({ sort: "newest", mealTypes: [] });
   }
 
   async function handlePick(recipeId: string) {
@@ -267,154 +231,47 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           </div>
         )}
 
-        {/* Search */}
-        <div className="px-4 pt-3 pb-2">
-          <div className="relative">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z"
+        {/* Search + filter — same clean schema as Discover */}
+        <div className="px-4 pt-3 pb-2.5">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center gap-2 rounded-full px-3.5 h-11" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#a8a29a" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+              </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by title, ingredient, tag…"
+                className="flex-1 bg-transparent outline-none text-[14px]"
+                style={{ color: INK }}
+                autoComplete="off"
               />
-            </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by title, ingredient, tag…"
-              className="w-full pl-9 pr-9 py-2.5 rounded-2xl text-[13px] font-medium tracking-tight outline-none transition-all placeholder:font-medium placeholder:text-[var(--ink-soft,#4A4742)] placeholder:opacity-60"
-              style={{ background: "#fff", border: "1.5px solid rgba(28,26,23,0.12)" }}
-              onFocus={(e) => (e.target.style.borderColor = "#E5462E")}
-              onBlur={(e) => (e.target.style.borderColor = "rgba(28,26,23,0.12)")}
-              autoComplete="off"
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <svg
-                  className="w-3.5 h-3.5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            )}
+              {search && (
+                <button onClick={() => setSearch("")} aria-label="Clear search" className="flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#a8a29a" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setSheetOpen(true)}
+              aria-label="Filter and sort"
+              className="relative w-11 h-11 flex items-center justify-center rounded-full active:scale-95 transition-transform flex-shrink-0"
+              style={{ background: filterCount > 0 ? ACCENT : "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}
+            >
+              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={filterCount > 0 ? "#fff" : INK} strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18M6 12h12M10 19h4" />
+              </svg>
+              {filterCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ background: INK }}>
+                  {filterCount}
+                </span>
+              )}
+            </button>
           </div>
         </div>
-
-        {/* Sort + meal type filters */}
-        <div className="flex items-center gap-2 px-4 pb-2.5 relative z-30">
-          {/* Sort dropdown */}
-          <div className="relative flex-shrink-0" ref={sortMenuRef}>
-            <button
-              onClick={() => { setShowSortMenu((v) => !v); setShowMealMenu(false); }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
-              style={{ background: "#1C1A17", color: "#fff" }}
-            >
-              {sort === "newest" ? "Newest" : "Prep time"}
-              <svg className={`w-3 h-3 opacity-60 transition-transform ${showSortMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {showSortMenu && (
-              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[140px] overflow-hidden"
-                style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
-                {([["newest", "Newest"], ["prep_time", "Prep time"]] as const).map(([value, label]) => (
-                  <button
-                    key={value}
-                    onClick={() => { setSort(value); setShowSortMenu(false); }}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-gray-50"
-                    style={{ color: sort === value ? "#1C1A17" : "#6b6560" }}
-                  >
-                    <span>{label}</span>
-                    {sort === value && (
-                      <svg className="w-3.5 h-3.5 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Meal type dropdown */}
-          <div className="relative flex-shrink-0" ref={mealMenuRef}>
-            <button
-              onClick={() => { setShowMealMenu((v) => !v); setShowSortMenu(false); }}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 whitespace-nowrap"
-              style={activeMealType !== "all"
-                ? { background: "var(--tomato, #E5462E)", color: "#fff" }
-                : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
-            >
-              {activeMealType !== "all" ? MEAL_TYPE_LABELS[activeMealType] : "Meal type"}
-              <svg className={`w-3 h-3 opacity-60 transition-transform ${showMealMenu ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {showMealMenu && (
-              <div className="absolute top-full left-0 mt-2 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 py-1.5 min-w-[150px] overflow-hidden"
-                style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.12)" }}>
-                {([["all", "All"], ...MEAL_TYPES.map((mt) => [mt, MEAL_TYPE_LABELS[mt]])] as [string, string][]).map(([value, label]) => (
-                  <button
-                    key={value}
-                    onClick={() => { setActiveMealType(value as MealType | "all"); setShowMealMenu(false); }}
-                    className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold transition-colors hover:bg-orange-50"
-                    style={{ color: activeMealType === value ? "var(--tomato, #E5462E)" : "#374151" }}
-                  >
-                    <span>{label}</span>
-                    {activeMealType === value && (
-                      <svg className="w-3.5 h-3.5" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Collections — first-class nav. Tap to open the Collections page.
-              Teal anchors editorial layouts per brand guidelines — distinct
-              from tomato (CTAs) and mustard (accents). */}
-          {props.mode === "library" && (
-            <button
-              onClick={() => router.push("/collections")}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px] font-medium tracking-tight transition-all active:scale-95 flex-shrink-0"
-              style={{ background: "var(--teal, #0F4C5C)", color: "var(--cream, #F5EEE2)" }}
-            >
-              <CollectionsIcon className="w-3.5 h-3.5" />
-              Collections
-            </button>
-          )}
-
-          {/* Clear filters */}
-          {hasFilters && (
-            <button onClick={() => { setActiveMealType("all"); setSearch(""); closeAllMenus(); }} className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-600 transition-colors whitespace-nowrap">
-              Clear
-            </button>
-          )}
-        </div>
-
-        {/* Backdrop overlay when any dropdown is open (mobile touch dismiss) */}
-        {(showSortMenu || showMealMenu) && (
-          <div className="fixed inset-0 z-20 sm:hidden" onClick={closeAllMenus} />
-        )}
         </div>{/* close max-w-5xl */}
       </div>
 
@@ -552,6 +409,13 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         )}
       </div>
 
+      <RecipeFilterSheet
+        isOpen={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        value={filters}
+        onChange={setFilters}
+        totalFiltered={filtered.length}
+      />
     </div>
   );
 }
