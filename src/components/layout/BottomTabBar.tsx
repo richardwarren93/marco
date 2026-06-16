@@ -188,26 +188,25 @@ function BottomTabBarInner() {
         </div>
       )}
 
-      {/* Tab bar — in PWA mode, sit flush with the home-indicator area
-          (var(--safe-bottom) is the env() inset). In Safari the var
-          resolves to 0px, so we clamp to a minimum 8px breathing room
-          above the screen edge. */}
+      {/* Tab bar — a standard flush bottom bar: full-width, docked to the very
+          bottom edge with the frosted background filling down through the
+          home-indicator area (var(--safe-bottom) is the env() inset; it
+          resolves to 0px in Safari). A top hairline replaces the old floating
+          pill shadow. */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation px-4"
+        className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation"
         style={{
-          paddingBottom: "max(8px, var(--safe-bottom, 0px))",
+          paddingBottom: "var(--safe-bottom, 0px)",
+          background: "rgba(255,253,247,0.92)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          borderTop: "0.5px solid rgba(28,26,23,0.08)",
+          boxShadow: "0 -2px 16px rgba(0,0,0,0.05)",
           willChange: "transform",
         }}
       >
         <div
           className="flex justify-around items-center h-[60px] px-2 mx-auto max-w-md relative"
-          style={{
-            background: "rgba(255,253,247,0.92)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
-            borderRadius: 30,
-            boxShadow: "0 2px 16px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(28,26,23,0.06)",
-          }}
         >
           {leftTabs.map((leftTab) => {
             // "Recipes" is the default tab — active when on /recipes with no
