@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import CookbookOpening from "@/components/onboarding/cookbook/CookbookOpening";
+import SocialProofStep from "@/components/onboarding/guided/SocialProofStep";
 import CreateHouseholdStep from "@/components/onboarding/cookbook/CreateHouseholdStep";
 import RecipeImportStep, { type SavedRecipe } from "@/components/onboarding/cookbook/RecipeImportStep";
 import GuidedDemo from "@/components/onboarding/cookbook/GuidedDemo";
@@ -165,7 +165,14 @@ export default function OnboardingPage() {
 
   switch (step) {
     case 0:
-      return <CookbookOpening onOpen={goForward} />;
+      return (
+        <SocialProofStep
+          step={1}
+          totalSteps={TOTAL_STEPS}
+          onBack={() => router.push("/auth/signup")}
+          onContinue={goForward}
+        />
+      );
     case 1:
       return (
         <CreateHouseholdStep
