@@ -29,6 +29,10 @@ interface Props {
   isSaved?: boolean;
   isSaving?: boolean;
   index?: number;
+  /** When set, shows a "Saved by <name>" overlay on the image (Friends' Favorites)
+   *  and hides the community rating chip. */
+  savedByName?: string;
+  savedByAvatar?: string | null;
 }
 
 const INK = "#1C1A17";
@@ -42,9 +46,12 @@ export default function DiscoverRecipeCard({
   isSaved = false,
   isSaving = false,
   index = 0,
+  savedByName,
+  savedByAvatar,
 }: Props) {
   const { title, image_url, meal_type, totalTime, rating } = recipe;
   const metaParts = [totalTime > 0 ? `${totalTime} min` : null, meal_type].filter(Boolean);
+  const firstName = savedByName ? savedByName.trim().split(" ")[0] : "";
 
   return (
     <div
@@ -110,6 +117,31 @@ export default function DiscoverRecipeCard({
             </button>
           )}
         </div>
+
+        {/* Saved-by overlay (Friends' Favorites) */}
+        {firstName && (
+          <div
+            className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5"
+            style={{ background: "rgba(20,12,5,0.55)", backdropFilter: "blur(4px)" }}
+          >
+            <span
+              className="flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+              style={{ width: 20, height: 20, background: "var(--tomato, #E5462E)" }}
+            >
+              {savedByAvatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={savedByAvatar} alt={firstName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+              ) : (
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#fff" }}>
+                  {firstName.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </span>
+            <span style={{ fontSize: "11px", fontWeight: 600, color: "#fff" }}>
+              Saved by {firstName}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* ── Text ─────────────────────────────────────────────── */}
@@ -134,7 +166,7 @@ export default function DiscoverRecipeCard({
         >
           {metaParts.join(" · ")}
         </p>
-        <div className="mt-1.5 flex items-center gap-1">
+        <div className="mt-1.5 flex items-center gap-1" style={{ display: savedByName ? "none" : undefined }}>
           {rating.count > 0 ? (
             <>
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#E8A33D">
