@@ -41,7 +41,7 @@ export default function PlusPaywallScreen({ onStartTrial, onSkip, onBack }: Prop
 
   return (
     <PaywallShell
-      eyebrow="Marco Plus"
+      eyebrow="salt & spoon Plus"
       onClose={onSkip}
       footer={
         <div className="space-y-2">
