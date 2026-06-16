@@ -156,6 +156,7 @@ export default function CollectionDetailPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
+  const [isVirtual, setIsVirtual] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [removingRecipeId, setRemovingRecipeId] = useState<string | null>(null);
   const [isRecentlyMade, setIsRecentlyMade] = useState(false);
@@ -182,6 +183,7 @@ export default function CollectionDetailPage() {
       setCollection(data.collection as Collection);
       setRecipes((data.recipes as Recipe[]) || []);
       setIsOwner(data.isOwner);
+      setIsVirtual(data.isVirtual || false);
       setIsRecentlyMade(data.isRecentlyMade || false);
       setEditName(data.collection.name);
       setEditDescription(data.collection.description || "");
@@ -270,6 +272,10 @@ export default function CollectionDetailPage() {
     );
   }
 
+  // The virtual "Recently Added" collection isn't a real DB row, so hide all
+  // collection-management actions (edit, delete, share, add/remove recipes).
+  const canManage = isOwner && !isVirtual;
+
   return (
     <>
       <div className="max-w-5xl mx-auto px-4 pt-4 pb-28">
@@ -346,7 +352,7 @@ export default function CollectionDetailPage() {
               </div>
 
               {/* Actions menu (owner only) */}
-              {isOwner && (
+              {canManage && (
                 <div className="relative flex-shrink-0">
                   <button
                     onClick={() => setShowActions(!showActions)}
@@ -408,7 +414,7 @@ export default function CollectionDetailPage() {
             </div>
 
             {/* Action buttons row */}
-            {isOwner && (
+            {canManage && (
               <div className="flex gap-2 mt-4">
                 <button
                   onClick={() => setShowAddRecipes(true)}
@@ -439,7 +445,7 @@ export default function CollectionDetailPage() {
             <div className="text-4xl mb-3">📖</div>
             <p className="text-gray-500 mb-1">No recipes yet</p>
             <p className="text-gray-400 text-sm mb-4">Add recipes to start building this collection</p>
-            {isOwner && (
+            {canManage && (
               <button
                 onClick={() => setShowAddRecipes(true)}
                 className="text-orange-600 hover:text-orange-700 font-medium text-sm"
@@ -454,7 +460,7 @@ export default function CollectionDetailPage() {
               <CollectionRecipeCard
                 key={recipe.id}
                 recipe={recipe}
-                isOwner={isOwner}
+                isOwner={canManage}
                 removing={removingRecipeId === recipe.id}
                 onRemove={() => handleRemoveRecipe(recipe.id)}
                 lastMadeAt={isRecentlyMade ? (recipe as Recipe & { last_made_at?: string }).last_made_at : undefined}
@@ -462,7 +468,7 @@ export default function CollectionDetailPage() {
             ))}
 
             {/* Add more card */}
-            {isOwner && (
+            {canManage && (
               <button
                 onClick={() => setShowAddRecipes(true)}
                 className="flex flex-col items-center justify-center h-32 bg-white rounded-xl border-2 border-dashed border-gray-200 hover:border-orange-300 hover:bg-orange-50/30 transition-all text-gray-400 hover:text-orange-500"

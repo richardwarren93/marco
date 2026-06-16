@@ -19,6 +19,33 @@ export async function GET(
   try {
     const admin = createAdminClient();
 
+    // Virtual "Recently Added" collection — not a real DB row. Returns the
+    // user's own recipes newest-first so the Recipes tab always has a default
+    // collection to show, even for brand-new users with no real collections.
+    if (id === "recently-added") {
+      const { data: recipesData } = await admin
+        .from("recipes")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      const collection = {
+        id: "recently-added",
+        user_id: user.id,
+        name: "Recently Added",
+        description: "Your most recently saved recipes",
+        is_public: false,
+        virtual: true,
+      };
+      return NextResponse.json({
+        collection,
+        recipes: recipesData ?? [],
+        isOwner: true,
+        isRecentlyMade: false,
+        isVirtual: true,
+      });
+    }
+
     const { data: collection, error } = await admin
       .from("collections")
       .select("*")

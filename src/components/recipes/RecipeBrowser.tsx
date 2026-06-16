@@ -355,7 +355,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             </div>
 
             {/* ── Collections section ─────────────────────────────────── */}
-            {showSections && collections.length > 0 && (
+            {showSections && (
               <div className="mt-8">
                 <div className="flex items-center justify-between mb-3">
                   <h2 style={SECTION_HEADING}>Collections</h2>
@@ -371,6 +371,34 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                   </button>
                 </div>
                 <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1">
+                  {/* Virtual "Recently Added" collection — always present so even
+                      brand-new users (no real collections) get a default
+                      collection containing what they've saved. */}
+                  <Link
+                    href="/collections/recently-added"
+                    className="flex-shrink-0 w-28 active:scale-[0.97] transition-transform"
+                  >
+                    <div
+                      className="relative w-full rounded-2xl overflow-hidden"
+                      style={{ aspectRatio: "1 / 1", background: "var(--cream-warm, #EFE5D2)", boxShadow: "0 2px 10px rgba(20,12,5,0.08)" }}
+                    >
+                      {displayRecipes[0]?.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={displayRecipes[0].image_url!} alt="" referrerPolicy="no-referrer" className="absolute inset-0 w-full h-full object-cover" />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.4 }}>
+                          <CollectionsIcon className="w-7 h-7" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="mt-1.5 text-[13px] font-semibold truncate" style={{ color: "var(--ink, #1C1A17)" }}>
+                      Recently Added
+                    </p>
+                    <p className="text-[11px]" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.6 }}>
+                      {displayRecipes.length} {displayRecipes.length === 1 ? "recipe" : "recipes"}
+                    </p>
+                  </Link>
+
                   {collections.slice(0, 12).map((c) => {
                     const img = (c.preview_images ?? [])[0];
                     const cnt = c.recipe_count ?? 0;
