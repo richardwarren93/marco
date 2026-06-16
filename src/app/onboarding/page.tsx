@@ -11,6 +11,9 @@ import SourcesAffirmationStep from "@/components/onboarding/guided/SourcesAffirm
 import MealPlanTimingStep from "@/components/onboarding/guided/MealPlanTimingStep";
 import NotificationsStep from "@/components/onboarding/guided/NotificationsStep";
 import MealPlanFeatureStep from "@/components/onboarding/guided/MealPlanFeatureStep";
+import GroceryFeatureStep from "@/components/onboarding/guided/GroceryFeatureStep";
+import PersonalizeAffirmationStep from "@/components/onboarding/guided/PersonalizeAffirmationStep";
+import AgeStep from "@/components/onboarding/guided/AgeStep";
 import CreateHouseholdStep from "@/components/onboarding/cookbook/CreateHouseholdStep";
 import RecipeImportStep, { type SavedRecipe } from "@/components/onboarding/cookbook/RecipeImportStep";
 import GuidedDemo from "@/components/onboarding/cookbook/GuidedDemo";
@@ -36,26 +39,29 @@ const PAYWALL_ENABLED = false;
 //   2  Goals affirmation — "That's great!" (guided)
 //   3  Recipe sources — where do you get your recipes? (guided)
 //   4  Sources affirmation — "Awesome 🎉" (guided)
-//   5  Meal-plan timing — when do you think about cooking? (guided)
-//   6  Notifications — get the right recipe at the right time (guided)
-//   7  Meal-plan feature — plan your week showcase (guided)
-//   8  Add to your cookbook — paste links / photos, saves to account
-//   9  Guided first-run — user taps through the seeded recipe (add to plan,
-//      grocery, cook with Sous Chef) + family-feed view
-//   10 Allergies
-//   11 Signature dish
-//   12 Dinner ranking
-//   13 Create a household (join by code or start new + size/type)
-//   14 Taste profile reveal (full overlay)
-const PROFILE_STEP = 14;
-const PAYWALL_STEP = 15;
-const TOTAL_STEPS = PAYWALL_ENABLED ? 16 : 15;
+//   5  Add to your cookbook — paste links / photos, saves to account (cookbook)
+//   6  Guided first-run — taps through the seeded recipe (cookbook)
+//   7  Meal-plan timing — when do you think about cooking? (guided)
+//   8  Notifications — get the right recipe at the right time (guided)
+//   9  Meal-plan feature — plan your week showcase (guided)
+//   10 Grocery feature — shop in one trip showcase (guided)
+//   11 Personalize — "Now let's make it yours" transition (guided)
+//   12 Age — how old are you? (guided)
+//   13 Allergies (guided)
+//   14 Signature dish (guided)
+//   15 Dinner ranking (guided)
+//   16 Create a household (guided)
+//   17 Taste profile reveal (guided)
+const PROFILE_STEP = 17;
+const PAYWALL_STEP = 18;
+const TOTAL_STEPS = PAYWALL_ENABLED ? 19 : 18;
 const STORAGE_KEY = "marco_onboarding";
 
 interface OnboardingState {
   goals: string[];
   recipeSources: string[];
   planTiming: string;
+  ageRange: string;
   importedRecipes: SavedRecipe[];
   joinedHousehold: boolean;
   householdSize: number;
@@ -71,6 +77,7 @@ const defaultState: OnboardingState = {
   goals: [],
   recipeSources: [],
   planTiming: "",
+  ageRange: "",
   importedRecipes: [],
   joinedHousehold: false,
   householdSize: 1,
@@ -235,81 +242,113 @@ export default function OnboardingPage() {
       );
     case 5:
       return (
+        <RecipeImportStep
+          pageNumber={6}
+          onBack={goBack}
+          onNext={(recipes) => { update({ importedRecipes: recipes }); goForward(); }}
+        />
+      );
+    case 6:
+      return (
+        <GuidedDemo
+          recipes={data.importedRecipes}
+          pageNumber={7}
+          onBack={goBack}
+          onComplete={goForward}
+        />
+      );
+    case 7:
+      return (
         <MealPlanTimingStep
-          step={6}
+          step={8}
           totalSteps={TOTAL_STEPS}
           value={data.planTiming}
           onBack={goBack}
           onNext={(planTiming) => { update({ planTiming }); goForward(); }}
         />
       );
-    case 6:
-      return (
-        <NotificationsStep
-          step={7}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onContinue={goForward}
-        />
-      );
-    case 7:
-      return (
-        <MealPlanFeatureStep
-          step={8}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onContinue={goForward}
-        />
-      );
     case 8:
       return (
-        <RecipeImportStep
-          pageNumber={9}
+        <NotificationsStep
+          step={9}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
-          onNext={(recipes) => { update({ importedRecipes: recipes }); goForward(); }}
+          onContinue={goForward}
         />
       );
     case 9:
       return (
-        <GuidedDemo
-          recipes={data.importedRecipes}
-          pageNumber={10}
+        <MealPlanFeatureStep
+          step={10}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
-          onComplete={goForward}
+          onContinue={goForward}
         />
       );
     case 10:
       return (
-        <AllergiesStep
-          value={data.allergies}
-          pageNumber={11}
+        <GroceryFeatureStep
+          step={11}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
-          onNext={(allergies) => { update({ allergies }); goForward(); }}
+          onContinue={goForward}
         />
       );
     case 11:
       return (
-        <SignatureDishStep
-          value={data.signatureDish}
-          pageNumber={12}
+        <PersonalizeAffirmationStep
+          step={12}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
-          onNext={(dish) => { update({ signatureDish: dish }); goForward(); }}
+          onContinue={goForward}
         />
       );
     case 12:
       return (
-        <DinnerRankingStep
-          pageNumber={13}
+        <AgeStep
+          step={13}
+          totalSteps={TOTAL_STEPS}
+          value={data.ageRange}
           onBack={goBack}
-          onNext={(rankedIds, rankedRecipes) => { update({ rankedIds, rankedRecipes }); goForward(); }}
+          onNext={(ageRange) => { update({ ageRange }); goForward(); }}
         />
       );
     case 13:
       return (
+        <AllergiesStep
+          value={data.allergies}
+          step={14}
+          totalSteps={TOTAL_STEPS}
+          onBack={goBack}
+          onNext={(allergies) => { update({ allergies }); goForward(); }}
+        />
+      );
+    case 14:
+      return (
+        <SignatureDishStep
+          value={data.signatureDish}
+          step={15}
+          totalSteps={TOTAL_STEPS}
+          onBack={goBack}
+          onNext={(dish) => { update({ signatureDish: dish }); goForward(); }}
+        />
+      );
+    case 15:
+      return (
+        <DinnerRankingStep
+          step={16}
+          totalSteps={TOTAL_STEPS}
+          onBack={goBack}
+          onNext={(rankedIds, rankedRecipes) => { update({ rankedIds, rankedRecipes }); goForward(); }}
+        />
+      );
+    case 16:
+      return (
         <CreateHouseholdStep
           size={data.householdSize}
           type={data.householdType}
-          pageNumber={14}
+          step={17}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={(joined, size, type) => {
             update({ joinedHousehold: joined, householdSize: size, householdType: type });
@@ -324,6 +363,8 @@ export default function OnboardingPage() {
           rankedRecipes={data.rankedRecipes}
           signatureDish={data.signatureDish}
           allergies={data.allergies}
+          step={18}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={handleComplete}
           onShowPaywall={PAYWALL_ENABLED ? goForward : undefined}

@@ -3,13 +3,23 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import Image from "next/image";
 import RANKING_RECIPES, { type RankingRecipe } from "./data/ranking-recipes";
-import CookbookPage from "./cookbook/CookbookPage";
+import GuidedShell from "./guided/GuidedShell";
 
 interface Props {
-  pageNumber: number;
+  step: number;
+  totalSteps: number;
   onBack?: () => void;
   onNext: (rankedIds: string[], recipes: RankingRecipe[]) => void;
 }
+
+const rankHeadingStyle = {
+  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+  fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+  fontSize: "27px",
+  lineHeight: 1.12,
+  letterSpacing: "-0.02em",
+  color: "var(--ink, #1C1A17)",
+} as const;
 
 /* ── Elo helpers ─────────────────────────────────────────────── */
 
@@ -91,7 +101,7 @@ const MIN_MATCHES = 10;
 
 /* ── Component ───────────────────────────────────────────────── */
 
-export default function DinnerRankingStep({ pageNumber, onBack, onNext }: Props) {
+export default function DinnerRankingStep({ step, totalSteps, onBack, onNext }: Props) {
   const [ratings, setRatings] = useState<Map<string, number>>(() => {
     const m = new Map<string, number>();
     RANKING_RECIPES.forEach((r) => m.set(r.id, 1000));
@@ -220,21 +230,25 @@ export default function DinnerRankingStep({ pageNumber, onBack, onNext }: Props)
 
   if (phase === "generating") {
     return (
-      <CookbookPage
-        sectionLabel="Your taste"
-        questionLabel="Taste DNA"
-        dropCap="G"
-        title={
-          <>
-            enerating your{" "}
-            <em style={{ color: "#E5462E", fontStyle: "italic" }}>Taste DNA</em>
-          </>
-        }
-        subtitle="Based on your rankings."
-        pageNumber={pageNumber}
-        hideBack
-      >
-        <div className="flex flex-col items-center justify-center h-full py-4">
+      <GuidedShell step={step} totalSteps={totalSteps}>
+        <div className="text-center pt-7 pb-2 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+          <h1 style={rankHeadingStyle}>
+            Tallying your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>picks</em>
+          </h1>
+          <p
+            className="mt-2.5"
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontStyle: "italic",
+              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+              fontSize: "15px",
+              color: "var(--ink-soft, #4A4742)",
+            }}
+          >
+            Based on your rankings.
+          </p>
+        </div>
+        <div className="flex flex-col items-center justify-center pt-6">
           <div className="text-4xl mb-5 animate-bounce-slow">🧬</div>
 
           {/* Progress bar */}
@@ -285,7 +299,7 @@ export default function DinnerRankingStep({ pageNumber, onBack, onNext }: Props)
             The more recipes you save and meals you plan, the more accurate your taste profile becomes.
           </p>
         </div>
-      </CookbookPage>
+      </GuidedShell>
     );
   }
 
@@ -296,20 +310,27 @@ export default function DinnerRankingStep({ pageNumber, onBack, onNext }: Props)
   const [recipeA, recipeB] = currentPair;
 
   return (
-    <CookbookPage
-      sectionLabel="Your taste"
-      questionLabel="Rather eat"
-      timeLabel={showHint ? "Tap one" : undefined}
-      dropCap="W"
-      title={
-        <>
-          hich would you{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>rather eat?</em>
-        </>
-      }
-      pageNumber={pageNumber}
-      onBack={onBack}
-    >
+    <GuidedShell step={step} totalSteps={totalSteps} onBack={onBack}>
+      <div className="text-center pt-7 pb-3 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+        <h1 style={rankHeadingStyle}>
+          Which would you <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>rather eat?</em>
+        </h1>
+        {showHint && (
+          <p
+            className="mt-2"
+            style={{
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: "10px",
+              letterSpacing: "0.22em",
+              textTransform: "uppercase",
+              color: "var(--ink-soft, #4A4742)",
+            }}
+          >
+            Tap one
+          </p>
+        )}
+      </div>
+
       {/* Match progress */}
       <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "rgba(28, 26, 23, 0.1)" }}>
         <div
@@ -429,6 +450,6 @@ export default function DinnerRankingStep({ pageNumber, onBack, onNext }: Props)
           </div>
         </div>
       </div>
-    </CookbookPage>
+    </GuidedShell>
   );
 }

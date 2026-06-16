@@ -1,41 +1,72 @@
 "use client";
 
 import { useState, useRef } from "react";
-import CookbookPage from "./cookbook/CookbookPage";
-import { CookbookButton } from "./cookbook/CookbookControls";
+import GuidedShell from "./guided/GuidedShell";
 
 interface Props {
   value: string;
-  pageNumber: number;
+  step: number;
+  totalSteps: number;
   onBack?: () => void;
   onNext: (dish: string) => void;
 }
 
-export default function SignatureDishStep({ value, pageNumber, onBack, onNext }: Props) {
+export default function SignatureDishStep({ value, step, totalSteps, onBack, onNext }: Props) {
   const [dish, setDish] = useState(value || "");
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const canContinue = !!dish.trim();
+
   return (
-    <CookbookPage
-      sectionLabel="Your taste"
-      questionLabel="Dream meal"
-      dropCap="W"
-      title={
-        <>
-          hat&apos;s your{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>dream meal?</em>
-        </>
-      }
-      subtitle="If you could eat one meal for the rest of your life, what would it be?"
-      pageNumber={pageNumber}
+    <GuidedShell
+      step={step}
+      totalSteps={totalSteps}
       onBack={onBack}
       footer={
-        <CookbookButton onClick={() => onNext(dish)} disabled={!dish.trim()}>
+        <button
+          onClick={() => canContinue && onNext(dish)}
+          disabled={!canContinue}
+          className="w-full py-4 px-4 text-white rounded-2xl font-semibold text-base shadow-sm transition-all"
+          style={{
+            background: "var(--tomato, #E5462E)",
+            opacity: canContinue ? 1 : 0.4,
+            cursor: canContinue ? "pointer" : "not-allowed",
+          }}
+        >
           Continue
-        </CookbookButton>
+        </button>
       }
     >
-      <div className="flex flex-col items-center justify-center h-full py-6">
+      {/* Heading */}
+      <div className="text-center pt-7 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+            fontSize: "28px",
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
+          What&apos;s your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>dream meal</em>?
+        </h1>
+        <p
+          className="mt-2.5 max-w-xs mx-auto"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontStyle: "italic",
+            fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+            fontSize: "15px",
+            lineHeight: 1.45,
+            color: "var(--ink-soft, #4A4742)",
+          }}
+        >
+          If you could eat one meal for the rest of your life, what would it be?
+        </p>
+      </div>
+
+      <div className="flex flex-col items-center justify-center pt-10">
         <div className="text-5xl mb-6">👨‍🍳</div>
         <input
           ref={inputRef}
@@ -47,14 +78,14 @@ export default function SignatureDishStep({ value, pageNumber, onBack, onNext }:
               inputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
             }, 300);
           }}
-          placeholder="e.g. Grandma's lasagna, Thai green curry..."
+          placeholder="e.g. Grandma's lasagna, Thai green curry…"
           className="w-full px-5 py-4 rounded-2xl outline-none text-center"
           style={{
-            background: "rgba(255, 253, 247, 0.7)",
-            border: "1px solid rgba(28, 26, 23, 0.18)",
+            background: "#FFFDF7",
+            border: "1px solid rgba(28,26,23,0.14)",
             fontFamily: "var(--font-display, Georgia, serif)",
             fontSize: "16px",
-            color: "#1C1A17",
+            color: "var(--ink, #1C1A17)",
             scrollMarginBottom: "120px",
           }}
         />
@@ -64,12 +95,12 @@ export default function SignatureDishStep({ value, pageNumber, onBack, onNext }:
             fontFamily: "var(--font-display, Georgia, serif)",
             fontStyle: "italic",
             fontSize: "13px",
-            color: "rgba(28, 26, 23, 0.5)",
+            color: "var(--ink-soft, #4A4742)",
           }}
         >
           This will appear on your Taste DNA profile
         </p>
       </div>
-    </CookbookPage>
+    </GuidedShell>
   );
 }

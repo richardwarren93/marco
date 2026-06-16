@@ -3,36 +3,28 @@
 import { useRef, useState } from "react";
 import GuidedShell from "./GuidedShell";
 
-/* Guided flow — first meal-planning screen. "When do you usually think about
-   cooking?" Single-select; tapping a choice advances (no Continue button, per
-   the ReciMe reference). The answer tunes when we nudge the user. */
+/* Guided flow — "How old are you?" Single-select; tapping a choice advances
+   (no Continue button), matching the reference. Used only to personalize. */
 
-const TIMES = [
-  { key: "morning", label: "In the morning, I like to plan ahead" },
-  { key: "lunch", label: "Around lunch time, when I start thinking about it" },
-  { key: "evening", label: "In the evening, when I'm ready to cook" },
-] as const;
+const RANGES = ["24 and under", "25–34", "35–44", "45–54", "55+"] as const;
 
 interface Props {
   step: number;
   totalSteps: number;
   value: string;
   onBack?: () => void;
-  onNext: (timing: string) => void;
+  onNext: (ageRange: string) => void;
 }
 
-export default function MealPlanTimingStep({ step, totalSteps, value, onBack, onNext }: Props) {
+export default function AgeStep({ step, totalSteps, value, onBack, onNext }: Props) {
   const [chosen, setChosen] = useState<string | null>(value || null);
-  // Guard the 280ms reveal window against double-advance — without keying off
-  // `chosen`, so a pre-answered screen (back-navigation) can still be re-picked.
   const advancing = useRef(false);
 
-  const pick = (key: string) => {
+  const pick = (range: string) => {
     if (advancing.current) return;
     advancing.current = true;
-    setChosen(key);
-    // Brief beat so the selection is visible before advancing.
-    window.setTimeout(() => onNext(key), 280);
+    setChosen(range);
+    window.setTimeout(() => onNext(range), 280);
   };
 
   return (
@@ -43,13 +35,13 @@ export default function MealPlanTimingStep({ step, totalSteps, value, onBack, on
           style={{
             fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
             fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-            fontSize: "27px",
-            lineHeight: 1.12,
+            fontSize: "28px",
+            lineHeight: 1.1,
             letterSpacing: "-0.02em",
             color: "var(--ink, #1C1A17)",
           }}
         >
-          When do you usually think about <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>cooking</em>?
+          How old are <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>you</em>?
         </h1>
         <p
           className="mt-2.5 max-w-xs mx-auto"
@@ -62,18 +54,18 @@ export default function MealPlanTimingStep({ step, totalSteps, value, onBack, on
             color: "var(--ink-soft, #4A4742)",
           }}
         >
-          We&apos;ll check in at the right moment, not a random one.
+          We only use this to personalize your experience.
         </p>
       </div>
 
       {/* Options */}
       <div className="flex flex-col gap-3 pt-6 pb-4">
-        {TIMES.map((t, i) => {
-          const isSel = chosen === t.key;
+        {RANGES.map((r, i) => {
+          const isSel = chosen === r;
           return (
             <button
-              key={t.key}
-              onClick={() => pick(t.key)}
+              key={r}
+              onClick={() => pick(r)}
               className="flex items-center w-full text-left animate-stagger-in transition-colors"
               style={{
                 padding: "17px 18px",
@@ -83,20 +75,19 @@ export default function MealPlanTimingStep({ step, totalSteps, value, onBack, on
                   ? "1.5px solid var(--tomato, #E5462E)"
                   : "1px solid rgba(28,26,23,0.1)",
                 boxShadow: isSel ? "none" : "0 1px 3px rgba(28,26,23,0.05)",
-                animationDelay: `${0.1 + i * 0.07}s`,
+                animationDelay: `${0.1 + i * 0.06}s`,
               }}
             >
               <span
                 style={{
                   fontFamily: "var(--font-display, Georgia, serif)",
                   fontVariationSettings: '"opsz" 24, "wght" 500',
-                  fontSize: "16px",
-                  lineHeight: 1.3,
+                  fontSize: "17px",
                   letterSpacing: "-0.005em",
                   color: "var(--ink, #1C1A17)",
                 }}
               >
-                {t.label}
+                {r}
               </span>
             </button>
           );

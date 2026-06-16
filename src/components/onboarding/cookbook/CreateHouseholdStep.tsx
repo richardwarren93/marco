@@ -4,14 +4,14 @@
 //   choose → join an existing household by code, or start a new one
 //   create → name the household + set size/type, then actually create it
 // On success it advances; the size/type are passed up for the onboarding payload.
+// Reskinned into the guided flow (GuidedShell) — logic unchanged.
 
 import { useState, useRef } from "react";
-import CookbookPage from "./CookbookPage";
-import { CookbookButton } from "./CookbookControls";
+import GuidedShell from "../guided/GuidedShell";
 
 const HOUSEHOLD_TYPES = [
   { id: "roommates", label: "Roommates", emoji: "\u{1F91D}" },
-  { id: "partner", label: "Partner / Spouse", emoji: "\u{2764}️" },
+  { id: "partner", label: "Partner / Spouse", emoji: "\u{2764}\u{FE0F}" },
   { id: "family", label: "Family with kids", emoji: "\u{1F46A}" },
   { id: "mixed", label: "Mixed household", emoji: "\u{1F3E0}" },
 ];
@@ -19,14 +19,33 @@ const HOUSEHOLD_TYPES = [
 interface Props {
   size: number;
   type: string | null;
-  pageNumber: number;
+  step: number;
+  totalSteps: number;
   onBack?: () => void;
   // joined=true when they joined an existing household by code; otherwise they
   // created a new one and size/type carry their answers.
   onComplete: (joined: boolean, size: number, type: string | null) => void;
 }
 
-export default function CreateHouseholdStep({ size: initSize, type: initType, pageNumber, onBack, onComplete }: Props) {
+const headingStyle = {
+  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+  fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+  fontSize: "27px",
+  lineHeight: 1.12,
+  letterSpacing: "-0.02em",
+  color: "var(--ink, #1C1A17)",
+} as const;
+
+const subStyle = {
+  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+  fontStyle: "italic" as const,
+  fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+  fontSize: "15px",
+  lineHeight: 1.45,
+  color: "var(--ink-soft, #4A4742)",
+};
+
+export default function CreateHouseholdStep({ size: initSize, type: initType, step, totalSteps, onBack, onComplete }: Props) {
   const [mode, setMode] = useState<"choose" | "create">("choose");
 
   // Join-by-code state
@@ -92,37 +111,42 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
   // ── Create-new mode ──────────────────────────────────────────────────────
   if (mode === "create") {
     return (
-      <CookbookPage
-        sectionLabel="Your kitchen"
-        questionLabel="New household"
-        dropCap="N"
-        title={
-          <>
-            ame your{" "}
-            <em style={{ color: "#E5462E", fontStyle: "italic" }}>household</em>
-          </>
-        }
-        subtitle="You can invite others once you're set up."
-        pageNumber={pageNumber}
+      <GuidedShell
+        step={step}
+        totalSteps={totalSteps}
         onBack={() => setMode("choose")}
         footer={
-          <CookbookButton onClick={handleCreate} disabled={creating || (count > 1 && !hType)}>
+          <button
+            onClick={handleCreate}
+            disabled={creating || (count > 1 && !hType)}
+            className="w-full py-4 px-4 text-white rounded-2xl font-semibold text-base shadow-sm transition-all"
+            style={{ background: "var(--tomato, #E5462E)", opacity: creating || (count > 1 && !hType) ? 0.4 : 1 }}
+          >
             {creating ? "Creating…" : "Create household"}
-          </CookbookButton>
+          </button>
         }
       >
+        <div className="text-center pt-7 pb-1 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+          <h1 style={headingStyle}>
+            Name your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>household</em>
+          </h1>
+          <p className="mt-2.5 max-w-xs mx-auto" style={subStyle}>
+            You can invite others once you&apos;re set up.
+          </p>
+        </div>
+
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="The Smith Kitchen"
-          className="w-full px-4 py-3 rounded-xl outline-none mb-5"
+          className="w-full px-4 py-3 rounded-xl outline-none mt-6 mb-5"
           style={{
-            background: "rgba(255, 253, 247, 0.7)",
-            border: "1px solid rgba(28, 26, 23, 0.18)",
+            background: "#FFFDF7",
+            border: "1px solid rgba(28,26,23,0.14)",
             fontFamily: "var(--font-display, Georgia, serif)",
             fontSize: "16px",
-            color: "#1C1A17",
+            color: "var(--ink, #1C1A17)",
           }}
         />
 
@@ -132,15 +156,15 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
             onClick={decrement}
             disabled={count <= 1}
             className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all active:scale-95 disabled:opacity-30"
-            style={{ background: "rgba(255, 253, 247, 0.7)", border: "1px solid rgba(28, 26, 23, 0.18)", color: "#1C1A17" }}
+            style={{ background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.14)", color: "var(--ink, #1C1A17)" }}
           >
             −
           </button>
           <div className="text-center">
-            <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 144, "wght" 700', fontSize: "64px", color: "#1C1A17", lineHeight: 1 }}>
+            <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 144, "wght" 700', fontSize: "64px", color: "var(--ink, #1C1A17)", lineHeight: 1 }}>
               {count}
             </span>
-            <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "13px", color: "rgba(28, 26, 23, 0.55)" }}>
+            <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "13px", color: "var(--ink-soft, #4A4742)" }}>
               {count === 1 ? "person" : "people"}
             </p>
           </div>
@@ -148,15 +172,15 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
             onClick={increment}
             disabled={count >= 10}
             className="w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all active:scale-95 disabled:opacity-30"
-            style={{ background: "#E5462E", border: "1.5px solid #E5462E", color: "white" }}
+            style={{ background: "var(--tomato, #E5462E)", border: "1.5px solid var(--tomato, #E5462E)", color: "white" }}
           >
             +
           </button>
         </div>
 
         {count > 1 && (
-          <div className="mt-4" style={{ animation: "cookbook-ink-fade-in 0.5s ease-out both" }}>
-            <p className="mb-3" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "14px", color: "rgba(28, 26, 23, 0.65)" }}>
+          <div className="mt-4 pb-4" style={{ animation: "stagger-in 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+            <p className="mb-3 text-center" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "14px", color: "var(--ink-soft, #4A4742)" }}>
               What best describes your household?
             </p>
             <div className="grid grid-cols-2 gap-2.5">
@@ -168,13 +192,13 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
                     onClick={() => setHType(t.id)}
                     className="flex flex-col items-center gap-2 p-4 transition-all active:scale-[0.97]"
                     style={{
-                      borderRadius: 12,
-                      background: isSelected ? "rgba(229, 70, 46, 0.08)" : "rgba(255, 253, 247, 0.55)",
-                      border: isSelected ? "1.5px solid #E5462E" : "1px solid rgba(28, 26, 23, 0.14)",
+                      borderRadius: 14,
+                      background: isSelected ? "rgba(229,70,46,0.07)" : "#FFFDF7",
+                      border: isSelected ? "1.5px solid var(--tomato, #E5462E)" : "1px solid rgba(28,26,23,0.1)",
                     }}
                   >
                     <span className="text-2xl">{t.emoji}</span>
-                    <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "13px", color: isSelected ? "#E5462E" : "#1C1A17" }}>
+                    <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "13px", color: isSelected ? "var(--tomato, #E5462E)" : "var(--ink, #1C1A17)" }}>
                       {t.label}
                     </span>
                   </button>
@@ -183,35 +207,31 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
             </div>
           </div>
         )}
-      </CookbookPage>
+      </GuidedShell>
     );
   }
 
   // ── Choose mode ──────────────────────────────────────────────────────────
   return (
-    <CookbookPage
-      sectionLabel="Your kitchen"
-      questionLabel="Household"
-      dropCap="C"
-      title={
-        <>
-          ook with your{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>household</em>
-        </>
-      }
-      subtitle="Share recipes, meal plans and groceries with the people you cook for."
-      pageNumber={pageNumber}
-      onBack={onBack}
-    >
+    <GuidedShell step={step} totalSteps={totalSteps} onBack={onBack}>
+      <div className="text-center pt-7 pb-1 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+        <h1 style={headingStyle}>
+          Cook with your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>household</em>
+        </h1>
+        <p className="mt-2.5 max-w-xs mx-auto" style={subStyle}>
+          Share recipes, meal plans and groceries with the people you cook for.
+        </p>
+      </div>
+
       {/* Join with code */}
-      <div className="p-4 mb-4" style={{ borderRadius: 12, background: "rgba(255, 253, 247, 0.6)", border: "1px solid rgba(28, 26, 23, 0.14)" }}>
+      <div className="p-4 mt-6 mb-4" style={{ borderRadius: 16, background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.1)", boxShadow: "0 1px 3px rgba(28,26,23,0.05)" }}>
         <div className="flex items-center gap-3 mb-3">
           <span className="text-2xl">🔗</span>
           <div>
-            <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "15px", color: "#1C1A17" }}>
+            <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "15px", color: "var(--ink, #1C1A17)" }}>
               Have an invite code?
             </p>
-            <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12.5px", color: "rgba(28, 26, 23, 0.55)" }}>
+            <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12.5px", color: "var(--ink-soft, #4A4742)" }}>
               Ask your household member for theirs
             </p>
           </div>
@@ -226,9 +246,9 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
             maxLength={10}
             className="flex-1 px-4 py-3 rounded-xl font-mono font-bold tracking-widest text-center outline-none uppercase"
             style={{
-              background: "rgba(255, 253, 247, 0.9)",
-              border: joinError ? "1.5px solid #ef4444" : "1px solid rgba(28, 26, 23, 0.18)",
-              color: "#1C1A17",
+              background: "#fff",
+              border: joinError ? "1.5px solid #ef4444" : "1px solid rgba(28,26,23,0.16)",
+              color: "var(--ink, #1C1A17)",
               fontSize: "15px",
             }}
           />
@@ -236,7 +256,7 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
             onClick={handleJoin}
             disabled={!code.trim() || joining || !!joinedName}
             className="px-5 py-3 rounded-xl font-bold text-sm text-white transition-all active:scale-[0.97] disabled:opacity-40"
-            style={{ background: "#E5462E" }}
+            style={{ background: "var(--tomato, #E5462E)" }}
           >
             {joining ? <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : joinedName ? "✓" : "Join"}
           </button>
@@ -255,44 +275,44 @@ export default function CreateHouseholdStep({ size: initSize, type: initType, pa
       </div>
 
       <div className="flex items-center gap-3 my-4">
-        <div className="flex-1 h-px" style={{ background: "rgba(28, 26, 23, 0.14)" }} />
-        <span style={{ fontFamily: "var(--font-mono, ui-monospace)", fontSize: "10px", letterSpacing: "0.3em", color: "rgba(28, 26, 23, 0.4)" }}>OR</span>
-        <div className="flex-1 h-px" style={{ background: "rgba(28, 26, 23, 0.14)" }} />
+        <div className="flex-1 h-px" style={{ background: "rgba(28,26,23,0.12)" }} />
+        <span style={{ fontFamily: "var(--font-mono, ui-monospace)", fontSize: "10px", letterSpacing: "0.3em", color: "var(--ink-soft, #4A4742)" }}>OR</span>
+        <div className="flex-1 h-px" style={{ background: "rgba(28,26,23,0.12)" }} />
       </div>
 
       <button
         onClick={() => setMode("create")}
         className="w-full flex items-center gap-3.5 p-4 text-left transition-all active:scale-[0.98]"
-        style={{ borderRadius: 12, background: "rgba(255, 253, 247, 0.55)", border: "1px solid rgba(28, 26, 23, 0.14)" }}
+        style={{ borderRadius: 16, background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.1)", boxShadow: "0 1px 3px rgba(28,26,23,0.05)" }}
       >
         <span className="text-2xl">🏠</span>
         <div className="flex-1">
-          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "15px", color: "#1C1A17" }}>
+          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "15px", color: "var(--ink, #1C1A17)" }}>
             Start a new household
           </p>
-          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12.5px", color: "rgba(28, 26, 23, 0.55)" }}>
+          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12.5px", color: "var(--ink-soft, #4A4742)" }}>
             Name it, set the size, invite others later
           </p>
         </div>
-        <span style={{ color: "rgba(28, 26, 23, 0.4)", fontSize: 18 }}>→</span>
+        <span style={{ color: "rgba(28,26,23,0.4)", fontSize: 18 }}>→</span>
       </button>
 
       <button
         onClick={() => onComplete(false, 1, null)}
-        className="w-full flex items-center gap-3.5 p-4 mt-2.5 text-left transition-all active:scale-[0.98]"
-        style={{ borderRadius: 12, background: "rgba(255, 253, 247, 0.55)", border: "1px solid rgba(28, 26, 23, 0.14)" }}
+        className="w-full flex items-center gap-3.5 p-4 mt-2.5 mb-4 text-left transition-all active:scale-[0.98]"
+        style={{ borderRadius: 16, background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.1)", boxShadow: "0 1px 3px rgba(28,26,23,0.05)" }}
       >
         <span className="text-2xl">🍳</span>
         <div className="flex-1">
-          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "15px", color: "#1C1A17" }}>
+          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "15px", color: "var(--ink, #1C1A17)" }}>
             It&apos;s just me
           </p>
-          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12.5px", color: "rgba(28, 26, 23, 0.55)" }}>
+          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12.5px", color: "var(--ink-soft, #4A4742)" }}>
             Cooking solo — you can add others anytime
           </p>
         </div>
-        <span style={{ color: "rgba(28, 26, 23, 0.4)", fontSize: 18 }}>→</span>
+        <span style={{ color: "rgba(28,26,23,0.4)", fontSize: 18 }}>→</span>
       </button>
-    </CookbookPage>
+    </GuidedShell>
   );
 }

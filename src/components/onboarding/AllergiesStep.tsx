@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import CookbookPage from "./cookbook/CookbookPage";
-import { CookbookButton } from "./cookbook/CookbookControls";
+import GuidedShell from "./guided/GuidedShell";
 
 const COMMON_ALLERGIES = [
   "Peanuts", "Tree Nuts", "Dairy", "Gluten",
@@ -11,12 +10,13 @@ const COMMON_ALLERGIES = [
 
 interface Props {
   value: string[];
-  pageNumber: number;
+  step: number;
+  totalSteps: number;
   onBack?: () => void;
   onNext: (allergies: string[]) => void;
 }
 
-export default function AllergiesStep({ value, pageNumber, onBack, onNext }: Props) {
+export default function AllergiesStep({ value, step, totalSteps, onBack, onNext }: Props) {
   const [selected, setSelected] = useState<string[]>(value);
   const [custom, setCustom] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,57 +42,84 @@ export default function AllergiesStep({ value, pageNumber, onBack, onNext }: Pro
   const customAllergies = selected.filter((a) => !COMMON_ALLERGIES.includes(a));
 
   const chipStyle = (isSelected: boolean) => ({
-    background: isSelected ? "#E5462E" : "rgba(255, 253, 247, 0.7)",
-    color: isSelected ? "white" : "#1C1A17",
-    border: isSelected ? "1.5px solid #E5462E" : "1px solid rgba(28, 26, 23, 0.16)",
+    background: isSelected ? "var(--tomato, #E5462E)" : "#FFFDF7",
+    color: isSelected ? "white" : "var(--ink, #1C1A17)",
+    border: isSelected ? "1.5px solid var(--tomato, #E5462E)" : "1px solid rgba(28,26,23,0.12)",
+    boxShadow: isSelected ? "none" : "0 1px 2px rgba(28,26,23,0.04)",
     fontFamily: "var(--font-display, Georgia, serif)",
     fontVariationSettings: '"opsz" 14, "wght" 500',
-    fontSize: "14px",
+    fontSize: "15px",
   });
 
   return (
-    <CookbookPage
-      sectionLabel="About you"
-      questionLabel="Allergies"
-      dropCap="A"
-      title={
-        <>
-          ny food{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>allergies?</em>
-        </>
-      }
-      subtitle="We'll keep these out of your suggestions."
-      pageNumber={pageNumber}
+    <GuidedShell
+      step={step}
+      totalSteps={totalSteps}
       onBack={onBack}
       footer={
-        <CookbookButton onClick={() => onNext(selected)}>
+        <button
+          onClick={() => onNext(selected)}
+          className="w-full py-4 px-4 text-white rounded-2xl font-semibold text-base shadow-sm transition-colors"
+          style={{ background: "var(--tomato, #E5462E)" }}
+          onMouseDown={(e) => (e.currentTarget.style.background = "var(--tomato-dark, #B8331E)")}
+          onMouseUp={(e) => (e.currentTarget.style.background = "var(--tomato, #E5462E)")}
+        >
           {selected.length > 0 ? "Continue" : "No allergies — continue"}
-        </CookbookButton>
+        </button>
       }
     >
+      {/* Heading */}
+      <div className="text-center pt-7 pb-1 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+            fontSize: "28px",
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
+          Any food <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>allergies</em>?
+        </h1>
+        <p
+          className="mt-2.5 max-w-xs mx-auto"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontStyle: "italic",
+            fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+            fontSize: "15px",
+            lineHeight: 1.45,
+            color: "var(--ink-soft, #4A4742)",
+          }}
+        >
+          We&apos;ll keep these out of your suggestions.
+        </p>
+      </div>
+
       {/* Custom input */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 pt-6 mb-4">
         <input
           ref={inputRef}
           type="text"
           value={custom}
           onChange={(e) => setCustom(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addCustom()}
-          placeholder="Type an allergy..."
-          className="flex-1 px-4 py-2.5 rounded-xl outline-none"
+          placeholder="Type an allergy…"
+          className="flex-1 px-4 py-3 rounded-xl outline-none"
           style={{
-            background: "rgba(255, 253, 247, 0.7)",
-            border: "1px solid rgba(28, 26, 23, 0.18)",
+            background: "#FFFDF7",
+            border: "1px solid rgba(28,26,23,0.14)",
             fontFamily: "var(--font-display, Georgia, serif)",
-            fontSize: "14px",
-            color: "#1C1A17",
+            fontSize: "15px",
+            color: "var(--ink, #1C1A17)",
           }}
         />
         {custom.trim() && (
           <button
             onClick={addCustom}
-            className="px-4 py-2.5 rounded-xl font-semibold text-sm text-white"
-            style={{ background: "#E5462E" }}
+            className="px-4 py-3 rounded-xl font-semibold text-sm text-white"
+            style={{ background: "var(--tomato, #E5462E)" }}
           >
             Add
           </button>
@@ -105,8 +132,8 @@ export default function AllergiesStep({ value, pageNumber, onBack, onNext }: Pro
           <button
             key={allergy}
             onClick={() => toggle(allergy)}
-            className="px-4 py-2.5 rounded-full transition-all active:scale-[0.97]"
-            style={{ ...chipStyle(selected.includes(allergy)), animation: `cookbook-ink-fade-in 0.5s ease-out ${0.1 + i * 0.04}s both` }}
+            className="px-4 py-2.5 rounded-full transition-all active:scale-[0.97] animate-stagger-in"
+            style={{ ...chipStyle(selected.includes(allergy)), animationDelay: `${0.1 + i * 0.04}s` }}
           >
             {allergy}
           </button>
@@ -115,12 +142,12 @@ export default function AllergiesStep({ value, pageNumber, onBack, onNext }: Pro
 
       {/* Custom chips */}
       {customAllergies.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 pb-4">
           {customAllergies.map((allergy) => (
             <span
               key={allergy}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-white"
-              style={{ background: "#E5462E", fontFamily: "var(--font-display, Georgia, serif)", fontSize: "14px" }}
+              style={{ background: "var(--tomato, #E5462E)", fontFamily: "var(--font-display, Georgia, serif)", fontSize: "15px" }}
             >
               {allergy}
               <button
@@ -136,6 +163,6 @@ export default function AllergiesStep({ value, pageNumber, onBack, onNext }: Pro
           ))}
         </div>
       )}
-    </CookbookPage>
+    </GuidedShell>
   );
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { TASTE_DIMENSIONS } from "./data/taste-dimensions";
 import type { RankingRecipe } from "./data/ranking-recipes";
+import GuidedShell from "./guided/GuidedShell";
 
 interface TasteScores {
   sweet: number;
@@ -17,6 +18,8 @@ interface Props {
   rankedRecipes: RankingRecipe[];
   signatureDish: string;
   allergies: string[];
+  step: number;
+  totalSteps: number;
   onBack?: () => void;
   onComplete: (tasteScores?: TasteScores, cuisinePreferences?: string[]) => void;
   /** When provided (paywall enabled), finishing saves the profile and hands
@@ -157,7 +160,7 @@ function matchChef(topTraits: ReturnType<typeof getTopTraits>): ChefMatch {
   return bestMatch;
 }
 
-export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, onComplete, onShowPaywall }: Props) {
+export default function TasteProfileOverlay({ rankedRecipes, allergies, step, totalSteps, onBack, onComplete, onShowPaywall }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<"loading" | "profile">("loading");
   const [showShare, setShowShare] = useState(false);
@@ -190,18 +193,38 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, 
   // ─── Loading ───
   if (phase === "loading") {
     return (
-      <div className="max-w-2xl mx-auto w-full flex items-center justify-center min-h-[60vh]">
-        <div className="text-center space-y-5 px-8 max-w-sm">
-          <span className="text-6xl block animate-pulse-soft">{"\u{1F9D1}\u{200D}\u{1F373}"}</span>
-          <h2 className="text-xl font-black" style={{ color: "#1C1A17" }}>Generating your taste profile...</h2>
-          <p className="text-sm leading-relaxed" style={{ color: "#a09890" }}>
-            The more recipes you save and meals you plan, the more accurate your taste profile becomes
-          </p>
-          <div className="flex justify-center gap-2 pt-2">
-            {[0, 1, 2].map((i) => (
-              <div key={i} className="w-2 h-2 rounded-full" style={{ background: "#E5462E", animation: `pulse-soft 1.2s ease-in-out ${i * 0.25}s infinite` }} />
-            ))}
-          </div>
+      <div className="flex flex-col items-center justify-center px-8" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
+        <span className="marco-signature is-pulsing mb-10" style={{ fontSize: "2.25rem" }}>salt &amp; spoon</span>
+        <span className="text-6xl block animate-pulse-soft mb-6">{"\u{1F9EC}"}</span>
+        <h2
+          className="text-center"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+            fontSize: "26px",
+            letterSpacing: "-0.02em",
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
+          Reading your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>taste</em>…
+        </h2>
+        <p
+          className="text-center mt-3 max-w-xs"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontStyle: "italic",
+            fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+            fontSize: "15px",
+            lineHeight: 1.45,
+            color: "var(--ink-soft, #4A4742)",
+          }}
+        >
+          The more recipes you save and meals you plan, the sharper this gets.
+        </p>
+        <div className="flex justify-center gap-2 pt-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="w-2 h-2 rounded-full" style={{ background: "var(--tomato, #E5462E)", animation: `pulse-soft 1.2s ease-in-out ${i * 0.25}s infinite` }} />
+          ))}
         </div>
       </div>
     );
@@ -210,35 +233,63 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, 
 
   // ─── Taste Profile ───
   return (
-    <div className="max-w-md mx-auto w-full flex flex-col min-h-[100svh]">
-      <div className="flex-1 flex flex-col justify-center">
-        {/* Header */}
-        <div className="relative pt-6 pb-2 px-6 text-center">
-          {onBack && (
-            <button
-              onClick={onBack}
-              aria-label="Go back"
-              className="absolute left-4 top-5 w-9 h-9 flex items-center justify-center rounded-full active:scale-95 transition-transform"
-              style={{ color: "#4A4742" }}
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          )}
-          <h1 className="text-[32px] font-black leading-none" style={{ color: "#1C1A17" }}>Taste DNA</h1>
+   <>
+    <GuidedShell
+      step={step}
+      totalSteps={totalSteps}
+      onBack={onBack}
+      footer={
+        <div className="space-y-3">
+          <button
+            onClick={async () => {
+              const text = `My Salt & Spoon Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
+              if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+                try { await navigator.share({ title: "My Taste DNA", text }); } catch { /* cancelled */ }
+              } else if (typeof navigator !== "undefined") {
+                await navigator.clipboard.writeText(text);
+              }
+            }}
+            className="w-full py-3.5 rounded-2xl font-semibold text-sm transition-all active:scale-[0.98]"
+            style={{ background: "var(--ink, #1C1A17)", color: "white" }}
+          >
+            🔗 Share my Taste DNA
+          </button>
+          <button
+            onClick={finish}
+            className="w-full py-4 rounded-2xl font-semibold text-base text-white transition-all active:scale-[0.98]"
+            style={{ background: "var(--tomato, #E5462E)" }}
+          >
+            Take me to my recipes
+          </button>
         </div>
+      }
+    >
+      {/* Heading */}
+      <div className="text-center pt-6 pb-1 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 72, "SOFT" 100, "wght" 600',
+            fontSize: "32px",
+            lineHeight: 1.0,
+            letterSpacing: "-0.02em",
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
+          Your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>Taste DNA</em>
+        </h1>
+      </div>
 
-        {/* Taste look-a-like */}
-        <div className="mx-5 mt-3 rounded-2xl p-4 animate-stagger-in" style={{ background: "white", border: "1px solid #eae7e2" }}>
+      {/* Taste look-a-like */}
+      <div className="mt-4 rounded-2xl p-4 animate-stagger-in" style={{ background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)" }}>
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1.5" style={{ color: "#E5462E" }}>Your taste look-a-like</p>
-          <p className="text-lg font-black mb-0.5" style={{ color: "#1C1A17" }}>{chefMatch.name}</p>
-          <p className="text-[12.5px] leading-snug line-clamp-2" style={{ color: "#555" }}>{chefMatch.description}</p>
+          <p className="mb-1" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "20px", color: "var(--ink, #1C1A17)" }}>{chefMatch.name}</p>
+          <p className="text-[12.5px] leading-snug line-clamp-2" style={{ color: "var(--ink-soft, #4A4742)" }}>{chefMatch.description}</p>
         </div>
 
         {/* Flavor profile + top picks (or cuisines) */}
-        <div className="mx-5 mt-3 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.08s", background: "white", border: "1px solid #eae7e2" }}>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.08s", background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)" }}>
             <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-2.5" style={{ color: "#E5462E" }}>Flavor profile</p>
             <div className="space-y-2">
               {FLAVOR_DIMENSIONS.map((dim) => (
@@ -251,7 +302,7 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, 
               ))}
             </div>
           </div>
-          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.12s", background: "white", border: "1px solid #eae7e2" }}>
+          <div className="rounded-2xl p-4 animate-stagger-in" style={{ animationDelay: "0.12s", background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)" }}>
             <p className="text-[9px] font-bold uppercase tracking-[0.2em] mb-2.5" style={{ color: "#E5462E" }}>{rankedRecipes.length > 0 ? "Top picks" : "Top cuisines"}</p>
             {rankedRecipes.length > 0 ? (
               <div className="space-y-2">
@@ -271,34 +322,13 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, 
         </div>
 
         {/* Allergies — compact, single row */}
-        <div className="mx-5 mt-3 rounded-2xl px-4 py-3 animate-stagger-in flex items-center gap-2 flex-wrap" style={{ animationDelay: "0.16s", background: "white", border: "1px solid #eae7e2" }}>
+        <div className="mt-3 mb-4 rounded-2xl px-4 py-3 animate-stagger-in flex items-center gap-2 flex-wrap" style={{ animationDelay: "0.16s", background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)" }}>
           <span className="text-[10px] font-bold uppercase tracking-[0.2em]" style={{ color: "#E5462E" }}>Keeping out</span>
           {allergies.length > 0 ? allergies.map((a) => (
             <span key={a} className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: "#fef2f2", color: "#b91c1c", border: "1px solid #fecaca" }}>🚫 {a}</span>
-          )) : <span className="text-[12px]" style={{ color: "#a09890" }}>Nothing — we&apos;ll suggest freely.</span>}
+          )) : <span className="text-[12px]" style={{ color: "var(--ink-soft, #4A4742)" }}>Nothing — we&apos;ll suggest freely.</span>}
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-5 pb-6 pt-3 space-y-3">
-        <button
-          onClick={async () => {
-            const text = `My Salt & Spoon Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
-            if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-              try { await navigator.share({ title: "My Taste DNA", text }); } catch { /* cancelled */ }
-            } else if (typeof navigator !== "undefined") {
-              await navigator.clipboard.writeText(text);
-            }
-          }}
-          className="w-full py-3.5 rounded-2xl font-bold text-sm transition-all active:scale-[0.98]"
-          style={{ background: "#1C1A17", color: "white" }}
-        >
-          🔗 Share my Taste DNA
-        </button>
-        <button onClick={finish} className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98]" style={{ background: "#E5462E" }}>
-          Take me to my recipes
-        </button>
-      </div>
+    </GuidedShell>
 
       {/* Share sheet */}
       {showShare && (
@@ -327,6 +357,6 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, onBack, 
           </div>
         </div>
       )}
-    </div>
+   </>
   );
 }

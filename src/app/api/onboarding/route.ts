@@ -34,6 +34,7 @@ export async function POST(request: Request) {
           ...(body.goals?.length ? { goals: body.goals } : {}),
           ...(body.recipeSources?.length ? { recipe_sources: body.recipeSources } : {}),
           ...(body.planTiming ? { plan_timing: body.planTiming } : {}),
+          ...(body.ageRange ? { age_range: body.ageRange } : {}),
         },
         liked_recipe_ids: body.likedRecipes || [],
         updated_at: new Date().toISOString(),
