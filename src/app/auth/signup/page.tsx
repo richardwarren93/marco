@@ -4,9 +4,10 @@ import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import WelcomePhoneMockup from "@/components/onboarding/WelcomePhoneMockup";
 
 export default function SignupPage() {
-  const [mode, setMode] = useState<"choose" | "email">("choose");
+  const [mode, setMode] = useState<"welcome" | "choose" | "email">("welcome");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -234,35 +235,145 @@ export default function SignupPage() {
     );
   }
 
-  // Main choose screen
+  // Welcome screen — ReciMe-style landing: wordmark logo, headline, an
+  // animated phone mockup showing a recipe importing "in seconds", then a
+  // single Get started CTA that opens the sign-in method picker.
+  if (mode === "welcome") {
+    return (
+      <div
+        className="flex flex-col"
+        style={{ background: "#F5EEE2", minHeight: "100dvh" }}
+      >
+        {/* Header — wordmark logo + headline + subtitle */}
+        <div
+          className="flex flex-col items-center text-center px-6 flex-shrink-0"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.75rem)" }}
+        >
+          <span
+            className="marco-signature animate-stagger-in"
+            style={{ fontSize: "2.5rem" }}
+          >
+            salt &amp; spoon
+          </span>
+
+          <h1
+            className="mt-5 animate-stagger-in"
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+              fontSize: "27px",
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+              color: "var(--ink, #1C1A17)",
+              animationDelay: "0.08s",
+            }}
+          >
+            Save recipes from{" "}
+            <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>
+              anywhere
+            </em>
+          </h1>
+
+          <p
+            className="mt-2.5 max-w-xs animate-stagger-in"
+            style={{
+              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+              fontStyle: "italic",
+              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+              fontSize: "15.5px",
+              lineHeight: 1.45,
+              color: "var(--ink-soft, #4A4742)",
+              animationDelay: "0.16s",
+            }}
+          >
+            Plan meals in seconds. Shop and earn back.
+          </p>
+        </div>
+
+        {/* Animated phone mockup — fills the space between header and CTA */}
+        <div className="flex-1 min-h-0 flex items-center justify-center px-6 py-6 overflow-hidden">
+          <div
+            className="h-full animate-stagger-in"
+            style={{ maxHeight: "440px", animationDelay: "0.22s" }}
+          >
+            <WelcomePhoneMockup />
+          </div>
+        </div>
+
+        {/* Bottom action — single Get started CTA + sign in link */}
+        <div className="px-6 pb-8 pt-2 flex-shrink-0 max-w-sm mx-auto w-full">
+          <button
+            onClick={() => {
+              setError("");
+              setMode("choose");
+            }}
+            className="w-full py-4 px-4 text-white rounded-2xl font-semibold text-base shadow-sm transition-colors"
+            style={{ background: "var(--tomato, #E5462E)" }}
+            onMouseDown={(e) =>
+              (e.currentTarget.style.background = "var(--tomato-dark, #B8331E)")
+            }
+            onMouseUp={(e) =>
+              (e.currentTarget.style.background = "var(--tomato, #E5462E)")
+            }
+          >
+            Get started
+          </button>
+
+          <p className="text-center text-sm text-gray-500 pt-4">
+            Already have an account?{" "}
+            <Link
+              href="/auth/login"
+              className="text-orange-600 hover:underline font-semibold"
+            >
+              Log in
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Sign-in method picker — reached via Get started
   return (
     <div className="flex flex-col sm:justify-center" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
+      {/* Back to welcome */}
+      <div
+        className="flex items-center px-4 flex-shrink-0"
+        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
+      >
+        <button
+          onClick={() => { setMode("welcome"); setError(""); }}
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+          style={{ background: "rgba(0,0,0,0.05)" }}
+          aria-label="Back"
+        >
+          <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      </div>
       {/* Hero — Marco signature wordmark + italic tagline. No emoji,
           no chef glyph circle, no orange hero band. The cream body is
           the canvas; the wordmark is the brand.
           On mobile the hero grows (flex-1) so buttons pin to the bottom
           for thumb reachability. On desktop we drop the growth so the
           buttons sit right under the tagline. */}
-      <div className="relative flex-1 sm:flex-none flex flex-col items-center justify-center overflow-hidden px-6 pt-10 pb-6">
+      <div className="relative flex-1 sm:flex-none flex flex-col items-center justify-center overflow-hidden px-6 pt-6 pb-6">
         <div className="relative z-10 text-center">
-          {/* The handwritten Marco wordmark with the tomato punctum */}
-          <span className="marco-signature" style={{ fontSize: "clamp(4.5rem, 16vw, 6rem)" }}>salt & spoon</span>
+          <span className="marco-signature" style={{ fontSize: "clamp(3rem, 11vw, 4rem)" }}>salt & spoon</span>
 
-          {/* Italic tagline — Fraunces, calm and editorial */}
           <p
             className="mt-6 max-w-xs mx-auto"
             style={{
               fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontStyle: "italic",
-              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
-              fontSize: "17px",
-              lineHeight: 1.45,
-              color: "var(--ink-soft, #4A4742)",
+              fontVariationSettings: '"opsz" 40, "SOFT" 100, "wght" 500',
+              fontSize: "20px",
+              lineHeight: 1.25,
+              letterSpacing: "-0.01em",
+              color: "var(--ink, #1C1A17)",
             }}
           >
-            Save recipes from <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>anywhere</em>.
-            Plan meals in <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>seconds</em>.
-            Shop and <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>earn back</em>.
+            Let&apos;s get you <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>cooking</em>
           </p>
         </div>
       </div>
