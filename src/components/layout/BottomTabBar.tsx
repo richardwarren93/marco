@@ -196,7 +196,10 @@ function BottomTabBarInner() {
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 sm:hidden touch-manipulation"
         style={{
-          paddingBottom: "var(--safe-bottom, 0px)",
+          // Trim the home-indicator inset so the icons sit lower / closer to
+          // the bottom edge, while keeping a little clearance above the
+          // indicator. Floors at 4px so non-notch devices still breathe.
+          paddingBottom: "max(4px, calc(var(--safe-bottom, 0px) - 16px))",
           background: "rgba(255,253,247,0.92)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
@@ -206,7 +209,7 @@ function BottomTabBarInner() {
         }}
       >
         <div
-          className="flex justify-around items-center h-[60px] px-2 mx-auto max-w-md relative"
+          className="flex justify-around items-center h-[50px] px-2 mx-auto max-w-md relative"
         >
           {leftTabs.map((leftTab) => {
             // "Recipes" is the default tab — active when on /recipes with no
