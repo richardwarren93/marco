@@ -155,7 +155,7 @@ export async function GET(request: NextRequest) {
       .limit(2000),
     admin.from("user_preferences").select("taste_profile").eq("user_id", user.id).single(),
     admin.from("recipes").select("title, tags, meal_type").eq("user_id", user.id),
-    admin.from("recipe_ratings").select("recipe_id, rating"),
+    admin.from("recipe_star_ratings").select("recipe_id, rating"),
   ]);
 
   const recipes = recipesRes.data ?? [];

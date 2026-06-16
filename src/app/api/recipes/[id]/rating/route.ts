@@ -10,7 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * POST   { rating: 1..5 } → upsert the caller's rating, returns fresh aggregate
  * DELETE → remove the caller's rating, returns fresh aggregate
  *
- * All handlers are defensive: if the recipe_ratings table hasn't been migrated
+ * All handlers are defensive: if the recipe_star_ratings table hasn't been migrated
  * yet they degrade to zeros instead of 500ing, so the app keeps working.
  */
 
@@ -28,7 +28,7 @@ function isMissingTable(error: { code?: string } | null): boolean {
 async function readAggregate(recipeId: string, userId: string): Promise<Aggregate> {
   const admin = createAdminClient();
   const { data, error } = await admin
-    .from("recipe_ratings")
+    .from("recipe_star_ratings")
     .select("rating, user_id")
     .eq("recipe_id", recipeId);
 
@@ -80,7 +80,7 @@ export async function POST(
 
   const admin = createAdminClient();
   const { error } = await admin
-    .from("recipe_ratings")
+    .from("recipe_star_ratings")
     .upsert(
       { user_id: user.id, recipe_id: id, rating, updated_at: new Date().toISOString() },
       { onConflict: "user_id,recipe_id" }
@@ -109,7 +109,7 @@ export async function DELETE(
   const { id } = await params;
   const admin = createAdminClient();
   const { error } = await admin
-    .from("recipe_ratings")
+    .from("recipe_star_ratings")
     .delete()
     .eq("recipe_id", id)
     .eq("user_id", user.id);
