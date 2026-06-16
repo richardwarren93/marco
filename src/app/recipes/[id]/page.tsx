@@ -12,6 +12,7 @@ import { findDietaryConflicts } from "@/lib/cook/dietary";
 import SocialEmbed from "@/components/recipes/SocialEmbed";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
+import RecipeRating from "@/components/recipes/RecipeRating";
 import { useToast } from "@/components/ui/Toast";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 
@@ -681,6 +682,9 @@ export default function RecipeDetailPage() {
               <span>{recipe.servings} servings</span>
             )}
           </div>
+
+          {/* Community rating — public average + tap-to-rate */}
+          <RecipeRating recipeId={recipe.id} />
 
           {/* Tags — Marco cream-warm pills with body font */}
           {(recipe.tags || []).length > 0 && (
