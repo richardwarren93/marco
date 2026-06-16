@@ -198,7 +198,7 @@ export default function DiscoverTab({
       {isFiltering ? (
         <div>
           <div className="flex items-center justify-between mb-3 px-0.5">
-            <p className="text-[13px] font-semibold" style={{ color: "#6B655C" }}>
+            <p className="text-[13px] font-semibold" style={{ color: "var(--ink-soft, #4A4742)" }}>
               {ok ? `${totalFiltered} ${totalFiltered === 1 ? "recipe" : "recipes"}` : "Searching…"}
             </p>
             <button onClick={clearAll} className="text-[12.5px] font-semibold" style={{ color: ACCENT }}>Clear</button>
@@ -207,7 +207,7 @@ export default function DiscoverTab({
             renderGrid(results)
           ) : !catalogLoading ? (
             <div className="py-16 text-center">
-              <p style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontStyle: "italic", fontSize: 17, color: "#6B655C" }}>
+              <p style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontStyle: "italic", fontSize: 17, color: "var(--ink-soft, #4A4742)" }}>
                 Nothing matches those filters.
               </p>
             </div>
@@ -220,14 +220,14 @@ export default function DiscoverTab({
             <h2 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 22, letterSpacing: "-0.015em", color: INK }}>
               Friends&apos; Favorites
             </h2>
-            <Link href="/friends" className="flex items-center gap-0.5 text-[12.5px] font-semibold active:scale-95" style={{ color: "#8a847a" }}>
+            <Link href="/friends" className="flex items-center gap-0.5 text-[12.5px] font-semibold active:scale-95" style={{ color: "var(--ink-soft, #4A4742)" }}>
               See all
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
-          <p className="mb-4 px-0.5 text-[13px]" style={{ color: "#6B655C" }}>
+          <p className="mb-4 px-0.5 text-[13px]" style={{ color: "var(--ink-soft, #4A4742)" }}>
             Recipes your friends are saving and cooking.
           </p>
 
@@ -237,7 +237,7 @@ export default function DiscoverTab({
             </div>
           ) : friendsLoading ? (
             <div className="py-16 text-center">
-              <p className="marco-mono" style={{ color: "#8a847a" }}>Loading…</p>
+              <p className="marco-mono" style={{ color: "var(--ink-soft, #4A4742)" }}>Loading…</p>
             </div>
           ) : (
             <div className="py-14 px-6 text-center">
@@ -252,7 +252,7 @@ export default function DiscoverTab({
               <p style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontWeight: 600, fontSize: 18, color: INK }}>
                 No friends&apos; favorites yet
               </p>
-              <p className="mt-1.5 mb-5 text-[13.5px]" style={{ color: "#6B655C" }}>
+              <p className="mt-1.5 mb-5 text-[13.5px]" style={{ color: "var(--ink-soft, #4A4742)" }}>
                 Add friends to see the recipes they&apos;re saving and cooking.
               </p>
               <Link

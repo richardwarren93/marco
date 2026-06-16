@@ -36,7 +36,7 @@ interface Props {
 }
 
 const INK = "#1C1A17";
-const INK_SOFT = "#6B655C";
+const INK_SOFT = "#4A4742";
 
 export default function DiscoverRecipeCard({
   recipe,
@@ -161,8 +161,15 @@ export default function DiscoverRecipeCard({
           {title}
         </h4>
         <p
-          className="mt-1 capitalize"
-          style={{ fontSize: "11px", color: INK_SOFT, fontWeight: 500 }}
+          className="mt-1"
+          style={{
+            fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
+            fontSize: "9.5px",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase",
+            color: INK_SOFT,
+            fontWeight: 500,
+          }}
         >
           {metaParts.join(" · ")}
         </p>
