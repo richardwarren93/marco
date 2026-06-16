@@ -1,6 +1,7 @@
 "use client";
 
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import TomatoFlourish from "@/components/brand/TomatoFlourish";
 
 /**
  * Light Discover card — the redesigned Discover surface (image on top, text
@@ -117,31 +118,6 @@ export default function DiscoverRecipeCard({
             </button>
           )}
         </div>
-
-        {/* Saved-by overlay (Friends' Favorites) */}
-        {firstName && (
-          <div
-            className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2.5"
-            style={{ background: "rgba(20,12,5,0.55)", backdropFilter: "blur(4px)" }}
-          >
-            <span
-              className="flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
-              style={{ width: 20, height: 20, background: "var(--tomato, #E5462E)" }}
-            >
-              {savedByAvatar ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={savedByAvatar} alt={firstName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-              ) : (
-                <span style={{ fontSize: "10px", fontWeight: 700, color: "#fff" }}>
-                  {firstName.charAt(0).toUpperCase()}
-                </span>
-              )}
-            </span>
-            <span style={{ fontSize: "11px", fontWeight: 600, color: "#fff" }}>
-              Saved by {firstName}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* ── Text ─────────────────────────────────────────────── */}
@@ -173,6 +149,32 @@ export default function DiscoverRecipeCard({
         >
           {metaParts.join(" · ")}
         </p>
+
+        {/* Friend signature — under the recipe details, with the tomato swoosh */}
+        {firstName && (
+          <div className="mt-2.5">
+            <div className="flex items-center gap-1.5">
+              <span
+                className="flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
+                style={{ width: 17, height: 17, background: "var(--tomato, #E5462E)" }}
+              >
+                {savedByAvatar ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={savedByAvatar} alt={firstName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                ) : (
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#fff" }}>
+                    {firstName.charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </span>
+              <span className="marco-signature" style={{ fontSize: "1.05rem", color: INK }}>
+                ~{firstName.toLowerCase()}
+              </span>
+            </div>
+            <TomatoFlourish width="58px" height="7px" className="mt-1 ml-1" />
+          </div>
+        )}
+
         <div className="mt-1.5 flex items-center gap-1" style={{ display: savedByName ? "none" : undefined }}>
           {rating.count > 0 ? (
             <>

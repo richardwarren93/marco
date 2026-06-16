@@ -216,20 +216,17 @@ export default function DiscoverTab({
       ) : (
         /* ── Friends' Favorites (default) ──────────────────────── */
         <section>
-          <div className="flex items-center justify-between mb-1 px-0.5">
+          <div className="flex items-center justify-between mb-4 px-0.5">
             <h2 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 22, letterSpacing: "-0.015em", color: INK }}>
               Friends&apos; Favorites
             </h2>
             <Link href="/friends" className="flex items-center gap-0.5 text-[12.5px] font-semibold active:scale-95" style={{ color: "var(--ink-soft, #4A4742)" }}>
-              See all
+              Friends
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </Link>
           </div>
-          <p className="mb-4 px-0.5 text-[13px]" style={{ color: "var(--ink-soft, #4A4742)" }}>
-            Recipes your friends are saving and cooking.
-          </p>
 
           {friendRecipes.length > 0 ? (
             <div className="grid grid-cols-2 gap-3">
