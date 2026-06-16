@@ -294,6 +294,16 @@ export default function MealPlanListView({
   );
   const dietaryFilters: string[] = dietaryData?.filters ?? [];
 
+  // Weekly cooking goal — drives the meal-plan progress header. Set during
+  // onboarding (meal-count screen) and editable on the profile. Falls back to a
+  // sensible default until a goal exists.
+  const { data: goalData } = useSWR<{ goal: { weekly_target?: number } | null }>(
+    "/api/cooking-goal",
+    apiFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 },
+  );
+  const weeklyGoal: number = goalData?.goal?.weekly_target ?? 0;
+
   // ─── View mode ──────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<"daily" | "weekly">("weekly");
   const [viewDropdownOpen, setViewDropdownOpen] = useState(false);
@@ -1039,7 +1049,9 @@ export default function MealPlanListView({
 
   // ─── Weekly view ──────────────────────────────────────────────────────────────
   function renderWeeklyView() {
-    const GOAL = 14; // 2 meals/day × 7 days
+    // Driven by the user's weekly cooking goal (set in onboarding / profile).
+    // Falls back to 3 (the goal table's default) until a goal is saved.
+    const GOAL = weeklyGoal || 3;
     const planned = totalVisibleMeals;
     const progressPct = Math.min(100, Math.round((planned / GOAL) * 100));
     const mealTime = (p: MealPlan) => (p.recipe?.prep_time_minutes ?? 0) + (p.recipe?.cook_time_minutes ?? 0);

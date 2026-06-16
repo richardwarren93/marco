@@ -15,6 +15,7 @@ import TasteProfileCard from "@/components/gamification/TasteProfileCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
 import PhoneCard from "@/components/phone/PhoneCard";
 import DietaryFiltersCard from "@/components/dietary/DietaryFiltersCard";
+import AllergiesCard from "@/components/dietary/AllergiesCard";
 import RestorePurchasesButton from "@/components/purchases/RestorePurchasesButton";
 
 export default function ProfilePage() {
@@ -397,6 +398,11 @@ export default function ProfilePage() {
       {/* ── Dietary filters ── */}
       <div className="px-4 pt-4">
         <DietaryFiltersCard />
+      </div>
+
+      {/* ── Allergies ── */}
+      <div className="px-4 pt-4">
+        <AllergiesCard />
       </div>
 
       {/* ── Household ── */}
