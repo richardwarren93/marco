@@ -134,7 +134,7 @@ export default function DiscoverTab({
   );
 
   const renderHScroll = (items: DiscoverItem[]) => (
-    <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
+    <div className="flex gap-3 overflow-x-auto pb-1 -mr-4 pr-4 scrollbar-hide" style={{ scrollSnapType: "x mandatory" }}>
       {items.map((item, i) => (
         <div key={item.recipeId} className="shrink-0" style={{ width: 156, scrollSnapAlign: "start" }}>
           {renderCard(item, i)}
@@ -235,7 +235,7 @@ export default function DiscoverTab({
               <h2 className="mb-3 px-0.5" style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 17, letterSpacing: "-0.01em", color: INK }}>
                 Browse by category
               </h2>
-              <div className="flex gap-2.5 overflow-x-auto pb-1 -mx-4 px-4 scrollbar-hide">
+              <div className="flex gap-2.5 overflow-x-auto pb-1 -mr-4 pr-4 scrollbar-hide">
                 {categories.map((c) => (
                   <button
                     key={c.key}
