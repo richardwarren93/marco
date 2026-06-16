@@ -4,11 +4,11 @@
 // paste recipe links AND/OR add photos. Everything is scraped/extracted and
 // saved to the account immediately, and the saved recipes are handed up so the
 // next step (the demo) can show what to do with the user's OWN recipes.
+// Reskinned into the guided flow (GuidedShell) — import logic unchanged.
 
 import Image from "next/image";
 import { useRef, useState } from "react";
-import CookbookPage from "./CookbookPage";
-import { CookbookButton } from "./CookbookControls";
+import GuidedShell from "../guided/GuidedShell";
 import { SEED_REEL_URL, SEED_RECIPE, SEED_DETAIL } from "../data/seed-recipe";
 
 export interface SavedRecipe {
@@ -25,7 +25,8 @@ export interface SavedRecipe {
 }
 
 interface Props {
-  pageNumber: number;
+  step: number;
+  totalSteps: number;
   onBack?: () => void;
   onNext: (recipes: SavedRecipe[]) => void;
 }
@@ -37,7 +38,7 @@ function parseUrls(raw: string): string[] {
     .filter((s) => /^https?:\/\//i.test(s));
 }
 
-export default function RecipeImportStep({ pageNumber, onBack, onNext }: Props) {
+export default function RecipeImportStep({ step, totalSteps, onBack, onNext }: Props) {
   const [text, setText] = useState(SEED_REEL_URL);
   const [added, setAdded] = useState<SavedRecipe[]>([]);
   const [importing, setImporting] = useState(false);
@@ -161,94 +162,119 @@ export default function RecipeImportStep({ pageNumber, onBack, onNext }: Props) 
       : "Add to my book";
 
   return (
-    <CookbookPage
-      sectionLabel="Your book"
-      questionLabel="Page 1"
-      timeLabel="The fun part"
-      dropCap="L"
-      title={
-        <>
-          et&apos;s fill your{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>book.</em>
-        </>
-      }
-      subtitle="We dropped a recipe in to try — just tap below to add it. (Or paste your own link, or snap a photo.)"
-      pageNumber={pageNumber}
+    <GuidedShell
+      step={step}
+      totalSteps={totalSteps}
       onBack={onBack}
-      hideBack={!onBack}
       footer={
         <div className="space-y-2.5">
           {error && (
-            <p className="text-center" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "13px", color: "#E5462E" }}>
+            <p className="text-center" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "13px", color: "var(--tomato, #E5462E)" }}>
               {error}
             </p>
           )}
-          <CookbookButton onClick={handleSubmit} disabled={!canSubmit}>
+          <button
+            onClick={handleSubmit}
+            disabled={!canSubmit}
+            className="w-full py-4 px-4 text-white rounded-2xl font-semibold text-base shadow-sm transition-all"
+            style={{ background: "var(--tomato, #E5462E)", opacity: canSubmit ? 1 : 0.4, cursor: canSubmit ? "pointer" : "not-allowed" }}
+          >
             {submitLabel}
-          </CookbookButton>
+          </button>
         </div>
       }
     >
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        rows={3}
-        placeholder={"https://...\nhttps://..."}
-        disabled={importing}
-        className="w-full px-4 py-3 rounded-xl outline-none resize-none disabled:opacity-60"
-        style={{
-          background: "rgba(255, 253, 247, 0.7)",
-          border: "1px solid rgba(28, 26, 23, 0.18)",
-          fontFamily: "var(--font-mono, ui-monospace)",
-          fontSize: "13px",
-          color: "#1C1A17",
-          lineHeight: 1.5,
-        }}
-      />
+      {/* Heading */}
+      <div className="text-center pt-7 pb-1 animate-stagger-in" style={{ animationDelay: "0.03s" }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
+            fontSize: "28px",
+            lineHeight: 1.1,
+            letterSpacing: "-0.02em",
+            color: "var(--ink, #1C1A17)",
+          }}
+        >
+          Let&apos;s fill your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>book</em>
+        </h1>
+        <p
+          className="mt-2.5 max-w-sm mx-auto"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontStyle: "italic",
+            fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
+            fontSize: "15px",
+            lineHeight: 1.45,
+            color: "var(--ink-soft, #4A4742)",
+          }}
+        >
+          We dropped a recipe in to try — just tap below to add it. Or paste your own link, or snap a photo.
+        </p>
+      </div>
 
-      {/* Photo import — mirrors the app's "+" button */}
-      <input ref={photoRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
-      <button
-        onClick={() => !photoBusy && photoRef.current?.click()}
-        disabled={photoBusy}
-        className="w-full mt-3 flex items-center justify-center gap-2.5 py-3 rounded-xl transition-all active:scale-[0.98] disabled:opacity-60"
-        style={{ background: "rgba(255, 253, 247, 0.55)", border: "1px dashed rgba(28, 26, 23, 0.3)" }}
-      >
-        {photoBusy ? (
-          <span className="inline-block w-4 h-4 border-2 border-[#1C1A17] border-t-transparent rounded-full animate-spin" />
-        ) : (
-          <span className="text-lg">📷</span>
-        )}
-        <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "15px", color: "#1C1A17" }}>
-          {photoBusy ? "Reading your photo…" : "Snap or upload a recipe photo"}
-        </span>
-      </button>
+      <div className="pt-6">
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={3}
+          placeholder={"https://...\nhttps://..."}
+          disabled={importing}
+          className="w-full px-4 py-3 rounded-xl outline-none resize-none disabled:opacity-60"
+          style={{
+            background: "#FFFDF7",
+            border: "1px solid rgba(28,26,23,0.14)",
+            fontFamily: "var(--font-mono, ui-monospace)",
+            fontSize: "13px",
+            color: "var(--ink, #1C1A17)",
+            lineHeight: 1.5,
+          }}
+        />
 
-      {/* Added-so-far thumbnails */}
-      {added.length > 0 && (
-        <div className="mt-5">
-          <p className="mb-2.5" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "14px", color: "rgba(28, 26, 23, 0.65)" }}>
-            In your book{added.length > 1 ? ` (${added.length})` : ""}:
-          </p>
-          <div className="grid grid-cols-2 gap-2.5">
-            {added.map((r) => (
-              <div key={r.id} className="relative overflow-hidden" style={{ borderRadius: 12, border: "1px solid rgba(28, 26, 23, 0.14)", boxShadow: "0 4px 12px rgba(74, 50, 20, 0.16)" }}>
-                <div className="relative w-full" style={{ aspectRatio: "4 / 3", background: "#E5D5B0" }}>
-                  {r.image_url ? (
-                    <Image src={r.image_url} alt={r.title} fill sizes="200px" style={{ objectFit: "cover" }} />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
-                  )}
-                  <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ background: "#E5462E", fontSize: 14 }}>✓</span>
+        {/* Photo import — mirrors the app's "+" button */}
+        <input ref={photoRef} type="file" accept="image/*" multiple className="hidden" onChange={handlePhotos} />
+        <button
+          onClick={() => !photoBusy && photoRef.current?.click()}
+          disabled={photoBusy}
+          className="w-full mt-3 flex items-center justify-center gap-2.5 py-3.5 rounded-xl transition-all active:scale-[0.98] disabled:opacity-60"
+          style={{ background: "#FFFDF7", border: "1px dashed rgba(28,26,23,0.28)" }}
+        >
+          {photoBusy ? (
+            <span className="inline-block w-4 h-4 border-2 border-[#1C1A17] border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <span className="text-lg">📷</span>
+          )}
+          <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "15px", color: "var(--ink, #1C1A17)" }}>
+            {photoBusy ? "Reading your photo…" : "Snap or upload a recipe photo"}
+          </span>
+        </button>
+
+        {/* Added-so-far thumbnails */}
+        {added.length > 0 && (
+          <div className="mt-5 pb-4">
+            <p className="mb-2.5" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "14px", color: "var(--ink-soft, #4A4742)" }}>
+              In your book{added.length > 1 ? ` (${added.length})` : ""}:
+            </p>
+            <div className="grid grid-cols-2 gap-2.5">
+              {added.map((r) => (
+                <div key={r.id} className="relative overflow-hidden" style={{ borderRadius: 12, border: "1px solid rgba(28,26,23,0.1)", boxShadow: "0 4px 12px rgba(28,26,23,0.1)" }}>
+                  <div className="relative w-full" style={{ aspectRatio: "4 / 3", background: "#E5D5B0" }}>
+                    {r.image_url ? (
+                      <Image src={r.image_url} alt={r.title} fill sizes="200px" style={{ objectFit: "cover" }} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
+                    )}
+                    <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ background: "var(--tomato, #E5462E)", fontSize: 14 }}>✓</span>
+                  </div>
+                  <div className="px-2.5 py-2" style={{ background: "#FFFDF7", fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "13px", color: "var(--ink, #1C1A17)", lineHeight: 1.2 }}>
+                    {r.title}
+                  </div>
                 </div>
-                <div className="px-2.5 py-2" style={{ background: "rgba(255, 253, 247, 0.85)", fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "13px", color: "#1C1A17", lineHeight: 1.2 }}>
-                  {r.title}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </CookbookPage>
+        )}
+      </div>
+    </GuidedShell>
   );
 }

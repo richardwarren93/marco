@@ -39,8 +39,8 @@ const PAYWALL_ENABLED = false;
 //   2  Goals affirmation — "That's great!" (guided)
 //   3  Recipe sources — where do you get your recipes? (guided)
 //   4  Sources affirmation — "Awesome 🎉" (guided)
-//   5  Add to your cookbook — paste links / photos, saves to account (cookbook)
-//   6  Guided first-run — taps through the seeded recipe (cookbook)
+//   5  Add to your cookbook — paste links / photos, saves to account (guided)
+//   6  Guided first-run — taps through the seeded recipe (guided chrome)
 //   7  Meal-plan timing — when do you think about cooking? (guided)
 //   8  Notifications — get the right recipe at the right time (guided)
 //   9  Meal-plan feature — plan your week showcase (guided)
@@ -243,7 +243,8 @@ export default function OnboardingPage() {
     case 5:
       return (
         <RecipeImportStep
-          pageNumber={6}
+          step={6}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(recipes) => { update({ importedRecipes: recipes }); goForward(); }}
         />
@@ -252,7 +253,8 @@ export default function OnboardingPage() {
       return (
         <GuidedDemo
           recipes={data.importedRecipes}
-          pageNumber={7}
+          step={7}
+          totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={goForward}
         />

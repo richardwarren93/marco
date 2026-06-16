@@ -31,7 +31,8 @@ type Phase = "recipe-add" | "plan" | "grocery" | "recipe-cook" | "cook" | "feed"
 
 interface Props {
   recipes: SavedRecipe[];
-  pageNumber: number;
+  step: number;
+  totalSteps: number;
   onBack?: () => void;
   onComplete: () => void;
 }
@@ -69,13 +70,14 @@ function Coach({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function GuidedDemo({ recipes, onBack, onComplete }: Props) {
+export default function GuidedDemo({ recipes, step, totalSteps, onBack, onComplete }: Props) {
   const [phase, setPhase] = useState<Phase>("recipe-add");
   const [showToast, setShowToast] = useState(false);
   const [cookStep, setCookStep] = useState(0);
 
   const hero = recipes[0] ?? SEED_RECIPE;
   const detail = buildDetail(recipes[0]);
+  const pct = Math.max(0, Math.min(100, (step / totalSteps) * 100));
 
   // On the plan screen, the grocery toast slides up shortly after arrival.
   useEffect(() => {
@@ -87,15 +89,26 @@ export default function GuidedDemo({ recipes, onBack, onComplete }: Props) {
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: CREAM }}>
       <div className="relative w-full max-w-md mx-auto flex-1 min-h-0 flex flex-col overflow-hidden">
-        {/* top app bar */}
-        <div className="flex items-center gap-2 px-4 pt-4 pb-2 flex-shrink-0">
-          {onBack && phase === "recipe-add" && (
-            <button onClick={onBack} aria-label="Back" className="w-9 h-9 flex items-center justify-center rounded-full active:scale-95" style={{ color: INK_SOFT }}>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
-            </button>
-          )}
-          <div className="flex-1" />
-          <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(28,26,23,0.4)" }}>Try it — it&apos;s yours</span>
+        {/* top chrome — matches the guided flow: logo + back + progress bar */}
+        <div className="flex flex-col flex-shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
+          <div className="flex justify-center">
+            <span className="marco-signature" style={{ fontSize: "1.6rem" }}>salt &amp; spoon</span>
+          </div>
+          <div className="flex items-center gap-3 px-5 pt-3.5 pb-1">
+            {onBack && phase === "recipe-add" ? (
+              <button onClick={onBack} aria-label="Back" className="flex items-center justify-center flex-shrink-0 active:opacity-50" style={{ width: 28, height: 28, marginLeft: -4, color: INK }}>
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round"><path d="M15 19l-7-7 7-7" /></svg>
+              </button>
+            ) : (
+              <div style={{ width: 24 }} aria-hidden />
+            )}
+            <div className="flex-1 overflow-hidden" style={{ height: 7, borderRadius: 100, background: "rgba(28,26,23,0.1)" }}>
+              <div style={{ height: "100%", width: `${pct}%`, borderRadius: 100, background: TOMATO, transition: "width 0.5s cubic-bezier(0.16,1,0.3,1)" }} />
+            </div>
+          </div>
+          <div className="flex justify-end px-5 pb-1.5">
+            <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(28,26,23,0.4)" }}>Try it — it&apos;s yours</span>
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
