@@ -9,7 +9,6 @@ import dynamic from "next/dynamic";
 import type { Recipe, Ingredient } from "@/types";
 import { useRecipe, useRecipes, apiFetcher } from "@/lib/hooks/use-data";
 import { findDietaryConflicts } from "@/lib/cook/dietary";
-import SocialEmbed from "@/components/recipes/SocialEmbed";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 import MyNotesCard from "@/components/recipes/MyNotesCard";
 import RecipeRating from "@/components/recipes/RecipeRating";
@@ -250,6 +249,32 @@ function formatAmount(n: number): string {
   return rounded % 1 === 0 ? `${rounded}` : `${Math.round(rounded * 10) / 10}`;
 }
 
+/* ── Tag chip with a contextual icon ─────────────────────────────────── */
+function tagIconPath(tag: string): string {
+  const t = tag.toLowerCase();
+  if (/one[\s-]?pot|pot|skillet|pan/.test(t)) return "M4 8h16v3a8 8 0 01-16 0V8zM2 8h20M8 4c0-1 1-1.5 1-2.5M12 4c0-1 1-1.5 1-2.5";
+  if (/veg|plant|green|salad/.test(t)) return "M11 20A7 7 0 014 13c0-5 4-9 9-9 5 0 7 3 7 3-2 9-9 13-9 13zM11 20c0-4 2-7 5-9";
+  if (/quick|easy|fast|15|min|weeknight/.test(t)) return "M13 2L4.5 13.5H11l-1 8.5L19.5 10H13l0-8z";
+  if (/cream|cheese|rich|butter/.test(t)) return "M12 3c3 4 5 6.5 5 9a5 5 0 01-10 0c0-2.5 2-5 5-9z";
+  if (/lemon|lime|citrus|tang|sour/.test(t)) return "M5 12a7 7 0 0114 0 7 7 0 01-14 0zM12 5v14";
+  if (/summer|sun|bright|fresh/.test(t)) return "M12 4a8 8 0 100 16 8 8 0 000-16zM12 2v0M12 22v0M2 12h0M22 12h0";
+  if (/pasta|noodle|carb|grain|rice|bread/.test(t)) return "M5 7c3-2 11-2 14 0M5 12c3-2 11-2 14 0M5 17c3-2 11-2 14 0";
+  if (/spic|chili|hot|pepper/.test(t)) return "M12 3c2 3 4 5 4 9a4 4 0 01-8 0c0-4 2-6 4-9z";
+  if (/sweet|dessert|cake|choc/.test(t)) return "M6 11h12l-1.5 9h-9L6 11zM8 11a4 4 0 018 0";
+  return "M7 7h.01M7 3h5a2 2 0 011.4.6l7 7a2 2 0 010 2.8l-5 5a2 2 0 01-2.8 0l-7-7A2 2 0 015 12V7a4 4 0 014-4z";
+}
+
+function TagChip({ tag }: { tag: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium" style={{ background: "#F2EEE6", color: "var(--ink, #1C1A17)" }}>
+      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+        <path d={tagIconPath(tag)} />
+      </svg>
+      {tag}
+    </span>
+  );
+}
+
 export default function RecipeDetailPage() {
   const { id } = useParams();
   const searchParams = useSearchParams();
@@ -258,7 +283,6 @@ export default function RecipeDetailPage() {
   const [showAddToCollection, setShowAddToCollection] = useState(false);
   const [showShareWithFriends, setShowShareWithFriends] = useState(false);
   const [showMore, setShowMore] = useState(false);
-  const [activeTab, setActiveTab] = useState<"ingredients" | "steps" | "nutrition">("ingredients");
   const servingsParam = searchParams ? parseInt(searchParams.get("servings") ?? "", 10) : NaN;
   const [adjustedServings, setAdjustedServings] = useState<number | null>(
     !isNaN(servingsParam) && servingsParam > 0 ? servingsParam : null
@@ -270,6 +294,10 @@ export default function RecipeDetailPage() {
   const [showMarcoChat, setShowMarcoChat] = useState(false);
   const [substituteIngredient, setSubstituteIngredient] = useState<Ingredient | null>(null);
   const [cameraUploading, setCameraUploading] = useState(false);
+  const [showStepsModal, setShowStepsModal] = useState(false);
+  const [showRatingSheet, setShowRatingSheet] = useState(false);
+  const [showNotesSheet, setShowNotesSheet] = useState(false);
+  const [ingredientsExpanded, setIngredientsExpanded] = useState(false);
   const cameraFileRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const supabase = createClient();
@@ -357,6 +385,15 @@ export default function RecipeDetailPage() {
     { revalidateOnFocus: false }
   );
   const recipeCollections: { id: string; name: string }[] = isPublicView ? [] : (collectionsData?.collections ?? []);
+
+  // Community rating — shared by the inline header display + the Reviews card.
+  const { data: ratingData } = useSWR<{ average: number; count: number; userRating: number | null }>(
+    id ? `/api/recipes/${id}/rating` : null,
+    apiFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 10000 },
+  );
+  const ratingAvg = ratingData?.average ?? 0;
+  const ratingCount = ratingData?.count ?? 0;
 
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
@@ -513,6 +550,81 @@ export default function RecipeDetailPage() {
 
   const hasMacros = !!(recipe.calories || recipe.protein_g || recipe.carbs_g || recipe.fat_g);
 
+  // One ingredient row — preserves standing-sub, dietary-conflict, scaling and
+  // unit-conversion behavior. Rendered into the (now 2-column) Ingredients card.
+  function renderIngredient(ing: Ingredient, i: number) {
+    const standingSub = findStandingSub(ing.name, standingSubs);
+    const effective = standingSub
+      ? { name: standingSub.to_name, amount: standingSub.to_amount ?? ing.amount, unit: standingSub.to_unit ?? ing.unit ?? "" }
+      : ing;
+
+    const scaledAmount = scaleAmount(effective.amount, ratio);
+    const numericAmount = (() => {
+      if (!effective.amount) return null;
+      const raw = effective.amount.trim();
+      const mixedMatch = raw.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+      if (mixedMatch) return (parseInt(mixedMatch[1]) + parseInt(mixedMatch[2]) / parseInt(mixedMatch[3])) * ratio;
+      const fracMatch = raw.match(/^(\d+)\/(\d+)$/);
+      if (fracMatch) return (parseInt(fracMatch[1]) / parseInt(fracMatch[2])) * ratio;
+      const num = parseFloat(raw);
+      return isNaN(num) ? null : num * ratio;
+    })();
+
+    const dietaryConflicts = findDietaryConflicts(effective.name, dietaryFilters);
+
+    let displayAmount = scaledAmount;
+    let displayUnit = effective.unit || "";
+    let wasConverted = false;
+    if (unitSystem && numericAmount && effective.unit) {
+      const converted = convertUnit(numericAmount, effective.unit, unitSystem);
+      if (converted) { displayAmount = formatAmount(converted.amount); displayUnit = converted.unit; wasConverted = true; }
+    }
+
+    return (
+      <li key={i} className="flex items-baseline gap-2.5">
+        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: "var(--tomato, #E5462E)" }} />
+        <div className="flex-1 min-w-0 -my-1 flex items-baseline gap-1.5 flex-wrap">
+          <button
+            type="button"
+            onClick={() => setSubstituteIngredient(ing)}
+            className="text-[13.5px] text-gray-800 text-left py-1 transition-colors hover:bg-[rgba(229,70,46,0.04)] rounded-md -mx-1 px-1"
+            aria-label={standingSub ? `Substitute ${effective.name} (was ${ing.name})` : `Substitute ${ing.name}`}
+          >
+            {displayAmount && (
+              <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[#e8530a]" : ""}`}>{displayAmount}{" "}</span>
+            )}
+            {displayUnit && (
+              <span className={`${wasConverted ? "text-[#e8530a] font-medium" : "text-gray-500"}`}>{displayUnit}{" "}</span>
+            )}
+            {effective.name}
+          </button>
+          {standingSub && (
+            <button
+              type="button"
+              onClick={async () => { await fetch(`/api/user/standing-subs/${standingSub.id}`, { method: "DELETE" }); mutateStandingSubs(); }}
+              className="flex-shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors hover:opacity-80"
+              style={{ background: "var(--cream-warm, #EFE5D2)", color: "var(--tomato, #E5462E)" }}
+              title={`Originally: ${ing.amount}${ing.unit ? " " + ing.unit : ""} ${ing.name}. Tap to revert.`}
+            >
+              ↳
+            </button>
+          )}
+          {dietaryConflicts.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSubstituteIngredient(ing)}
+              className="flex-shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase transition-colors hover:opacity-80"
+              style={{ background: "rgba(229, 70, 46, 0.10)", color: "var(--tomato, #E5462E)", letterSpacing: "0.08em" }}
+              title={`Doesn't fit: ${dietaryConflicts.map((c) => c.label).join(", ")}. Tap to swap.`}
+            >
+              Needs swap
+            </button>
+          )}
+        </div>
+      </li>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#F5EEE2" }}>
       {/* ── 1. Hero Image ──────────────────────────────────────────────── */}
@@ -524,11 +636,11 @@ export default function RecipeDetailPage() {
               alt={recipe.title}
               className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-black/20" />
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 22%, rgba(0,0,0,0) 58%, rgba(0,0,0,0.45) 100%)" }} />
           </div>
         ) : (
           <div
-            className="h-52 sm:h-64 flex items-center justify-center"
+            className="h-60 sm:h-72 flex items-center justify-center relative"
             style={{
               background:
                 "radial-gradient(circle at 30% 60%, var(--tomato, #E5462E) 0%, transparent 45%), radial-gradient(circle at 80% 30%, var(--mustard, #E8A33D) 0%, transparent 30%), var(--cream-warm, #EFE5D2)",
@@ -538,28 +650,21 @@ export default function RecipeDetailPage() {
           </div>
         )}
 
-        {/* I Made This — bottom-right overlay (owner only).
-            Renders on both photo + gradient-fallback heroes. */}
-        {!isPublicView && (
-          <button
-            onClick={() => cameraFileRef.current?.click()}
-            disabled={cameraUploading}
-            className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-2 rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white transition-colors z-10"
-            aria-label="I Made This"
-          >
-            {cameraUploading ? (
-              <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <svg className="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                </svg>
-                <span className="text-xs font-semibold text-gray-700">I Made This</span>
-              </>
-            )}
-          </button>
-        )}
+        {/* Time + servings pills */}
+        <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
+          {totalTime > 0 ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold text-white" style={{ background: "rgba(20,12,5,0.6)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M12 7v5l3 2" /></svg>
+              {totalTime} min total
+            </span>
+          ) : <span />}
+          {recipe.servings ? (
+            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold text-white" style={{ background: "rgba(20,12,5,0.6)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM21 20v-1a4 4 0 00-3-3.87M16 4.13A4 4 0 0116 11.6" /></svg>
+              {recipe.servings} servings
+            </span>
+          ) : <span />}
+        </div>
 
         {/* Hidden file input for camera photo upload */}
         <input
@@ -570,10 +675,7 @@ export default function RecipeDetailPage() {
           className="hidden"
         />
 
-        {/* Overlaid nav — pushed below the iOS status bar / notch in PWA mode.
-            env(safe-area-inset-top) is 0 in regular Safari (since the status
-            bar already overlays the page content there), so this only adds
-            extra spacing when the app is installed as a PWA. */}
+        {/* Overlaid nav — pushed below the iOS status bar / notch in PWA mode. */}
         <div
           className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 z-10"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}
@@ -594,40 +696,45 @@ export default function RecipeDetailPage() {
             </svg>
           </button>
           <div className="flex items-center gap-2">
+            {/* Bookmark → add to collection (owner only) */}
             {!isPublicView && (
-            <button
-              onClick={() => setEditing(true)}
-              className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-xs font-semibold text-gray-700 shadow-sm hover:bg-white transition-colors"
-            >
-              Edit
-            </button>
+              <button
+                onClick={() => setShowAddToCollection(true)}
+                aria-label="Add to collection"
+                className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+              >
+                <svg className="w-4.5 h-4.5 text-gray-700" fill={recipeCollections.length > 0 ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </button>
             )}
+            {!isPublicView && (
             <div className="relative">
-              {!isPublicView && (
               <button
                 onClick={() => setShowMore(!showMore)}
+                aria-label="More"
                 className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
               >
                 <svg className="w-4.5 h-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                 </svg>
               </button>
-              )}
               {showMore && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowMore(false)} />
-                  <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-30 py-1 min-w-[140px] animate-pop-in">
-                    <button
-                      onClick={() => { setShowMore(false); handleDelete(); }}
-                      disabled={deleting}
-                      className="w-full text-left px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                    >
-                      {deleting ? "Deleting..." : "Delete recipe"}
-                    </button>
+                  <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-30 py-1 min-w-[180px] animate-pop-in text-sm">
+                    <button onClick={() => { setShowMore(false); setEditing(true); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">Edit recipe</button>
+                    <button onClick={() => { setShowMore(false); cameraFileRef.current?.click(); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">Add a cook photo</button>
+                    <button onClick={() => { setShowMore(false); setShowShareWithFriends(true); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">Share with friends</button>
+                    {recipe.source_url && (
+                      <button onClick={() => { setShowMore(false); window.open(recipe.source_url!, "_blank"); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">View source</button>
+                    )}
+                    <button onClick={() => { setShowMore(false); handleDelete(); }} disabled={deleting} className="w-full text-left px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors">{deleting ? "Deleting…" : "Delete recipe"}</button>
                   </div>
                 </>
               )}
             </div>
+            )}
           </div>
         </div>
       </div>
@@ -635,15 +742,14 @@ export default function RecipeDetailPage() {
       {/* ── Content ─────────────────────────────────────────────────────── */}
       <div className="max-w-3xl mx-auto px-5 pb-10">
 
-        {/* ── 2. Title section ────────────────────────────────────────── */}
-        <div className="py-6 space-y-3">
-          {/* Recipe title — Fraunces display */}
+        {/* ── 2. Title + rating + tags ──────────────────────────────── */}
+        <div className="pt-5 pb-4 space-y-3">
           <h1
-            className="leading-tight"
+            className="leading-[1.05]"
             style={{
               fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
               fontVariationSettings: '"opsz" 144, "SOFT" 100, "wght" 600',
-              fontSize: "clamp(1.75rem, 6vw, 2.25rem)",
+              fontSize: "clamp(1.9rem, 7vw, 2.5rem)",
               letterSpacing: "-0.02em",
               color: "var(--ink, #1C1A17)",
             }}
@@ -651,155 +757,103 @@ export default function RecipeDetailPage() {
             {recipe.title}
           </h1>
 
-          {/* Stats row — Marco mono uppercase tracked metadata */}
-          <div
-            className="flex items-center gap-2 flex-wrap"
-            style={{
-              fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
-              fontSize: "11px",
-              fontWeight: 500,
-              letterSpacing: "0.13em",
-              textTransform: "uppercase",
-              color: "var(--ink-soft, #4A4742)",
-            }}
-          >
-            {recipe.meal_type && (
-              <span className="inline-flex items-center gap-1.5">
-                <MealTypeIcon type={recipe.meal_type} className="w-3.5 h-3.5" strokeWidth={2} />
-                {recipe.meal_type}
+          {/* Rating + stats inline */}
+          <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[13.5px]" style={{ color: "var(--ink-soft, #4A4742)" }}>
+            <span className="inline-flex items-center" aria-label={ratingCount > 0 ? `${ratingAvg} out of 5` : "No ratings yet"}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <svg key={n} className="w-4 h-4" viewBox="0 0 24 24" fill={Math.round(ratingAvg) >= n ? "#E8A33D" : "none"} stroke={Math.round(ratingAvg) >= n ? "#E8A33D" : "#d9d0c2"} strokeWidth={1.4}>
+                  <path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" />
+                </svg>
+              ))}
+            </span>
+            {ratingCount > 0 ? (
+              <span className="font-bold" style={{ color: "var(--ink, #1C1A17)" }}>
+                {ratingAvg.toFixed(1)} <span className="font-normal" style={{ color: "var(--ink-soft, #4A4742)" }}>({ratingCount})</span>
               </span>
+            ) : (
+              <span className="font-medium">New</span>
             )}
-            {recipe.meal_type && totalTime > 0 && <span style={{ opacity: 0.5 }}>·</span>}
+            {(recipe.prep_time_minutes || recipe.cook_time_minutes || recipe.servings) && <span style={{ opacity: 0.4 }}>·</span>}
             {totalTime > 0 && (
-              <span>
-                {recipe.prep_time_minutes ? `${recipe.prep_time_minutes}m prep` : ""}
-                {recipe.prep_time_minutes && recipe.cook_time_minutes ? " + " : ""}
-                {recipe.cook_time_minutes ? `${recipe.cook_time_minutes}m cook` : ""}
+              <span className="inline-flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M12 7v5l3 2" /></svg>
+                {recipe.prep_time_minutes ? `${recipe.prep_time_minutes} min prep` : ""}
               </span>
             )}
-            {(recipe.meal_type || totalTime > 0) && recipe.servings && <span style={{ opacity: 0.5 }}>·</span>}
-            {recipe.servings && (
-              <span>{recipe.servings} servings</span>
-            )}
+            {recipe.prep_time_minutes && recipe.cook_time_minutes ? <span style={{ opacity: 0.4 }}>·</span> : null}
+            {recipe.cook_time_minutes ? <span>{recipe.cook_time_minutes} min cook</span> : null}
+            {recipe.servings ? <span style={{ opacity: 0.4 }}>·</span> : null}
+            {recipe.servings ? <span>{recipe.servings} servings</span> : null}
           </div>
 
-          {/* Community rating — public average + tap-to-rate */}
-          <RecipeRating recipeId={recipe.id} />
-
-          {/* Tags — Marco cream-warm pills with body font */}
+          {/* Icon tags */}
           {(recipe.tags || []).length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {(recipe.tags || []).map((tag) => (
-                <span
-                  key={tag}
-                  className="px-2.5 py-0.5 rounded-full text-[11px] font-medium"
-                  style={{
-                    background: "var(--cream-warm, #EFE5D2)",
-                    color: "var(--ink-soft, #4A4742)",
-                  }}
-                >
-                  {tag}
-                </span>
-              ))}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {(recipe.tags || []).map((tag) => <TagChip key={tag} tag={tag} />)}
             </div>
           )}
-
-          {/* Collections this recipe belongs to */}
-          {recipeCollections.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2">
-              {recipeCollections.map((col) => (
-                <Link
-                  key={col.id}
-                  href={`/collections/${col.id}`}
-                  className="px-2.5 py-0.5 bg-orange-50 text-orange-600 rounded-full text-[11px] font-medium hover:bg-orange-100 transition-colors"
-                >
-                  {col.name}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          {/* Action buttons with labels */}
-          <div className="flex items-center gap-5 pt-2">
-            {/* Collection (owner only) */}
-            {!isPublicView && (
-              <button
-                onClick={() => setShowAddToCollection(true)}
-                className="flex flex-col items-center gap-1 text-[#a09890] hover:text-[#e8530a] transition-colors touch-manipulation"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0z" />
-                </svg>
-                <span className="text-[10px] font-medium">Collection</span>
-              </button>
-            )}
-            {/* Share (owner only) */}
-            {!isPublicView && (
-              <button
-                onClick={() => setShowShareWithFriends(true)}
-                className="flex flex-col items-center gap-1 text-[#a09890] hover:text-[#e8530a] transition-colors touch-manipulation"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3v11.25" />
-                </svg>
-                <span className="text-[10px] font-medium">Share</span>
-              </button>
-            )}
-            {/* Source */}
-            {recipe.source_url && (
-              <button
-                onClick={() => window.open(recipe.source_url!, "_blank")}
-                className="flex flex-col items-center gap-1 text-[#a09890] hover:text-[#e8530a] transition-colors touch-manipulation"
-              >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                </svg>
-                <span className="text-[10px] font-medium">Source</span>
-              </button>
-            )}
-          </div>
         </div>
 
-        {/* ── 3. Three tabs: Ingredients | Steps | Macros ──────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          {/* Tab bar — Marco palette: tomato accent, ink-soft inactive */}
-          <div className="flex border-b" style={{ borderColor: "var(--line, rgba(28,26,23,0.08))" }}>
-            {(["ingredients", "steps", "nutrition"] as const).map((tab) => {
-              // Hide macros tab if no macro data
-              if (tab === "nutrition" && !hasMacros) return null;
-              const isActive = activeTab === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className="flex-1 py-3.5 text-sm text-center transition-colors relative capitalize"
-                  style={{
-                    color: isActive ? "var(--tomato, #E5462E)" : "var(--ink-soft, #4A4742)",
-                    fontWeight: isActive ? 600 : 500,
-                  }}
-                >
-                  {tab}
-                  {isActive && (
-                    <div
-                      className="absolute bottom-0 left-4 right-4 h-0.5 rounded-full"
-                      style={{ background: "var(--tomato, #E5462E)" }}
-                    />
-                  )}
-                </button>
-              );
-            })}
+        {/* ── 3. Actions (owner) ─────────────────────────────────────── */}
+        {!isPublicView && (
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <button
+              onClick={() => setShowAddMealSheet(true)}
+              className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl text-left active:scale-[0.98] transition-transform"
+              style={{ background: "#E5462E", color: "#fff", boxShadow: "0 2px 12px rgba(229,70,46,0.25)" }}
+            >
+              <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="4" width="18" height="17" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 9h18M8 2v4M16 2v4M9 14l2 2 4-4" /></svg>
+              <span className="min-w-0">
+                <span className="block text-[14px] font-bold leading-tight">Add to Meal Plan</span>
+                <span className="block text-[11px] opacity-90 leading-tight mt-0.5">Plan this recipe</span>
+              </span>
+            </button>
+            <button
+              onClick={() => setShowMarcoChat(true)}
+              className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl text-left active:scale-[0.98] transition-transform"
+              style={{ background: "#fff", border: "1.5px solid rgba(229,70,46,0.45)" }}
+            >
+              <svg className="w-6 h-6 flex-shrink-0" style={{ color: "#E5462E" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10M9 21v-3m6 3v-3M6 18h12a4 4 0 00.5-7.97 6 6 0 00-11.9-.5A3.5 3.5 0 006 18z" /></svg>
+              <span className="min-w-0">
+                <span className="block text-[14px] font-bold leading-tight" style={{ color: "#1C1A17" }}>Start Guided Cooking</span>
+                <span className="block text-[11px] leading-tight mt-0.5" style={{ color: "#6B655C" }}>AI walks you through every step</span>
+              </span>
+            </button>
           </div>
+        )}
 
-          {/* Tab content */}
-          <div className="p-5">
-            {/* ── Ingredients tab ──────────────────────────────────────── */}
-            {activeTab === "ingredients" && (
-              <div>
-                {/* Servings adjuster */}
-                {originalServings && (
-                  <div className="flex items-center justify-between mb-5 pb-4 border-b border-gray-100">
-                    <span className="text-sm font-medium text-gray-700">Servings</span>
-                    <div className="flex items-center gap-2.5">
+        {/* ── Nutrition (per serving) ────────────────────────────────── */}
+        {hasMacros && (
+          <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+            <h3 className="text-[16px] font-bold mb-3" style={{ color: "#1C1A17" }}>
+              Nutrition <span className="text-[13px] font-normal" style={{ color: "#6B655C" }}>per serving</span>
+            </h3>
+            <div className="grid grid-cols-4 divide-x" style={{ borderColor: "rgba(28,26,23,0.06)" }}>
+              {[
+                { v: recipe.calories, unit: "", label: "calories", icon: "M12 3c1.5 3 4 4 4 7a4 4 0 01-8 0c0-1.5 1-2.5 1.5-3.5C10 8 12 6 12 3z" },
+                { v: recipe.protein_g, unit: "g", label: "protein", icon: "M6.5 4.5l13 13M9 4l11 11M4 9l11 11M14 4l6 6M4 14l6 6" },
+                { v: recipe.carbs_g, unit: "g", label: "carbs", icon: "M12 3v6M9 6c-3 1-5 4-5 8a8 8 0 0016 0c0-4-2-7-5-8" },
+                { v: recipe.fat_g, unit: "g", label: "fat", icon: "M12 21a7 7 0 01-7-7c0-4 3-7 7-11 4 4 7 7 7 11a7 7 0 01-7 7z" },
+              ].map((m) => (
+                <div key={m.label} className="flex flex-col items-center gap-1 px-1">
+                  <svg className="w-5 h-5" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d={m.icon} /></svg>
+                  <span className="text-[18px] font-bold" style={{ color: "#1C1A17" }}>{m.v != null ? `${Math.round(m.v * ratio)}${m.unit}` : "—"}</span>
+                  <span className="text-[11px]" style={{ color: "#8a847a" }}>{m.label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px]" style={{ color: "#a8a29a" }}>Percent Daily Values (DV) are based on a 2,000 calorie diet.</p>
+          </div>
+        )}
+
+        {/* ── Ingredients ────────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-[16px] font-bold" style={{ color: "#1C1A17" }}>Ingredients</h3>
+            {originalServings && (
+              <div className="flex items-center gap-2">
+                <span className="text-[13px]" style={{ color: "#6B655C" }}>Scale</span>
+                <div className="flex items-center gap-2.5">
                       <button
                         onClick={() => changeServings(-1)}
                         className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#e8530a]/40 hover:text-[#e8530a] active:scale-95 transition-all"
@@ -827,11 +881,12 @@ export default function RecipeDetailPage() {
                           Reset
                         </button>
                       )}
-                    </div>
-                  </div>
-                )}
+                </div>
+              </div>
+            )}
+          </div>
 
-                {/* Meal plan prompt */}
+          {/* Meal plan prompt */}
                 {showMealPlanPrompt && servingsChanged && (
                   <div className="mb-5 p-3 bg-orange-50 rounded-xl border border-orange-100 animate-slide-up">
                     <p className="text-xs text-orange-700 font-medium mb-2">
@@ -854,202 +909,101 @@ export default function RecipeDetailPage() {
                   </div>
                 )}
 
-                {/* Ingredient list */}
-                <ul className="space-y-3">
-                  {ingredients.map((ing, i) => {
-                    // Standing-pref substitution applied silently. The ↳
-                    // marker is the only visible affordance; the recipe's
-                    // original ingredient is preserved in `ing` and shown
-                    // when the user expands the marker.
-                    const standingSub = findStandingSub(ing.name, standingSubs);
-                    const effective = standingSub
-                      ? {
-                          name: standingSub.to_name,
-                          amount: standingSub.to_amount ?? ing.amount,
-                          unit: standingSub.to_unit ?? ing.unit ?? "",
-                        }
-                      : ing;
-
-                    const scaledAmount = scaleAmount(effective.amount, ratio);
-                    const numericAmount = (() => {
-                      if (!effective.amount) return null;
-                      const raw = effective.amount.trim();
-                      const mixedMatch = raw.match(/^(\d+)\s+(\d+)\/(\d+)$/);
-                      if (mixedMatch) return (parseInt(mixedMatch[1]) + parseInt(mixedMatch[2]) / parseInt(mixedMatch[3])) * ratio;
-                      const fracMatch = raw.match(/^(\d+)\/(\d+)$/);
-                      if (fracMatch) return (parseInt(fracMatch[1]) / parseInt(fracMatch[2])) * ratio;
-                      const num = parseFloat(raw);
-                      return isNaN(num) ? null : num * ratio;
-                    })();
-
-                    // Dietary conflicts are computed against the *effective*
-                    // (post-standing-sub) name so applying a sub silently
-                    // clears the flag — same mental model as the substitution
-                    // sheet's role/reasoning text.
-                    const dietaryConflicts = findDietaryConflicts(effective.name, dietaryFilters);
-
-                    let displayAmount = scaledAmount;
-                    let displayUnit = effective.unit || "";
-                    let wasConverted = false;
-
-                    if (unitSystem && numericAmount && effective.unit) {
-                      const converted = convertUnit(numericAmount, effective.unit, unitSystem);
-                      if (converted) {
-                        displayAmount = formatAmount(converted.amount);
-                        displayUnit = converted.unit;
-                        wasConverted = true;
-                      }
-                    }
-
-                    return (
-                      <li key={i} className="flex items-baseline gap-3">
-                        <div className="w-1.5 h-1.5 rounded-full bg-[#1C1A17] flex-shrink-0 mt-1.5" />
-                        <div className="flex-1 -my-1 flex items-baseline gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => setSubstituteIngredient(ing)}
-                            className="text-sm text-gray-800 text-left flex-1 py-1 transition-colors hover:bg-[rgba(229,70,46,0.04)] rounded-md -mx-1 px-1"
-                            aria-label={standingSub ? `Substitute ${effective.name} (was ${ing.name})` : `Substitute ${ing.name}`}
-                          >
-                            {displayAmount && (
-                              <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[#e8530a]" : ""}`}>
-                                {displayAmount}{" "}
-                              </span>
-                            )}
-                            {displayUnit && (
-                              <span className={`${wasConverted ? "text-[#e8530a] font-medium" : "text-gray-500"}`}>
-                                {displayUnit}{" "}
-                              </span>
-                            )}
-                            {effective.name}
-                          </button>
-                          {standingSub && (
-                            <button
-                              type="button"
-                              onClick={async () => {
-                                await fetch(`/api/user/standing-subs/${standingSub.id}`, { method: "DELETE" });
-                                mutateStandingSubs();
-                              }}
-                              className="flex-shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold transition-colors hover:opacity-80"
-                              style={{
-                                background: "var(--cream-warm, #EFE5D2)",
-                                color: "var(--tomato, #E5462E)",
-                              }}
-                              aria-label={`Standing sub: was ${ing.amount} ${ing.unit ?? ""} ${ing.name}. Tap to revert.`}
-                              title={`Originally: ${ing.amount}${ing.unit ? " " + ing.unit : ""} ${ing.name}. Tap to revert.`}
-                            >
-                              ↳
-                            </button>
-                          )}
-                          {dietaryConflicts.length > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => setSubstituteIngredient(ing)}
-                              className="flex-shrink-0 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide transition-colors hover:opacity-80"
-                              style={{
-                                background: "rgba(229, 70, 46, 0.10)",
-                                color: "var(--tomato, #E5462E)",
-                                letterSpacing: "0.08em",
-                              }}
-                              aria-label={`Conflicts with ${dietaryConflicts.map((c) => c.label).join(", ")} — tap to find a substitute`}
-                              title={`Doesn't fit: ${dietaryConflicts.map((c) => c.label).join(", ")}. Tap to swap.`}
-                            >
-                              Needs swap
-                            </button>
-                          )}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
-
-            {/* ── Steps tab ───────────────────────────────────────────── */}
-            {activeTab === "steps" && (
-              <ol className="space-y-6">
-                {steps.map((step, i) => (
-                  <li key={i} className="flex gap-4">
-                    <span className="w-7 h-7 rounded-full bg-gray-100 text-[#1C1A17] flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
-                      {i + 1}
-                    </span>
-                    <p className="text-sm text-gray-700 leading-relaxed flex-1 pt-1">{step}</p>
-                  </li>
-                ))}
-              </ol>
-            )}
-
-            {/* ── Nutrition tab ──────────────────────────────────────── */}
-            {activeTab === "nutrition" && hasMacros && (
-              <div className="space-y-5 py-2">
-                {/* Calories */}
-                {recipe.calories != null && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">🔥</span>
-                    <span className="text-3xl font-bold text-[#1C1A17]">
-                      {Math.round(recipe.calories * ratio)}
-                    </span>
-                    <span className="text-sm text-gray-400 font-medium">cal</span>
-                  </div>
-                )}
-
-                {/* Protein / Carbs / Fats */}
-                <div className="grid grid-cols-3 gap-6">
-                  {recipe.protein_g != null && (
-                    <div>
-                      <div className="text-xs text-gray-400 mb-1">🥩 Protein</div>
-                      <div className="text-xl font-bold text-[#1C1A17]">{Math.round(recipe.protein_g * ratio)}g</div>
-                    </div>
-                  )}
-                  {recipe.carbs_g != null && (
-                    <div>
-                      <div className="text-xs text-gray-400 mb-1">🌾 Carbs</div>
-                      <div className="text-xl font-bold text-[#1C1A17]">{Math.round(recipe.carbs_g * ratio)}g</div>
-                    </div>
-                  )}
-                  {recipe.fat_g != null && (
-                    <div>
-                      <div className="text-xs text-gray-400 mb-1">🧈 Fats</div>
-                      <div className="text-xl font-bold text-[#1C1A17]">{Math.round(recipe.fat_g * ratio)}g</div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Fiber */}
-                {recipe.fiber_g != null && recipe.fiber_g > 0 && (
-                  <p className="text-xs text-gray-400">
-                    {Math.round(recipe.fiber_g * ratio)}g fiber per serving
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Ingredient list — 2 columns; View all expands the rest */}
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+            {(ingredientsExpanded ? ingredients : ingredients.slice(0, 8)).map((ing, i) => renderIngredient(ing, i))}
+          </ul>
+          {ingredients.length > 8 && (
+            <button
+              onClick={() => setIngredientsExpanded((v) => !v)}
+              className="w-full mt-3.5 flex items-center justify-center gap-1 text-[13.5px] font-semibold"
+              style={{ color: "var(--tomato, #E5462E)" }}
+            >
+              {ingredientsExpanded ? "Show fewer" : "View all ingredients"}
+              <svg className={`w-3.5 h-3.5 transition-transform ${ingredientsExpanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+            </button>
+          )}
         </div>
+
+        {/* ── Instructions ───────────────────────────────────────────── */}
+        {steps.length > 0 && (
+          <button
+            onClick={() => setShowStepsModal(true)}
+            className="w-full bg-white rounded-2xl shadow-sm p-4 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+          >
+            <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--cream-warm, #EFE5D2)", color: "#1C1A17" }}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 012-2h6v16H6a2 2 0 00-2 2V5zM20 5a2 2 0 00-2-2h-6v16h6a2 2 0 012 2V5z" /></svg>
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>Instructions</p>
+              <p className="text-[12.5px]" style={{ color: "#6B655C" }}>{steps.length} {steps.length === 1 ? "step" : "steps"}{totalTime > 0 ? ` · About ${totalTime} minutes` : ""}</p>
+            </div>
+            {recipe.image_url && (
+              <img src={recipe.image_url} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
+            )}
+            <svg className="w-5 h-5 flex-shrink-0" style={{ color: "#E5462E" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+          </button>
+        )}
 
         {/* ── Cook Photos (owner only) ───────────────────────────────── */}
         {!isPublicView && (
           <CookPhotosGallery recipeId={recipe.id} refreshKey={photoRefreshKey} />
         )}
 
-        {/* ── 4. My Notes (owner only) ─────────────────────────────────── */}
-        {!isPublicView && (
-          <div className="bg-white rounded-2xl shadow-sm p-5 mt-4">
-            <MyNotesCard recipeId={recipe.id} />
-          </div>
+        {/* ── Original Recipe Video ──────────────────────────────────── */}
+        {recipe.source_url && (
+          <button
+            onClick={() => window.open(recipe.source_url!, "_blank")}
+            className="w-full bg-white rounded-2xl shadow-sm p-3 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+          >
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{ background: "#eeece8" }}>
+              {recipe.image_url && <img src={recipe.image_url} alt="" className="w-full h-full object-cover" />}
+              <span className="absolute inset-0 flex items-center justify-center">
+                <span className="w-7 h-7 rounded-full bg-white/85 flex items-center justify-center">
+                  <svg className="w-3.5 h-3.5 ml-0.5" style={{ color: "#1C1A17" }} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                </span>
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>Original Recipe Video</p>
+              <p className="text-[12px] capitalize" style={{ color: "#6B655C" }}>
+                {recipe.source_platform && recipe.source_platform !== "other" ? recipe.source_platform : "View original"}
+              </p>
+            </div>
+            <svg className="w-5 h-5 flex-shrink-0" style={{ color: "#6B655C" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+          </button>
         )}
 
-        {/* ── 5. Original Post ────────────────────────────────────────── */}
-        {recipe.source_url && recipe.source_platform && recipe.source_platform !== "other" && (
-          <div className="bg-white rounded-2xl shadow-sm p-5 mt-4">
-            <SocialEmbed
-              sourceUrl={recipe.source_url}
-              sourcePlatform={recipe.source_platform}
-            />
-          </div>
-        )}
+        {/* ── Reviews + My Notes ─────────────────────────────────────── */}
+        <div className={`grid ${isPublicView ? "grid-cols-1" : "grid-cols-2"} gap-3 mb-4`}>
+          <button
+            onClick={() => setShowRatingSheet(true)}
+            className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
+          >
+            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill={ratingCount > 0 ? "#E8A33D" : "none"} stroke="#E8A33D" strokeWidth={1.5}><path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" /></svg>
+            <div className="min-w-0 flex-1">
+              <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>Reviews</p>
+              <p className="text-[12px]" style={{ color: "#6B655C" }}>{ratingCount > 0 ? `${ratingAvg.toFixed(1)} (${ratingCount})` : "Rate this recipe"}</p>
+            </div>
+            <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#c5beb2" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+          </button>
+          {!isPublicView && (
+            <button
+              onClick={() => setShowNotesSheet(true)}
+              className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
+            >
+              <svg className="w-5 h-5 flex-shrink-0" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4m3 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>My Notes</p>
+                <p className="text-[12px] line-clamp-1" style={{ color: "#6B655C" }}>Add your notes, tips, or modifications</p>
+              </div>
+              <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#c5beb2" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            </button>
+          )}
+        </div>
 
-        {/* spacer for sticky bottom bar + room to scroll inputs above mobile keyboard */}
-        <div style={{ height: "60vh" }} />
+        {/* spacer — public view keeps the sticky save bar, owner is inline */}
+        <div style={{ height: isPublicView ? "18vh" : "2rem" }} />
       </div>
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
@@ -1081,10 +1035,10 @@ export default function RecipeDetailPage() {
         onAdd={handleMealSheetAdd}
       />
 
-      {/* ── Sticky bottom bar ─────────────────────────────────────────── */}
+      {/* ── Sticky save bar (public view only) ───────────────────────── */}
+      {isPublicView && (
       <div className="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto z-40 rounded-t-2xl overflow-hidden" style={{ paddingBottom: "var(--safe-bottom, 0px)", background: "#ffffff", boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}>
         <div className="px-4 py-3 space-y-2">
-          {isPublicView ? (
             <button
               onClick={async () => {
                 if (alreadySaved || savingPublic) return;
@@ -1145,40 +1099,9 @@ export default function RecipeDetailPage() {
             >
               {alreadySaved ? "✓ Already in your library" : savingPublic ? "Saving…" : "Save to my library"}
             </button>
-          ) : (
-            <>
-              <button
-                onClick={() => setShowAddMealSheet(true)}
-                className="w-full py-3.5 rounded-xl font-semibold text-sm text-white active:scale-[0.98] transition-all"
-                style={{ background: "#e8530a" }}
-              >
-                Add to Meal Plan
-              </button>
-              <button
-                onClick={() => setShowMarcoChat(true)}
-                className="w-full py-3 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all border inline-flex items-center justify-center gap-2"
-                style={{ borderColor: "var(--line, rgba(28,26,23,0.12))", color: "var(--ink, #1C1A17)", background: "white" }}
-              >
-                <span>Cook with Sous Chef</span>
-                <span
-                  className="ml-0.5 px-1.5 py-0.5 rounded-full align-middle"
-                  style={{
-                    background: "var(--cream-warm, #EFE5D2)",
-                    color: "var(--tomato, #E5462E)",
-                    fontFamily: "var(--font-mono, 'Geist Mono', monospace)",
-                    fontSize: "9px",
-                    fontWeight: 600,
-                    letterSpacing: "0.1em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  beta
-                </span>
-              </button>
-            </>
-          )}
         </div>
       </div>
+      )}
 
       {savingPublic && (
         <div
@@ -1226,7 +1149,7 @@ export default function RecipeDetailPage() {
       )}
 
       {/* Substitution sheet — Phase 1 one-time-swap. Tap any ingredient
-          on the Ingredients tab to open this. */}
+          to open this. */}
       {recipe && substituteIngredient && (
         <SubstitutionSheet
           recipeId={recipe.id}
@@ -1234,6 +1157,96 @@ export default function RecipeDetailPage() {
           onClose={() => setSubstituteIngredient(null)}
           onStandingPrefAdded={() => mutateStandingSubs()}
         />
+      )}
+
+      {/* Instructions — plain numbered steps (the "Start Guided Cooking"
+          button opens the AI CookMode instead). */}
+      {showStepsModal && (
+        <>
+          <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setShowStepsModal(false)} />
+          <div
+            className="fixed left-0 right-0 bottom-0 z-[61] rounded-t-3xl"
+            style={{ background: "#FBF7EF", maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 20px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
+          >
+            <div className="max-w-3xl mx-auto px-5 pt-3">
+              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
+              <div className="flex items-center justify-between mb-5">
+                <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 22, color: "#1C1A17" }}>Instructions</h3>
+                <button onClick={() => setShowStepsModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.05)" }}>
+                  <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <ol className="space-y-5 pb-2">
+                {steps.map((step, i) => (
+                  <li key={i} className="flex gap-3.5">
+                    <span className="w-7 h-7 rounded-full text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: "var(--tomato, #E5462E)" }}>{i + 1}</span>
+                    <p className="text-[14px] leading-relaxed flex-1 pt-0.5" style={{ color: "#3a3530" }}>{step}</p>
+                  </li>
+                ))}
+              </ol>
+              {!isPublicView && (
+                <button
+                  onClick={() => { setShowStepsModal(false); setShowMarcoChat(true); }}
+                  className="w-full mt-3 py-3.5 rounded-2xl font-semibold text-[14px] text-white active:scale-[0.98] transition-all"
+                  style={{ background: "#E5462E" }}
+                >
+                  Start Guided Cooking
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Reviews — rate this recipe (community rating) */}
+      {showRatingSheet && (
+        <>
+          <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setShowRatingSheet(false)} />
+          <div
+            className="fixed left-0 right-0 bottom-0 z-[61] rounded-t-3xl"
+            style={{ background: "#FBF7EF", paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
+          >
+            <div className="max-w-md mx-auto px-5 pt-3">
+              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
+              <h3 className="mb-1" style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: "#1C1A17" }}>
+                {ratingCount > 0 ? `${ratingAvg.toFixed(1)} · ${ratingCount} ${ratingCount === 1 ? "rating" : "ratings"}` : "Be the first to rate"}
+              </h3>
+              <p className="text-[13px] mb-4" style={{ color: "#6B655C" }}>Tap a star to rate this recipe.</p>
+              <RecipeRating recipeId={recipe.id} />
+              <button onClick={() => setShowRatingSheet(false)} className="w-full mt-6 py-3.5 rounded-2xl font-semibold text-[14px] text-white active:scale-[0.98] transition-all" style={{ background: "#1C1A17" }}>Done</button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* My Notes — private per-recipe notes */}
+      {!isPublicView && showNotesSheet && (
+        <>
+          <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setShowNotesSheet(false)} />
+          <div
+            className="fixed left-0 right-0 bottom-0 z-[61] rounded-t-3xl"
+            style={{ background: "#FBF7EF", maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
+          >
+            <div className="max-w-md mx-auto px-5 pt-3">
+              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
+              <div className="flex items-center justify-between mb-4">
+                <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: "#1C1A17" }}>My Notes</h3>
+                <button onClick={() => setShowNotesSheet(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.05)" }}>
+                  <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+              <MyNotesCard recipeId={recipe.id} />
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Cook-photo upload indicator */}
+      {cameraUploading && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[70] flex items-center gap-2 px-4 py-2.5 rounded-full text-white text-sm font-medium" style={{ background: "rgba(20,12,5,0.85)" }}>
+          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          Saving photo…
+        </div>
       )}
     </div>
   );
