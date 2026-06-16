@@ -16,13 +16,18 @@ CREATE TABLE IF NOT EXISTS recipe_ratings (
 
 ALTER TABLE recipe_ratings ENABLE ROW LEVEL SECURITY;
 
+-- Drop-then-create so this migration is safe to re-run (CREATE POLICY is not
+-- idempotent and errors if the policy already exists).
+
 -- Anyone signed in can read ratings (needed to show community averages).
+DROP POLICY IF EXISTS "Ratings are readable by all authenticated users" ON recipe_ratings;
 CREATE POLICY "Ratings are readable by all authenticated users"
   ON recipe_ratings FOR SELECT
   TO authenticated
   USING (true);
 
 -- A user may only create / update / delete their own rating rows.
+DROP POLICY IF EXISTS "Users manage own ratings" ON recipe_ratings;
 CREATE POLICY "Users manage own ratings"
   ON recipe_ratings FOR ALL
   USING (auth.uid() = user_id)
