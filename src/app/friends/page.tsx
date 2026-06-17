@@ -6,7 +6,6 @@ import type { UserProfile, Friendship } from "@/types";
 import MobileHeader from "@/components/layout/MobileHeader";
 import FriendCodeCard from "@/components/friends/FriendCodeCard";
 import AddFriendForm from "@/components/friends/AddFriendForm";
-import PendingRequestCard from "@/components/friends/PendingRequestCard";
 import FriendsCookingRow from "@/components/friends/FriendsCookingRow";
 import { FriendsIcon } from "@/components/icons/HandDrawnIcons";
 
@@ -35,6 +34,7 @@ export default function FriendsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [responding, setResponding] = useState<string | null>(null);
+  const [showAllFriends, setShowAllFriends] = useState(false);
 
   const loadAll = useCallback(async () => {
     try {
@@ -66,6 +66,19 @@ export default function FriendsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ friendship_id: friendshipId, action }),
+      });
+      await loadAll();
+    } catch { /* ignore */ }
+    setResponding(null);
+  }
+
+  async function cancelRequest(friendshipId: string) {
+    setResponding(friendshipId);
+    try {
+      await fetch("/api/friends/remove", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ friendship_id: friendshipId }),
       });
       await loadAll();
     } catch { /* ignore */ }
@@ -176,6 +189,18 @@ export default function FriendsPage() {
                 <h2 className="text-base font-bold" style={{ color: INK }}>
                   Your friends{friends.length > 0 ? ` (${friends.length})` : ""}
                 </h2>
+                {filteredFriends.length > 8 && (
+                  <button
+                    onClick={() => setShowAllFriends((v) => !v)}
+                    className="flex items-center gap-0.5 text-[12.5px] font-semibold active:scale-95"
+                    style={{ color: INK_SOFT }}
+                  >
+                    {showAllFriends ? "Show less" : "See all"}
+                    <svg className={`w-3.5 h-3.5 transition-transform ${showAllFriends ? "rotate-90" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                )}
               </div>
               {filteredFriends.length === 0 ? (
                 <div className="text-center py-10 rounded-2xl" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.05)" }}>
@@ -188,21 +213,21 @@ export default function FriendsPage() {
                   )}
                 </div>
               ) : (
-                <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1" style={{ scrollSnapType: "x mandatory" }}>
-                  {filteredFriends.map((f) => {
+                <div className="grid grid-cols-4 gap-2.5">
+                  {(showAllFriends ? filteredFriends : filteredFriends.slice(0, 8)).map((f) => {
                     const p = f.profile ?? null;
                     const name = p?.display_name || "Friend";
                     return (
                       <Link
                         key={f.id}
                         href={`/recipes?tab=discover`}
-                        className="flex-shrink-0 w-[136px] rounded-2xl px-3 py-4 flex flex-col items-center text-center active:scale-[0.97] transition-transform"
-                        style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)", scrollSnapAlign: "start" }}
+                        className="rounded-2xl px-1.5 py-3 flex flex-col items-center text-center active:scale-[0.97] transition-transform"
+                        style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}
                       >
-                        <div className="relative mb-2">
+                        <div className="relative mb-1.5">
                           <span
                             className="flex items-center justify-center rounded-full overflow-hidden"
-                            style={{ width: 56, height: 56, background: "linear-gradient(135deg,#E8A33D,#E5462E)", color: "#fff", fontWeight: 700, fontSize: 16 }}
+                            style={{ width: 46, height: 46, background: "linear-gradient(135deg,#E8A33D,#E5462E)", color: "#fff", fontWeight: 700, fontSize: 14 }}
                           >
                             {p?.avatar_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -211,12 +236,11 @@ export default function FriendsPage() {
                               initials(name)
                             )}
                           </span>
-                          <span className="absolute bottom-0 right-0 rounded-full" style={{ width: 13, height: 13, background: "#22c55e", border: "2.5px solid #fff" }} />
+                          <span className="absolute bottom-0 right-0 rounded-full" style={{ width: 11, height: 11, background: "#22c55e", border: "2px solid #fff" }} />
                         </div>
-                        <p className="font-bold text-[14px] truncate w-full" style={{ color: INK }}>{name}</p>
-                        <p className="text-[12px] truncate w-full" style={{ color: INK_SOFT, opacity: 0.7 }}>{handleFor(p)}</p>
-                        <p className="text-[11px] mt-1.5" style={{ color: INK_SOFT, opacity: 0.6 }}>
-                          {f.recipe_count ?? 0} {f.recipe_count === 1 ? "recipe" : "recipes"} saved
+                        <p className="font-bold text-[11.5px] leading-tight truncate w-full" style={{ color: INK }}>{name}</p>
+                        <p className="text-[9.5px] mt-0.5" style={{ color: INK_SOFT, opacity: 0.6 }}>
+                          {f.recipe_count ?? 0} saved
                         </p>
                       </Link>
                     );
@@ -228,11 +252,11 @@ export default function FriendsPage() {
             {/* What your friends are cooking — same cards as Discover */}
             <FriendsCookingRow />
 
-            {/* Pending invitations (incoming) */}
-            {incoming.length > 0 && (
+            {/* Pending invitations — incoming (accept/ignore) + outgoing (cancel) */}
+            {(incoming.length + outgoing.length) > 0 && (
               <section>
                 <h2 className="text-base font-bold mb-3" style={{ color: INK }}>
-                  Pending invitations ({incoming.length})
+                  Pending invitations ({incoming.length + outgoing.length})
                 </h2>
                 <div className="space-y-2">
                   {incoming.map((req) => {
@@ -269,6 +293,32 @@ export default function FriendsPage() {
                       </div>
                     );
                   })}
+                  {outgoing.map((req) => {
+                    const p = req.profile ?? null;
+                    const name = p?.display_name || "Someone";
+                    return (
+                      <div key={req.id} className="flex items-center gap-3 rounded-2xl px-3 py-3" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.05)" }}>
+                        <span className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden" style={{ width: 40, height: 40, background: "rgba(229,70,46,0.12)", color: TOMATO, fontWeight: 700, fontSize: 13 }}>
+                          {p?.avatar_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.avatar_url} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                          ) : initials(name)}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-[14px] truncate" style={{ color: INK }}>{name}</p>
+                          <p className="text-[12px] truncate" style={{ color: INK_SOFT, opacity: 0.7 }}>Request sent · pending</p>
+                        </div>
+                        <button
+                          onClick={() => cancelRequest(req.id)}
+                          disabled={responding === req.id}
+                          className="px-3.5 py-2 rounded-xl text-[13px] font-semibold disabled:opacity-50"
+                          style={{ background: "#fff", color: INK_SOFT, border: "1px solid rgba(28,26,23,0.14)" }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -298,23 +348,6 @@ export default function FriendsPage() {
               <h2 className="text-base font-bold mb-3" style={{ color: INK }}>Add a Friend</h2>
               <AddFriendForm onRequestSent={loadAll} />
             </div>
-
-            {outgoing.length > 0 && (
-              <section>
-                <h2 className="text-base font-bold mb-3" style={{ color: INK }}>Pending requests</h2>
-                <div className="space-y-2">
-                  {outgoing.map((req) => (
-                    <PendingRequestCard
-                      key={req.id}
-                      friendshipId={req.id}
-                      profile={req.profile || null}
-                      direction="outgoing"
-                      onResponded={loadAll}
-                    />
-                  ))}
-                </div>
-              </section>
-            )}
           </>
         )}
       </div>
