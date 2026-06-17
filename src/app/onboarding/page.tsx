@@ -9,6 +9,7 @@ import GoalsAffirmationStep from "@/components/onboarding/guided/GoalsAffirmatio
 import RecipeSourcesStep from "@/components/onboarding/guided/RecipeSourcesStep";
 import SourcesAffirmationStep from "@/components/onboarding/guided/SourcesAffirmationStep";
 import MealCountStep from "@/components/onboarding/guided/MealCountStep";
+import GoalReinforcementStep from "@/components/onboarding/guided/GoalReinforcementStep";
 import MealPlanTimingStep from "@/components/onboarding/guided/MealPlanTimingStep";
 import NotificationsStep from "@/components/onboarding/guided/NotificationsStep";
 import MealPlanFeatureStep from "@/components/onboarding/guided/MealPlanFeatureStep";
@@ -39,25 +40,26 @@ const PAYWALL_ENABLED = true;
 //   0  Social proof (guided)
 //   1  Goals — what are your goals? (guided)
 //   2  Goals affirmation — "That's great!" (guided)
-//   3  Recipe sources — where do you get your recipes? (guided)
-//   4  Sources affirmation — "Awesome 🎉" (guided)
-//   5  Add to your cookbook — paste links / photos, saves to account (guided)
-//   6  Guided first-run — taps through the seeded recipe (guided chrome)
-//   7  Meal count — how many meals/week (sets cooking goal) (guided)
-//   8  Meal-plan timing — when do you think about cooking? (guided)
-//   9  Notifications — get the right recipe at the right time (guided)
-//   10 Meal-plan feature — plan your week showcase (guided)
-//   11 Grocery feature — shop in one trip showcase (guided)
-//   12 Personalize — "Now let's make it yours" transition (guided)
-//   13 Age — how old are you? (guided)
-//   14 Allergies (guided)
-//   15 Signature dish (guided)
-//   16 Dinner ranking (guided)
-//   17 Create a household (guided)
-//   18 Taste profile reveal (guided)
-const PROFILE_STEP = 18;
-const PAYWALL_STEP = 19;
-const TOTAL_STEPS = PAYWALL_ENABLED ? 20 : 19;
+//   3  Meal count — how many meals/week (sets cooking goal) (guided)
+//   4  Goal reinforcement — animated graph, "stick with it" (guided)
+//   5  Recipe sources — where do you get your recipes? (guided)
+//   6  Sources affirmation — "Awesome 🎉" (guided)
+//   7  Add to your cookbook — paste links / photos, saves to account (guided)
+//   8  Guided first-run — taps through the seeded recipe (guided chrome)
+//   9  Meal-plan timing — when do you think about cooking? (guided)
+//   10 Notifications — get the right recipe at the right time (guided)
+//   11 Meal-plan feature — plan your week showcase (guided)
+//   12 Grocery feature — shop in one trip showcase (guided)
+//   13 Personalize — "Now let's make it yours" transition (guided)
+//   14 Age — how old are you? (guided)
+//   15 Allergies (guided)
+//   16 Signature dish (guided)
+//   17 Dinner ranking (guided)
+//   18 Create a household (guided)
+//   19 Taste profile reveal (guided)
+const PROFILE_STEP = 19;
+const PAYWALL_STEP = 20;
+const TOTAL_STEPS = PAYWALL_ENABLED ? 21 : 20;
 const STORAGE_KEY = "marco_onboarding";
 
 interface OnboardingState {
@@ -238,17 +240,17 @@ export default function OnboardingPage() {
       );
     case 3:
       return (
-        <RecipeSourcesStep
+        <MealCountStep
           step={4}
           totalSteps={TOTAL_STEPS}
-          value={data.recipeSources}
+          value={data.weeklyMealGoal}
           onBack={goBack}
-          onNext={(recipeSources) => { update({ recipeSources }); goForward(); }}
+          onNext={(count) => { update({ weeklyMealGoal: count }); saveWeeklyGoal(count); goForward(); }}
         />
       );
     case 4:
       return (
-        <SourcesAffirmationStep
+        <GoalReinforcementStep
           step={5}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
@@ -257,55 +259,55 @@ export default function OnboardingPage() {
       );
     case 5:
       return (
-        <RecipeImportStep
+        <RecipeSourcesStep
           step={6}
+          totalSteps={TOTAL_STEPS}
+          value={data.recipeSources}
+          onBack={goBack}
+          onNext={(recipeSources) => { update({ recipeSources }); goForward(); }}
+        />
+      );
+    case 6:
+      return (
+        <SourcesAffirmationStep
+          step={7}
+          totalSteps={TOTAL_STEPS}
+          onBack={goBack}
+          onContinue={goForward}
+        />
+      );
+    case 7:
+      return (
+        <RecipeImportStep
+          step={8}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(recipes) => { update({ importedRecipes: recipes }); goForward(); }}
         />
       );
-    case 6:
+    case 8:
       return (
         <GuidedDemo
           recipes={data.importedRecipes}
-          step={7}
+          step={9}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={goForward}
         />
       );
-    case 7:
-      return (
-        <MealCountStep
-          step={8}
-          totalSteps={TOTAL_STEPS}
-          value={data.weeklyMealGoal}
-          onBack={goBack}
-          onNext={(count) => { update({ weeklyMealGoal: count }); saveWeeklyGoal(count); goForward(); }}
-        />
-      );
-    case 8:
+    case 9:
       return (
         <MealPlanTimingStep
-          step={9}
+          step={10}
           totalSteps={TOTAL_STEPS}
           value={data.planTiming}
           onBack={goBack}
           onNext={(planTiming) => { update({ planTiming }); goForward(); }}
         />
       );
-    case 9:
-      return (
-        <NotificationsStep
-          step={10}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onContinue={goForward}
-        />
-      );
     case 10:
       return (
-        <MealPlanFeatureStep
+        <NotificationsStep
           step={11}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
@@ -314,7 +316,7 @@ export default function OnboardingPage() {
       );
     case 11:
       return (
-        <GroceryFeatureStep
+        <MealPlanFeatureStep
           step={12}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
@@ -323,7 +325,7 @@ export default function OnboardingPage() {
       );
     case 12:
       return (
-        <PersonalizeAffirmationStep
+        <GroceryFeatureStep
           step={13}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
@@ -332,49 +334,58 @@ export default function OnboardingPage() {
       );
     case 13:
       return (
-        <AgeStep
+        <PersonalizeAffirmationStep
           step={14}
+          totalSteps={TOTAL_STEPS}
+          onBack={goBack}
+          onContinue={goForward}
+        />
+      );
+    case 14:
+      return (
+        <AgeStep
+          step={15}
           totalSteps={TOTAL_STEPS}
           value={data.ageRange}
           onBack={goBack}
           onNext={(ageRange) => { update({ ageRange }); goForward(); }}
         />
       );
-    case 14:
+    case 15:
       return (
         <AllergiesStep
           value={data.allergies}
-          step={15}
+          step={16}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(allergies) => { update({ allergies }); goForward(); }}
         />
       );
-    case 15:
+    case 16:
       return (
         <SignatureDishStep
           value={data.signatureDish}
-          step={16}
+          step={17}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(dish) => { update({ signatureDish: dish }); goForward(); }}
         />
       );
-    case 16:
+    case 17:
       return (
         <DinnerRankingStep
-          step={17}
+          step={18}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(rankedIds, rankedRecipes) => { update({ rankedIds, rankedRecipes }); goForward(); }}
         />
       );
-    case 17:
+    case 18:
       return (
         <CreateHouseholdStep
           size={data.householdSize}
           type={data.householdType}
-          step={18}
+          step={19}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={(joined, size, type) => {
@@ -390,7 +401,7 @@ export default function OnboardingPage() {
           rankedRecipes={data.rankedRecipes}
           signatureDish={data.signatureDish}
           allergies={data.allergies}
-          step={19}
+          step={20}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={handleComplete}
