@@ -42,12 +42,25 @@ export async function GET() {
       (profiles || []).map((p) => [p.user_id, p])
     );
 
+    // Count how many recipes each friend has saved (for the "N recipes saved"
+    // line on the friend cards).
+    const { data: friendRecipes } = await admin
+      .from("recipes")
+      .select("user_id")
+      .in("user_id", friendUserIds);
+
+    const recipeCounts = new Map<string, number>();
+    for (const r of friendRecipes || []) {
+      recipeCounts.set(r.user_id, (recipeCounts.get(r.user_id) || 0) + 1);
+    }
+
     const friends = (friendships || []).map((f) => {
       const friendUserId =
         f.user_id === user.id ? f.friend_id : f.user_id;
       return {
         ...f,
         profile: profileMap.get(friendUserId) || null,
+        recipe_count: recipeCounts.get(friendUserId) || 0,
       };
     });
 

@@ -66,7 +66,7 @@ export default function AddFriendForm({ onRequestSent }: AddFriendFormProps) {
             value={code}
             onChange={(e) => handleCodeChange(e.target.value)}
             placeholder="MARCO-XXXX"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono tracking-wider"
+            className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono tracking-wider"
             maxLength={10}
           />
           <button
