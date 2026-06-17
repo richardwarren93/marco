@@ -154,12 +154,7 @@ export default function RecipeImportStep({ step, totalSteps, onBack, onNext }: P
     onNext(added);
   }
 
-  const totalPending = typedUrls.length + added.length;
-  const submitLabel = importing
-    ? "Filling your book…"
-    : totalPending > 0
-      ? `Add ${totalPending} to my book`
-      : "Add to my book";
+  const submitLabel = importing ? "Saving…" : "Save Recipe";
 
   return (
     <GuidedShell

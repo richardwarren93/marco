@@ -112,7 +112,7 @@ export default function GuidedDemo({ recipes, step, totalSteps, onBack, onComple
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
-          {(phase === "recipe-add" || phase === "recipe-cook") && <RecipeScreen hero={hero} detail={detail} cook={phase === "recipe-cook"} onAdd={() => setPhase("plan")} onCook={() => { setCookStep(0); setPhase("cook"); }} />}
+          {(phase === "recipe-add" || phase === "recipe-cook") && <RecipeScreen hero={hero} detail={detail} cook={phase === "recipe-cook"} onContinue={onComplete} onCook={() => { setCookStep(0); setPhase("cook"); }} />}
           {phase === "plan" && <PlanScreen hero={hero} showToast={showToast} onToast={() => setPhase("grocery")} />}
           {phase === "grocery" && <GroceryScreen detail={detail} onCook={() => setPhase("recipe-cook")} />}
           {phase === "cook" && <CookScreen hero={hero} detail={detail} step={cookStep} onNext={() => { if (cookStep < detail.steps.length - 1) setCookStep((s) => s + 1); else setPhase("feed"); }} />}
@@ -124,7 +124,7 @@ export default function GuidedDemo({ recipes, step, totalSteps, onBack, onComple
 }
 
 /* ── Recipe detail ─────────────────────────────────────────────────────── */
-function RecipeScreen({ hero, detail, cook, onAdd, onCook }: { hero: SavedRecipe; detail: Detail; cook: boolean; onAdd: () => void; onCook: () => void }) {
+function RecipeScreen({ hero, detail, cook, onContinue, onCook }: { hero: SavedRecipe; detail: Detail; cook: boolean; onContinue: () => void; onCook: () => void }) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto px-4">
@@ -166,15 +166,9 @@ function RecipeScreen({ hero, detail, cook, onAdd, onCook }: { hero: SavedRecipe
             </button>
           </>
         ) : (
-          <>
-            <Coach>Add it to your week</Coach>
-            <button onClick={onAdd} className="w-full rounded-2xl py-3.5 font-semibold text-white active:scale-[0.98] transition-transform" style={{ background: TOMATO, fontSize: 15 }}>
-              Add to Meal Plan
-            </button>
-            <div className="mt-2 w-full flex items-center justify-center gap-1.5 rounded-2xl py-3" style={{ border: "1px solid rgba(28,26,23,0.12)", background: "white", opacity: 0.5 }}>
-              <span className="font-semibold" style={{ fontSize: 14, color: INK }}>Cook with Sous Chef</span>
-            </div>
-          </>
+          <button onClick={onContinue} className="w-full rounded-2xl py-3.5 font-semibold text-white active:scale-[0.98] transition-transform" style={{ background: TOMATO, fontSize: 15 }}>
+            Continue
+          </button>
         )}
       </div>
     </div>
