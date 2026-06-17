@@ -6,6 +6,7 @@ import type { UserProfile, Friendship } from "@/types";
 import FriendCodeCard from "@/components/friends/FriendCodeCard";
 import AddFriendForm from "@/components/friends/AddFriendForm";
 import FriendCard from "@/components/friends/FriendCard";
+import FriendsCookingRow from "@/components/friends/FriendsCookingRow";
 import PendingRequestCard from "@/components/friends/PendingRequestCard";
 import { FriendsIcon } from "@/components/icons/HandDrawnIcons";
 
@@ -92,6 +93,9 @@ export default function FriendsPage() {
         </h2>
         <AddFriendForm onRequestSent={loadAll} />
       </div>
+
+      {/* What your friends are cooking — same cards as the Discover tab */}
+      <FriendsCookingRow />
 
       {/* Pending Requests */}
       {(incoming.length > 0 || outgoing.length > 0) && (
