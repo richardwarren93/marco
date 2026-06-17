@@ -10,16 +10,15 @@ import RecipeSourcesStep from "@/components/onboarding/guided/RecipeSourcesStep"
 import SourcesAffirmationStep from "@/components/onboarding/guided/SourcesAffirmationStep";
 import MealCountStep from "@/components/onboarding/guided/MealCountStep";
 import GoalReinforcementStep from "@/components/onboarding/guided/GoalReinforcementStep";
-import MealPlanTimingStep from "@/components/onboarding/guided/MealPlanTimingStep";
-import NotificationsStep from "@/components/onboarding/guided/NotificationsStep";
-import MealPlanFeatureStep from "@/components/onboarding/guided/MealPlanFeatureStep";
-import GroceryFeatureStep from "@/components/onboarding/guided/GroceryFeatureStep";
 import PersonalizeAffirmationStep from "@/components/onboarding/guided/PersonalizeAffirmationStep";
-import AgeStep from "@/components/onboarding/guided/AgeStep";
 import CreateHouseholdStep from "@/components/onboarding/cookbook/CreateHouseholdStep";
 import RecipeImportStep, { type SavedRecipe } from "@/components/onboarding/cookbook/RecipeImportStep";
 import GuidedDemo from "@/components/onboarding/cookbook/GuidedDemo";
 import AllergiesStep from "@/components/onboarding/AllergiesStep";
+import DietaryFlagStep from "@/components/onboarding/guided/DietaryFlagStep";
+// Parked steps — removed from the flow for now, kept for an easy bring-back:
+//   MealPlanTimingStep, NotificationsStep, MealPlanFeatureStep,
+//   GroceryFeatureStep (post-demo showcases) and AgeStep (personalize).
 import SignatureDishStep from "@/components/onboarding/SignatureDishStep";
 import DinnerRankingStep from "@/components/onboarding/DinnerRankingStep";
 import TasteProfileOverlay from "@/components/onboarding/TasteProfileOverlay";
@@ -46,20 +45,16 @@ const PAYWALL_ENABLED = true;
 //   6  Sources affirmation — "Awesome 🎉" (guided)
 //   7  Add to your cookbook — paste links / photos, saves to account (guided)
 //   8  Guided first-run — recipe saved → meal-plan demo → grocery demo (guided chrome)
-//   9  Meal-plan timing — when do you think about cooking? (guided)
-//   10 Notifications — get the right recipe at the right time (guided)
-//   11 Meal-plan feature — plan your week showcase (guided)
-//   12 Grocery feature — shop in one trip showcase (guided)
-//   13 Personalize — "Now let's make it yours" transition (guided)
-//   14 Age — how old are you? (guided)
-//   15 Allergies (guided)
-//   16 Signature dish (guided)
-//   17 Dinner ranking (guided)
-//   18 Create a household (guided)
-//   19 Taste profile reveal (guided)
-const PROFILE_STEP = 19;
-const PAYWALL_STEP = 20;
-const TOTAL_STEPS = PAYWALL_ENABLED ? 21 : 20;
+//   9  Personalize — "Now let's make it yours" transition (guided)
+//   10 Allergies (guided)
+//   11 Dietary flag splash — "we'll flag what doesn't fit" (guided)
+//   12 Dream meal / signature dish (guided)
+//   13 Dinner ranking — recipe picker (guided)
+//   14 Create a household (guided)
+//   15 Taste profile reveal (guided)
+const PROFILE_STEP = 15;
+const PAYWALL_STEP = 16;
+const TOTAL_STEPS = PAYWALL_ENABLED ? 17 : 16;
 const STORAGE_KEY = "marco_onboarding";
 
 interface OnboardingState {
@@ -297,26 +292,27 @@ export default function OnboardingPage() {
       );
     case 9:
       return (
-        <MealPlanTimingStep
+        <PersonalizeAffirmationStep
           step={10}
-          totalSteps={TOTAL_STEPS}
-          value={data.planTiming}
-          onBack={goBack}
-          onNext={(planTiming) => { update({ planTiming }); goForward(); }}
-        />
-      );
-    case 10:
-      return (
-        <NotificationsStep
-          step={11}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onContinue={goForward}
         />
       );
+    case 10:
+      return (
+        <AllergiesStep
+          value={data.allergies}
+          step={11}
+          totalSteps={TOTAL_STEPS}
+          onBack={goBack}
+          onNext={(allergies) => { update({ allergies }); goForward(); }}
+        />
+      );
     case 11:
       return (
-        <MealPlanFeatureStep
+        <DietaryFlagStep
+          allergies={data.allergies}
           step={12}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
@@ -325,67 +321,29 @@ export default function OnboardingPage() {
       );
     case 12:
       return (
-        <GroceryFeatureStep
-          step={13}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onContinue={goForward}
-        />
-      );
-    case 13:
-      return (
-        <PersonalizeAffirmationStep
-          step={14}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onContinue={goForward}
-        />
-      );
-    case 14:
-      return (
-        <AgeStep
-          step={15}
-          totalSteps={TOTAL_STEPS}
-          value={data.ageRange}
-          onBack={goBack}
-          onNext={(ageRange) => { update({ ageRange }); goForward(); }}
-        />
-      );
-    case 15:
-      return (
-        <AllergiesStep
-          value={data.allergies}
-          step={16}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onNext={(allergies) => { update({ allergies }); goForward(); }}
-        />
-      );
-    case 16:
-      return (
         <SignatureDishStep
           value={data.signatureDish}
-          step={17}
+          step={13}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(dish) => { update({ signatureDish: dish }); goForward(); }}
         />
       );
-    case 17:
+    case 13:
       return (
         <DinnerRankingStep
-          step={18}
+          step={14}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(rankedIds, rankedRecipes) => { update({ rankedIds, rankedRecipes }); goForward(); }}
         />
       );
-    case 18:
+    case 14:
       return (
         <CreateHouseholdStep
           size={data.householdSize}
           type={data.householdType}
-          step={19}
+          step={15}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={(joined, size, type) => {
@@ -401,7 +359,7 @@ export default function OnboardingPage() {
           rankedRecipes={data.rankedRecipes}
           signatureDish={data.signatureDish}
           allergies={data.allergies}
-          step={20}
+          step={16}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={handleComplete}
