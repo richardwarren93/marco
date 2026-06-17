@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import GuidedShell from "./GuidedShell";
-import { Instagram, TikTok, Facebook, Pinterest, GoogleG } from "./BrandIcons";
+import { Instagram, TikTok, Facebook, Pinterest, GoogleG, YouTube, NYTimes, BonAppetit } from "./BrandIcons";
 
 /* Guided flow — "Where do you get your recipes from?" multi-select. Mirrors
    the ReciMe reference: rows with a label and the brand glyphs for that
@@ -20,10 +20,11 @@ const SOURCES: Source[] = [
     label: "Social media",
     icons: (
       <>
-        <Instagram size={24} />
-        <TikTok size={24} />
-        <Facebook size={24} />
-        <Pinterest size={24} />
+        <Instagram size={22} />
+        <TikTok size={22} />
+        <Facebook size={22} />
+        <Pinterest size={22} />
+        <YouTube size={22} />
       </>
     ),
   },
@@ -32,8 +33,10 @@ const SOURCES: Source[] = [
     label: "Recipe websites",
     icons: (
       <>
-        <span style={{ fontSize: "22px", lineHeight: 1 }}>🌐</span>
+        <span style={{ fontSize: "20px", lineHeight: 1 }}>🌐</span>
         <GoogleG size={22} />
+        <NYTimes size={22} />
+        <BonAppetit size={22} />
       </>
     ),
   },

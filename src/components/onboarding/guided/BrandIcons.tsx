@@ -85,3 +85,64 @@ export function Camera({ size = 22 }: { size?: number }) {
     </svg>
   );
 }
+
+export function YouTube({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden>
+      <rect width="24" height="24" rx="6.5" fill="#FF0000" />
+      <path d="M10 8.2v7.6l6.4-3.8z" fill="#fff" />
+    </svg>
+  );
+}
+
+/* NYT — white tile with the masthead "T" (serif approximation). */
+export function NYTimes({ size = 22 }: { size?: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 5,
+        background: "#ffffff",
+        border: "1px solid rgba(28,26,23,0.18)",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#111",
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontWeight: 700,
+        fontSize: size * 0.66,
+        lineHeight: 1,
+      }}
+    >
+      T
+    </span>
+  );
+}
+
+/* Bon Appétit — dark tile with a serif "BA" monogram. */
+export function BonAppetit({ size = 22 }: { size?: number }) {
+  return (
+    <span
+      aria-hidden
+      style={{
+        width: size,
+        height: size,
+        borderRadius: 5,
+        background: "#1C1A17",
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#fff",
+        fontFamily: "Georgia, 'Times New Roman', serif",
+        fontWeight: 700,
+        fontSize: size * 0.42,
+        letterSpacing: "-0.02em",
+        lineHeight: 1,
+      }}
+    >
+      BA
+    </span>
+  );
+}
