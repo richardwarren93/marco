@@ -56,9 +56,9 @@ export default function FriendsCookingRow() {
         </Link>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto scrollbar-hide -mx-4 px-4 pb-1" style={{ scrollSnapType: "x mandatory" }}>
+      <div className="flex gap-3 overflow-x-auto scrollbar-hide -mr-4 pr-4 pb-1" style={{ scrollSnapType: "x mandatory" }}>
         {recipes.slice(0, 12).map((r, i) => (
-          <div key={r.id} className="shrink-0" style={{ width: 190, scrollSnapAlign: "start" }}>
+          <div key={r.id} className="shrink-0" style={{ width: 150, scrollSnapAlign: "start" }}>
             <DiscoverRecipeCard
               index={i}
               recipe={{
