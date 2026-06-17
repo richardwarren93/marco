@@ -1,13 +1,22 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import WelcomePhoneMockup from "@/components/onboarding/WelcomePhoneMockup";
 
+// Rotating welcome headline — synced with the phone screens (recipe / meal plan
+// / grocery). Each phrase's accent word renders in tomato italic.
+const HERO_PHRASES = [
+  { lead: "Save & organize recipes from ", accent: "anywhere" },
+  { lead: "Create a meal plan ", accent: "automatically" },
+  { lead: "Generate your ", accent: "grocery list" },
+];
+
 export default function SignupPage() {
   const [mode, setMode] = useState<"welcome" | "choose" | "email">("welcome");
+  const [heroScreen, setHeroScreen] = useState(0);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,6 +26,13 @@ export default function SignupPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+
+  // Advance the welcome hero (headline + phone) every few seconds.
+  useEffect(() => {
+    if (mode !== "welcome") return;
+    const id = setInterval(() => setHeroScreen((s) => (s + 1) % HERO_PHRASES.length), 3800);
+    return () => clearInterval(id);
+  }, [mode]);
 
   async function handleGuestSignIn() {
     setError("");
@@ -257,7 +273,8 @@ export default function SignupPage() {
           </span>
 
           <h1
-            className="mt-5 animate-stagger-in"
+            key={heroScreen}
+            className="mt-5 max-w-sm animate-stagger-in"
             style={{
               fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
               fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
@@ -265,38 +282,23 @@ export default function SignupPage() {
               lineHeight: 1.1,
               letterSpacing: "-0.02em",
               color: "var(--ink, #1C1A17)",
-              animationDelay: "0.08s",
+              minHeight: "2.2em",
             }}
           >
-            Save recipes from{" "}
+            {HERO_PHRASES[heroScreen].lead}
             <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>
-              anywhere
+              {HERO_PHRASES[heroScreen].accent}
             </em>
           </h1>
-
-          <p
-            className="mt-2.5 max-w-xs animate-stagger-in"
-            style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontStyle: "italic",
-              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
-              fontSize: "15.5px",
-              lineHeight: 1.45,
-              color: "var(--ink-soft, #4A4742)",
-              animationDelay: "0.16s",
-            }}
-          >
-            Plan meals in seconds. Shop and earn back.
-          </p>
         </div>
 
         {/* Animated phone mockup — fills the space between header and CTA */}
         <div className="flex-1 min-h-0 flex items-center justify-center px-6 py-6 overflow-hidden">
           <div
-            className="h-full animate-stagger-in"
-            style={{ maxHeight: "440px", animationDelay: "0.22s" }}
+            className="animate-stagger-in"
+            style={{ height: "min(440px, 56vh)", animationDelay: "0.22s" }}
           >
-            <WelcomePhoneMockup />
+            <WelcomePhoneMockup screen={heroScreen} />
           </div>
         </div>
 
