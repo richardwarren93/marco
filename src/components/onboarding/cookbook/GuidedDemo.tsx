@@ -6,7 +6,7 @@
 // by step — then views the family feed before moving on to allergies/taste.
 // Fully scripted (no live API) so it can never break. Coachmarks guide each tap.
 
-import { useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { SEED_RECIPE, SEED_DETAIL } from "../data/seed-recipe";
 import type { SavedRecipe } from "./RecipeImportStep";
 
@@ -27,7 +27,7 @@ const FEED = [
   { src: "/onboarding/recipes/245361-creamy-pork-stew-Beauty-4x3-a56080e9b5a4462a8dad0a7661f6d1f4.jpg", title: "Creamy Pork Stew", who: "dad", line: "planning this for friday", meta: "45 MIN · DINNER" },
 ];
 
-type Phase = "recipe-add" | "plan" | "grocery" | "recipe-cook" | "cook" | "feed";
+type Phase = "recipe-add" | "plan-intro" | "plan" | "grocery-intro" | "grocery" | "recipe-cook" | "cook" | "feed";
 
 interface Props {
   recipes: SavedRecipe[];
@@ -72,19 +72,11 @@ function Coach({ children }: { children: React.ReactNode }) {
 
 export default function GuidedDemo({ recipes, step, totalSteps, onBack, onComplete }: Props) {
   const [phase, setPhase] = useState<Phase>("recipe-add");
-  const [showToast, setShowToast] = useState(false);
   const [cookStep, setCookStep] = useState(0);
 
   const hero = recipes[0] ?? SEED_RECIPE;
   const detail = buildDetail(recipes[0]);
   const pct = Math.max(0, Math.min(100, (step / totalSteps) * 100));
-
-  // On the plan screen, the grocery toast slides up shortly after arrival.
-  useEffect(() => {
-    if (phase !== "plan") return;
-    const t = setTimeout(() => setShowToast(true), 900);
-    return () => clearTimeout(t);
-  }, [phase]);
 
   return (
     <div className="fixed inset-0 flex flex-col" style={{ background: CREAM }}>
@@ -112,12 +104,37 @@ export default function GuidedDemo({ recipes, step, totalSteps, onBack, onComple
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
-          {(phase === "recipe-add" || phase === "recipe-cook") && <RecipeScreen hero={hero} detail={detail} cook={phase === "recipe-cook"} onContinue={onComplete} onCook={() => { setCookStep(0); setPhase("cook"); }} />}
-          {phase === "plan" && <PlanScreen hero={hero} showToast={showToast} onToast={() => setPhase("grocery")} />}
-          {phase === "grocery" && <GroceryScreen detail={detail} onCook={() => setPhase("recipe-cook")} />}
+          {(phase === "recipe-add" || phase === "recipe-cook") && <RecipeScreen hero={hero} detail={detail} cook={phase === "recipe-cook"} onContinue={() => setPhase("plan-intro")} onCook={() => { setCookStep(0); setPhase("cook"); }} />}
+          {phase === "plan-intro" && <IntroScreen hero={hero} eyebrow="Recipe saved" title={<>Your recipe was <em style={{ color: TOMATO, fontStyle: "italic" }}>saved</em>!</>} body="Now let's add it to your meal plan — it only takes a tap." cta="Add to my meal plan" onContinue={() => setPhase("plan")} />}
+          {phase === "plan" && <PlanScreen hero={hero} onContinue={() => setPhase("grocery-intro")} />}
+          {phase === "grocery-intro" && <IntroScreen hero={hero} eyebrow="One tap left" title={<>Now your <em style={{ color: TOMATO, fontStyle: "italic" }}>groceries</em></>} body="We'll turn that meal into a shopping list automatically — nothing to write down." cta="Build my grocery list" onContinue={() => setPhase("grocery")} />}
+          {phase === "grocery" && <GroceryScreen detail={detail} onContinue={onComplete} />}
           {phase === "cook" && <CookScreen hero={hero} detail={detail} step={cookStep} onNext={() => { if (cookStep < detail.steps.length - 1) setCookStep((s) => s + 1); else setPhase("feed"); }} />}
           {phase === "feed" && <FeedScreen onContinue={onComplete} />}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Demo intro / affirmation ──────────────────────────────────────────── */
+function IntroScreen({ hero, eyebrow, title, body, cta, onContinue }: { hero: SavedRecipe; eyebrow: string; title: ReactNode; body: string; cta: string; onContinue: () => void }) {
+  return (
+    <div className="h-full flex flex-col">
+      <div className="flex-1 min-h-0 overflow-y-auto px-5 flex flex-col items-center justify-center text-center">
+        {/* Saved recipe thumbnail with a check badge */}
+        <div className="relative animate-stagger-in" style={{ animationDelay: "0.04s" }}>
+          <div className="relative overflow-hidden" style={{ width: 132, height: 132, borderRadius: 28, border: "3px solid #FFFDF7", boxShadow: "0 14px 34px -12px rgba(28,26,23,0.4)" }}>
+            <Img src={hero.image_url || ""} alt={hero.title} />
+          </div>
+          <span className="absolute flex items-center justify-center rounded-full text-white" style={{ right: -6, bottom: -6, width: 34, height: 34, background: TOMATO, fontSize: 18, boxShadow: "0 4px 12px rgba(229,70,46,0.5)" }}>✓</span>
+        </div>
+        <p className="animate-stagger-in" style={{ animationDelay: "0.1s", marginTop: 22, fontFamily: MONO, fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase", color: TOMATO }}>{eyebrow}</p>
+        <h1 className="animate-stagger-in" style={{ animationDelay: "0.14s", marginTop: 8, fontFamily: FRAUNCES, fontVariationSettings: '"opsz" 72, "SOFT" 100, "wght" 600', fontSize: 30, lineHeight: 1.08, letterSpacing: "-0.02em", color: INK }}>{title}</h1>
+        <p className="animate-stagger-in" style={{ animationDelay: "0.2s", marginTop: 12, maxWidth: "20rem", fontFamily: FRAUNCES, fontStyle: "italic", fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400', fontSize: 15.5, lineHeight: 1.5, color: INK_SOFT }}>{body}</p>
+      </div>
+      <div className="flex-shrink-0 px-4 pt-2 pb-5">
+        <button onClick={onContinue} className="w-full rounded-2xl py-3.5 font-semibold text-white active:scale-[0.98] transition-transform" style={{ background: TOMATO, fontSize: 15 }}>{cta}</button>
       </div>
     </div>
   );
@@ -175,10 +192,10 @@ function RecipeScreen({ hero, detail, cook, onContinue, onCook }: { hero: SavedR
   );
 }
 
-/* ── Meal plan + grocery toast ─────────────────────────────────────────── */
-function PlanScreen({ hero, showToast, onToast }: { hero: SavedRecipe; showToast: boolean; onToast: () => void }) {
+/* ── Meal plan demo ────────────────────────────────────────────────────── */
+function PlanScreen({ hero, onContinue }: { hero: SavedRecipe; onContinue: () => void }) {
   return (
-    <div className="h-full flex flex-col relative">
+    <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto px-4">
         <p style={{ fontFamily: MONO, fontSize: 9, letterSpacing: "0.18em", textTransform: "uppercase", color: "rgba(28,26,23,0.5)" }}>This week</p>
         <h1 style={{ fontFamily: FRAUNCES, fontVariationSettings: '"opsz" 144, "wght" 600', fontSize: 22, color: INK, marginTop: 2, marginBottom: 12 }}>Meal plan</h1>
@@ -197,27 +214,16 @@ function PlanScreen({ hero, showToast, onToast }: { hero: SavedRecipe; showToast
           <span style={{ color: TOMATO, fontSize: 20 }}>✓</span>
         </div>
       </div>
-
-      {/* grocery toast */}
-      {showToast && (
-        <div className="absolute left-3 right-3 animate-slide-up" style={{ bottom: 20 }}>
-          <Coach>Tap to see your groceries</Coach>
-          <button onClick={onToast} className="w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl active:scale-[0.98] transition-transform text-left" style={{ background: INK, boxShadow: "0 8px 24px rgba(20,12,5,0.3)" }}>
-            <span style={{ fontSize: 22 }}>🛒</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-white" style={{ fontFamily: FRAUNCES, fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: 14 }}>6 ingredients added to your list</p>
-              <p style={{ fontSize: 11.5, color: "#7bdca0" }}>+ earn $4.20 cash back</p>
-            </div>
-            <span className="text-white" style={{ fontSize: 18, opacity: 0.7 }}>›</span>
-          </button>
-        </div>
-      )}
+      <div className="flex-shrink-0 px-4 pt-2 pb-5">
+        <Coach>It&apos;s on your week 🎉</Coach>
+        <button onClick={onContinue} className="w-full rounded-2xl py-3.5 font-semibold text-white active:scale-[0.98] transition-transform" style={{ background: TOMATO, fontSize: 15 }}>Continue</button>
+      </div>
     </div>
   );
 }
 
-/* ── Grocery list ──────────────────────────────────────────────────────── */
-function GroceryScreen({ detail, onCook }: { detail: Detail; onCook: () => void }) {
+/* ── Grocery list demo ─────────────────────────────────────────────────── */
+function GroceryScreen({ detail, onContinue }: { detail: Detail; onContinue: () => void }) {
   return (
     <div className="h-full flex flex-col">
       <div className="flex-1 min-h-0 overflow-y-auto px-4">
@@ -245,8 +251,8 @@ function GroceryScreen({ detail, onCook }: { detail: Detail; onCook: () => void 
         <div className="h-3" />
       </div>
       <div className="flex-shrink-0 px-4 pt-2 pb-5">
-        <Coach>Now let&apos;s cook it</Coach>
-        <button onClick={onCook} className="w-full rounded-2xl py-3.5 font-semibold text-white active:scale-[0.98] transition-transform" style={{ background: TOMATO, fontSize: 15 }}>Cook it now →</button>
+        <Coach>Your list is ready 🛒</Coach>
+        <button onClick={onContinue} className="w-full rounded-2xl py-3.5 font-semibold text-white active:scale-[0.98] transition-transform" style={{ background: TOMATO, fontSize: 15 }}>Continue</button>
       </div>
     </div>
   );
