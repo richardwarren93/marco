@@ -10,6 +10,8 @@ export const TOMATO_REWARDS = {
   FRIEND_INVITE_ACCEPTED: 25,
   RECIPE_RATING: 5,
   RECIPE_PHOTO: 10,
+  // Spend: resurrect the mascot once he's died from inactivity.
+  REVIVE_PET_COST: 50,
 } as const;
 
 /** Every reason value allowed in tomato_transactions.reason (mirrors the DB CHECK). */
@@ -36,12 +38,100 @@ export const TOMATO_DAILY_CAPS: Partial<Record<TomatoReason, number>> = {
   friend_invite_accepted: 10,
 };
 
+/* ── Tomato mascot health ─────────────────────────────────────────────────
+ * A living tomato on the /tomatoes screen whose state reflects how consistently
+ * the user earns. STRICT DAILY model: earn every day to keep him healthy; each
+ * missed UTC day drops him a stage; ~4 idle days and he's gone (always revivable
+ * by earning again). Derived purely from the earning ledger — no stored pet state.
+ */
+export type TomatoHealthState = "thriving" | "happy" | "content" | "wilting" | "dying" | "dead";
+
+export const TOMATO_HEALTH_META: Record<TomatoHealthState, { label: string; message: string }> = {
+  thriving: { label: "Thriving", message: "He's glowing — keep the streak alive!" },
+  happy: { label: "Happy", message: "Earned today. Come back tomorrow to keep him healthy." },
+  content: { label: "Peckish", message: "Earn a tomato today to perk him up." },
+  wilting: { label: "Wilting", message: "Two days without tomatoes — he's drooping." },
+  dying: { label: "Fading", message: "He's barely hanging on. Earn a tomato today!" },
+  dead: { label: "Gone", message: "Earn a tomato to bring him back to life." },
+};
+
+/** Days of inactivity before the mascot dies (and the gap that kills him mid-history). */
+const TOMATO_DEATH_IDLE = 4;
+
+/**
+ * Derive the mascot's health from the user's activity. `earnDates` and `reviveDates`
+ * are distinct UTC days (YYYY-MM-DD), newest first.
+ *
+ * Death LATCHES: once he dies from a 4-day inactivity gap, earning alone does NOT
+ * bring him back — only a revive (a paid resurrection) resets him to alive, after
+ * which strict-daily decay resumes. The earning streak (for the "thriving" tier and
+ * the streak badge) counts consecutive earn-days back from today.
+ */
+export function deriveTomatoHealth(
+  earnDates: string[],
+  reviveDates: string[] = [],
+): { state: TomatoHealthState; streak: number; daysSinceLastEarn: number | null } {
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const todayMs = today.getTime();
+  const toMs = (d: string) => Date.parse(d.slice(0, 10) + "T00:00:00Z");
+  const dayStr = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  const between = (aMs: number, bMs: number) => Math.round((bMs - aMs) / 86_400_000);
+
+  const earnSet = new Set(earnDates.map((d) => d.slice(0, 10)));
+  const events = [
+    ...earnDates.map((d) => ({ ms: toMs(d), revive: false })),
+    ...reviveDates.map((d) => ({ ms: toMs(d), revive: true })),
+  ].sort((a, b) => a.ms - b.ms);
+
+  if (!events.length) return { state: "content", streak: 0, daysSinceLastEarn: null };
+
+  // Walk activity chronologically, tracking alive/dead with latched death.
+  let status: "alive" | "dead" = "alive";
+  let lastAlive: number | null = null;
+  for (const e of events) {
+    if (status === "dead") {
+      if (e.revive) { status = "alive"; lastAlive = e.ms; }
+      // an earn while dead is ignored — no free resurrection
+    } else if (lastAlive !== null && between(lastAlive, e.ms) >= TOMATO_DEATH_IDLE && !e.revive) {
+      status = "dead"; // died in the gap; this earn does not revive him
+    } else {
+      status = "alive";
+      lastAlive = e.ms;
+    }
+  }
+
+  const daysSince = lastAlive !== null ? between(lastAlive, todayMs) : null;
+
+  if (status === "dead" || (daysSince !== null && daysSince >= TOMATO_DEATH_IDLE)) {
+    return { state: "dead", streak: 0, daysSinceLastEarn: daysSince };
+  }
+
+  // Alive — earn streak counting back from today.
+  let streak = 0;
+  let cur = todayMs;
+  while (earnSet.has(dayStr(cur))) {
+    streak += 1;
+    cur -= 86_400_000;
+  }
+
+  const d = daysSince ?? 0;
+  let state: TomatoHealthState;
+  if (d <= 0) state = streak >= 5 ? "thriving" : "happy";
+  else if (d === 1) state = "content";
+  else if (d === 2) state = "wilting";
+  else state = "dying";
+
+  return { state, streak, daysSinceLastEarn: d };
+}
+
 /** Human label + icon per reason, for the tomato history view. */
 export const TOMATO_REASON_META: Record<TomatoReason, { label: string; icon: string }> = {
   cooked_recipe: { label: "Cooked a recipe", icon: "🍳" },
   community_note: { label: "Left a note", icon: "📝" },
   weekly_goal_complete: { label: "Hit your weekly goal", icon: "🎯" },
-  feed_pet: { label: "Fed Marco Jr", icon: "🐾" },
+  // feed_pet is reused as the mascot revive spend (the old feed-pet mechanic is retired).
+  feed_pet: { label: "Revived your tomato", icon: "🌱" },
   added_to_meal_plan: { label: "Added to meal plan", icon: "📅" },
   friend_invite_accepted: { label: "A friend joined", icon: "👋" },
   recipe_rating: { label: "Rated a recipe", icon: "⭐" },
