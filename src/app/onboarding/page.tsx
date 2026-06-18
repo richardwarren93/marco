@@ -27,11 +27,11 @@ import { purchasePlus } from "@/lib/purchases";
 import { invalidateEntitlement } from "@/lib/useEntitlement";
 import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes";
 
-// Soft paywall ON: the post–Taste DNA Plus upsell shows after the reveal, but
-// billing isn't wired yet — purchasePlus() is a no-op on web/until RevenueCat
-// (Phase 2), so "Start for $0.00" just continues into the app without charging.
-// This measures intent; flip to false to hide the upsell entirely.
-const PAYWALL_ENABLED = true;
+// Soft paywall OFF for now: the post–Taste DNA Plus upsell is parked, not part
+// of the live flow — the reveal lands users straight in the app. The paywall
+// screens (PlusUpsell, etc.) are kept in the codebase; flip this back to true
+// to re-enable the upsell once billing (RevenueCat, Phase 2) is wired up.
+const PAYWALL_ENABLED = false;
 
 // Step map (ReciMe-style guided flow; cookbook-themed steps are being
 // converted screen by screen). Household moved much later — it's now the
