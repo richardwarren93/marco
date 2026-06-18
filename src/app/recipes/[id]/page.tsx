@@ -1115,7 +1115,7 @@ export default function RecipeDetailPage() {
             className="marco-signature is-pulsing"
             style={{ fontSize: "4.5rem" }}
           >
-            salt & spoon
+            Marco
           </span>
           <p
             style={{

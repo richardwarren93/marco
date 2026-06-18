@@ -39,7 +39,7 @@ export default function GuidedShell({
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}
       >
         <span className="marco-signature" style={{ fontSize: "2rem" }}>
-          salt &amp; spoon
+          Marco
         </span>
       </div>
 

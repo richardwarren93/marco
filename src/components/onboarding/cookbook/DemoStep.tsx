@@ -133,7 +133,7 @@ export default function DemoStep({ recipes, pageNumber, onBack, onNext }: Props)
         >
           <div className="flex items-center justify-between px-4 pt-2.5 pb-1 flex-shrink-0" style={{ fontSize: 10, color: INK, fontWeight: 600 }}>
             <span>9:41</span>
-            <span className="marco-signature" style={{ fontSize: 15 }}>salt &amp; spoon</span>
+            <span className="marco-signature" style={{ fontSize: 15 }}>Marco</span>
             <span>●●●</span>
           </div>
           <div key={beat} className="flex-1 min-h-0 overflow-hidden px-3.5 pt-0.5 pb-1.5 animate-stagger-in">

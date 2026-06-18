@@ -194,7 +194,7 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, step, to
   if (phase === "loading") {
     return (
       <div className="flex flex-col items-center justify-center px-8" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
-        <span className="marco-signature is-pulsing mb-10" style={{ fontSize: "2.25rem" }}>salt &amp; spoon</span>
+        <span className="marco-signature is-pulsing mb-10" style={{ fontSize: "2.25rem" }}>Marco</span>
         <span className="text-6xl block animate-pulse-soft mb-6">{"\u{1F9EC}"}</span>
         <h2
           className="text-center"
@@ -242,7 +242,7 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, step, to
         <div className="space-y-3">
           <button
             onClick={async () => {
-              const text = `My Salt & Spoon Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
+              const text = `My Marco Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
               if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
                 try { await navigator.share({ title: "My Taste DNA", text }); } catch { /* cancelled */ }
               } else if (typeof navigator !== "undefined") {
@@ -343,7 +343,7 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, step, to
             </div>
             <button
               onClick={async () => {
-                const text = `My Salt & Spoon Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
+                const text = `My Marco Taste DNA look-a-like is ${chefMatch.name}! Top flavors: ${topTraits.slice(0, 3).map((t) => t.label).join(", ")} \u{1F525}`;
                 if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
                   try { await navigator.share({ title: "My Taste DNA", text }); } catch { /* cancelled */ }
                 } else if (typeof navigator !== "undefined") { await navigator.clipboard.writeText(text); }

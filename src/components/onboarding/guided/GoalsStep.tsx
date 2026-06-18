@@ -5,7 +5,7 @@ import GuidedShell from "./GuidedShell";
 
 /* Guided flow — "What are your goals?" multi-select. Mirrors the ReciMe
    reference: a list of tappable goal rows, select all that apply, then
-   Continue. Recolored to salt & spoon's brand. */
+   Continue. Recolored to Marco's brand. */
 
 const GOALS = [
   { key: "eat_healthier", emoji: "🥗", label: "Eat healthier" },

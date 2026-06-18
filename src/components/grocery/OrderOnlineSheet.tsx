@@ -199,7 +199,7 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
         lines.push(qty ? `- ${name} (${qty})` : `- ${name}`);
       }
     }
-    return `Salt & Spoon Grocery List\n${"─".repeat(20)}${lines.join("\n")}`;
+    return `Marco Grocery List\n${"─".repeat(20)}${lines.join("\n")}`;
   }
 
   async function handleContinueToStore() {

@@ -65,7 +65,7 @@ export default function ShareWithFriendsModal({
     return `${base}${path}`;
   }, [itemType, itemId]);
 
-  const shareText = `Check out "${itemTitle}" on Salt & Spoon`;
+  const shareText = `Check out "${itemTitle}" on Marco`;
   const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   async function shareToFriend(friendUserId: string, name: string) {

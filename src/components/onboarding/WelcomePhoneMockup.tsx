@@ -1,6 +1,6 @@
 "use client";
 
-/* The welcome-screen phone. Shows one of three salt & spoon screens — Save
+/* The welcome-screen phone. Shows one of three Marco screens — Save
    recipes, Create a meal plan, Generate a grocery list — driven by the `screen`
    prop so it stays in sync with the rotating headline. Each screen staggers in
    and pops a handwritten sticker. */
@@ -99,7 +99,7 @@ function RecipeScreen() {
   return (
     <div className="flex h-full w-full flex-col" style={{ paddingTop: "34px" }}>
       <div className="flex items-center justify-between px-4 pb-2">
-        <span className="marco-signature" style={{ fontSize: "1.05rem" }}>salt &amp; spoon</span>
+        <span className="marco-signature" style={{ fontSize: "1.05rem" }}>Marco</span>
         <span style={{ ...labelMono, fontSize: "8px", letterSpacing: "0.18em" }}>Imported</span>
       </div>
 
@@ -133,7 +133,7 @@ function MealPlanScreen() {
   return (
     <div className="flex h-full w-full flex-col" style={{ paddingTop: "34px" }}>
       <div className="flex items-center justify-between px-4 pb-2">
-        <span className="marco-signature" style={{ fontSize: "1.05rem" }}>salt &amp; spoon</span>
+        <span className="marco-signature" style={{ fontSize: "1.05rem" }}>Marco</span>
         <span style={{ ...labelMono, fontSize: "8px", letterSpacing: "0.18em" }}>This week</span>
       </div>
 
@@ -175,7 +175,7 @@ function GroceryScreen() {
   return (
     <div className="flex h-full w-full flex-col" style={{ paddingTop: "34px" }}>
       <div className="flex items-center justify-between px-4 pb-2">
-        <span className="marco-signature" style={{ fontSize: "1.05rem" }}>salt &amp; spoon</span>
+        <span className="marco-signature" style={{ fontSize: "1.05rem" }}>Marco</span>
         <span style={{ ...labelMono, fontSize: "8px", letterSpacing: "0.18em" }}>Groceries</span>
       </div>
 

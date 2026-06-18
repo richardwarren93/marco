@@ -337,7 +337,7 @@ export const BADGES: BadgeDefinition[] = [
   {
     id: "friends_5",
     name: "Dinner Party",
-    description: "Have 5 friends on Salt & Spoon",
+    description: "Have 5 friends on Marco",
     icon: "🎉",
     imageUrl: "/badges/dinner-party.svg",
     category: "social",

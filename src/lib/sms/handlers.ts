@@ -86,7 +86,7 @@ export async function handleSaveRecipe(userId: string, url: string): Promise<str
       }).catch(() => {});
     }
 
-    return `Saved "${truncate(recipe.title || "recipe", 50)}" to Salt & Spoon.\n${recipeLink(data.id)}`;
+    return `Saved "${truncate(recipe.title || "recipe", 50)}" to Marco.\n${recipeLink(data.id)}`;
   } catch (err) {
     console.error("[sms] save error:", err);
     return "Couldn't save that recipe. The link may be private or unsupported. Try sharing the public URL.";
@@ -160,7 +160,7 @@ export async function handleChat(userId: string, message: string): Promise<strin
   const response = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 400,
-    system: `You are Salt & Spoon, a friendly cooking assistant replying via SMS. Keep replies SHORT — under 300 characters when possible. No markdown, no bullet lists with bold, no emojis unless natural. Plain text only. The user's allergies: ${allergies}. Household size: ${household}.`,
+    system: `You are Marco, a friendly cooking assistant replying via SMS. Keep replies SHORT — under 300 characters when possible. No markdown, no bullet lists with bold, no emojis unless natural. Plain text only. The user's allergies: ${allergies}. Household size: ${household}.`,
     messages: [{ role: "user", content: message }],
   });
   const text = response.content[0].type === "text" ? response.content[0].text : "";
@@ -169,7 +169,7 @@ export async function handleChat(userId: string, message: string): Promise<strin
 
 export function helpReply(): string {
   return [
-    "Hey! I'm Salt & Spoon. Text me to:",
+    "Hey! I'm Marco. Text me to:",
     "• Save a recipe — paste any recipe link",
     "• Find a recipe — \"send me my chicken pad thai\"",
     "• Ask cooking questions — \"how long do I roast salmon?\"",
@@ -178,9 +178,9 @@ export function helpReply(): string {
 }
 
 export function rateLimitReply(): string {
-  return "You've hit today's SMS limit (30/day). Try again tomorrow, or use the Salt & Spoon app in the meantime.";
+  return "You've hit today's SMS limit (30/day). Try again tomorrow, or use the Marco app in the meantime.";
 }
 
 export function unknownSenderReply(): string {
-  return `Hi! This number isn't linked to a Salt & Spoon account yet. Open the Salt & Spoon app, go to Profile, and verify this phone number to start texting recipes.`;
+  return `Hi! This number isn't linked to a Marco account yet. Open the Marco app, go to Profile, and verify this phone number to start texting recipes.`;
 }

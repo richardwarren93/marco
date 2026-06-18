@@ -2,7 +2,7 @@
 
 import GuidedShell from "./GuidedShell";
 
-/* Guided flow — reinforces that planning with salt & spoon makes the user's
+/* Guided flow — reinforces that planning with Marco makes the user's
    weekly cooking goal stick. A "That's great"-style screen whose hero is an
    animated line chart: cooks who plan with the app keep climbing, cooks on
    their own drift off. */
@@ -86,7 +86,7 @@ export default function GoalReinforcementStep({ step, totalSteps, onBack, onCont
             color: "var(--ink-soft, #4A4742)",
           }}
         >
-          Cooks who plan their week with salt &amp; spoon are{" "}
+          Cooks who plan their week with Marco are{" "}
           <strong style={{ fontVariationSettings: '"wght" 600', color: "var(--ink, #1C1A17)" }}>3× more likely</strong>{" "}
           to hit their cooking goal.
         </p>
@@ -133,7 +133,7 @@ export default function GoalReinforcementStep({ step, totalSteps, onBack, onCont
             style={{ strokeDasharray: 1, strokeDashoffset: 1, animation: "check-draw 1.1s ease-out 0.25s forwards" } as React.CSSProperties}
           />
 
-          {/* With salt & spoon — tomato, the hero line */}
+          {/* With Marco — tomato, the hero line */}
           <polyline
             points={polyline(WITH_APP)}
             fill="none"
@@ -160,7 +160,7 @@ export default function GoalReinforcementStep({ step, totalSteps, onBack, onCont
         <div className="flex items-center gap-4 mt-3">
           <span className="flex items-center gap-1.5" style={{ fontSize: "11.5px", color: "var(--ink, #1C1A17)", fontWeight: 600 }}>
             <span style={{ width: 14, height: 3, borderRadius: 2, background: "var(--tomato, #E5462E)" }} />
-            With salt &amp; spoon
+            With Marco
           </span>
           <span className="flex items-center gap-1.5" style={{ fontSize: "11.5px", color: "var(--ink-soft, #4A4742)" }}>
             <span style={{ width: 14, height: 3, borderRadius: 2, background: "rgba(28,26,23,0.3)" }} />

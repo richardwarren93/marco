@@ -1,7 +1,7 @@
 "use client";
 
-// Shared frame for the salt & spoon Plus upsell screens. Reskinned to match the
-// guided onboarding flow: cream surface, the salt & spoon wordmark, a small mono
+// Shared frame for the Marco Plus upsell screens. Reskinned to match the
+// guided onboarding flow: cream surface, the Marco wordmark, a small mono
 // eyebrow (e.g. "PLUS · STEP 1 OF 4"), an optional soft-exit X, and a pinned
 // footer. Each Plus screen owns its own body layout; this just provides chrome.
 
@@ -27,7 +27,7 @@ export default function PaywallShell({ eyebrow, eyebrowAside, onClose, footer, c
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}
       >
         <span className="marco-signature" style={{ fontSize: "2rem" }}>
-          salt &amp; spoon
+          Marco
         </span>
         {onClose && (
           <button

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import WelcomePhoneMockup from "@/components/onboarding/WelcomePhoneMockup";
+import MarcoLockup from "@/components/layout/MarcoLockup";
 
 // Rotating welcome headline — synced with the phone screens (recipe / meal plan
 // / grocery). Each phrase's accent word renders in tomato italic.
@@ -100,7 +101,7 @@ export default function SignupPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
         <div className="text-center space-y-4 max-w-sm">
-          <span className="marco-signature block" style={{ fontSize: "4rem" }}>salt & spoon</span>
+          <MarcoLockup wordmarkSize="4rem" tomatoSize={72} />
           <h1
             style={{
               fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
@@ -143,7 +144,7 @@ export default function SignupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <span className="marco-signature" style={{ fontSize: "1.75rem" }}>salt & spoon</span>
+          <MarcoLockup wordmarkSize="1.75rem" tomatoSize={34} />
           <div className="w-9 h-9" aria-hidden="true" />
         </div>
 
@@ -265,12 +266,7 @@ export default function SignupPage() {
           className="flex flex-col items-center text-center px-6 flex-shrink-0"
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.75rem)" }}
         >
-          <span
-            className="marco-signature animate-stagger-in"
-            style={{ fontSize: "2.5rem" }}
-          >
-            salt &amp; spoon
-          </span>
+          <MarcoLockup wordmarkSize="2.5rem" tomatoSize={48} className="animate-stagger-in" />
 
           <h1
             key={heroScreen}
@@ -362,7 +358,7 @@ export default function SignupPage() {
           buttons sit right under the tagline. */}
       <div className="relative flex-1 sm:flex-none flex flex-col items-center justify-center overflow-hidden px-6 pt-6 pb-6">
         <div className="relative z-10 text-center">
-          <span className="marco-signature" style={{ fontSize: "clamp(3rem, 11vw, 4rem)" }}>salt & spoon</span>
+          <MarcoLockup wordmarkSize="clamp(3rem, 11vw, 4rem)" tomatoSize={64} />
 
           <p
             className="mt-6 max-w-xs mx-auto"

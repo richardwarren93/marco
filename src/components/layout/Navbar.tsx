@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import MarcoLockup from "@/components/layout/MarcoLockup";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Suspense, useEffect, useState, useRef, useCallback } from "react";
@@ -147,8 +148,8 @@ function NavbarInner() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-10 sm:h-14 items-center">
             {/* Left: Page title on mobile, Marco signature wordmark on desktop */}
-            <Link href={user ? "/recipes" : "/"} className="hidden sm:inline-flex items-end" aria-label="Salt & Spoon — home">
-              <span className="marco-signature" style={{ fontSize: "2.25rem" }}>salt & spoon</span>
+            <Link href={user ? "/recipes" : "/"} className="hidden sm:inline-flex items-center" aria-label="Marco — home">
+              <MarcoLockup wordmarkSize="2.25rem" tomatoSize={42} />
             </Link>
             {(() => {
               const mobileTitle = user

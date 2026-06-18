@@ -66,7 +66,7 @@ export default function CookingIsFamilyDemo() {
 function HookCard() {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center px-8 text-center" style={{ background: CREAM }}>
-      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(28,26,23,0.45)" }}>Salt &amp; Spoon</span>
+      <span style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.3em", textTransform: "uppercase", color: "rgba(28,26,23,0.45)" }}>Marco</span>
       <h1 className="mt-4" style={{ fontFamily: FRAUNCES, fontVariationSettings: '"opsz" 144, "wght" 600', fontSize: "clamp(2.4rem, 9vw, 3.4rem)", lineHeight: 1.0, letterSpacing: "-0.02em", color: INK }}>
         Cooking is <em style={{ color: TOMATO, fontStyle: "italic" }}>family.</em>
       </h1>
@@ -86,7 +86,7 @@ function CoverScene() {
       {/* phone with grandma's cover */}
       <div className="flex-1 min-h-0 flex items-center justify-center px-8 py-4">
         <div className="relative h-full overflow-hidden flex flex-col items-center px-5 pt-6 pb-7" style={{ aspectRatio: "9/17", maxHeight: "100%", borderRadius: 26, border: "7px solid #1C1A17", background: "radial-gradient(ellipse at 50% 40%, #F7EFD8 0%, #ECDFC2 75%, #E0CFA8 100%)", boxShadow: "0 18px 40px rgba(74,50,20,0.32)" }}>
-          <span style={{ fontFamily: MONO, fontSize: 8, letterSpacing: "0.35em", textTransform: "uppercase", color: "rgba(28,26,23,0.45)" }}>A Salt &amp; Spoon Cookbook · Vol. I</span>
+          <span style={{ fontFamily: MONO, fontSize: 8, letterSpacing: "0.35em", textTransform: "uppercase", color: "rgba(28,26,23,0.45)" }}>A Marco Cookbook · Vol. I</span>
           <div className="relative flex-1 my-4 w-full flex items-center justify-center min-h-0">
             <div className="relative h-full" style={{ aspectRatio: "3/4", maxHeight: "100%", transform: "rotate(-1.2deg)", boxShadow: "0 8px 24px rgba(74,50,20,0.28)", background: "#F5EEDC" }}>
               <Img src="/marketing/image-1779076119535.jpg" alt="Grandma's handwritten recipe" />
@@ -172,7 +172,7 @@ function WhatsAppScene() {
               <p style={{ fontSize: 12.5, color: "#111b21", lineHeight: 1.3 }}>Saving it 👉 <span style={{ fontWeight: 700, color: "#027eb5" }}>@Sharma Cookbook</span></p>
             </div>
             <div className="self-start animate-stagger-in" style={{ maxWidth: "90%", background: "#fff", borderRadius: 10, borderTopLeftRadius: 3, padding: "6px 9px", boxShadow: "0 1px 0.5px rgba(0,0,0,0.13)", borderLeft: `3px solid ${TOMATO}`, animationDelay: "1.25s" }}>
-              <p className="marco-signature" style={{ fontSize: 14, color: TOMATO, lineHeight: 1 }}>salt &amp; spoon</p>
+              <p className="marco-signature" style={{ fontSize: 14, color: TOMATO, lineHeight: 1 }}>Marco</p>
               <p style={{ fontSize: 12.5, color: "#111b21", lineHeight: 1.3, marginTop: 2 }}>✓ Saved <b>Lamb Biryani</b> to the <b>Sharma Family Cookbook</b></p>
             </div>
           </div>
@@ -188,7 +188,7 @@ function EndCard() {
       <h1 style={{ fontFamily: FRAUNCES, fontVariationSettings: '"opsz" 144, "wght" 600', fontSize: "clamp(1.8rem, 7vw, 2.6rem)", lineHeight: 1.1, letterSpacing: "-0.02em", color: INK }}>
         One cookbook, written by your <em style={{ color: TOMATO, fontStyle: "italic" }}>whole family.</em>
       </h1>
-      <span className="marco-signature mt-8" style={{ fontSize: "1.8rem", color: INK }}>salt &amp; spoon</span>
+      <span className="marco-signature mt-8" style={{ fontSize: "1.8rem", color: INK }}>Marco</span>
     </div>
   );
 }

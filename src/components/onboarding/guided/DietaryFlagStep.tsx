@@ -4,7 +4,7 @@ import Image from "next/image";
 import GuidedShell from "./GuidedShell";
 
 /* Guided flow — reassurance splash shown right after the allergies step.
-   Highlights that salt & spoon screens every recipe against the user's
+   Highlights that Marco screens every recipe against the user's
    allergies and dietary preferences and flags anything that doesn't fit,
    before they ever cook it. Personalizes the example with their first
    selected allergy when we have one. */

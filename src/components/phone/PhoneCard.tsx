@@ -71,7 +71,7 @@ export default function PhoneCard() {
   }
 
   async function handleUnlink() {
-    if (!confirm("Unlink this phone number from Salt & Spoon?")) return;
+    if (!confirm("Unlink this phone number from Marco?")) return;
     setUnlinking(true);
     try {
       const res = await fetch("/api/phone/confirm", { method: "DELETE" });
@@ -85,7 +85,7 @@ export default function PhoneCard() {
     <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Text Salt & Spoon</p>
+          <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Text Marco</p>
           <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>
             {verified
               ? `Linked to ${profile!.phone}`
@@ -126,7 +126,7 @@ export default function PhoneCard() {
             className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
           />
           <p className="text-[11px] leading-relaxed" style={{ color: "#a09890" }}>
-            By tapping &quot;Send code&quot; you agree to receive transactional and conversational SMS from Salt & Spoon
+            By tapping &quot;Send code&quot; you agree to receive transactional and conversational SMS from Marco
             (verification codes, recipe save confirmations, and replies to messages you initiate).
             Frequency varies by usage. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help.
             See our <a href="/privacy" target="_blank" className="underline">Privacy Policy</a> and <a href="/terms" target="_blank" className="underline">Terms</a>.

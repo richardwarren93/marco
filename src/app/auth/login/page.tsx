@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
+import MarcoLockup from "@/components/layout/MarcoLockup";
 
 // Apple Sign in is required by App Store guideline 4.8 whenever any
 // third-party social sign-in is offered. The Apple OAuth provider must
@@ -66,7 +67,7 @@ export default function LoginPage() {
         className="relative flex items-center justify-center px-4"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)", paddingBottom: "1.5rem" }}
       >
-        <span className="marco-signature" style={{ fontSize: "3rem" }}>salt & spoon</span>
+        <MarcoLockup wordmarkSize="3rem" tomatoSize={56} />
       </div>
 
       {/* Form */}

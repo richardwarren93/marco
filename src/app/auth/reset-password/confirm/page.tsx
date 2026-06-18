@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import MarcoLockup from "@/components/layout/MarcoLockup";
 
 export default function ResetPasswordConfirmPage() {
   const [password, setPassword] = useState("");
@@ -66,7 +67,7 @@ export default function ResetPasswordConfirmPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
         <div className="text-center space-y-4 max-w-sm">
-          <span className="marco-signature block" style={{ fontSize: "4rem" }}>salt & spoon</span>
+          <MarcoLockup wordmarkSize="4rem" tomatoSize={72} />
           <h1
             style={{
               fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
@@ -92,7 +93,7 @@ export default function ResetPasswordConfirmPage() {
         className="relative flex items-center justify-center px-4"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)", paddingBottom: "1.5rem" }}
       >
-        <span className="marco-signature" style={{ fontSize: "3rem" }}>salt & spoon</span>
+        <MarcoLockup wordmarkSize="3rem" tomatoSize={56} />
       </div>
 
       <div className="flex-1 px-6 pt-4 pb-10 max-w-sm mx-auto w-full">

@@ -87,9 +87,9 @@ export default function FriendsPage() {
 
   function shareCode() {
     if (!profile?.friend_code) return;
-    const text = `Add me on salt & spoon — my friend code is ${profile.friend_code}`;
+    const text = `Add me on Marco — my friend code is ${profile.friend_code}`;
     if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      navigator.share({ title: "salt & spoon", text }).catch(() => {});
+      navigator.share({ title: "Marco", text }).catch(() => {});
     } else if (typeof navigator !== "undefined") {
       navigator.clipboard?.writeText(profile.friend_code).catch(() => {});
     }
@@ -329,7 +329,7 @@ export default function FriendsPage() {
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" /></svg>
               </span>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-[14px]" style={{ color: TOMATO }}>Invite friends to salt &amp; spoon</p>
+                <p className="font-bold text-[14px]" style={{ color: TOMATO }}>Invite friends to Marco</p>
                 <p className="text-[12.5px]" style={{ color: INK_SOFT, opacity: 0.85 }}>Share your code so friends can find and add you.</p>
               </div>
               <button onClick={shareCode} className="px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white flex-shrink-0 active:scale-95 transition-transform" style={{ background: TOMATO }}>

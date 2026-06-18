@@ -33,7 +33,7 @@ export async function GET() {
     const displayName =
       user.user_metadata?.full_name ||
       user.email?.split("@")[0] ||
-      "Salt & Spoon User";
+      "Marco User";
 
     let attempts = 0;
     while (attempts < 5) {

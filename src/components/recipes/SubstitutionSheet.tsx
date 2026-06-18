@@ -170,7 +170,7 @@ function SubstitutionSheetInner({
         <div className="px-5 pt-4 pb-1 overflow-y-auto" style={{ maxHeight: "55vh" }}>
           {loading && (
             <div className="py-10 text-center">
-              <span className="marco-signature is-pulsing" style={{ fontSize: "2.4rem" }}>salt & spoon</span>
+              <span className="marco-signature is-pulsing" style={{ fontSize: "2.4rem" }}>Marco</span>
               <p
                 className="mt-3 text-[13px]"
                 style={{

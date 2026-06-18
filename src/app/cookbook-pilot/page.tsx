@@ -4,7 +4,7 @@
 //
 // Changes vs v2:
 //  - Cover reframed as "Build My Recipe Book" (the BOOK title), with
-//    Salt & Spoon demoted to a humble publisher's imprint at the top.
+//    Marco demoted to a humble publisher's imprint at the top.
 //    The user is the author. Ownership = retention.
 //  - Dropped "Chapter One" label — cookbooks don't use chapter framing.
 //    Just the metadata strip carries position information.
@@ -158,7 +158,7 @@ function CoverPage({ onOpen }: { onOpen: () => void }) {
             color: "rgba(28, 26, 23, 0.45)",
           }}
         >
-          A Salt &amp; Spoon Cookbook · Vol. I
+          A Marco Cookbook · Vol. I
         </span>
       </div>
 

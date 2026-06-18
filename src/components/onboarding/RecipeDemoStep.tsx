@@ -79,7 +79,7 @@ export default function RecipeDemoStep({ onNext }: Props) {
           See the <span style={{ color: "#E5462E" }}>magic</span>
         </h1>
         <p className="text-sm mt-1" style={{ color: "#a09890" }}>
-          Paste any recipe link and Salt & Spoon extracts it instantly
+          Paste any recipe link and Marco extracts it instantly
         </p>
       </div>
 

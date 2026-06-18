@@ -107,7 +107,7 @@ export default function GroceryFeatureStep({ step, totalSteps, onBack, onContinu
             {/* App bar */}
             <div className="flex items-center justify-between px-3.5 pt-3.5 pb-1.5">
               <span className="marco-signature" style={{ fontSize: "0.95rem" }}>
-                salt &amp; spoon
+                Marco
               </span>
               <span
                 style={{

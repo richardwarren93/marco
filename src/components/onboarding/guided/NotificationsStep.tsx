@@ -136,7 +136,7 @@ export default function NotificationsStep({ step, totalSteps, onBack, onContinue
                 marginBottom: "6px",
               }}
             >
-              &ldquo;salt &amp; spoon&rdquo; Would Like to Send You Notifications
+              &ldquo;Marco&rdquo; Would Like to Send You Notifications
             </p>
             <p
               style={{

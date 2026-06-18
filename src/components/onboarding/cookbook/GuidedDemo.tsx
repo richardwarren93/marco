@@ -84,7 +84,7 @@ export default function GuidedDemo({ recipes, step, totalSteps, onBack, onComple
         {/* top chrome — matches the guided flow: logo + back + progress bar */}
         <div className="flex flex-col flex-shrink-0" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 0.75rem)" }}>
           <div className="flex justify-center">
-            <span className="marco-signature" style={{ fontSize: "1.6rem" }}>salt &amp; spoon</span>
+            <span className="marco-signature" style={{ fontSize: "1.6rem" }}>Marco</span>
           </div>
           <div className="flex items-center gap-3 px-5 pt-3.5 pb-1">
             {onBack && phase === "recipe-add" ? (

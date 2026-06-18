@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import type { TomatoHealthState } from "@/lib/gamification";
 
 /**
@@ -102,12 +103,13 @@ function Sparkles() {
 export default function TomatoMascot({ state, size = 220 }: { state: TomatoHealthState; size?: number }) {
   const c = CONFIG[state];
   const animClass = c.anim === "none" ? "" : `tm-${c.anim}`;
+  const gradId = `tm-body-${useId()}`;
 
   return (
     <div style={{ width: size, height: size }} aria-hidden>
       <svg viewBox="0 0 240 240" width={size} height={size} role="img">
         <defs>
-          <radialGradient id="tm-body" cx="0.38" cy="0.30" r="0.9">
+          <radialGradient id={gradId} cx="0.38" cy="0.30" r="0.9">
             <stop offset="0%" stopColor={c.light} />
             <stop offset="100%" stopColor={c.dark} />
           </radialGradient>
@@ -121,7 +123,7 @@ export default function TomatoMascot({ state, size = 220 }: { state: TomatoHealt
           <Leaf color={c.leaf} rot={c.leafRot} />
 
           {/* Body */}
-          <ellipse cx="120" cy="135" rx={c.rx} ry={c.ry} fill="url(#tm-body)" style={{ transition: "all 0.6s ease" }} />
+          <ellipse cx="120" cy="135" rx={c.rx} ry={c.ry} fill={`url(#${gradId})`} style={{ transition: "all 0.6s ease" }} />
           {/* Soft sheen */}
           <ellipse cx="92" cy="108" rx="24" ry="16" fill="rgba(255,255,255,0.18)" />
 

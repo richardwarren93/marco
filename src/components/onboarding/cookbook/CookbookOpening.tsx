@@ -108,7 +108,7 @@ function CoverPage({ onOpen }: { onOpen: () => void }) {
             color: "rgba(28, 26, 23, 0.45)",
           }}
         >
-          A Salt &amp; Spoon Cookbook · Vol. I
+          A Marco Cookbook · Vol. I
         </span>
       </div>
 

@@ -82,7 +82,7 @@ const WEEK_MEALS: { day: string; dayNum: number; meals: { recipe: Recipe; mealTy
 
 // Phase header config
 const PHASE_HEADERS: Record<Phase, { title: string; subtitle: string }> = {
-  "extract-typing": { title: "Save recipes from any website", subtitle: "Paste a link and Salt & Spoon does the rest" },
+  "extract-typing": { title: "Save recipes from any website", subtitle: "Paste a link and Marco does the rest" },
   "extract-loading": { title: "Save recipes from any website", subtitle: "Extracting recipe details..." },
   "extract-reveal": { title: "Save recipes from any website", subtitle: "Recipe saved!" },
   "extract-details": { title: "Save recipes from any website", subtitle: "Ingredients and steps ready to go" },

@@ -53,7 +53,7 @@ export default function PlusCompareScreen({
 }) {
   return (
     <PaywallShell
-      eyebrow="salt & spoon Plus"
+      eyebrow="Marco Plus"
       eyebrowAside="What you get"
       onClose={onClose}
       footer={<PlusPrimaryButton onClick={onContinue}>Start for $0.00</PlusPrimaryButton>}

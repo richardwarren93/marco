@@ -39,7 +39,7 @@ export default function TrialReminderScreen({
 
   return (
     <PaywallShell
-      eyebrow="salt & spoon Plus"
+      eyebrow="Marco Plus"
       eyebrowAside="No surprises"
       onClose={onClose}
       footer={

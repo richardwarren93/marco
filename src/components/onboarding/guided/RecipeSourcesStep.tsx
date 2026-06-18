@@ -6,7 +6,7 @@ import { Instagram, TikTok, Facebook, Pinterest, GoogleG, YouTube, NYTimes, BonA
 
 /* Guided flow — "Where do you get your recipes from?" multi-select. Mirrors
    the ReciMe reference: rows with a label and the brand glyphs for that
-   source. Recolored to salt & spoon's brand. */
+   source. Recolored to Marco's brand. */
 
 interface Source {
   key: string;

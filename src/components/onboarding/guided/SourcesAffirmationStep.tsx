@@ -5,7 +5,7 @@ import GuidedShell from "./GuidedShell";
 import { Instagram, TikTok, Facebook, Pinterest, Camera } from "./BrandIcons";
 
 /* Guided flow — "Awesome 🎉" affirmation after the recipe-sources pick.
-   Mirrors the ReciMe screen: a reassuring line that salt & spoon imports from
+   Mirrors the ReciMe screen: a reassuring line that Marco imports from
    everywhere, a phone showing a social post ringed by floating app icons, and
    a "Show me how" CTA into the import step. */
 
@@ -89,7 +89,7 @@ export default function SourcesAffirmationStep({ step, totalSteps, onBack, onCon
             color: "var(--ink-soft, #4A4742)",
           }}
         >
-          salt &amp; spoon can import recipes from{" "}
+          Marco can import recipes from{" "}
           <strong style={{ fontVariationSettings: '"wght" 600', color: "var(--ink, #1C1A17)" }}>
             Instagram, TikTok, Facebook, Pinterest, YouTube
           </strong>
@@ -149,7 +149,7 @@ export default function SourcesAffirmationStep({ step, totalSteps, onBack, onCon
                     color: "var(--ink, #1C1A17)",
                   }}
                 >
-                  salt &amp; spoon
+                  Marco
                 </span>
                 <span style={{ fontSize: "11px", color: "var(--ink-soft, #4A4742)", lineHeight: 1 }}>•••</span>
               </div>

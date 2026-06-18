@@ -19,7 +19,7 @@ export default function PlusHookScreen({ onContinue, onClose }: Props) {
 
   return (
     <PaywallShell
-      eyebrow="salt & spoon Plus"
+      eyebrow="Marco Plus"
       eyebrowAside="The whole kitchen"
       onClose={onClose}
       footer={

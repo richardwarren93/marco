@@ -6,7 +6,7 @@ import GuidedShell from "./GuidedShell";
 /* Guided flow — affirmation after the goals pick. Mirrors the ReciMe
    "That's great!" screen: a reassuring stat that names the user's own
    selected goals, a blob-masked photo of someone cooking, and a warm
-   sign-off. Recolored to salt & spoon's brand. */
+   sign-off. Recolored to Marco's brand. */
 
 const GOAL_PHRASES: Record<string, string> = {
   eat_healthier: "eat healthier",
@@ -77,7 +77,7 @@ export default function GoalsAffirmationStep({ step, totalSteps, goals, onBack, 
             color: "var(--ink-soft, #4A4742)",
           }}
         >
-          92% of cooks say salt &amp; spoon has helped them{" "}
+          92% of cooks say Marco has helped them{" "}
           <strong style={{ fontVariationSettings: '"wght" 600', color: "var(--ink, #1C1A17)" }}>
             {formatGoals(goals)}
           </strong>

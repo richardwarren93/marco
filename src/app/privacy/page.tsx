@@ -1,14 +1,14 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Privacy Policy · Salt & Spoon",
+  title: "Privacy Policy · Marco",
 };
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
       <div className="max-w-2xl mx-auto px-5 py-10">
-        <Link href="/" className="text-sm font-semibold" style={{ color: "#e8530a" }}>← Salt & Spoon</Link>
+        <Link href="/" className="text-sm font-semibold" style={{ color: "#e8530a" }}>← Marco</Link>
         <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
           Privacy Policy
         </h1>
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="Who we share with">
-            <p className="mb-2">We use a small set of third-party processors to run Salt & Spoon:</p>
+            <p className="mb-2">We use a small set of third-party processors to run Marco:</p>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Supabase</strong> — database, authentication, file storage.</li>
               <li><strong>Anthropic</strong> — AI for recipe extraction, search, and chat.</li>
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="Children">
-            Salt & Spoon isn&apos;t intended for users under 13. If you think a child has signed up,
+            Marco isn&apos;t intended for users under 13. If you think a child has signed up,
             email support@marco.app and we&apos;ll remove the account.
           </Section>
 
