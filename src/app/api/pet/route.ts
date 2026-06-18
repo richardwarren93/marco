@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { computePetMood, computeEffectiveHunger, TOMATO_REWARDS } from "@/lib/gamification";
+import { awardTomatoes } from "@/lib/tomatoes";
 
 export async function GET() {
   const supabase = await createClient();
@@ -84,20 +85,14 @@ export async function POST(request: Request) {
   const effectiveHunger = computeEffectiveHunger(pet.hunger_level, pet.last_fed_at);
   const newHunger = Math.min(4, effectiveHunger + 2);
 
-  // Deduct tomatoes
-  const newBalance = balance - TOMATO_REWARDS.FEED_PET_COST;
-  await admin
-    .from("user_profiles")
-    .update({ tomato_balance: newBalance })
-    .eq("user_id", user.id);
-
-  // Record transaction
-  await admin.from("tomato_transactions").insert({
-    user_id: user.id,
+  // Deduct tomatoes through the shared ledger (atomic decrement; repeatable, so no dedupe).
+  const spend = await awardTomatoes({
+    userId: user.id,
     amount: -TOMATO_REWARDS.FEED_PET_COST,
     reason: "feed_pet",
-    reference_id: pet.id,
+    referenceId: pet.id,
   });
+  const newBalance = spend.newBalance;
 
   // Update pet
   const { data: updatedPet } = await admin

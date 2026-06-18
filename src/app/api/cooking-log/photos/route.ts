@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { TOMATO_REWARDS, TOMATO_DAILY_CAPS } from "@/lib/gamification";
+import { awardTomatoes } from "@/lib/tomatoes";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -117,6 +119,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  // Reward adding a photo. Deduped per cooking_log (re-saving a caption doesn't
+  // re-award); each distinct photo counts toward the daily cap.
+  const award = await awardTomatoes({
+    userId: user.id,
+    amount: TOMATO_REWARDS.RECIPE_PHOTO,
+    reason: "recipe_photo",
+    dedupeKey: cooking_log_id,
+    dailyCap: TOMATO_DAILY_CAPS.recipe_photo,
+  });
+
   // Also update the most recent activity_feed entry for this cook if it exists
   await admin
     .from("activity_feed")
@@ -133,7 +145,12 @@ export async function PATCH(request: Request) {
     .eq("id", log.recipe_id)
     .eq("user_id", user.id);
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({
+    success: true,
+    tomatoesEarned: award.amount,
+    awarded: award.awarded,
+    tomatoBalance: award.newBalance,
+  });
 }
 
 // POST: Backfill recipe images from existing cooking photos

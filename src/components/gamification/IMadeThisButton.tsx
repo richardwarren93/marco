@@ -3,11 +3,25 @@
 import { useState } from "react";
 import { CookingPotIcon } from "@/components/icons/HandDrawnIcons";
 import PhotoUpload from "@/components/social/PhotoUpload";
+import { useToast } from "@/components/ui/Toast";
+
+/** Show a "🍅 +N" earn toast and refresh any header balance, when an award fired. */
+function surfaceEarn(showToast: ReturnType<typeof useToast>["showToast"], data: { awarded?: boolean; tomatoesEarned?: number; tomatoBalance?: number }) {
+  if (data?.awarded && (data.tomatoesEarned ?? 0) > 0) {
+    showToast(`🍅 +${data.tomatoesEarned}`, { variant: "success" });
+    window.dispatchEvent(new CustomEvent("tomatoes:earned", { detail: { balance: data.tomatoBalance } }));
+  }
+}
 
 interface IMadeThisButtonProps {
   recipeId: string;
+  /** When confirming a planned meal, link the cook to its meal-plan slot (one award per slot). */
+  mealPlanId?: string;
+  /** Override the call-to-action label (e.g. "Cooked it" on the meal plan). */
+  label?: string;
   onCooked?: (result: {
     tomatoesEarned: number;
+    awarded?: boolean;
     goalJustCompleted: boolean;
     weekProgress: number;
     tomatoBalance: number;
@@ -16,7 +30,8 @@ interface IMadeThisButtonProps {
   variant?: "default" | "pill";
 }
 
-export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, variant = "default" }: IMadeThisButtonProps) {
+export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made This", onCooked, onPhotoAdded, variant = "default" }: IMadeThisButtonProps) {
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [justCooked, setJustCooked] = useState(false);
   const [cookingLogId, setCookingLogId] = useState<string | null>(null);
@@ -32,7 +47,7 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
       const res = await fetch("/api/cooking-log", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ recipe_id: recipeId }),
+        body: JSON.stringify({ recipe_id: recipeId, ...(mealPlanId ? { meal_plan_id: mealPlanId } : {}) }),
       });
 
       if (!res.ok) throw new Error("Failed");
@@ -42,6 +57,7 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
       setCookingLogId(data.cookingLogId || data.log?.id || null);
       setActivityId(data.activityId || null);
 
+      surfaceEarn(showToast, data);
       onCooked?.(data);
     } catch (error) {
       console.error("Cook log error:", error);
@@ -55,7 +71,7 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
 
     try {
       // Save photo to cooking_log
-      await fetch("/api/cooking-log/photos", {
+      const photoRes = await fetch("/api/cooking-log/photos", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -64,6 +80,7 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
           caption,
         }),
       });
+      surfaceEarn(showToast, await photoRes.json().catch(() => ({})));
 
       // Also update activity_feed entry if it exists
       if (activityId) {
@@ -113,7 +130,7 @@ export default function IMadeThisButton({ recipeId, onCooked, onPhotoAdded, vari
         ) : (
           <>
             <CookingPotIcon className="w-4 h-4" />
-            {loading ? "Logging..." : "I Made This"}
+            {loading ? "Logging..." : label}
           </>
         )}
       </button>

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { TOMATO_REWARDS, TOMATO_DAILY_CAPS } from "@/lib/gamification";
+import { awardTomatoes } from "@/lib/tomatoes";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -54,6 +56,16 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+
+    // Reward the INVITER (original requester) for bringing a friend into the app.
+    // Deduped per friendship (UNIQUE pair → one award ever), capped daily.
+    await awardTomatoes({
+      userId: friendship.user_id,
+      amount: TOMATO_REWARDS.FRIEND_INVITE_ACCEPTED,
+      reason: "friend_invite_accepted",
+      dedupeKey: friendship_id,
+      dailyCap: TOMATO_DAILY_CAPS.friend_invite_accepted,
+    });
 
     // Notify the original requester that their request was accepted
     const { data: acceptorProfile } = await admin

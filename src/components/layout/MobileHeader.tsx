@@ -8,6 +8,7 @@ import type { User } from "@supabase/supabase-js";
 import dynamic from "next/dynamic";
 
 const NotificationSheet = dynamic(() => import("@/components/notifications/NotificationSheet"), { ssr: false });
+const HeaderTomatoBalance = dynamic(() => import("@/components/gamification/HeaderTomatoBalance"), { ssr: false });
 
 /**
  * MobileHeader — inline page header with notifications + profile avatar.
@@ -105,6 +106,7 @@ export default function MobileHeader({
         {/* Right: notifications + profile (only once user is resolved) */}
         {user && (
         <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+          <HeaderTomatoBalance />
           <button
             onClick={() => setShowNotifications(true)}
             className="relative w-9 h-9 rounded-full hover:bg-gray-100/60 flex items-center justify-center transition-colors"

@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getWeekStart, TOMATO_REWARDS } from "@/lib/gamification";
+import { getWeekStart, TOMATO_REWARDS, TOMATO_DAILY_CAPS } from "@/lib/gamification";
+import { awardTomatoes } from "@/lib/tomatoes";
 
 export async function GET() {
   const supabase = await createClient();
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { recipe_id } = await request.json();
+  const { recipe_id, meal_plan_id } = await request.json();
   if (!recipe_id) {
     return NextResponse.json({ error: "recipe_id is required" }, { status: 400 });
   }
@@ -38,49 +39,25 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   try {
-    // 1. Insert cooking log
+    // 1. Insert cooking log (linked to the planned slot when confirming from the meal plan)
     const { data: log, error: logError } = await admin
       .from("cooking_logs")
-      .insert({ user_id: user.id, recipe_id })
+      .insert({ user_id: user.id, recipe_id, ...(meal_plan_id ? { meal_plan_id } : {}) })
       .select()
       .single();
 
     if (logError) throw logError;
 
-    // 2. Award tomatoes for cooking
-    await admin.from("tomato_transactions").insert({
-      user_id: user.id,
+    // 2. Award tomatoes for cooking. From the meal plan we dedupe per slot (one award
+    //    per planned meal ever); from a recipe page each cook counts toward the daily cap.
+    const cookAward = await awardTomatoes({
+      userId: user.id,
       amount: TOMATO_REWARDS.COOKED_RECIPE,
       reason: "cooked_recipe",
-      reference_id: log.id,
+      referenceId: meal_plan_id || log.id,
+      dedupeKey: meal_plan_id || undefined,
+      dailyCap: TOMATO_DAILY_CAPS.cooked_recipe,
     });
-
-    // Atomic balance increment
-    await admin.rpc("increment_tomato_balance", {
-      p_user_id: user.id,
-      p_amount: TOMATO_REWARDS.COOKED_RECIPE,
-    }).then(({ error }) => {
-      // Fallback if RPC doesn't exist yet - do manual update
-      if (error) {
-        return admin
-          .from("user_profiles")
-          .update({ tomato_balance: undefined }) // will use raw SQL below
-          .eq("user_id", user.id);
-      }
-    });
-
-    // Fallback: manual balance update if RPC not available
-    const { data: profile } = await admin
-      .from("user_profiles")
-      .select("tomato_balance")
-      .eq("user_id", user.id)
-      .single();
-
-    const currentBalance = profile?.tomato_balance || 0;
-    await admin
-      .from("user_profiles")
-      .update({ tomato_balance: currentBalance + TOMATO_REWARDS.COOKED_RECIPE })
-      .eq("user_id", user.id);
 
     // 3. Insert activity feed entry and capture its ID
     const { data: activityEntry } = await admin
@@ -108,8 +85,8 @@ export async function POST(request: Request) {
       .single();
 
     let goalJustCompleted = false;
-    const newBalance = currentBalance + TOMATO_REWARDS.COOKED_RECIPE;
-    let finalBalance = newBalance;
+    let finalBalance = cookAward.newBalance;
+    let bonusEarned = 0;
 
     if (goal && weekCount === goal.weekly_target) {
       // Check we haven't already awarded the bonus this week
@@ -121,25 +98,24 @@ export async function POST(request: Request) {
         .gte("created_at", weekStart);
 
       if (!bonusCount || bonusCount === 0) {
-        await admin.from("tomato_transactions").insert({
-          user_id: user.id,
+        const bonusAward = await awardTomatoes({
+          userId: user.id,
           amount: TOMATO_REWARDS.WEEKLY_GOAL_COMPLETE,
           reason: "weekly_goal_complete",
         });
 
-        finalBalance = newBalance + TOMATO_REWARDS.WEEKLY_GOAL_COMPLETE;
-        await admin
-          .from("user_profiles")
-          .update({ tomato_balance: finalBalance })
-          .eq("user_id", user.id);
+        if (bonusAward.awarded) {
+          finalBalance = bonusAward.newBalance;
+          bonusEarned = TOMATO_REWARDS.WEEKLY_GOAL_COMPLETE;
 
-        await admin.from("activity_feed").insert({
-          user_id: user.id,
-          activity_type: "completed_goal",
-          metadata: { weekly_target: goal.weekly_target },
-        });
+          await admin.from("activity_feed").insert({
+            user_id: user.id,
+            activity_type: "completed_goal",
+            metadata: { weekly_target: goal.weekly_target },
+          });
 
-        goalJustCompleted = true;
+          goalJustCompleted = true;
+        }
       }
     }
 
@@ -204,7 +180,8 @@ export async function POST(request: Request) {
       log,
       cookingLogId: log.id,
       activityId: activityEntry?.id || null,
-      tomatoesEarned: TOMATO_REWARDS.COOKED_RECIPE + (goalJustCompleted ? TOMATO_REWARDS.WEEKLY_GOAL_COMPLETE : 0),
+      tomatoesEarned: cookAward.amount + bonusEarned,
+      awarded: cookAward.awarded || bonusEarned > 0,
       goalJustCompleted,
       weekProgress: weekCount || 0,
       weeklyTarget: goal?.weekly_target || null,

@@ -171,23 +171,25 @@ function MealPlanInner() {
     mealType: string,
     servings?: number,
   ) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const rows = dates.map((planned_date) => ({
-      user_id: user.id,
-      recipe_id: recipeId,
-      planned_date,
-      meal_type: mealType,
-      ...(servings ? { servings } : {}),
-    }));
-
-    const { error: insertError } = await supabase.from("meal_plans").insert(rows);
-    if (insertError) { setError(insertError.message); return; }
+    // Server-side add (so the tomato award can't be farmed via direct DB writes).
+    const res = await fetch("/api/meal-plan/add", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ recipe_id: recipeId, dates, meal_type: mealType, servings }),
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data?.error || "Couldn't add to your plan.");
+      return;
+    }
+    const data = await res.json().catch(() => ({}));
     await mutateMealPlans();
-    // Single-add toast is handled by AddMealSheet
+    // Single-add "added to plan" toast is handled by AddMealSheet; here we surface
+    // only the tomato earn (silent when capped/deduped).
+    if (data?.awarded && data?.tomatoesEarned > 0) {
+      showToast(`🍅 +${data.tomatoesEarned}`, { variant: "success" });
+      window.dispatchEvent(new CustomEvent("tomatoes:earned", { detail: { balance: data.tomatoBalance } }));
+    }
   }
 
   async function handleEditMealSave(

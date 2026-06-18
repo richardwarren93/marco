@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import type { MealPlan } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 
 export default function RecipePreviewSheet({
   isOpen,
@@ -108,6 +109,12 @@ export default function RecipePreviewSheet({
             </svg>
             View recipe
           </button>
+
+          {/* Cooked it — confirm this planned meal was cooked (own meals with a recipe).
+              IMadeThisButton surfaces the 🍅 earn toast itself. */}
+          {!plan.owner_name && plan.recipe_id && (
+            <IMadeThisButton recipeId={plan.recipe_id} mealPlanId={plan.id} label="Cooked it" />
+          )}
 
           {/* Edit — only for own meals */}
           {!plan.owner_name && onEdit && (

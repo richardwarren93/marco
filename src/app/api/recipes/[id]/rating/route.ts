@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { TOMATO_REWARDS, TOMATO_DAILY_CAPS } from "@/lib/gamification";
+import { awardTomatoes } from "@/lib/tomatoes";
 
 /**
  * Community ratings for a single recipe (the representative recipe_id shown on
@@ -94,8 +96,23 @@ export async function POST(
     return NextResponse.json({ error: "Could not save rating" }, { status: 500 });
   }
 
+  // Reward the first rating for this recipe (editing the star value never re-awards),
+  // capped daily.
+  const award = await awardTomatoes({
+    userId: user.id,
+    amount: TOMATO_REWARDS.RECIPE_RATING,
+    reason: "recipe_rating",
+    dedupeKey: id,
+    dailyCap: TOMATO_DAILY_CAPS.recipe_rating,
+  });
+
   const agg = await readAggregate(id, user.id);
-  return NextResponse.json(agg);
+  return NextResponse.json({
+    ...agg,
+    tomatoesEarned: award.amount,
+    awarded: award.awarded,
+    tomatoBalance: award.newBalance,
+  });
 }
 
 export async function DELETE(

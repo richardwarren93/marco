@@ -55,6 +55,10 @@ export default function RecipeRating({ recipeId }: { recipeId: string }) {
       if (!res.ok) throw new Error("failed");
       const fresh = await res.json();
       mutate(fresh, false);
+      if (fresh?.awarded && fresh?.tomatoesEarned > 0) {
+        showToast(`🍅 +${fresh.tomatoesEarned}`, { variant: "success" });
+        window.dispatchEvent(new CustomEvent("tomatoes:earned", { detail: { balance: fresh.tomatoBalance } }));
+      }
     } catch {
       showToast("Couldn't save your rating");
       mutate();
