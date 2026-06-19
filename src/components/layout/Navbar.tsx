@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import MarcoLockup from "@/components/layout/MarcoLockup";
+import HeaderTomatoBalance from "@/components/gamification/HeaderTomatoBalance";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Suspense, useEffect, useState, useRef, useCallback } from "react";
@@ -213,6 +214,8 @@ function NavbarInner() {
             <div className="relative flex items-center gap-1.5 sm:gap-2 ml-auto sm:ml-0">
               {user ? (
                 <>
+                  {/* Tomato balance — the desktop equivalent of the mobile header chip */}
+                  <HeaderTomatoBalance />
                   {/* Add recipe — tomato CTA, mirrors the mobile FAB on desktop */}
                   <Link
                     href="/recipes/new"

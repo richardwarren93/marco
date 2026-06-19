@@ -103,7 +103,9 @@ function Sparkles() {
 export default function TomatoMascot({ state, size = 220 }: { state: TomatoHealthState; size?: number }) {
   const c = CONFIG[state];
   const animClass = c.anim === "none" ? "" : `tm-${c.anim}`;
-  const gradId = `tm-body-${useId()}`;
+  // Strip non-alphanumerics: useId() can contain ':' which breaks SVG url(#id)
+  // fill references in production builds / Safari, leaving the body unpainted.
+  const gradId = `tm-body-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
 
   return (
     <div style={{ width: size, height: size }} aria-hidden>
