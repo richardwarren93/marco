@@ -12,6 +12,7 @@ import { RecipesIcon, CollectionsIcon, FriendsIcon } from "@/components/icons/Ha
 import MobileHeader from "@/components/layout/MobileHeader";
 import BadgesCard from "@/components/gamification/BadgesCard";
 import TasteProfileCard from "@/components/gamification/TasteProfileCard";
+import WeeklyReviewCard from "@/components/gamification/WeeklyReviewCard";
 import HouseholdCard from "@/components/household/HouseholdCard";
 import PhoneCard from "@/components/phone/PhoneCard";
 import DietaryFiltersCard from "@/components/dietary/DietaryFiltersCard";
@@ -384,6 +385,9 @@ export default function ProfilePage() {
           </>
         )}
       </div>
+
+      {/* ── Last week's cooking recap ── */}
+      <WeeklyReviewCard />
 
       {/* ── Taste Profile ── */}
       <div className="px-4 pt-1">

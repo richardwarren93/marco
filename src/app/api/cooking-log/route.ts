@@ -39,6 +39,42 @@ export async function POST(request: Request) {
   const admin = createAdminClient();
 
   try {
+    const today = new Date().toISOString().slice(0, 10); // UTC day
+
+    // 0. Confirm the cook — idempotent per (user, recipe, day). The unique constraint
+    //    makes re-confirming the same recipe today (from any slot) a no-op, so tomatoes
+    //    can't be farmed by adding one recipe to multiple meal-plan slots.
+    let newlyConfirmed = true;
+    const { data: confirmRows, error: confirmErr } = await admin
+      .from("cooked_confirmations")
+      .upsert(
+        { user_id: user.id, recipe_id, cooked_date: today, ...(meal_plan_id ? { meal_plan_id } : {}) },
+        { onConflict: "user_id,recipe_id,cooked_date", ignoreDuplicates: true },
+      )
+      .select("id");
+    if (confirmErr) {
+      // Table not migrated yet (or transient) — don't block cooking; treat as fresh.
+      newlyConfirmed = true;
+    } else {
+      newlyConfirmed = !!(confirmRows && confirmRows.length > 0);
+    }
+
+    if (!newlyConfirmed) {
+      // Already confirmed this recipe today: no new log, no re-award.
+      const { data: profile } = await admin
+        .from("user_profiles")
+        .select("tomato_balance")
+        .eq("user_id", user.id)
+        .single();
+      return NextResponse.json({
+        alreadyConfirmed: true,
+        awarded: false,
+        tomatoesEarned: 0,
+        goalJustCompleted: false,
+        tomatoBalance: profile?.tomato_balance ?? 0,
+      });
+    }
+
     // 1. Insert cooking log (linked to the planned slot when confirming from the meal plan)
     const { data: log, error: logError } = await admin
       .from("cooking_logs")
@@ -48,14 +84,13 @@ export async function POST(request: Request) {
 
     if (logError) throw logError;
 
-    // 2. Award tomatoes for cooking. From the meal plan we dedupe per slot (one award
-    //    per planned meal ever); from a recipe page each cook counts toward the daily cap.
+    // 2. Award tomatoes — once per recipe per day (gated by the confirmation above),
+    //    still subject to the daily cap.
     const cookAward = await awardTomatoes({
       userId: user.id,
       amount: TOMATO_REWARDS.COOKED_RECIPE,
       reason: "cooked_recipe",
-      referenceId: meal_plan_id || log.id,
-      dedupeKey: meal_plan_id || undefined,
+      referenceId: log.id,
       dailyCap: TOMATO_DAILY_CAPS.cooked_recipe,
     });
 
