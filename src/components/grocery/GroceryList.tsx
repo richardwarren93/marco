@@ -798,10 +798,22 @@ export default function GroceryList() {
 
       {/* ── List header + filter + view toggle ─────────────────────────── */}
       {!loading && (
-        <div className="mx-4 mt-4 mb-1">
+        <div className="mx-4 mt-4 mb-1 flex items-center justify-between gap-3">
           <h2 className="uppercase" style={{ fontFamily: "var(--font-mono, 'Geist Mono', monospace)", fontSize: "11px", fontWeight: 500, letterSpacing: "0.15em", color: "var(--ink-soft, #4A4742)" }}>
             List ({toBuyCount})
           </h2>
+          {toBuyCount > 0 && (
+            <button
+              onClick={() => setOrderOnlineOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-sm active:scale-[0.97] transition-transform"
+              style={{ background: "var(--tomato, #E5462E)" }}
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 2.3c-.6.6-.2 1.7.7 1.7H17M17 17a2 2 0 100 4 2 2 0 000-4zM9 19a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              Order online
+            </button>
+          )}
         </div>
       )}
 

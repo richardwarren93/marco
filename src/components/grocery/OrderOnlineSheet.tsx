@@ -129,6 +129,7 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedStore, setSelectedStore] = useState<string>("instacart");
   const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const toBuyItems = useMemo(() => items.filter((i) => !i.checked && !i.soft_deleted), [items]);
 
@@ -202,24 +203,62 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
     return `Marco Grocery List\n${"─".repeat(20)}${lines.join("\n")}`;
   }
 
-  async function handleContinueToStore() {
-    const store = STORES.find((s) => s.id === selectedStore);
-    if (!store || !store.available) return;
+  /** Resolve the selected items to their effective (override-aware) values. */
+  function selectedLineItems() {
+    return toBuyItems
+      .filter((i) => selectedIds.has(i.id))
+      .map((i) => ({
+        name: i.name_override || i.name,
+        amount: i.amount_override || i.amount,
+        unit: i.unit_override || i.unit,
+      }));
+  }
 
-    // Copy list to clipboard
-    const text = buildListText();
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-    } catch {
-      // fallback — still open the store
-    }
-
-    // Small delay so user sees the "copied" feedback, then open store
+  /** Fallback when Instacart isn't configured: copy the list + open the store. */
+  function copyAndOpen(targetUrl: string, tab: Window | null) {
+    try { navigator.clipboard.writeText(buildListText()); } catch { /* best effort */ }
+    setCopied(true);
     setTimeout(() => {
-      window.open(store.url, "_blank");
+      if (tab) tab.location.href = targetUrl;
+      else window.open(targetUrl, "_blank");
       onClose();
     }, 600);
+  }
+
+  async function handleContinueToStore() {
+    const store = STORES.find((s) => s.id === selectedStore);
+    if (!store || !store.available || loading) return;
+
+    // Open the tab synchronously inside the click so it isn't popup-blocked;
+    // we redirect it to the real list URL once the API responds.
+    const tab = typeof window !== "undefined" ? window.open("", "_blank") : null;
+
+    if (store.id === "instacart") {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/instacart/shopping-list", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: selectedLineItems(), title: "Marco grocery list" }),
+        });
+        if (res.ok) {
+          const { url } = await res.json();
+          if (url) {
+            if (tab) tab.location.href = url;
+            else window.open(url, "_blank");
+            setLoading(false);
+            onClose();
+            return;
+          }
+        }
+        // 501 (not configured) or any failure → graceful fallback below.
+      } catch {
+        /* fall through to fallback */
+      }
+      setLoading(false);
+    }
+
+    copyAndOpen(store.url, tab);
   }
 
   return (
@@ -413,14 +452,22 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
             <div className="px-5 pt-4 pb-8 border-t border-gray-100 flex-shrink-0 bg-white">
               <button
                 onClick={handleContinueToStore}
-                disabled={!STORES.find((s) => s.id === selectedStore)?.available}
+                disabled={!STORES.find((s) => s.id === selectedStore)?.available || loading}
                 className={`w-full py-3.5 font-bold text-sm rounded-2xl active:scale-[0.98] transition-all shadow-sm ${
                   copied
                     ? "bg-green-500 text-white"
                     : "bg-orange-500 text-white hover:bg-orange-600"
                 } disabled:opacity-40`}
               >
-                {copied ? (
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Building your list…
+                  </span>
+                ) : copied ? (
                   <span className="flex items-center justify-center gap-2">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
