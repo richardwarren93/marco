@@ -80,6 +80,40 @@ function Mouth({ type }: { type: StateConfig["mouth"] }) {
   return null;
 }
 
+/* A cheerful winking face for brand moments (splash / welcome): the left eye stays
+   open, the right one closes into a happy arc, and a wide open grin shows a tongue
+   and two little teeth. Layered over any state's body colours. */
+function GreetingFace({ clipId }: { clipId: string }) {
+  const INK = "#1C1A17";
+  const MOUTH = "#5E2317";
+  return (
+    <g>
+      {/* Left eye — open tall oval with highlight */}
+      <g>
+        <ellipse cx={102} cy={150} rx={15} ry={26} fill={INK} />
+        <circle cx={107} cy={140} r={5} fill="#FFFFFF" />
+      </g>
+      {/* Right eye — closed happy arc (the wink) */}
+      <path d="M137 152 Q150 142 163 152" stroke={INK} strokeWidth={7} strokeLinecap="round" fill="none" />
+
+      {/* Open grin with a tongue + teeth, clipped to the mouth shape */}
+      <defs>
+        <clipPath id={clipId}>
+          <path d="M99 182 Q120 176 141 182 Q138 208 120 208 Q102 208 99 182 Z" />
+        </clipPath>
+      </defs>
+      <path d="M99 182 Q120 176 141 182 Q138 208 120 208 Q102 208 99 182 Z" fill={MOUTH} />
+      <g clipPath={`url(#${clipId})`}>
+        {/* Two little teeth along the top lip */}
+        <rect x={110} y={178} width={9} height={8} rx={2} fill="#FFFFFF" />
+        <rect x={121} y={178} width={9} height={8} rx={2} fill="#FFFFFF" />
+        {/* Tongue */}
+        <ellipse cx={120} cy={205} rx={13} ry={8} fill="#EF6E86" />
+      </g>
+    </g>
+  );
+}
+
 function Sparkles() {
   return (
     <g fill="#F2B705">
@@ -100,12 +134,14 @@ function Sparkles() {
   );
 }
 
-export default function TomatoMascot({ state, size = 220 }: { state: TomatoHealthState; size?: number }) {
+export default function TomatoMascot({ state, size = 220, greeting = false }: { state: TomatoHealthState; size?: number; greeting?: boolean }) {
   const c = CONFIG[state];
   const animClass = c.anim === "none" ? "" : `tm-${c.anim}`;
   // Strip non-alphanumerics: useId() can contain ':' which breaks SVG url(#id)
   // fill references in production builds / Safari, leaving the body unpainted.
-  const gradId = `tm-body-${useId().replace(/[^a-zA-Z0-9]/g, "")}`;
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, "");
+  const gradId = `tm-body-${uid}`;
+  const clipId = `tm-mouth-${uid}`;
 
   return (
     <div style={{ width: size, height: size }} aria-hidden>
@@ -129,9 +165,15 @@ export default function TomatoMascot({ state, size = 220 }: { state: TomatoHealt
           {/* Soft sheen */}
           <ellipse cx="92" cy="108" rx="24" ry="16" fill="rgba(255,255,255,0.18)" />
 
-          <Eye cx={102} type={c.eyes} />
-          <Eye cx={150} type={c.eyes} />
-          <Mouth type={c.mouth} />
+          {greeting ? (
+            <GreetingFace clipId={clipId} />
+          ) : (
+            <>
+              <Eye cx={102} type={c.eyes} />
+              <Eye cx={150} type={c.eyes} />
+              <Mouth type={c.mouth} />
+            </>
+          )}
 
           {c.fx === "sweat" && (
             <path className="tm-sweat" d="M176 86 q9 13 0 20 q-9 -7 0 -20 Z" fill="#7CC4E8" style={{ transformOrigin: "176px 96px" }} />

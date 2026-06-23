@@ -4,20 +4,14 @@ import { createClient } from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import WelcomePhoneMockup from "@/components/onboarding/WelcomePhoneMockup";
+import WelcomeCollage from "@/components/onboarding/WelcomeCollage";
 import MarcoLockup from "@/components/layout/MarcoLockup";
-
-// Rotating welcome headline — synced with the phone screens (recipe / meal plan
-// / grocery). Each phrase's accent word renders in tomato italic.
-const HERO_PHRASES = [
-  { lead: "Save & organize recipes from ", accent: "anywhere" },
-  { lead: "Create a meal plan ", accent: "automatically" },
-  { lead: "Generate your ", accent: "grocery list" },
-];
+import BrandSplash from "@/components/onboarding/BrandSplash";
+import FeatureTour from "@/components/onboarding/FeatureTour";
+import PreAuthQuestions from "@/components/onboarding/PreAuthQuestions";
 
 export default function SignupPage() {
-  const [mode, setMode] = useState<"welcome" | "choose" | "email">("welcome");
-  const [heroScreen, setHeroScreen] = useState(0);
+  const [mode, setMode] = useState<"splash" | "welcome" | "tour" | "questions" | "choose" | "email">("splash");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -28,12 +22,15 @@ export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // Advance the welcome hero (headline + phone) every few seconds.
+  // The brand splash plays once per app session. If we've already shown it,
+  // skip straight to the welcome screen (avoids replaying on back-navigation).
   useEffect(() => {
-    if (mode !== "welcome") return;
-    const id = setInterval(() => setHeroScreen((s) => (s + 1) % HERO_PHRASES.length), 3800);
-    return () => clearInterval(id);
-  }, [mode]);
+    if (sessionStorage.getItem("marco_splash_seen")) {
+      setMode("welcome");
+    } else {
+      sessionStorage.setItem("marco_splash_seen", "1");
+    }
+  }, []);
 
   async function handleGuestSignIn() {
     setError("");
@@ -94,6 +91,23 @@ export default function SignupPage() {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+  }
+
+  // Brand splash — the first screen on app open: the cute Marco tomato.
+  if (mode === "splash") {
+    return <BrandSplash onDone={() => setMode("welcome")} />;
+  }
+
+  // Feature tour — 5-screen walkthrough shown after Get started. Its final Next
+  // leads into the intro questions.
+  if (mode === "tour") {
+    return <FeatureTour onBack={() => setMode("welcome")} onComplete={() => setMode("questions")} />;
+  }
+
+  // Intro questions — how-they-heard / goals / meals + graph. Answers persist to
+  // localStorage; the final Continue hands off to account creation.
+  if (mode === "questions") {
+    return <PreAuthQuestions onBack={() => setMode("tour")} onComplete={() => setMode("choose")} />;
   }
 
   // Success confirmation
@@ -252,58 +266,53 @@ export default function SignupPage() {
     );
   }
 
-  // Welcome screen — ReciMe-style landing: wordmark logo, headline, an
-  // animated phone mockup showing a recipe importing "in seconds", then a
-  // single Get started CTA that opens the sign-in method picker.
+  // Welcome screen — a collage hero (floating recipe / mascot / streak cards)
+  // over a big "Reach your cooking goals" headline, then a single Get started
+  // CTA that opens the sign-in method picker.
   if (mode === "welcome") {
     return (
       <div
         className="flex flex-col"
         style={{ background: "#F5EEE2", minHeight: "100dvh" }}
       >
-        {/* Header — wordmark logo + headline + subtitle */}
+        {/* Tiny wordmark up top */}
         <div
-          className="flex flex-col items-center text-center px-6 flex-shrink-0"
-          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.75rem)" }}
+          className="flex justify-center flex-shrink-0 animate-stagger-in"
+          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}
         >
-          <MarcoLockup wordmarkSize="2.5rem" tomatoSize={48} className="animate-stagger-in" />
-
-          <h1
-            key={heroScreen}
-            className="mt-5 max-w-sm animate-stagger-in"
-            style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-              fontSize: "27px",
-              lineHeight: 1.1,
-              letterSpacing: "-0.02em",
-              color: "var(--ink, #1C1A17)",
-              minHeight: "2.2em",
-            }}
-          >
-            {HERO_PHRASES[heroScreen].lead}
-            <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>
-              {HERO_PHRASES[heroScreen].accent}
-            </em>
-          </h1>
+          <MarcoLockup wordmarkSize="1.6rem" tomatoSize={32} />
         </div>
 
-        {/* Animated phone mockup — fills the space between header and CTA */}
-        <div className="flex-1 min-h-0 flex items-center justify-center px-6 py-6 overflow-hidden">
-          <div
-            className="animate-stagger-in"
-            style={{ height: "min(440px, 56vh)", animationDelay: "0.22s" }}
-          >
-            <WelcomePhoneMockup screen={heroScreen} />
-          </div>
+        {/* Collage hero — floating recipe / mascot / streak cards */}
+        <div className="px-2 pt-2 animate-stagger-in" style={{ animationDelay: "0.12s" }}>
+          <WelcomeCollage />
         </div>
+
+        {/* Big headline — one word per line */}
+        <h1
+          className="px-6 mt-2 text-center animate-stagger-in"
+          style={{
+            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+            fontVariationSettings: '"opsz" 144, "SOFT" 60, "wght" 860',
+            fontSize: "clamp(48px, 16vw, 72px)",
+            lineHeight: 0.94,
+            letterSpacing: "-0.035em",
+            color: "var(--ink, #1C1A17)",
+            animationDelay: "0.2s",
+          }}
+        >
+          <span style={{ display: "block" }}>Reach</span>
+          <span style={{ display: "block" }}>your</span>
+          <span style={{ display: "block", color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>cooking</span>
+          <span style={{ display: "block" }}>goals</span>
+        </h1>
 
         {/* Bottom action — single Get started CTA + sign in link */}
-        <div className="px-6 pb-8 pt-2 flex-shrink-0 max-w-sm mx-auto w-full">
+        <div className="px-6 pb-8 pt-6 mt-auto flex-shrink-0 max-w-sm w-full mx-auto">
           <button
             onClick={() => {
               setError("");
-              setMode("choose");
+              setMode("tour");
             }}
             className="w-full py-4 px-4 text-white rounded-2xl font-semibold text-base shadow-sm transition-colors"
             style={{ background: "var(--tomato, #E5462E)" }}
@@ -317,15 +326,13 @@ export default function SignupPage() {
             Get started
           </button>
 
-          <p className="text-center text-sm text-gray-500 pt-4">
-            Already have an account?{" "}
-            <Link
-              href="/auth/login"
-              className="text-orange-600 hover:underline font-semibold"
-            >
-              Log in
-            </Link>
-          </p>
+          <Link
+            href="/auth/login"
+            className="block text-center font-semibold pt-5 text-[15px]"
+            style={{ color: "var(--ink, #1C1A17)" }}
+          >
+            Already Have an Account
+          </Link>
         </div>
       </div>
     );

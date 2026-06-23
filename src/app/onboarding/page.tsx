@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import SocialProofStep from "@/components/onboarding/guided/SocialProofStep";
@@ -96,6 +96,10 @@ export default function OnboardingPage() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingState>(defaultState);
   const [ready, setReady] = useState(false);
+  // Lowest step the user may navigate back to. Raised when the intro questions
+  // (goals / meals / graph) were answered before signup, so Back doesn't walk
+  // them into the skipped screens.
+  const minStepRef = useRef(0);
 
   useEffect(() => {
     const supabase = createClient();
@@ -118,15 +122,38 @@ export default function OnboardingPage() {
       // sees the "Build My Recipe Book" opening. We restore saved *answers*
       // (so nothing is lost) but never the saved step — resuming past the
       // cover was hiding it for anyone who'd entered onboarding before.
+      let restoredWeeklyGoal = 0;
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed.data) {
             setData({ ...defaultState, ...parsed.data, rankedRecipes: parsed.data.rankedRecipes || [], importedRecipes: parsed.data.importedRecipes || [] });
+            restoredWeeklyGoal = parsed.data.weeklyMealGoal || 0;
           }
         }
       } catch { /* ignore */ }
+
+      // If the user already answered the intro questions before signing up
+      // (how-they-heard / goals / meals + graph / recipe sources), skip the
+      // cover and those screens — resume at the sources affirmation (step 6)
+      // so nothing repeats.
+      let preAuthDone = false;
+      try { preAuthDone = localStorage.getItem("marco_preauth_done") === "1"; } catch { /* ignore */ }
+      if (preAuthDone) {
+        minStepRef.current = 6;
+        setStep(6);
+        // MealCountStep normally persists the weekly goal; we skipped it, so do
+        // it here now that the user is authenticated (fire-and-forget).
+        if (restoredWeeklyGoal > 0) {
+          fetch("/api/cooking-goal", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ weekly_target: restoredWeeklyGoal }),
+          }).catch(() => { /* non-blocking */ });
+        }
+      }
+
       setReady(true);
     });
   }, [router]);
@@ -140,7 +167,7 @@ export default function OnboardingPage() {
   }, [step, data, ready]);
 
   const goForward = useCallback(() => setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1)), []);
-  const goBack = useCallback(() => setStep((prev) => Math.max(prev - 1, 0)), []);
+  const goBack = useCallback(() => setStep((prev) => Math.max(prev - 1, minStepRef.current)), []);
 
   const update = useCallback((partial: Partial<OnboardingState>) => {
     setData((prev) => ({ ...prev, ...partial }));
@@ -170,6 +197,7 @@ export default function OnboardingPage() {
       document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
     } catch { /* continue anyway */ }
     localStorage.removeItem(STORAGE_KEY);
+    try { localStorage.removeItem("marco_preauth_done"); } catch { /* ignore */ }
   }, [data]);
 
   // Final landing into the app. With the paywall off, TasteProfileOverlay still
