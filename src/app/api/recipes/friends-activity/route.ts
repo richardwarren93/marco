@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,11 +32,21 @@ export async function GET() {
       return NextResponse.json({ recipes: [], friends: [] });
     }
 
+    // Optional single-friend filter (their saved recipes). Only honoured for an
+    // actual accepted friend, so it can't be used to read a stranger's library.
+    const friendParam = new URL(request.url).searchParams.get("friend");
+    const single = friendParam && friendIds.includes(friendParam);
+    if (friendParam && !single) {
+      return NextResponse.json({ recipes: [], friends: [] });
+    }
+    const targetIds = single ? [friendParam] : friendIds;
+    const recipeLimit = single ? 200 : 60;
+
     // 2. Get friend profiles
     const { data: profiles } = await admin
       .from("user_profiles")
       .select("user_id, display_name, avatar_url")
-      .in("user_id", friendIds);
+      .in("user_id", targetIds);
 
     const profileMap = new Map(
       (profiles || []).map((p) => [p.user_id, p])
@@ -46,9 +56,9 @@ export async function GET() {
     const { data: friendRecipes } = await admin
       .from("recipes")
       .select("id, user_id, title, description, tags, image_url, source_platform, prep_time_minutes, cook_time_minutes, servings, meal_type, created_at")
-      .in("user_id", friendIds)
+      .in("user_id", targetIds)
       .order("created_at", { ascending: false })
-      .limit(60);
+      .limit(recipeLimit);
 
     // 4. Get friends' recent meal plans to see what they're cooking
     const thirtyDaysAgo = new Date();
@@ -59,7 +69,7 @@ export async function GET() {
     const { data: friendMealPlans } = await admin
       .from("meal_plans")
       .select("recipe_id, user_id, planned_date, meal_type")
-      .in("user_id", friendIds)
+      .in("user_id", targetIds)
       .gte("planned_date", thirtyDaysAgo.toISOString().split("T")[0])
       .lte("planned_date", thirtyDaysFromNow.toISOString().split("T")[0])
       .order("planned_date", { ascending: false })

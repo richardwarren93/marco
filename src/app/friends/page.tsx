@@ -220,7 +220,7 @@ export default function FriendsPage() {
                     return (
                       <Link
                         key={f.id}
-                        href={`/recipes?tab=discover`}
+                        href={p?.user_id ? `/friends/${p.user_id}` : "/recipes?tab=discover"}
                         className="rounded-2xl px-1.5 py-3 flex flex-col items-center text-center active:scale-[0.97] transition-transform"
                         style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}
                       >
