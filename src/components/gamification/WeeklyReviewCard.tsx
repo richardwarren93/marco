@@ -39,7 +39,8 @@ export default function WeeklyReviewCard() {
   const { data } = useSWR<ReviewData>("/api/cooking-review", apiFetcher, { revalidateOnFocus: false });
   const { showToast } = useToast();
 
-  if (!data) return null;
+  // Also bail on error payloads (e.g. a 401 body) — destructure only real data.
+  if (!data || !Array.isArray(data.recipes)) return null;
 
   const { recipes, distinctCount, totalCooks, tomatoesEarned } = data;
   const empty = distinctCount === 0;

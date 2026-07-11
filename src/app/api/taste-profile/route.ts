@@ -295,6 +295,8 @@ export async function GET() {
   const currentRefreshDate = getLastRefreshDate();
 
   const priority = (prefsData?.meal_planning_priority as string) || null;
+  // Dream meal from onboarding — free text, shown on the Taste DNA page.
+  const signatureDish = (tasteProfile?.signature_dish as string) || null;
 
   // Return cached data if it was computed during the current 2-week period
   if (cached && cached.lastComputed >= currentRefreshDate) {
@@ -306,6 +308,7 @@ export async function GET() {
       insights: cached.insights,
       signatureMeals: cached.signatureMeals,
       priority,
+      signatureDish,
     });
   }
 
@@ -385,5 +388,6 @@ export async function GET() {
     insights,
     signatureMeals,
     priority,
+    signatureDish,
   });
 }

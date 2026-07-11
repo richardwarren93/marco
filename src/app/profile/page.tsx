@@ -3,21 +3,50 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, CookingGoal } from "@/types";
 import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
-import { RecipesIcon, CollectionsIcon, FriendsIcon } from "@/components/icons/HandDrawnIcons";
+import { TOMATO_HEALTH_META, type TomatoHealthState } from "@/lib/gamification";
 import MobileHeader from "@/components/layout/MobileHeader";
-import BadgesCard from "@/components/gamification/BadgesCard";
-import TasteProfileCard from "@/components/gamification/TasteProfileCard";
 import WeeklyReviewCard from "@/components/gamification/WeeklyReviewCard";
-import HouseholdCard from "@/components/household/HouseholdCard";
-import PhoneCard from "@/components/phone/PhoneCard";
-import DietaryFiltersCard from "@/components/dietary/DietaryFiltersCard";
-import AllergiesCard from "@/components/dietary/AllergiesCard";
-import RestorePurchasesButton from "@/components/purchases/RestorePurchasesButton";
+
+/* Profile hub — identity + living stats up top, features as visual tiles
+   (Taste DNA, Badges, Tomatoes, Household), the weekly recap, and the one-time
+   settings collapsed into a menu (Food preferences, Text Marco, Notifications,
+   Account). Every tile previews live state; the deep content lives on
+   /profile/{taste,badges,preferences,household,text,notifications,account}. */
+
+interface TasteTile {
+  all?: { sweet: number; savory: number; richness: number; tangy: number; spicy: number };
+  cuisines?: { id: string; label: string; flag: string }[];
+}
+interface BadgesTile { earned?: number; total?: number }
+interface TomatoTile { balance?: number; mascot?: { state: TomatoHealthState; streak: number } }
+interface HouseholdTile {
+  household?: { name: string; members?: { display_name: string }[] } | null;
+}
+
+const TILE_STYLE = {
+  background: "#FFFDF7",
+  border: "1px solid rgba(28,26,23,0.08)",
+  boxShadow: "0 1px 3px rgba(28,26,23,0.05)",
+} as const;
+
+const TILE_TITLE = {
+  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+  fontVariationSettings: '"opsz" 24, "SOFT" 100, "wght" 600',
+  fontSize: "14.5px",
+  color: "#1C1A17",
+} as const;
+
+function Chevron() {
+  return (
+    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#b4ab9e" strokeWidth={2.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+    </svg>
+  );
+}
 
 export default function ProfilePage() {
   const { data: profileData, isLoading: profileLoading, mutate: mutateProfile } = useProfile();
@@ -26,41 +55,21 @@ export default function ProfilePage() {
   const { data: friendsData, isLoading: friendsLoading } = useSWR("/api/friends", apiFetcher, { revalidateOnFocus: false });
   const { data: goalData, isLoading: goalLoading, mutate: mutateGoal } = useSWR("/api/cooking-goal", apiFetcher, { revalidateOnFocus: false });
 
-  // Detect anonymous (guest) users
+  // Tile previews — never gate the page on these; each tile has its own idle state.
+  const { data: taste } = useSWR<TasteTile>("/api/taste-profile", apiFetcher, { revalidateOnFocus: false });
+  const { data: badges } = useSWR<BadgesTile>("/api/badges", apiFetcher, { revalidateOnFocus: false });
+  const { data: tomatoes } = useSWR<TomatoTile>("/api/tomatoes", apiFetcher, { revalidateOnFocus: false });
+  const { data: householdData } = useSWR<HouseholdTile>("/api/household", apiFetcher, { revalidateOnFocus: false });
+
+  // Guest detection — the hub only shows a slim banner; the upgrade flow lives
+  // on /profile/account.
   const [isGuest, setIsGuest] = useState(false);
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [upgradeEmail, setUpgradeEmail] = useState("");
-  const [upgradePassword, setUpgradePassword] = useState("");
-  const [upgradeError, setUpgradeError] = useState("");
-  const [upgradeLoading, setUpgradeLoading] = useState(false);
-  const [upgradeSent, setUpgradeSent] = useState(false);
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then((result: { data: { user: { is_anonymous?: boolean } | null } }) => {
       setIsGuest(result.data.user?.is_anonymous === true);
     });
   }, []);
-
-  async function handleUpgrade(e: React.FormEvent) {
-    e.preventDefault();
-    setUpgradeError("");
-    setUpgradeLoading(true);
-    const supabase = createClient();
-    const { error: pwError } = await supabase.auth.updateUser({ password: upgradePassword });
-    if (pwError) {
-      setUpgradeError(pwError.message);
-      setUpgradeLoading(false);
-      return;
-    }
-    const { error: emailError } = await supabase.auth.updateUser({ email: upgradeEmail });
-    if (emailError) {
-      setUpgradeError(emailError.message);
-      setUpgradeLoading(false);
-      return;
-    }
-    setUpgradeSent(true);
-    setUpgradeLoading(false);
-  }
 
   const profile: UserProfile | null = profileData?.profile ?? null;
   const goal: CookingGoal | null = goalData?.goal ?? null;
@@ -75,14 +84,9 @@ export default function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState("");
   const [saving, setSaving] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [showGoalPicker, setShowGoalPicker] = useState(false);
   const [savingGoal, setSavingGoal] = useState(false);
-  const [showDelete, setShowDelete] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const goalTarget = goal?.weekly_target ?? 0;
@@ -148,14 +152,6 @@ export default function ProfilePage() {
     }
   }
 
-  async function handleCopyCode() {
-    if (profile) {
-      await navigator.clipboard.writeText(profile.friend_code);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }
-
   if (loading) {
     return (
       <div className="max-w-lg mx-auto" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
@@ -165,10 +161,10 @@ export default function ProfilePage() {
           <div className="h-5 skeleton-warm rounded-2xl w-32 mx-auto" />
           <div className="grid grid-cols-2 gap-2.5">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-12 skeleton-warm rounded-2xl" />
+              <div key={i} className="h-24 skeleton-warm rounded-2xl" />
             ))}
           </div>
-          <div className="h-56 skeleton-warm rounded-2xl" />
+          <div className="h-40 skeleton-warm rounded-2xl" />
         </div>
       </div>
     );
@@ -181,77 +177,51 @@ export default function ProfilePage() {
     .slice(0, 2)
     .toUpperCase();
 
+  // ── Tile preview values ──
+  const tasteScores = taste?.all;
+  const hasTaste = !!tasteScores && Object.values(tasteScores).some((v) => v > 0);
+  const tasteDims = hasTaste
+    ? ([
+        { key: "savory", label: "Savory", color: "#E5462E" },
+        { key: "sweet", label: "Sweet", color: "#E8A33D" },
+        { key: "spicy", label: "Spicy", color: "#c2410c" },
+        { key: "tangy", label: "Tangy", color: "#0F4C5C" },
+        { key: "richness", label: "Rich", color: "#b45309" },
+      ] as const)
+        .map((d) => ({ ...d, score: tasteScores[d.key] ?? 0 }))
+        .sort((a, b) => b.score - a.score)
+    : [];
+  const topCuisine = taste?.cuisines?.[0]?.label;
+
+  const mascotState = tomatoes?.mascot?.state;
+  const mascotLabel = mascotState ? TOMATO_HEALTH_META[mascotState]?.label : null;
+  const streak = tomatoes?.mascot?.streak ?? 0;
+
+  const household = householdData?.household ?? null;
+  const memberInitials = (household?.members ?? [])
+    .slice(0, 4)
+    .map((m) => (m.display_name || "?").trim().charAt(0).toUpperCase());
+
+  const verifiedPhone = Boolean(profile?.phone_verified_at && profile?.phone);
+
   return (
     <div className="max-w-lg mx-auto pb-8" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
       <MobileHeader title="Profile" />
 
-      {/* ── Guest upgrade banner ── */}
-      {isGuest && !showUpgrade && (
-        <div className="mx-4 mt-3 p-4 rounded-2xl flex items-start gap-3" style={{ background: "#fff4ec", border: "1px solid #fcd9bd" }}>
-          <span className="text-2xl flex-shrink-0">🔒</span>
+      {/* ── Guest banner — slim; the upgrade flow lives on the Account page ── */}
+      {isGuest && (
+        <Link
+          href="/profile/account"
+          className="mx-4 mt-3 p-3.5 rounded-2xl flex items-center gap-3 active:scale-[0.99] transition-transform"
+          style={{ background: "#fff4ec", border: "1px solid #fcd9bd" }}
+        >
+          <span className="text-xl flex-shrink-0">🔒</span>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
-            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#a09890" }}>
-              Add an email to access Marco from any device and never lose your recipes.
-            </p>
-            <button
-              onClick={() => setShowUpgrade(true)}
-              className="mt-2.5 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all active:scale-95"
-              style={{ background: "#e8530a" }}
-            >
-              Add email
-            </button>
+            <p className="text-[13px] font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
+            <p className="text-[11.5px]" style={{ color: "#a09890" }}>Add an email so you never lose your recipes</p>
           </div>
-        </div>
-      )}
-
-      {/* ── Upgrade form ── */}
-      {isGuest && showUpgrade && !upgradeSent && (
-        <div className="mx-4 mt-3 p-4 rounded-2xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
-            <button onClick={() => setShowUpgrade(false)} className="text-gray-400 text-sm" aria-label="Close">✕</button>
-          </div>
-          <form onSubmit={handleUpgrade} className="space-y-2.5">
-            {upgradeError && (
-              <div className="bg-red-50 text-red-600 p-2.5 rounded-xl text-xs">{upgradeError}</div>
-            )}
-            <input
-              type="email"
-              value={upgradeEmail}
-              onChange={(e) => setUpgradeEmail(e.target.value)}
-              required
-              placeholder="you@example.com"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
-            />
-            <input
-              type="password"
-              value={upgradePassword}
-              onChange={(e) => setUpgradePassword(e.target.value)}
-              required
-              minLength={6}
-              placeholder="Choose a password (6+ chars)"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
-            />
-            <button
-              type="submit"
-              disabled={upgradeLoading}
-              className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-50"
-              style={{ background: "#e8530a" }}
-            >
-              {upgradeLoading ? "Securing..." : "Secure account"}
-            </button>
-          </form>
-        </div>
-      )}
-
-      {isGuest && upgradeSent && (
-        <div className="mx-4 mt-3 p-4 rounded-2xl" style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
-          <p className="text-sm font-bold" style={{ color: "#065f46" }}>📬 Check your email!</p>
-          <p className="text-xs mt-1 leading-relaxed" style={{ color: "#065f46" }}>
-            We sent a confirmation link to <strong>{upgradeEmail}</strong>. Click it to finish securing your account.
-          </p>
-        </div>
+          <Chevron />
+        </Link>
       )}
 
       {/* ── Banner + Avatar ── */}
@@ -287,7 +257,7 @@ export default function ProfilePage() {
 
       <input ref={avatarInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} className="hidden" />
 
-      {/* ── Name ── */}
+      {/* ── Name + streak chip ── */}
       <div className="text-center pt-14 px-6 pb-1">
         {editing ? (
           <div className="space-y-3">
@@ -319,6 +289,19 @@ export default function ProfilePage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
             </svg>
           </button>
+        )}
+
+        {!editing && tomatoes && (
+          <div className="pt-2">
+            <Link
+              href="/tomatoes"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold active:scale-95 transition-transform"
+              style={{ background: "rgba(229,70,46,0.1)", color: "#B8331E" }}
+            >
+              {streak > 0 ? <>🔥 {streak}-day streak</> : <>🍅 {tomatoes.balance ?? 0}</>}
+              {streak > 0 && <span style={{ opacity: 0.7 }}>· 🍅 {tomatoes.balance ?? 0}</span>}
+            </Link>
+          </div>
         )}
       </div>
 
@@ -386,157 +369,119 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* ── Feature tiles — each previews live state ── */}
+      <div className="mx-4 mt-3 grid grid-cols-2 gap-2.5">
+        {/* Taste DNA */}
+        <Link href="/profile/taste" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
+          <div className="flex items-center justify-between">
+            <span className="text-lg" aria-hidden>🧬</span>
+            <Chevron />
+          </div>
+          <p className="mt-2 mb-1.5" style={TILE_TITLE}>Taste DNA</p>
+          {hasTaste ? (
+            <>
+              {tasteDims.slice(0, 2).map((d) => (
+                <div key={d.key} className="h-[5px] rounded-full overflow-hidden mb-1" style={{ background: "#efe9dc" }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(d.score, 6)}%`, background: d.color }} />
+                </div>
+              ))}
+              <p className="mt-1.5 text-[10.5px] truncate" style={{ color: "#8a8378" }}>
+                {tasteDims[0]?.label}-forward{topCuisine ? ` · ${topCuisine}` : ""}
+              </p>
+            </>
+          ) : (
+            <p className="text-[11px]" style={{ color: "#8a8378" }}>Build yours →</p>
+          )}
+        </Link>
+
+        {/* Badges */}
+        <Link href="/profile/badges" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
+          <div className="flex items-center justify-between">
+            <span className="text-lg" aria-hidden>🏅</span>
+            <Chevron />
+          </div>
+          <p className="mt-2 mb-1.5" style={TILE_TITLE}>Badges</p>
+          <div className="h-[5px] rounded-full overflow-hidden mb-1.5" style={{ background: "#efe9dc" }}>
+            <div
+              className="h-full rounded-full"
+              style={{
+                width: `${badges?.total ? Math.max(Math.round(((badges.earned ?? 0) / badges.total) * 100), 4) : 4}%`,
+                background: "#E8A33D",
+              }}
+            />
+          </div>
+          <p className="text-[10.5px]" style={{ color: "#8a8378" }}>
+            {badges?.total ? `${badges.earned ?? 0} of ${badges.total} earned` : "Start earning →"}
+          </p>
+        </Link>
+
+        {/* Tomatoes */}
+        <Link href="/tomatoes" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
+          <div className="flex items-center justify-between">
+            <span className="text-lg" aria-hidden>🍅</span>
+            <Chevron />
+          </div>
+          <p className="mt-2" style={TILE_TITLE}>Tomatoes</p>
+          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 700', fontSize: "22px", color: "#E5462E", lineHeight: 1.1 }}>
+            {tomatoes?.balance ?? "—"}
+          </p>
+          <p className="mt-0.5 text-[10.5px] truncate" style={{ color: "#8a8378" }}>
+            {mascotLabel ? `${mascotLabel}${streak > 0 ? ` · ${streak}-day streak` : ""}` : "Earn by cooking →"}
+          </p>
+        </Link>
+
+        {/* Household */}
+        <Link href="/profile/household" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
+          <div className="flex items-center justify-between">
+            <span className="text-lg" aria-hidden>🏠</span>
+            <Chevron />
+          </div>
+          <p className="mt-2 mb-1.5" style={TILE_TITLE}>Household</p>
+          {household ? (
+            <>
+              <div className="flex">
+                {memberInitials.map((ini, i) => (
+                  <span
+                    key={i}
+                    className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9.5px] font-bold text-white ring-2 ring-[#FFFDF7]"
+                    style={{ background: ["#E5462E", "#E8A33D", "#0F4C5C", "#7c6a44"][i % 4], marginLeft: i > 0 ? "-6px" : 0 }}
+                  >
+                    {ini}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-1.5 text-[10.5px] truncate" style={{ color: "#8a8378" }}>{household.name}</p>
+            </>
+          ) : (
+            <p className="text-[11px]" style={{ color: "#8a8378" }}>Cook together — set up →</p>
+          )}
+        </Link>
+      </div>
+
       {/* ── Last week's cooking recap ── */}
       <WeeklyReviewCard />
 
-      {/* ── Taste Profile ── */}
-      <div className="px-4 pt-1">
-        <TasteProfileCard />
-      </div>
-
-      {/* ── Badges — Showcase ── */}
-      <div className="px-4 pt-4">
-        <BadgesCard />
-      </div>
-
-      {/* ── Dietary filters ── */}
-      <div className="px-4 pt-4">
-        <DietaryFiltersCard />
-      </div>
-
-      {/* ── Allergies ── */}
-      <div className="px-4 pt-4">
-        <AllergiesCard />
-      </div>
-
-      {/* ── Household ── */}
-      <div className="px-4 pt-4">
-        <HouseholdCard />
-      </div>
-
-      {/* ── Text Marco (SMS) ── */}
-      <div className="px-4 pt-4">
-        <PhoneCard />
-      </div>
-
-      {/* ── Restore purchases (App Store requirement) ── */}
-      <div className="px-4 pt-8">
-        <RestorePurchasesButton />
-      </div>
-
-      {/* ── Log out ── */}
-      <div className="px-4 pt-3">
-        <button
-          onClick={async () => {
-            const supabase = createClient();
-            await supabase.auth.signOut();
-            document.cookie = "marco_onboarded=; path=/; max-age=0";
-            window.location.href = "/auth/signup";
-          }}
-          className="w-full py-3 rounded-2xl text-sm font-semibold text-red-500 transition-colors active:scale-[0.98]"
-          style={{ background: "rgba(239,68,68,0.06)" }}
-        >
-          Log out
-        </button>
-      </div>
-
-      {/* ── Delete account ── separated visually so it's clearly the
-          point of no return. Guests can't hit it (no password to
-          confirm and no data worth losing). */}
-      {!isGuest && (
-        <div className="px-4 pt-3 pb-12">
-          <button
-            onClick={() => { setShowDelete(true); setDeleteConfirmText(""); setDeleteError(""); }}
-            className="w-full py-3 rounded-2xl text-sm font-medium transition-colors active:scale-[0.98]"
-            style={{ color: "rgba(28,26,23,0.45)", background: "transparent" }}
+      {/* ── Settings menu ── */}
+      <div className="mx-4 mt-4 rounded-2xl overflow-hidden" style={TILE_STYLE}>
+        {[
+          { href: "/profile/preferences", icon: "🥗", label: "Food preferences", hint: undefined as string | undefined },
+          { href: "/profile/text", icon: "💬", label: "Text Marco", hint: verifiedPhone ? "Linked" : undefined },
+          { href: "/profile/notifications", icon: "🔔", label: "Notifications", hint: undefined },
+          { href: "/profile/account", icon: "👤", label: "Account", hint: isGuest ? "Guest — add an email" : undefined },
+        ].map((row, i, arr) => (
+          <Link
+            key={row.href}
+            href={row.href}
+            className="flex items-center gap-3 px-4 py-3.5 active:bg-black/[0.03] transition-colors"
+            style={i < arr.length - 1 ? { borderBottom: "1px solid rgba(28,26,23,0.06)" } : undefined}
           >
-            Delete account
-          </button>
-        </div>
-      )}
-
-      {showDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-4 sm:pb-0"
-          style={{ background: "rgba(0,0,0,0.45)" }}
-          onClick={() => !deleting && setShowDelete(false)}
-        >
-          <div
-            className="w-full max-w-sm rounded-3xl p-6 shadow-xl"
-            style={{ background: "#F5EEE2" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3
-              className="mb-2"
-              style={{
-                fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-                fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-                fontSize: "22px",
-                color: "var(--ink, #1C1A17)",
-              }}
-            >
-              Delete your account?
-            </h3>
-            <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--ink-soft, #4A4742)" }}>
-              This wipes your recipes, meal plans, household membership, friend connections, and saved
-              groceries. We can&apos;t bring it back.
-            </p>
-
-            <label htmlFor="delete-confirm" className="block text-xs font-medium mb-1.5" style={{ color: "var(--ink-soft, #4A4742)" }}>
-              Type <span style={{ fontFamily: "monospace", color: "var(--ink, #1C1A17)" }}>DELETE</span> to confirm
-            </label>
-            <input
-              id="delete-confirm"
-              type="text"
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              disabled={deleting}
-              className="w-full px-4 py-3 rounded-2xl outline-none text-sm bg-white"
-              style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
-              autoComplete="off"
-              autoCapitalize="characters"
-            />
-
-            {deleteError && (
-              <div className="mt-3 bg-red-50 text-red-600 p-3 rounded-xl text-sm">{deleteError}</div>
-            )}
-
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => setShowDelete(false)}
-                disabled={deleting}
-                className="flex-1 py-3 rounded-2xl text-sm font-medium transition-colors disabled:opacity-50"
-                style={{ background: "rgba(28,26,23,0.06)", color: "var(--ink, #1C1A17)" }}
-              >
-                Keep my account
-              </button>
-              <button
-                onClick={async () => {
-                  setDeleting(true);
-                  setDeleteError("");
-                  const res = await fetch("/api/auth/delete", { method: "POST" });
-                  if (!res.ok) {
-                    const body = await res.json().catch(() => ({}));
-                    setDeleteError(body.error || "Couldn't delete the account. Try again?");
-                    setDeleting(false);
-                    return;
-                  }
-                  document.cookie = "marco_onboarded=; path=/; max-age=0";
-                  const supabase = createClient();
-                  await supabase.auth.signOut();
-                  window.location.href = "/auth/signup";
-                }}
-                disabled={deleting || deleteConfirmText !== "DELETE"}
-                className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
-                style={{ background: "#E5462E" }}
-              >
-                {deleting ? "Deleting..." : "Delete forever"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+            <span className="text-[16px] flex-shrink-0" aria-hidden>{row.icon}</span>
+            <span className="text-[13.5px] font-medium flex-1" style={{ color: "#1C1A17" }}>{row.label}</span>
+            {row.hint && <span className="text-[11px] flex-shrink-0" style={{ color: "#8a8378" }}>{row.hint}</span>}
+            <Chevron />
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
