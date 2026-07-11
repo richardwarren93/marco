@@ -8,6 +8,7 @@ import RecipeSourcesStep from "@/components/onboarding/guided/RecipeSourcesStep"
 import MealCountStep from "@/components/onboarding/guided/MealCountStep";
 import GoalReinforcementStep from "@/components/onboarding/guided/GoalReinforcementStep";
 import NotificationsStep from "@/components/onboarding/guided/NotificationsStep";
+import MadeForYouStep from "@/components/onboarding/guided/MadeForYouStep";
 import CreateHouseholdStep from "@/components/onboarding/cookbook/CreateHouseholdStep";
 import RecipeImportStep, { type SavedRecipe } from "@/components/onboarding/cookbook/RecipeImportStep";
 import GuidedDemo from "@/components/onboarding/cookbook/GuidedDemo";
@@ -46,18 +47,19 @@ const PAYWALL_ENABLED = false;
 //   5  Recipe sources — where do you get your recipes? (guided)
 //   6  Add to your cookbook — paste links / photos, saves to account (guided)
 //   7  Guided first-run — recipe saved → meal-plan demo → grocery demo (guided chrome)
-//   8  Dream meal / signature dish (guided)
-//   9  Dinner ranking — recipe picker (guided)
-//   10 Taste profile reveal — straight after the ranking that feeds it (guided)
-//   11 Notifications — keep your streak alive (guided, post-payoff ask)
-//   12 How did you hear about us? — attribution (guided)
-//   13 Create a household — the finale, lands in the app (guided)
-const PROFILE_STEP = 10;
-const NOTIFICATIONS_STEP = 11;
-const REFERRAL_STEP = 12;
-const HOUSEHOLD_STEP = 13;
-const PAYWALL_STEP = 14;
-const TOTAL_STEPS = PAYWALL_ENABLED ? 15 : 14;
+//   8  Made for you — personalization pillars: taste, household, friends (guided)
+//   9  Dream meal / signature dish (guided)
+//   10 Dinner ranking — recipe picker (guided)
+//   11 Taste profile reveal — straight after the ranking that feeds it (guided)
+//   12 Notifications — keep your streak alive (guided, post-payoff ask)
+//   13 How did you hear about us? — attribution (guided)
+//   14 Create a household — the finale, lands in the app (guided)
+const PROFILE_STEP = 11;
+const NOTIFICATIONS_STEP = 12;
+const REFERRAL_STEP = 13;
+const HOUSEHOLD_STEP = 14;
+const PAYWALL_STEP = 15;
+const TOTAL_STEPS = PAYWALL_ENABLED ? 16 : 15;
 const STORAGE_KEY = "marco_onboarding";
 
 interface OnboardingState {
@@ -339,18 +341,27 @@ export default function OnboardingPage() {
       );
     case 8:
       return (
+        <MadeForYouStep
+          step={9}
+          totalSteps={TOTAL_STEPS}
+          onBack={goBack}
+          onContinue={goForward}
+        />
+      );
+    case 9:
+      return (
         <SignatureDishStep
           value={data.signatureDish}
-          step={9}
+          step={10}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(dish) => { update({ signatureDish: dish }); goForward(); }}
         />
       );
-    case 9:
+    case 10:
       return (
         <DinnerRankingStep
-          step={10}
+          step={11}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(rankedIds, rankedRecipes) => { update({ rankedIds, rankedRecipes }); goForward(); }}
@@ -363,7 +374,7 @@ export default function OnboardingPage() {
           rankedRecipes={data.rankedRecipes}
           signatureDish={data.signatureDish}
           allergies={data.allergies}
-          step={11}
+          step={12}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={handleComplete}
@@ -377,7 +388,7 @@ export default function OnboardingPage() {
       // No onBack — onboarding is already saved/complete once the reveal ends.
       return (
         <NotificationsStep
-          step={12}
+          step={13}
           totalSteps={TOTAL_STEPS}
           onContinue={goForward}
         />
@@ -385,7 +396,7 @@ export default function OnboardingPage() {
     case REFERRAL_STEP:
       return (
         <HowDidYouHearStep
-          step={13}
+          step={14}
           totalSteps={TOTAL_STEPS}
           value={data.referralSource}
           onNext={(referralSource) => {
@@ -403,7 +414,7 @@ export default function OnboardingPage() {
         <CreateHouseholdStep
           size={data.householdSize}
           type={data.householdType}
-          step={14}
+          step={15}
           totalSteps={TOTAL_STEPS}
           onComplete={(joined, size, type) => {
             update({ joinedHousehold: joined, householdSize: size, householdType: type });
