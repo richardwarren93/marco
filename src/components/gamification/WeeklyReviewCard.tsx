@@ -103,7 +103,7 @@ export default function WeeklyReviewCard() {
           </div>
 
           {/* Recipe thumbnails */}
-          <div className="flex gap-2.5 overflow-x-auto px-4 pb-4 no-scrollbar">
+          <div className="flex gap-2.5 overflow-x-auto px-4 pb-4 scrollbar-hide">
             {recipes.map((r) => (
               <div key={r.id} className="flex-shrink-0" style={{ width: 76 }}>
                 <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "1 / 1", background: "#E5D5B0" }}>

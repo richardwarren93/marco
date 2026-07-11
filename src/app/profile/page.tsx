@@ -10,6 +10,7 @@ import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/
 import { TOMATO_HEALTH_META, type TomatoHealthState } from "@/lib/gamification";
 import MobileHeader from "@/components/layout/MobileHeader";
 import WeeklyReviewCard from "@/components/gamification/WeeklyReviewCard";
+import FeatureCardHand, { type HandCard } from "@/components/profile/FeatureCardHand";
 
 /* Profile hub — identity + living stats up top, features as visual tiles
    (Taste DNA, Badges, Tomatoes, Household), the weekly recap, and the one-time
@@ -31,13 +32,6 @@ const TILE_STYLE = {
   background: "#FFFDF7",
   border: "1px solid rgba(28,26,23,0.08)",
   boxShadow: "0 1px 3px rgba(28,26,23,0.05)",
-} as const;
-
-const TILE_TITLE = {
-  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-  fontVariationSettings: '"opsz" 24, "SOFT" 100, "wght" 600',
-  fontSize: "14.5px",
-  color: "#1C1A17",
 } as const;
 
 function Chevron() {
@@ -204,6 +198,101 @@ export default function ProfilePage() {
 
   const verifiedPhone = Boolean(profile?.phone_verified_at && profile?.phone);
 
+  // ── The hand of cards — each card's gem carries its headline stat ──
+  const handCards: HandCard[] = [
+    {
+      href: "/profile/taste",
+      title: "Taste DNA",
+      gem: "🧬",
+      tint: "#0F4C5C",
+      artBg: "rgba(15,76,92,0.08)",
+      subtitle: hasTaste
+        ? `${tasteDims[0]?.label}-forward${topCuisine ? ` · ${topCuisine}` : ""}`
+        : "Build yours →",
+      art: (
+        <>
+          <span style={{ fontSize: 40 }} aria-hidden>🧬</span>
+          {hasTaste && (
+            <div className="w-full px-2">
+              {tasteDims.slice(0, 2).map((d) => (
+                <div key={d.key} className="h-[6px] rounded-full overflow-hidden mb-1.5" style={{ background: "rgba(28,26,23,0.08)" }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.max(d.score, 6)}%`, background: d.color }} />
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ),
+    },
+    {
+      href: "/profile/badges",
+      title: "Badges",
+      gem: badges?.total ? String(badges.earned ?? 0) : "🏅",
+      tint: "#E8A33D",
+      artBg: "rgba(232,163,61,0.12)",
+      subtitle: badges?.total ? `${badges.earned ?? 0} of ${badges.total} earned` : "Start earning →",
+      art: (
+        <>
+          <span style={{ fontSize: 44 }} aria-hidden>🏅</span>
+          <div className="w-full px-2">
+            <div className="h-[6px] rounded-full overflow-hidden" style={{ background: "rgba(28,26,23,0.08)" }}>
+              <div
+                className="h-full rounded-full"
+                style={{
+                  width: `${badges?.total ? Math.max(Math.round(((badges.earned ?? 0) / badges.total) * 100), 4) : 4}%`,
+                  background: "#E8A33D",
+                }}
+              />
+            </div>
+          </div>
+        </>
+      ),
+    },
+    {
+      href: "/tomatoes",
+      title: "Tomatoes",
+      gem: tomatoes?.balance != null ? String(tomatoes.balance) : "🍅",
+      tint: "#E5462E",
+      artBg: "rgba(229,70,46,0.08)",
+      subtitle: mascotLabel
+        ? `${mascotLabel}${streak > 0 ? ` · ${streak}-day streak` : ""}`
+        : "Earn by cooking →",
+      art: (
+        <>
+          <span style={{ fontSize: 44 }} aria-hidden>🍅</span>
+          {streak > 0 && (
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,70,46,0.14)", color: "#B8331E" }}>
+              🔥 {streak}-day
+            </span>
+          )}
+        </>
+      ),
+    },
+    {
+      href: "/profile/household",
+      title: "Household",
+      gem: household ? String((household.members ?? []).length || 1) : "🏠",
+      tint: "#7C6A44",
+      artBg: "rgba(124,106,68,0.10)",
+      subtitle: household ? household.name : "Cook together — set up →",
+      art: household ? (
+        <div className="flex">
+          {memberInitials.map((ini, i) => (
+            <span
+              key={i}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white ring-2 ring-[#FBF6EA]"
+              style={{ background: ["#E5462E", "#E8A33D", "#0F4C5C", "#7c6a44"][i % 4], marginLeft: i > 0 ? "-8px" : 0 }}
+            >
+              {ini}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span style={{ fontSize: 44 }} aria-hidden>🏠</span>
+      ),
+    },
+  ];
+
   return (
     <div className="max-w-lg mx-auto pb-8" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
       <MobileHeader title="Profile" />
@@ -369,93 +458,9 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* ── Feature tiles — each previews live state ── */}
-      <div className="mx-4 mt-3 grid grid-cols-2 gap-2.5">
-        {/* Taste DNA */}
-        <Link href="/profile/taste" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
-          <div className="flex items-center justify-between">
-            <span className="text-lg" aria-hidden>🧬</span>
-            <Chevron />
-          </div>
-          <p className="mt-2 mb-1.5" style={TILE_TITLE}>Taste DNA</p>
-          {hasTaste ? (
-            <>
-              {tasteDims.slice(0, 2).map((d) => (
-                <div key={d.key} className="h-[5px] rounded-full overflow-hidden mb-1" style={{ background: "#efe9dc" }}>
-                  <div className="h-full rounded-full" style={{ width: `${Math.max(d.score, 6)}%`, background: d.color }} />
-                </div>
-              ))}
-              <p className="mt-1.5 text-[10.5px] truncate" style={{ color: "#8a8378" }}>
-                {tasteDims[0]?.label}-forward{topCuisine ? ` · ${topCuisine}` : ""}
-              </p>
-            </>
-          ) : (
-            <p className="text-[11px]" style={{ color: "#8a8378" }}>Build yours →</p>
-          )}
-        </Link>
-
-        {/* Badges */}
-        <Link href="/profile/badges" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
-          <div className="flex items-center justify-between">
-            <span className="text-lg" aria-hidden>🏅</span>
-            <Chevron />
-          </div>
-          <p className="mt-2 mb-1.5" style={TILE_TITLE}>Badges</p>
-          <div className="h-[5px] rounded-full overflow-hidden mb-1.5" style={{ background: "#efe9dc" }}>
-            <div
-              className="h-full rounded-full"
-              style={{
-                width: `${badges?.total ? Math.max(Math.round(((badges.earned ?? 0) / badges.total) * 100), 4) : 4}%`,
-                background: "#E8A33D",
-              }}
-            />
-          </div>
-          <p className="text-[10.5px]" style={{ color: "#8a8378" }}>
-            {badges?.total ? `${badges.earned ?? 0} of ${badges.total} earned` : "Start earning →"}
-          </p>
-        </Link>
-
-        {/* Tomatoes */}
-        <Link href="/tomatoes" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
-          <div className="flex items-center justify-between">
-            <span className="text-lg" aria-hidden>🍅</span>
-            <Chevron />
-          </div>
-          <p className="mt-2" style={TILE_TITLE}>Tomatoes</p>
-          <p style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 700', fontSize: "22px", color: "#E5462E", lineHeight: 1.1 }}>
-            {tomatoes?.balance ?? "—"}
-          </p>
-          <p className="mt-0.5 text-[10.5px] truncate" style={{ color: "#8a8378" }}>
-            {mascotLabel ? `${mascotLabel}${streak > 0 ? ` · ${streak}-day streak` : ""}` : "Earn by cooking →"}
-          </p>
-        </Link>
-
-        {/* Household */}
-        <Link href="/profile/household" className="rounded-2xl p-3.5 active:scale-[0.98] transition-transform" style={TILE_STYLE}>
-          <div className="flex items-center justify-between">
-            <span className="text-lg" aria-hidden>🏠</span>
-            <Chevron />
-          </div>
-          <p className="mt-2 mb-1.5" style={TILE_TITLE}>Household</p>
-          {household ? (
-            <>
-              <div className="flex">
-                {memberInitials.map((ini, i) => (
-                  <span
-                    key={i}
-                    className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[9.5px] font-bold text-white ring-2 ring-[#FFFDF7]"
-                    style={{ background: ["#E5462E", "#E8A33D", "#0F4C5C", "#7c6a44"][i % 4], marginLeft: i > 0 ? "-6px" : 0 }}
-                  >
-                    {ini}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-1.5 text-[10.5px] truncate" style={{ color: "#8a8378" }}>{household.name}</p>
-            </>
-          ) : (
-            <p className="text-[11px]" style={{ color: "#8a8378" }}>Cook together — set up →</p>
-          )}
-        </Link>
+      {/* ── The hand — feature cards, Slay the Spire style. Swipe, tap to play. ── */}
+      <div className="mt-1">
+        <FeatureCardHand cards={handCards} />
       </div>
 
       {/* ── Last week's cooking recap ── */}
