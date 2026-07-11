@@ -36,6 +36,7 @@ export async function POST(request: Request) {
           ...(body.planTiming ? { plan_timing: body.planTiming } : {}),
           ...(body.ageRange ? { age_range: body.ageRange } : {}),
           ...(body.referralSource ? { referral_source: body.referralSource } : {}),
+          ...(body.signatureDish?.trim() ? { signature_dish: body.signatureDish.trim() } : {}),
         },
         liked_recipe_ids: body.likedRecipes || [],
         updated_at: new Date().toISOString(),

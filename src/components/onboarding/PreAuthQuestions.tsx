@@ -1,22 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import HowDidYouHearStep from "@/components/onboarding/guided/HowDidYouHearStep";
 import GoalsStep from "@/components/onboarding/guided/GoalsStep";
 import MealCountStep from "@/components/onboarding/guided/MealCountStep";
 import GoalReinforcementStep from "@/components/onboarding/guided/GoalReinforcementStep";
 import RecipeSourcesStep from "@/components/onboarding/guided/RecipeSourcesStep";
 
 /**
- * The intro questions shown after the feature tour and before account creation:
- * how-they-heard → goals → meals-per-week → the goal-adherence graph → where do
- * you get your recipes. Answers are written to the same `marco_onboarding`
- * localStorage the post-signup flow restores, and a flag tells that flow to skip
- * these steps so nothing repeats. Account creation (sign in) comes last.
+ * PARKED — no longer mounted. Account creation now follows the feature tour
+ * directly, so these intro questions (goals → meals-per-week → goal graph →
+ * recipe sources) run post-signup inside /onboarding instead, which already
+ * contains all of them. Kept for an easy bring-back if we want pre-signup
+ * questions again: it persists answers to `marco_onboarding` localStorage and
+ * sets `marco_preauth_done`, which /onboarding still honours by skipping its
+ * duplicate steps. ("How did you hear about us?" lives at the very end of
+ * onboarding now.)
  */
 const STORAGE_KEY = "marco_onboarding";
 const PREAUTH_FLAG = "marco_preauth_done";
-const TOTAL = 6; // 5 questions + account creation — keeps the progress bar honest.
+const TOTAL = 5; // 4 questions + account creation — keeps the progress bar honest.
 
 function persist(partial: Record<string, unknown>) {
   try {
@@ -30,7 +32,6 @@ function persist(partial: Record<string, unknown>) {
 
 export default function PreAuthQuestions({ onBack, onComplete }: { onBack: () => void; onComplete: () => void }) {
   const [sub, setSub] = useState(0);
-  const [referral, setReferral] = useState("");
   const [goals, setGoals] = useState<string[]>([]);
   const [meals, setMeals] = useState(0);
   const [recipeSources, setRecipeSources] = useState<string[]>([]);
@@ -39,54 +40,42 @@ export default function PreAuthQuestions({ onBack, onComplete }: { onBack: () =>
 
   if (sub === 0) {
     return (
-      <HowDidYouHearStep
+      <GoalsStep
         step={1}
         totalSteps={TOTAL}
-        value={referral}
+        value={goals}
         onBack={back}
-        onNext={(r) => { setReferral(r); persist({ referralSource: r }); setSub(1); }}
+        onNext={(g) => { setGoals(g); persist({ goals: g }); setSub(1); }}
       />
     );
   }
 
   if (sub === 1) {
     return (
-      <GoalsStep
+      <MealCountStep
         step={2}
         totalSteps={TOTAL}
-        value={goals}
+        value={meals}
         onBack={back}
-        onNext={(g) => { setGoals(g); persist({ goals: g }); setSub(2); }}
+        onNext={(m) => { setMeals(m); persist({ weeklyMealGoal: m }); setSub(2); }}
       />
     );
   }
 
   if (sub === 2) {
     return (
-      <MealCountStep
+      <GoalReinforcementStep
         step={3}
         totalSteps={TOTAL}
-        value={meals}
         onBack={back}
-        onNext={(m) => { setMeals(m); persist({ weeklyMealGoal: m }); setSub(3); }}
-      />
-    );
-  }
-
-  if (sub === 3) {
-    return (
-      <GoalReinforcementStep
-        step={4}
-        totalSteps={TOTAL}
-        onBack={back}
-        onContinue={() => setSub(4)}
+        onContinue={() => setSub(3)}
       />
     );
   }
 
   return (
     <RecipeSourcesStep
-      step={5}
+      step={4}
       totalSteps={TOTAL}
       value={recipeSources}
       onBack={back}

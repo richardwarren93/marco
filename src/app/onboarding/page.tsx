@@ -3,25 +3,25 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import SocialProofStep from "@/components/onboarding/guided/SocialProofStep";
 import GoalsStep from "@/components/onboarding/guided/GoalsStep";
 import GoalsAffirmationStep from "@/components/onboarding/guided/GoalsAffirmationStep";
 import RecipeSourcesStep from "@/components/onboarding/guided/RecipeSourcesStep";
-import SourcesAffirmationStep from "@/components/onboarding/guided/SourcesAffirmationStep";
 import MealCountStep from "@/components/onboarding/guided/MealCountStep";
 import GoalReinforcementStep from "@/components/onboarding/guided/GoalReinforcementStep";
-import PersonalizeAffirmationStep from "@/components/onboarding/guided/PersonalizeAffirmationStep";
+import NotificationsStep from "@/components/onboarding/guided/NotificationsStep";
 import CreateHouseholdStep from "@/components/onboarding/cookbook/CreateHouseholdStep";
 import RecipeImportStep, { type SavedRecipe } from "@/components/onboarding/cookbook/RecipeImportStep";
 import GuidedDemo from "@/components/onboarding/cookbook/GuidedDemo";
 import AllergiesStep from "@/components/onboarding/AllergiesStep";
 import DietaryFlagStep from "@/components/onboarding/guided/DietaryFlagStep";
 // Parked steps — removed from the flow for now, kept for an easy bring-back:
-//   MealPlanTimingStep, NotificationsStep, MealPlanFeatureStep,
-//   GroceryFeatureStep (post-demo showcases) and AgeStep (personalize).
+//   MealPlanTimingStep, MealPlanFeatureStep, GroceryFeatureStep (post-demo
+//   showcases), AgeStep (personalize), and the ceremony screens SocialProofStep,
+//   SourcesAffirmationStep, PersonalizeAffirmationStep (cut to shorten the flow).
 import SignatureDishStep from "@/components/onboarding/SignatureDishStep";
 import DinnerRankingStep from "@/components/onboarding/DinnerRankingStep";
 import TasteProfileOverlay from "@/components/onboarding/TasteProfileOverlay";
+import HowDidYouHearStep from "@/components/onboarding/guided/HowDidYouHearStep";
 import PlusUpsell from "@/components/onboarding/paywall/PlusUpsell";
 import { purchasePlus } from "@/lib/purchases";
 import { invalidateEntitlement } from "@/lib/useEntitlement";
@@ -33,32 +33,35 @@ import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes
 // to re-enable the upsell once billing (RevenueCat, Phase 2) is wired up.
 const PAYWALL_ENABLED = false;
 
-// Step map (ReciMe-style guided flow; cookbook-themed steps are being
-// converted screen by screen). Household moved much later — it's now the
-// last data-collection step before the Taste DNA reveal:
-//   0  Social proof (guided)
-//   1  Goals — what are your goals? (guided)
-//   2  Goals affirmation — "That's great!" (guided)
-//   3  Meal count — how many meals/week (sets cooking goal) (guided)
-//   4  Goal reinforcement — animated graph, "stick with it" (guided)
-//   5  Recipe sources — where do you get your recipes? (guided)
-//   6  Sources affirmation — "Awesome 🎉" (guided)
-//   7  Add to your cookbook — paste links / photos, saves to account (guided)
-//   8  Guided first-run — recipe saved → meal-plan demo → grocery demo (guided chrome)
-//   9  Personalize — "Now let's make it yours" transition (guided)
-//   10 Allergies (guided)
-//   11 Dietary flag splash — "we'll flag what doesn't fit" (guided)
-//   12 Dream meal / signature dish (guided)
-//   13 Dinner ranking — recipe picker (guided)
-//   14 Create a household (guided)
-//   15 Taste profile reveal (guided)
-const PROFILE_STEP = 15;
-const PAYWALL_STEP = 16;
-const TOTAL_STEPS = PAYWALL_ENABLED ? 17 : 16;
+// Step map (ReciMe-style guided flow). Questions run post-signup (account
+// creation follows the feature tour); every screen either collects something
+// real, demos something real, or is the payoff — the ceremony screens
+// (social proof + two extra affirmations) were cut to shorten the flow:
+//   0  Goals — what are your goals? (guided)
+//   1  Goals affirmation — "That's great!" (guided)
+//   2  Meal count — how many meals/week (sets cooking goal) (guided)
+//   3  Goal reinforcement — animated graph, "stick with it" (guided)
+//   4  Recipe sources — where do you get your recipes? (guided)
+//   5  Add to your cookbook — paste links / photos, saves to account (guided)
+//   6  Guided first-run — recipe saved → meal-plan demo → grocery demo (guided chrome)
+//   7  Allergies (guided)
+//   8  Dietary flag splash — "we'll flag what doesn't fit" (guided)
+//   9  Dream meal / signature dish (guided)
+//   10 Dinner ranking — recipe picker (guided)
+//   11 Create a household (guided)
+//   12 Taste profile reveal (guided)
+//   13 Notifications — keep your streak alive (guided, post-payoff ask)
+//   14 How did you hear about us? — attribution, the very last slide (guided)
+const PROFILE_STEP = 12;
+const NOTIFICATIONS_STEP = 13;
+const REFERRAL_STEP = 14;
+const PAYWALL_STEP = 15;
+const TOTAL_STEPS = PAYWALL_ENABLED ? 16 : 15;
 const STORAGE_KEY = "marco_onboarding";
 
 interface OnboardingState {
   goals: string[];
+  referralSource: string;
   recipeSources: string[];
   planTiming: string;
   weeklyMealGoal: number;
@@ -76,6 +79,7 @@ interface OnboardingState {
 
 const defaultState: OnboardingState = {
   goals: [],
+  referralSource: "",
   recipeSources: [],
   planTiming: "",
   weeklyMealGoal: 0,
@@ -134,15 +138,14 @@ export default function OnboardingPage() {
         }
       } catch { /* ignore */ }
 
-      // If the user already answered the intro questions before signing up
-      // (how-they-heard / goals / meals + graph / recipe sources), skip the
-      // cover and those screens — resume at the sources affirmation (step 6)
-      // so nothing repeats.
+      // Legacy: if the user answered the intro questions back when they ran
+      // before signup (goals / meals + graph / recipe sources), skip those
+      // screens — resume at the cookbook import (step 5) so nothing repeats.
       let preAuthDone = false;
       try { preAuthDone = localStorage.getItem("marco_preauth_done") === "1"; } catch { /* ignore */ }
       if (preAuthDone) {
-        minStepRef.current = 6;
-        setStep(6);
+        minStepRef.current = 5;
+        setStep(5);
         // MealCountStep normally persists the weekly goal; we skipped it, so do
         // it here now that the user is authenticated (fire-and-forget).
         if (restoredWeeklyGoal > 0) {
@@ -180,6 +183,17 @@ export default function OnboardingPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ weekly_target }),
+    }).catch(() => { /* non-blocking */ });
+  }, []);
+
+  // The attribution answer arrives on the very last slide — AFTER the reveal has
+  // already saved everything via /api/onboarding — so it gets its own targeted
+  // merge (fire-and-forget; never blocks landing in the app).
+  const saveReferral = useCallback((referralSource: string) => {
+    fetch("/api/onboarding/referral", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ referralSource }),
     }).catch(() => { /* non-blocking */ });
   }, []);
 
@@ -234,144 +248,117 @@ export default function OnboardingPage() {
   switch (step) {
     case 0:
       return (
-        <SocialProofStep
+        <GoalsStep
           step={1}
           totalSteps={TOTAL_STEPS}
+          value={data.goals}
           onBack={() => router.push("/auth/signup")}
-          onContinue={goForward}
+          onNext={(goals) => { update({ goals }); goForward(); }}
         />
       );
     case 1:
       return (
-        <GoalsStep
-          step={2}
-          totalSteps={TOTAL_STEPS}
-          value={data.goals}
-          onBack={goBack}
-          onNext={(goals) => { update({ goals }); goForward(); }}
-        />
-      );
-    case 2:
-      return (
         <GoalsAffirmationStep
-          step={3}
+          step={2}
           totalSteps={TOTAL_STEPS}
           goals={data.goals}
           onBack={goBack}
           onContinue={goForward}
         />
       );
-    case 3:
+    case 2:
       return (
         <MealCountStep
-          step={4}
+          step={3}
           totalSteps={TOTAL_STEPS}
           value={data.weeklyMealGoal}
           onBack={goBack}
           onNext={(count) => { update({ weeklyMealGoal: count }); saveWeeklyGoal(count); goForward(); }}
         />
       );
-    case 4:
+    case 3:
       return (
         <GoalReinforcementStep
-          step={5}
+          step={4}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onContinue={goForward}
         />
       );
-    case 5:
+    case 4:
       return (
         <RecipeSourcesStep
-          step={6}
+          step={5}
           totalSteps={TOTAL_STEPS}
           value={data.recipeSources}
           onBack={goBack}
           onNext={(recipeSources) => { update({ recipeSources }); goForward(); }}
         />
       );
-    case 6:
-      return (
-        <SourcesAffirmationStep
-          step={7}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onContinue={goForward}
-        />
-      );
-    case 7:
+    case 5:
       return (
         <RecipeImportStep
-          step={8}
+          step={6}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(recipes) => { update({ importedRecipes: recipes }); goForward(); }}
         />
       );
-    case 8:
+    case 6:
       return (
         <GuidedDemo
           recipes={data.importedRecipes}
-          step={9}
+          step={7}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={goForward}
         />
       );
-    case 9:
-      return (
-        <PersonalizeAffirmationStep
-          step={10}
-          totalSteps={TOTAL_STEPS}
-          onBack={goBack}
-          onContinue={goForward}
-        />
-      );
-    case 10:
+    case 7:
       return (
         <AllergiesStep
           value={data.allergies}
-          step={11}
+          step={8}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(allergies) => { update({ allergies }); goForward(); }}
         />
       );
-    case 11:
+    case 8:
       return (
         <DietaryFlagStep
           allergies={data.allergies}
-          step={12}
+          step={9}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onContinue={goForward}
         />
       );
-    case 12:
+    case 9:
       return (
         <SignatureDishStep
           value={data.signatureDish}
-          step={13}
+          step={10}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(dish) => { update({ signatureDish: dish }); goForward(); }}
         />
       );
-    case 13:
+    case 10:
       return (
         <DinnerRankingStep
-          step={14}
+          step={11}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onNext={(rankedIds, rankedRecipes) => { update({ rankedIds, rankedRecipes }); goForward(); }}
         />
       );
-    case 14:
+    case 11:
       return (
         <CreateHouseholdStep
           size={data.householdSize}
           type={data.householdType}
-          step={15}
+          step={12}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={(joined, size, type) => {
@@ -387,11 +374,37 @@ export default function OnboardingPage() {
           rankedRecipes={data.rankedRecipes}
           signatureDish={data.signatureDish}
           allergies={data.allergies}
-          step={16}
+          step={13}
           totalSteps={TOTAL_STEPS}
           onBack={goBack}
           onComplete={handleComplete}
-          onShowPaywall={PAYWALL_ENABLED ? goForward : undefined}
+          // Always hand off after the reveal — the notifications ask rides the
+          // payoff moment, then attribution is the true last slide (and, when
+          // re-enabled, the paywall after that).
+          onShowPaywall={goForward}
+        />
+      );
+    case NOTIFICATIONS_STEP:
+      // No onBack — onboarding is already saved/complete once the reveal ends.
+      return (
+        <NotificationsStep
+          step={14}
+          totalSteps={TOTAL_STEPS}
+          onContinue={goForward}
+        />
+      );
+    case REFERRAL_STEP:
+      return (
+        <HowDidYouHearStep
+          step={15}
+          totalSteps={TOTAL_STEPS}
+          value={data.referralSource}
+          onNext={(referralSource) => {
+            update({ referralSource });
+            saveReferral(referralSource);
+            if (PAYWALL_ENABLED) goForward();
+            else landInApp();
+          }}
         />
       );
     case PAYWALL_STEP:

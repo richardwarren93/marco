@@ -22,8 +22,9 @@ interface Props {
   totalSteps: number;
   onBack?: () => void;
   onComplete: (tasteScores?: TasteScores, cuisinePreferences?: string[]) => void;
-  /** When provided (paywall enabled), finishing saves the profile and hands
-   *  off to the Plus upsell instead of navigating straight to /recipes. */
+  /** When provided, finishing saves the profile and hands control back to the
+   *  parent (the attribution slide, then the Plus upsell when enabled) instead
+   *  of navigating straight to /recipes. */
   onShowPaywall?: () => void;
 }
 
@@ -160,7 +161,7 @@ function matchChef(topTraits: ReturnType<typeof getTopTraits>): ChefMatch {
   return bestMatch;
 }
 
-export default function TasteProfileOverlay({ rankedRecipes, allergies, step, totalSteps, onBack, onComplete, onShowPaywall }: Props) {
+export default function TasteProfileOverlay({ rankedRecipes, signatureDish, allergies, step, totalSteps, onBack, onComplete, onShowPaywall }: Props) {
   const router = useRouter();
   const [phase, setPhase] = useState<"loading" | "profile">("loading");
   const [showShare, setShowShare] = useState(false);
@@ -320,6 +321,19 @@ export default function TasteProfileOverlay({ rankedRecipes, allergies, step, to
             )}
           </div>
         </div>
+
+        {/* Dream meal — the free-text answer, quoted back */}
+        {signatureDish.trim() && (
+          <div className="mt-3 rounded-2xl px-4 py-3 animate-stagger-in flex items-baseline gap-2 flex-wrap" style={{ animationDelay: "0.14s", background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)" }}>
+            <span className="text-[10px] font-bold uppercase tracking-[0.2em] flex-shrink-0" style={{ color: "#E5462E" }}>Dream meal</span>
+            <span
+              className="text-[13px] min-w-0"
+              style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", color: "var(--ink, #1C1A17)" }}
+            >
+              &ldquo;{signatureDish.trim()}&rdquo;
+            </span>
+          </div>
+        )}
 
         {/* Allergies — compact, single row */}
         <div className="mt-3 mb-4 rounded-2xl px-4 py-3 animate-stagger-in flex items-center gap-2 flex-wrap" style={{ animationDelay: "0.16s", background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)" }}>

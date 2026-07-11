@@ -3,11 +3,12 @@
 import { useState } from "react";
 import GuidedShell from "./GuidedShell";
 
-/* Guided flow — meal-planning notifications opt-in. Mirrors the ReciMe
-   reference: a mock of the iOS permission dialog as the hero, then a CTA that
-   actually fires the permission request. Native uses the Capacitor push
-   plugin (dynamic-imported, native-only); web falls back to the Notification
-   API. Either way we never block onboarding. */
+/* Guided flow — notifications opt-in, shown right after the Taste DNA reveal
+   (permission grants are highest right after a payoff moment). Framed around
+   the streak/tomato loop: a mock of the iOS permission dialog as the hero,
+   then a CTA that actually fires the permission request. Native uses the
+   Capacitor push plugin (dynamic-imported, native-only); web falls back to
+   the Notification API. Either way we never block onboarding. */
 
 async function requestNotifications(): Promise<void> {
   try {
@@ -94,7 +95,7 @@ export default function NotificationsStep({ step, totalSteps, onBack, onContinue
             color: "var(--ink, #1C1A17)",
           }}
         >
-          Get the right recipe at the <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>right time</em>
+          Keep your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>streak</em> alive
         </h1>
         <p
           className="mt-3 max-w-xs mx-auto"
@@ -107,7 +108,7 @@ export default function NotificationsStep({ step, totalSteps, onBack, onContinue
             color: "var(--ink-soft, #4A4742)",
           }}
         >
-          We&apos;ll send you a recipe idea at the time that works for you.
+          A nudge before dinner keeps your tomato happy — and the right recipe in front of you at the right time.
         </p>
       </div>
 

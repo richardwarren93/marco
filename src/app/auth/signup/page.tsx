@@ -8,10 +8,9 @@ import WelcomeCollage from "@/components/onboarding/WelcomeCollage";
 import MarcoLockup from "@/components/layout/MarcoLockup";
 import BrandSplash from "@/components/onboarding/BrandSplash";
 import FeatureTour from "@/components/onboarding/FeatureTour";
-import PreAuthQuestions from "@/components/onboarding/PreAuthQuestions";
 
 export default function SignupPage() {
-  const [mode, setMode] = useState<"splash" | "welcome" | "tour" | "questions" | "choose" | "email">("splash");
+  const [mode, setMode] = useState<"splash" | "welcome" | "tour" | "choose" | "email">("splash");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -99,15 +98,10 @@ export default function SignupPage() {
   }
 
   // Feature tour — 5-screen walkthrough shown after Get started. Its final Next
-  // leads into the intro questions.
+  // leads straight into account creation; the intro questions (goals / meals /
+  // graph / sources) now run after signup, inside the onboarding flow.
   if (mode === "tour") {
-    return <FeatureTour onBack={() => setMode("welcome")} onComplete={() => setMode("questions")} />;
-  }
-
-  // Intro questions — how-they-heard / goals / meals + graph. Answers persist to
-  // localStorage; the final Continue hands off to account creation.
-  if (mode === "questions") {
-    return <PreAuthQuestions onBack={() => setMode("tour")} onComplete={() => setMode("choose")} />;
+    return <FeatureTour onBack={() => setMode("welcome")} onComplete={() => setMode("choose")} />;
   }
 
   // Success confirmation
@@ -341,13 +335,13 @@ export default function SignupPage() {
   // Sign-in method picker — reached via Get started
   return (
     <div className="flex flex-col sm:justify-center" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
-      {/* Back to welcome */}
+      {/* Back to the feature tour (its predecessor in the funnel) */}
       <div
         className="flex items-center px-4 flex-shrink-0"
         style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
       >
         <button
-          onClick={() => { setMode("welcome"); setError(""); }}
+          onClick={() => { setMode("tour"); setError(""); }}
           className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
           style={{ background: "rgba(0,0,0,0.05)" }}
           aria-label="Back"
