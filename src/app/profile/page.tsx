@@ -7,10 +7,10 @@ import useSWR from "swr";
 import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, CookingGoal } from "@/types";
 import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
-import { TOMATO_HEALTH_META, type TomatoHealthState } from "@/lib/gamification";
+import type { TomatoHealthState } from "@/lib/gamification";
 import MobileHeader from "@/components/layout/MobileHeader";
 import WeeklyReviewCard from "@/components/gamification/WeeklyReviewCard";
-import FeatureCardHand, { type HandCard } from "@/components/profile/FeatureCardHand";
+import { TastePreviewCard, BadgesPreviewCard } from "@/components/profile/PreviewCards";
 
 /* Profile hub — identity + living stats up top, features as visual tiles
    (Taste DNA, Badges, Tomatoes, Household), the weekly recap, and the one-time
@@ -22,7 +22,11 @@ interface TasteTile {
   all?: { sweet: number; savory: number; richness: number; tangy: number; spicy: number };
   cuisines?: { id: string; label: string; flag: string }[];
 }
-interface BadgesTile { earned?: number; total?: number }
+interface BadgesTile {
+  earned?: number;
+  total?: number;
+  progress?: { earned: boolean; badge?: { icon?: string } }[];
+}
 interface TomatoTile { balance?: number; mascot?: { state: TomatoHealthState; streak: number } }
 interface HouseholdTile {
   household?: { name: string; members?: { display_name: string }[] } | null;
@@ -171,127 +175,17 @@ export default function ProfilePage() {
     .slice(0, 2)
     .toUpperCase();
 
-  // ── Tile preview values ──
-  const tasteScores = taste?.all;
-  const hasTaste = !!tasteScores && Object.values(tasteScores).some((v) => v > 0);
-  const tasteDims = hasTaste
-    ? ([
-        { key: "savory", label: "Savory", color: "#E5462E" },
-        { key: "sweet", label: "Sweet", color: "#E8A33D" },
-        { key: "spicy", label: "Spicy", color: "#c2410c" },
-        { key: "tangy", label: "Tangy", color: "#0F4C5C" },
-        { key: "richness", label: "Rich", color: "#b45309" },
-      ] as const)
-        .map((d) => ({ ...d, score: tasteScores[d.key] ?? 0 }))
-        .sort((a, b) => b.score - a.score)
-    : [];
-  const topCuisine = taste?.cuisines?.[0]?.label;
+  // ── Card preview values ──
+  const tasteScores = taste?.all ?? null;
+  const earnedIcons = (badges?.progress ?? [])
+    .filter((p) => p.earned)
+    .slice(0, 6)
+    .map((p) => p.badge?.icon || "🏅");
 
-  const mascotState = tomatoes?.mascot?.state;
-  const mascotLabel = mascotState ? TOMATO_HEALTH_META[mascotState]?.label : null;
   const streak = tomatoes?.mascot?.streak ?? 0;
-
   const household = householdData?.household ?? null;
-  const memberInitials = (household?.members ?? [])
-    .slice(0, 4)
-    .map((m) => (m.display_name || "?").trim().charAt(0).toUpperCase());
-
   const verifiedPhone = Boolean(profile?.phone_verified_at && profile?.phone);
 
-  // ── The hand of cards — each card's gem carries its headline stat ──
-  const handCards: HandCard[] = [
-    {
-      href: "/profile/taste",
-      title: "Taste DNA",
-      gem: "🧬",
-      tint: "#0F4C5C",
-      artBg: "rgba(15,76,92,0.08)",
-      subtitle: hasTaste
-        ? `${tasteDims[0]?.label}-forward${topCuisine ? ` · ${topCuisine}` : ""}`
-        : "Build yours →",
-      art: (
-        <>
-          <span style={{ fontSize: 40 }} aria-hidden>🧬</span>
-          {hasTaste && (
-            <div className="w-full px-2">
-              {tasteDims.slice(0, 2).map((d) => (
-                <div key={d.key} className="h-[6px] rounded-full overflow-hidden mb-1.5" style={{ background: "rgba(28,26,23,0.08)" }}>
-                  <div className="h-full rounded-full" style={{ width: `${Math.max(d.score, 6)}%`, background: d.color }} />
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      ),
-    },
-    {
-      href: "/profile/badges",
-      title: "Badges",
-      gem: badges?.total ? String(badges.earned ?? 0) : "🏅",
-      tint: "#E8A33D",
-      artBg: "rgba(232,163,61,0.12)",
-      subtitle: badges?.total ? `${badges.earned ?? 0} of ${badges.total} earned` : "Start earning →",
-      art: (
-        <>
-          <span style={{ fontSize: 44 }} aria-hidden>🏅</span>
-          <div className="w-full px-2">
-            <div className="h-[6px] rounded-full overflow-hidden" style={{ background: "rgba(28,26,23,0.08)" }}>
-              <div
-                className="h-full rounded-full"
-                style={{
-                  width: `${badges?.total ? Math.max(Math.round(((badges.earned ?? 0) / badges.total) * 100), 4) : 4}%`,
-                  background: "#E8A33D",
-                }}
-              />
-            </div>
-          </div>
-        </>
-      ),
-    },
-    {
-      href: "/tomatoes",
-      title: "Tomatoes",
-      gem: tomatoes?.balance != null ? String(tomatoes.balance) : "🍅",
-      tint: "#E5462E",
-      artBg: "rgba(229,70,46,0.08)",
-      subtitle: mascotLabel
-        ? `${mascotLabel}${streak > 0 ? ` · ${streak}-day streak` : ""}`
-        : "Earn by cooking →",
-      art: (
-        <>
-          <span style={{ fontSize: 44 }} aria-hidden>🍅</span>
-          {streak > 0 && (
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(229,70,46,0.14)", color: "#B8331E" }}>
-              🔥 {streak}-day
-            </span>
-          )}
-        </>
-      ),
-    },
-    {
-      href: "/profile/household",
-      title: "Household",
-      gem: household ? String((household.members ?? []).length || 1) : "🏠",
-      tint: "#7C6A44",
-      artBg: "rgba(124,106,68,0.10)",
-      subtitle: household ? household.name : "Cook together — set up →",
-      art: household ? (
-        <div className="flex">
-          {memberInitials.map((ini, i) => (
-            <span
-              key={i}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold text-white ring-2 ring-[#FBF6EA]"
-              style={{ background: ["#E5462E", "#E8A33D", "#0F4C5C", "#7c6a44"][i % 4], marginLeft: i > 0 ? "-8px" : 0 }}
-            >
-              {ini}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <span style={{ fontSize: 44 }} aria-hidden>🏠</span>
-      ),
-    },
-  ];
 
   return (
     <div className="max-w-lg mx-auto pb-8" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
@@ -458,9 +352,10 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* ── The hand — feature cards, Slay the Spire style. Swipe, tap to play. ── */}
-      <div className="mt-1">
-        <FeatureCardHand cards={handCards} />
+      {/* ── Feature cards — each background previews what's inside ── */}
+      <div className="mx-4 mt-3 grid grid-cols-2 gap-3">
+        <TastePreviewCard scores={tasteScores} />
+        <BadgesPreviewCard earned={badges?.earned} total={badges?.total} icons={earnedIcons} />
       </div>
 
       {/* ── Last week's cooking recap ── */}
@@ -469,6 +364,7 @@ export default function ProfilePage() {
       {/* ── Settings menu ── */}
       <div className="mx-4 mt-4 rounded-2xl overflow-hidden" style={TILE_STYLE}>
         {[
+          { href: "/profile/household", icon: "🏠", label: "Household", hint: household?.name as string | undefined },
           { href: "/profile/preferences", icon: "🥗", label: "Food preferences", hint: undefined as string | undefined },
           { href: "/profile/text", icon: "💬", label: "Text Marco", hint: verifiedPhone ? "Linked" : undefined },
           { href: "/profile/notifications", icon: "🔔", label: "Notifications", hint: undefined },
