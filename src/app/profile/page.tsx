@@ -9,7 +9,6 @@ import type { UserProfile, CookingGoal } from "@/types";
 import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
 import type { TomatoHealthState } from "@/lib/gamification";
 import MobileHeader from "@/components/layout/MobileHeader";
-import WeeklyReviewCard from "@/components/gamification/WeeklyReviewCard";
 import { TastePreviewCard, BadgesPreviewCard } from "@/components/profile/PreviewCards";
 
 /* Profile hub — identity + living stats up top, features as visual tiles
@@ -358,12 +357,10 @@ export default function ProfilePage() {
         <BadgesPreviewCard earned={badges?.earned} total={badges?.total} icons={earnedIcons} />
       </div>
 
-      {/* ── Last week's cooking recap ── */}
-      <WeeklyReviewCard />
-
       {/* ── Settings menu ── */}
       <div className="mx-4 mt-4 rounded-2xl overflow-hidden" style={TILE_STYLE}>
         {[
+          { href: "/profile/history", icon: "📖", label: "Cooking history", hint: undefined as string | undefined },
           { href: "/profile/household", icon: "🏠", label: "Household", hint: household?.name as string | undefined },
           { href: "/profile/preferences", icon: "🥗", label: "Food preferences", hint: undefined as string | undefined },
           { href: "/profile/text", icon: "💬", label: "Text Marco", hint: verifiedPhone ? "Linked" : undefined },
