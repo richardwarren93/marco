@@ -96,6 +96,9 @@ export function YouTube({ size = 22 }: { size?: number }) {
 }
 
 /* NYT — white tile with the masthead "T" (serif approximation). */
+/* The New York Times — white tile with the masthead-style blackletter "T",
+   rendered via the Fraktur unicode glyph (math-font fallback chains cover
+   iOS/Android/desktop; degrades to a serif T where absent). */
 export function NYTimes({ size = 22 }: { size?: number }) {
   return (
     <span
@@ -110,13 +113,14 @@ export function NYTimes({ size = 22 }: { size?: number }) {
         alignItems: "center",
         justifyContent: "center",
         color: "#111",
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontWeight: 700,
-        fontSize: size * 0.66,
+        fontFamily: "'STIX Two Text', 'Cambria Math', Georgia, 'Times New Roman', serif",
+        fontWeight: 400,
+        fontSize: size * 0.8,
         lineHeight: 1,
+        paddingBottom: size * 0.06,
       }}
     >
-      T
+      {"\u{1D517}"}
     </span>
   );
 }
