@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/Toast";
 
 // ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
 const DiscoverTab = dynamic(() => import("@/components/recipes/DiscoverTab"));
+const MascotStrip = dynamic(() => import("@/components/gamification/MascotStrip"), { ssr: false });
 const GroceryPageContent = dynamic(() => import("@/components/grocery/GroceryPageContent"), { ssr: false });
 const MealPlanPageContent = dynamic(() => import("@/components/meal-plan/MealPlanPageContent"), { ssr: false });
 const ProfilePage = dynamic(() => import("@/app/profile/page"), { ssr: false });
@@ -112,6 +113,7 @@ function RecipesInner() {
       {/* ── Tab content ────────────────────────────────────────────── */}
 
       {/* Recipes tab */}
+      {activeTab === "recipes" && <MascotStrip />}
       {activeTab === "recipes" && (
         <RecipeBrowser
           mode="library"

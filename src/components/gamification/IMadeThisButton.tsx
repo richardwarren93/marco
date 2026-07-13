@@ -4,6 +4,8 @@ import { useState } from "react";
 import { CookingPotIcon } from "@/components/icons/HandDrawnIcons";
 import PhotoUpload from "@/components/social/PhotoUpload";
 import { useToast } from "@/components/ui/Toast";
+import { CookCelebration } from "./celebrations";
+import type { TomatoHealthState } from "@/lib/gamification";
 
 /** Show a "🍅 +N" earn toast and refresh any header balance, when an award fired. */
 function surfaceEarn(showToast: ReturnType<typeof useToast>["showToast"], data: { awarded?: boolean; tomatoesEarned?: number; tomatoBalance?: number }) {
@@ -13,19 +15,28 @@ function surfaceEarn(showToast: ReturnType<typeof useToast>["showToast"], data: 
   }
 }
 
+// Streak days that warrant the full celebration overlay (weekly-goal completion
+// always does). Regular cooks keep the light toast.
+const STREAK_MILESTONES = new Set([3, 7, 14, 30, 50, 100]);
+
+interface CookResult {
+  tomatoesEarned: number;
+  awarded?: boolean;
+  goalJustCompleted: boolean;
+  weekProgress: number;
+  weeklyTarget?: number | null;
+  tomatoBalance: number;
+  streak?: number;
+  mascotState?: TomatoHealthState;
+}
+
 interface IMadeThisButtonProps {
   recipeId: string;
   /** When confirming a planned meal, link the cook to its meal-plan slot (one award per slot). */
   mealPlanId?: string;
   /** Override the call-to-action label (e.g. "Cooked it" on the meal plan). */
   label?: string;
-  onCooked?: (result: {
-    tomatoesEarned: number;
-    awarded?: boolean;
-    goalJustCompleted: boolean;
-    weekProgress: number;
-    tomatoBalance: number;
-  }) => void;
+  onCooked?: (result: CookResult) => void;
   onPhotoAdded?: () => void;
   variant?: "default" | "pill";
 }
@@ -38,6 +49,7 @@ export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made 
   const [activityId, setActivityId] = useState<string | null>(null);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
   const [photoPosted, setPhotoPosted] = useState(false);
+  const [celebration, setCelebration] = useState<CookResult | null>(null);
 
   async function handleClick() {
     if (loading) return;
@@ -57,7 +69,18 @@ export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made 
       setCookingLogId(data.cookingLogId || data.log?.id || null);
       setActivityId(data.activityId || null);
 
-      surfaceEarn(showToast, data);
+      // Milestone cooks (weekly goal done / streak landmark) get the full
+      // celebration overlay; regular cooks keep the light earn toast.
+      const isMilestone =
+        data.awarded &&
+        (data.tomatoesEarned ?? 0) > 0 &&
+        (data.goalJustCompleted || STREAK_MILESTONES.has(data.streak ?? -1));
+      if (isMilestone) {
+        window.dispatchEvent(new CustomEvent("tomatoes:earned", { detail: { balance: data.tomatoBalance } }));
+        setCelebration(data as CookResult);
+      } else {
+        surfaceEarn(showToast, data);
+      }
       onCooked?.(data);
     } catch (error) {
       console.error("Cook log error:", error);
@@ -159,6 +182,19 @@ export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made 
         <PhotoUpload
           onUploaded={handlePhotoUploaded}
           onCancel={() => setShowPhotoUpload(false)}
+        />
+      )}
+
+      {/* Milestone celebration — body portal, so render site (sheet or page) is irrelevant */}
+      {celebration && (
+        <CookCelebration
+          earned={celebration.tomatoesEarned}
+          goalJustCompleted={celebration.goalJustCompleted}
+          weekProgress={celebration.weekProgress}
+          weeklyTarget={celebration.weeklyTarget ?? null}
+          streak={celebration.streak}
+          mascotState={celebration.mascotState}
+          onClose={() => setCelebration(null)}
         />
       )}
     </div>

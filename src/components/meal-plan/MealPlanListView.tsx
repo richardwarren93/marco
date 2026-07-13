@@ -27,6 +27,7 @@ import CoordinationView from "./CoordinationView";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { GroceryIcon } from "@/components/icons/HandDrawnIcons";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import TomatoMascot from "@/components/gamification/TomatoMascot";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const ACCENT = "#e8530a";          // slightly calmer orange
@@ -1085,13 +1086,8 @@ export default function MealPlanListView({
           className="flex items-center gap-3 rounded-2xl px-4 py-3"
           style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
         >
-          <span
-            className="flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 38, height: 38, background: planned >= GOAL ? "rgba(22,163,74,0.12)" : ACCENT_LIGHT }}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke={planned >= GOAL ? "#16a34a" : ACCENT} strokeWidth={2.2} strokeLinecap="round">
-              <path d="M5 20V10M12 20V4M19 20v-6" />
-            </svg>
+          <span className="flex-shrink-0 -my-1" aria-hidden>
+            <TomatoMascot size={38} state={planned >= GOAL ? "thriving" : "content"} />
           </span>
           <div className="flex-1 min-w-0">
             <p className="text-[13px] font-semibold" style={{ color: TEXT_1 }}>

@@ -2,7 +2,40 @@
 // from a client component. It only depends on admin.ts and gamification.ts.
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { TomatoReason } from "@/lib/gamification";
+import { deriveTomatoHealth, type TomatoReason } from "@/lib/gamification";
+
+/**
+ * Mascot health from the ledger: positive earns + feed_pet revives (60 most
+ * recent each, deduped to UTC days) → deriveTomatoHealth. Shared by
+ * /api/tomatoes and the cook flow so the derivation can't drift.
+ */
+export async function getMascotHealth(
+  admin: ReturnType<typeof createAdminClient>,
+  userId: string,
+): Promise<ReturnType<typeof deriveTomatoHealth>> {
+  const [earnsRes, revivesRes] = await Promise.all([
+    admin
+      .from("tomato_transactions")
+      .select("created_at")
+      .eq("user_id", userId)
+      .gt("amount", 0)
+      .order("created_at", { ascending: false })
+      .limit(60),
+    // Revives (feed_pet spends) — resurrection points that reset the death latch.
+    admin
+      .from("tomato_transactions")
+      .select("created_at")
+      .eq("user_id", userId)
+      .eq("reason", "feed_pet")
+      .order("created_at", { ascending: false })
+      .limit(60),
+  ]);
+
+  const toDates = (rows: { created_at: string }[] | null) =>
+    [...new Set((rows ?? []).map((e) => new Date(e.created_at).toISOString().slice(0, 10)))];
+
+  return deriveTomatoHealth(toDates(earnsRes.data), toDates(revivesRes.data));
+}
 
 interface AwardArgs {
   userId: string;

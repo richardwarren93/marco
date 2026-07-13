@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getWeekStart, TOMATO_REWARDS, TOMATO_DAILY_CAPS } from "@/lib/gamification";
-import { awardTomatoes } from "@/lib/tomatoes";
+import { awardTomatoes, getMascotHealth } from "@/lib/tomatoes";
 
 export async function GET() {
   const supabase = await createClient();
@@ -211,6 +211,10 @@ export async function POST(request: Request) {
       // Non-critical — don't fail the cooking log
     }
 
+    // Mascot health AFTER the award so today's earn counts toward the streak —
+    // feeds the cook celebration (streak milestones) client-side.
+    const mascot = await getMascotHealth(admin, user.id);
+
     return NextResponse.json({
       log,
       cookingLogId: log.id,
@@ -221,6 +225,8 @@ export async function POST(request: Request) {
       weekProgress: weekCount || 0,
       weeklyTarget: goal?.weekly_target || null,
       tomatoBalance: finalBalance,
+      streak: mascot.streak,
+      mascotState: mascot.state,
     });
   } catch (error) {
     console.error("Cooking log error:", error);

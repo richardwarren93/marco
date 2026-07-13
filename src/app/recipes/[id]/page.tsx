@@ -945,6 +945,16 @@ export default function RecipeDetailPage() {
           </button>
         )}
 
+        {/* ── I Made This — log the cook (owner only) ─────────────────── */}
+        {!isPublicView && (
+          <div className="mb-4">
+            <IMadeThisButton
+              recipeId={recipe.id}
+              onPhotoAdded={() => setPhotoRefreshKey((k) => k + 1)}
+            />
+          </div>
+        )}
+
         {/* ── Cook Photos (owner only) ───────────────────────────────── */}
         {!isPublicView && (
           <CookPhotosGallery recipeId={recipe.id} refreshKey={photoRefreshKey} />

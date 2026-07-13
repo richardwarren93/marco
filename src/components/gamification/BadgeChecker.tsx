@@ -1,18 +1,26 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
+import { AchievementModal } from "./celebrations";
+import type { BadgeProgress } from "@/lib/badges";
 
 const SEEN_KEY = "marco_seen_badges";
+// Full celebration modals for up to this many new badges at once; anything
+// beyond (e.g. a lapsed user returning to a pile) falls back to toasts so we
+// never chain a wall of takeovers.
+const MAX_MODALS = 3;
 
 /**
  * Lightweight global badge checker. Mounts in the root layout and checks for
- * newly earned badges on mount and when the tab regains focus. Shows a toast
- * notification for each new badge rather than a full-screen modal.
+ * newly earned badges on mount and when the tab regains focus. New badges get
+ * the full confetti AchievementModal (sequentially, one at a time); overflow
+ * beyond MAX_MODALS gets the staggered toast treatment.
  */
 export default function BadgeChecker() {
   const { showToast } = useToast();
   const checking = useRef(false);
+  const [modalQueue, setModalQueue] = useState<BadgeProgress[]>([]);
 
   async function checkBadges() {
     if (checking.current) return;
@@ -27,8 +35,7 @@ export default function BadgeChecker() {
       const res = await fetch("/api/badges");
       if (!res.ok) return;
       const data = await res.json();
-      const progress: { badge: { id: string; name: string; icon: string; tier: string }; earned: boolean }[] =
-        data.progress || [];
+      const progress: BadgeProgress[] = data.progress || [];
       const earnedBadges = progress.filter((p) => p.earned);
       if (earnedBadges.length === 0) return;
 
@@ -41,8 +48,21 @@ export default function BadgeChecker() {
 
       const newBadges = earnedBadges.filter((p) => !seen.includes(p.badge.id));
 
-      // Show toast for each new badge (staggered)
-      newBadges.forEach((p, i) => {
+      // Mark ALL new badges seen up front so a refocus while a modal is open
+      // can't re-enqueue the same unlocks.
+      try {
+        localStorage.setItem(SEEN_KEY, JSON.stringify(earnedBadges.map((p) => p.badge.id)));
+      } catch {
+        // localStorage unavailable
+      }
+
+      if (newBadges.length === 0) return;
+
+      // First few get the full confetti modal, shown one at a time.
+      setModalQueue((q) => [...q, ...newBadges.slice(0, MAX_MODALS)]);
+
+      // Overflow keeps the old staggered toast treatment.
+      newBadges.slice(MAX_MODALS).forEach((p, i) => {
         setTimeout(() => {
           showToast(`${p.badge.icon} Badge Unlocked: ${p.badge.name}`, {
             variant: "badge",
@@ -50,13 +70,6 @@ export default function BadgeChecker() {
           });
         }, i * 1500);
       });
-
-      // Update seen list
-      try {
-        localStorage.setItem(SEEN_KEY, JSON.stringify(earnedBadges.map((p) => p.badge.id)));
-      } catch {
-        // localStorage unavailable
-      }
     } catch {
       // Silently fail — badge check is non-critical
     } finally {
@@ -83,5 +96,12 @@ export default function BadgeChecker() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return null; // Renders nothing — purely side-effect component
+  // Sequential celebration: show the head of the queue; closing advances it.
+  if (modalQueue.length === 0) return null;
+  return (
+    <AchievementModal
+      badge={modalQueue[0]}
+      onClose={() => setModalQueue((q) => q.slice(1))}
+    />
+  );
 }
