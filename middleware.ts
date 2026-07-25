@@ -1,7 +1,20 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Files served straight out of public/. The matcher below covers route prefixes
+// like /onboarding/:path*, which also match real assets such as
+// /onboarding/recipes/mapo-tofu.jpg — and redirecting an <img> to /auth/login
+// hands it an HTML document, i.e. a broken image for every signed-out user in
+// the onboarding flow. Bail before any auth work (this also skips a Supabase
+// session lookup per asset request).
+const STATIC_ASSET =
+  /\.(?:jpg|jpeg|png|gif|webp|avif|svg|ico|bmp|mp4|webm|mp3|wav|woff|woff2|ttf|otf|eot|txt|xml|json|webmanifest|map)$/i;
+
 export async function middleware(request: NextRequest) {
+  if (STATIC_ASSET.test(request.nextUrl.pathname)) {
+    return NextResponse.next();
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

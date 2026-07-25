@@ -3,6 +3,7 @@ import { Geist } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
+import AppMain from "@/components/layout/AppMain";
 import BottomTabBar from "@/components/layout/BottomTabBar";
 import Providers from "@/components/ui/Providers";
 
@@ -45,7 +46,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // Cream on <html> paints the canvas itself: with viewport-fit=cover the
+    // iOS WebView extends under the home indicator, and any strip the body
+    // doesn't cover (there, or in a rubber-band overscroll) showed up white.
+    <html lang="en" className="bg-[#F5EEE2]">
       <body className={`${geistSans.variable} font-sans antialiased bg-[#F5EEE2] text-[#1C1A17] h-full flex flex-col overscroll-none`}>
         {/* Prevent pinch-to-zoom and visual-viewport scroll on iOS PWA */}
         <Script id="prevent-zoom" strategy="afterInteractive">{`
@@ -71,7 +75,7 @@ export default function RootLayout({
         `}</Script>
 <Providers>
 <Navbar />
-        <main className="flex-1 overflow-y-auto overscroll-none pb-[calc(5rem+var(--safe-bottom,0px))] sm:pb-0">{children}</main>
+        <AppMain>{children}</AppMain>
         <BottomTabBar />
 </Providers>
       </body>

@@ -64,7 +64,18 @@ export default function FeatureTour({ onBack, onComplete }: { onBack: () => void
 
       {/* Live app preview */}
       <div className="flex-1 min-h-0 flex items-center justify-center px-6 pt-4 pb-2 overflow-hidden">
-        <div key={`phone-${step}`} style={{ height: "min(420px, 52vh)", animation: "tour-slide-in 0.4s ease both" }}>
+        {/* The caller sizes the mockup explicitly — width is derived from the
+            height in calc rather than left to `aspect-ratio`, which WebKit
+            fails to resolve for a flex item whose height comes from its parent
+            (the bezel collapsed to a thin black bar in the iOS shell). */}
+        <div
+          key={`phone-${step}`}
+          style={{
+            height: "min(420px, 52vh)",
+            width: "calc(min(420px, 52vh) * 186 / 380)",
+            animation: "tour-slide-in 0.4s ease both",
+          }}
+        >
           <WelcomePhoneMockup screen={step} />
         </div>
       </div>

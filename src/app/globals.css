@@ -135,6 +135,9 @@ html {
   overscroll-behavior: none;
   /* Use the full screen including notch/home-indicator areas */
   height: 100%;
+  /* NB: the cream canvas colour is set as a `bg-[#F5EEE2]` utility on <html>
+     in layout.tsx — declaring `background` here gets dropped by the Tailwind
+     v4 / Lightning CSS pipeline. */
   /* Safe-area inset only matters in chromeless environments — PWA
      standalone and Capacitor native. In a regular Safari browser the
      bottom URL toolbar already covers the home-indicator area, so we

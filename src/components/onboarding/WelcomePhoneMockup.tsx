@@ -53,8 +53,12 @@ const labelMono = {
 export default function WelcomePhoneMockup({ screen = 0, showSticker = false }: { screen?: number; showSticker?: boolean }) {
   const idx = ((screen % 5) + 5) % 5;
 
+  // Fills whatever box the caller gives it (see FeatureTour, which sets an
+  // explicit width + height in the 186:380 phone ratio). Deriving the width
+  // here from `aspect-ratio` + a parent-relative height broke in WebKit — the
+  // bezel collapsed to a thin black bar in the iOS shell.
   return (
-    <div className="relative mx-auto h-full" style={{ aspectRatio: "186 / 380", maxWidth: "100%" }}>
+    <div className="relative mx-auto h-full w-full" style={{ maxWidth: "100%" }}>
       {/* Soft glow puddle behind the phone */}
       <div
         aria-hidden
