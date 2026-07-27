@@ -96,6 +96,10 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
         BUNDLE_ID: com.ACGC.crave
+        # The Share Extension is a separate target with its own bundle ID, so
+        # it needs its own provisioning profile. Signing the app alone leaves
+        # the embedded .appex unsigned and the archive step fails.
+        EXTENSION_BUNDLE_ID: com.ACGC.crave.ShareExtension
     triggering:
       events: []  # manual until we want every merge to ship a build
     scripts:
@@ -124,7 +128,16 @@ workflows:
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
             --create
+          # Same again for the Share Extension. `--create` registers the
+          # bundle ID on Apple's side if it doesn't exist yet; if your account
+          # blocks automatic creation, add it manually in App Store Connect →
+          # Identifiers first and this call just fetches it.
+          app-store-connect fetch-signing-files "$EXTENSION_BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
           keychain add-certificates
+          # Applies every fetched profile to the matching target in the
+          # project — App and ShareExtension both get one.
           xcode-project use-profiles
       - name: Increment build number
         script: |

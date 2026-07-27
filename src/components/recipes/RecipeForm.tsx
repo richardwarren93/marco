@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -18,15 +18,27 @@ export default function RecipeForm({
   recipe,
   onCancel,
   onSaved,
+  initialUrl,
 }: {
   recipe?: Recipe;
   onCancel?: () => void;
   onSaved?: () => void;
+  /**
+   * Pre-filled source URL that extracts immediately on mount instead of
+   * showing the paste field. Used by the iOS Share Extension handoff
+   * (marco://import?url=… → /recipes/new?url=…), where the user already
+   * chose the link in another app and shouldn't have to confirm it again.
+   */
+  initialUrl?: string;
 }) {
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(initialUrl || "");
   const [error, setError] = useState("");
   const [duplicateRecipeId, setDuplicateRecipeId] = useState<string | null>(null);
-  const [step, setStep] = useState<Step>(recipe ? "editing" : "url");
+  // Start straight in `extracting` when handed a URL — rendering the paste
+  // step first would flash the empty form before the effect below fires.
+  const [step, setStep] = useState<Step>(
+    recipe ? "editing" : initialUrl ? "extracting" : "url"
+  );
   const { showToast } = useToast();
 
   const [title, setTitle] = useState(recipe?.title || "");
@@ -63,8 +75,12 @@ export default function RecipeForm({
   const isEditing = !!recipe?.id;
 
   // ─── Extract ────────────────────────────────────────────────────────────────
-  async function handleExtract(e: React.FormEvent) {
+  function handleExtract(e: React.FormEvent) {
     e.preventDefault();
+    runExtract(url);
+  }
+
+  async function runExtract(target: string) {
     setError("");
     setStep("extracting");
 
@@ -72,7 +88,7 @@ export default function RecipeForm({
       const resp = await fetch("/api/recipes/extract", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: target }),
       });
 
       const data = await resp.json();
@@ -87,16 +103,29 @@ export default function RecipeForm({
       setPrepTime(r.prep_time_minutes?.toString() || "");
       setCookTime(r.cook_time_minutes?.toString() || "");
       setTags((r.tags || []).join(", "));
-      setSourceUrl(r.source_url || url);
+      setSourceUrl(r.source_url || target);
       setSourcePlatform(r.source_platform || "other");
       setImageUrl(r.image_url || null);
       if (r.meal_type) setMealType(r.meal_type);
       setStep("preview");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Extraction failed");
+      // Falls back to the paste step with the field pre-filled, so a failed
+      // share-sheet import is one tap from a retry rather than a dead end.
       setStep("url");
     }
   }
+
+  // Auto-extract a URL handed in from outside the form (iOS share sheet).
+  // Ref-guarded: React 18 StrictMode double-mounts effects in dev, and a
+  // second extract is a second Claude call.
+  const autoExtracted = useRef(false);
+  useEffect(() => {
+    if (!initialUrl || recipe || autoExtracted.current) return;
+    autoExtracted.current = true;
+    runExtract(initialUrl);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialUrl]);
 
   // ─── Save ───────────────────────────────────────────────────────────────────
   async function handleSave() {

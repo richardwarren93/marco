@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-        <string>Salt &amp; Spoon</string>
+	<string>Marco</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -18,6 +18,21 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
+	<!-- Custom scheme the Share Extension uses to hand a shared link back to
+	     the app: marco://import?url=… Capacitor forwards it to the web layer
+	     as an `appUrlOpen` event, which DeepLinkHandler routes to
+	     /recipes/new?url=… -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.ACGC.crave</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>marco</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>

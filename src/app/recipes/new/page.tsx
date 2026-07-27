@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import ExtractBackButton from "@/components/recipes/ExtractBackButton";
+import { PENDING_KEY } from "@/components/native/DeepLinkHandler";
 import type { Ingredient } from "@/types";
 
 const SAFE_TOP = { paddingTop: "max(env(safe-area-inset-top, 0px), 12px)" } as const;
@@ -35,6 +36,21 @@ function NewRecipeInner() {
   const mode = searchParams.get("mode");
   const isExtracted = mode === "extracted";
   const isTextMode = mode === "text";
+  // Handed in by the iOS Share Extension via marco://import?url=… (see
+  // DeepLinkHandler). Only http(s) survives — the param lands in a fetch body
+  // and we don't want to forward anything else.
+  const sharedUrl = (() => {
+    const raw = searchParams.get("url");
+    if (!raw) return undefined;
+    try {
+      const parsed = new URL(raw);
+      return parsed.protocol === "http:" || parsed.protocol === "https:"
+        ? parsed.toString()
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  })();
   const [extractedRecipe, setExtractedRecipe] = useState<ExtractedRecipe | null>(null);
   const [pastedText, setPastedText] = useState("");
   const [extracting, setExtracting] = useState(false);
@@ -82,6 +98,18 @@ function NewRecipeInner() {
     // of a perma-spinner.
     setHydrated(true);
   }, [isExtracted, router]);
+
+  // Consume the pending-import handoff as soon as we've got the URL in hand.
+  // Leaving it in localStorage would make DeepLinkHandler re-push this page
+  // the next time the user navigates anywhere.
+  useEffect(() => {
+    if (!sharedUrl) return;
+    try {
+      localStorage.removeItem(PENDING_KEY);
+    } catch {
+      // Nothing to clean up if storage is unavailable.
+    }
+  }, [sharedUrl]);
 
   // iOS Safari bfcache: when the user uses the back gesture, the page may be
   // restored from the back-forward cache without any React lifecycle running.
@@ -200,7 +228,7 @@ function NewRecipeInner() {
           onCancel={() => setExtractedRecipe(null)}
         />
       ) : (
-        <RecipeForm />
+        <RecipeForm initialUrl={sharedUrl} />
       )}
     </div>
   );
