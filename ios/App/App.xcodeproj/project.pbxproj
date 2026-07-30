@@ -18,6 +18,8 @@
 		A1A1A1A100000000000000A3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A1A1A1A100000000000000A2 /* PrivacyInfo.xcprivacy */; };
 		5E1AC0DE0000000000000008 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1AC0DE0000000000000007 /* ShareViewController.swift */; };
 		5E1AC0DE000000000000000E /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 5E1AC0DE0000000000000002 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		5E1AC0DE0000000000000013 /* SharedImportStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1AC0DE0000000000000012 /* SharedImportStore.swift */; };
+		5E1AC0DE0000000000000014 /* SharedImportStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1AC0DE0000000000000012 /* SharedImportStore.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +38,8 @@
 		5E1AC0DE0000000000000002 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		5E1AC0DE0000000000000007 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		5E1AC0DE0000000000000009 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		5E1AC0DE0000000000000012 /* SharedImportStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedImportStore.swift; sourceTree = "<group>"; };
+		5E1AC0DE0000000000000015 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -77,6 +81,7 @@
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				5E1AC0DE0000000000000003 /* ShareExtension */,
+				5E1AC0DE0000000000000011 /* Shared */,
 				504EC3051FED79650016851F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -86,8 +91,17 @@
 			children = (
 				5E1AC0DE0000000000000007 /* ShareViewController.swift */,
 				5E1AC0DE0000000000000009 /* Info.plist */,
+				5E1AC0DE0000000000000015 /* ShareExtension.entitlements */,
 			);
 			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		5E1AC0DE0000000000000011 /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				5E1AC0DE0000000000000012 /* SharedImportStore.swift */,
+			);
+			path = Shared;
 			sourceTree = "<group>";
 		};
 		504EC3051FED79650016851F /* Products */ = {
@@ -230,6 +244,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				5E1AC0DE0000000000000013 /* SharedImportStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -238,6 +253,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5E1AC0DE0000000000000008 /* ShareViewController.swift in Sources */,
+				5E1AC0DE0000000000000014 /* SharedImportStore.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -439,6 +455,7 @@
 		5E1AC0DE000000000000000B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -462,6 +479,7 @@
 		5E1AC0DE000000000000000C /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;

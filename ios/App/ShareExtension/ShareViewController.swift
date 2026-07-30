@@ -4,8 +4,9 @@ import UniformTypeIdentifiers
 /// Marco's iOS Share Extension.
 ///
 /// Deliberately dumb: it does no network work and holds no credentials. It
-/// pulls the shared URL out of the extension context, hands it to the main
-/// app via the `marco://import?url=…` scheme, and gets out of the way.
+/// pulls the shared URL out of the extension context and hands it to the main
+/// app two ways — a durable write to the App Group queue, then a
+/// `marco://import?url=…` deep link — and gets out of the way.
 ///
 /// Why not POST straight to the API from here? Marco's iOS app is a Capacitor
 /// shell pointing at the production web app (see capacitor.config.ts), so the
@@ -14,6 +15,11 @@ import UniformTypeIdentifiers
 /// would mean bridging a token into App Group storage and keeping it fresh —
 /// a whole auth surface for no user-visible gain. Handing off to the app lets
 /// the already-authenticated WebView do the work with zero new secrets.
+///
+/// Why both handoffs? The deep link is instant but rests on
+/// `extensionContext.open`, which silently fails for share extensions on some
+/// iOS versions. The queue always survives; the app drains it on activation.
+/// See SharedImportStore.
 final class ShareViewController: UIViewController {
 
     /// Custom scheme registered in the main app's Info.plist (CFBundleURLTypes).
@@ -32,8 +38,8 @@ final class ShareViewController: UIViewController {
         buildUI()
 
         resolveSharedURL { [weak self] url in
-            guard let self else { return }
-            guard let url else {
+            guard let self = self else { return }
+            guard let url = url else {
                 self.showFailure()
                 return
             }
@@ -65,7 +71,9 @@ final class ShareViewController: UIViewController {
 
         if let provider = providers.first(where: { $0.hasItemConformingToTypeIdentifier(textType) }) {
             provider.loadItem(forTypeIdentifier: textType, options: nil) { item, _ in
-                let text = (item as? String) ?? (item as? NSString) as String? ?? ""
+                // NSString bridges to String across `as?`, so this one cast
+                // covers both the Swift and Foundation string cases.
+                let text = (item as? String) ?? ""
                 DispatchQueue.main.async { completion(Self.firstURL(in: text)) }
             }
             return
@@ -95,13 +103,26 @@ final class ShareViewController: UIViewController {
     // MARK: - Handoff
 
     private func handoff(_ shared: URL) {
+        // Correlates the two handoff paths so the app can tell that a queued
+        // entry and an incoming deep link are the same share, and import once.
+        let id = UUID().uuidString
+
+        // Durable first — if the process is killed before the deep link
+        // resolves, the share still survives in the queue.
+        SharedImportStore.enqueue(url: shared.absoluteString, id: id)
+
         var components = URLComponents()
         components.scheme = Self.hostAppScheme
         components.host = "import"
-        components.queryItems = [URLQueryItem(name: "url", value: shared.absoluteString)]
+        components.queryItems = [
+            URLQueryItem(name: "url", value: shared.absoluteString),
+            URLQueryItem(name: "id", value: id),
+        ]
 
         guard let deepLink = components.url else {
-            showFailure()
+            // The queue write already happened, so the app will still pick
+            // this up on next launch — no need to show a failure.
+            finish()
             return
         }
 
@@ -121,7 +142,7 @@ final class ShareViewController: UIViewController {
         }
 
         extensionContext?.open(url) { [weak self] opened in
-            guard let self else { return }
+            guard let self = self else { return }
             if !opened {
                 // `extensionContext.open` is documented for Today extensions
                 // and returns false for share extensions on several iOS
@@ -136,7 +157,7 @@ final class ShareViewController: UIViewController {
     }
 
     private func openViaResponderChain(_ url: URL) {
-        let selector = sel_registerName("openURL:")
+        let selector = NSSelectorFromString("openURL:")
         var responder: UIResponder? = self
         while let current = responder {
             if current !== self, current.responds(to: selector) {

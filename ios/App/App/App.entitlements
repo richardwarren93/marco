@@ -4,5 +4,13 @@
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<!-- Shared with the Share Extension so a shared recipe link survives even
+	     when the marco:// deep link doesn't fire. Must stay identical to the
+	     group in ShareExtension.entitlements and to
+	     SharedImportStore.appGroupID. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.ACGC.crave</string>
+	</array>
 </dict>
 </plist>

@@ -46,8 +46,18 @@ function writePending(url: string) {
   }
 }
 
-/** Pulls the `url` param out of a `marco://import?url=…` deep link. */
-function parseImportUrl(deepLink: string): string | null {
+// Ids of shares already handled this session. The native side may deliver the
+// same share more than once: the extension both queues it in the App Group and
+// fires the deep link, and AppDelegate re-posts a drained item after 4s in case
+// the first post beat the listener below into existence. Every delivery carries
+// the id the extension generated, so dropping repeats is exact rather than
+// heuristic.
+const handledIds = new Set<string>();
+
+type ParsedImport = { url: string; id: string | null };
+
+/** Pulls the `url` and `id` params out of a `marco://import?url=…` deep link. */
+function parseImportUrl(deepLink: string): ParsedImport | null {
   try {
     const parsed = new URL(deepLink);
     if (parsed.protocol !== "marco:") return null;
@@ -61,7 +71,7 @@ function parseImportUrl(deepLink: string): string | null {
     // into a navigation.
     const sharedUrl = new URL(shared);
     if (sharedUrl.protocol !== "http:" && sharedUrl.protocol !== "https:") return null;
-    return sharedUrl.toString();
+    return { url: sharedUrl.toString(), id: parsed.searchParams.get("id") };
   } catch {
     return null;
   }
@@ -77,9 +87,13 @@ export default function DeepLinkHandler() {
     let cancelled = false;
     let removeListener: (() => void) | undefined;
 
-    function go(sharedUrl: string) {
-      writePending(sharedUrl);
-      router.push(`/recipes/new?url=${encodeURIComponent(sharedUrl)}`);
+    function go(shared: ParsedImport) {
+      if (shared.id) {
+        if (handledIds.has(shared.id)) return;
+        handledIds.add(shared.id);
+      }
+      writePending(shared.url);
+      router.push(`/recipes/new?url=${encodeURIComponent(shared.url)}`);
     }
 
     async function init() {
