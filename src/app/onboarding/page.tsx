@@ -32,7 +32,7 @@ import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes
 // of the live flow — the reveal lands users straight in the app. The paywall
 // screens (PlusUpsell, etc.) are kept in the codebase; flip this back to true
 // to re-enable the upsell once billing (RevenueCat, Phase 2) is wired up.
-const PAYWALL_ENABLED = false;
+const PAYWALL_ENABLED = true;
 
 // Step map (ReciMe-style guided flow). Questions run post-signup (account
 // creation follows the feature tour); every screen either collects something

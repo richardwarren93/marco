@@ -13,7 +13,7 @@ export type Tier = "free" | "plus";
 // Phase 1 ships with enforcement OFF so existing free users are not retroactively
 // capped before Plus is purchasable. Phase 2 (RevenueCat) flips this to true the
 // same release that makes the trial buyable. Gate helpers no-op while false.
-export const ENFORCE_ENTITLEMENTS = false;
+export const ENFORCE_ENTITLEMENTS = true;
 
 export interface TierLimits {
   /** Max recipes a user can save. */
