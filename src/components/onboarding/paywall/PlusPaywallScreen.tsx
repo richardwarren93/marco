@@ -39,13 +39,19 @@ export default function PlusPaywallScreen({ onStartTrial, onSkip, onBack }: Prop
   const t = PLUS_TESTIMONIALS[0];
   const [before, after] = t.quote.split(t.emphasis);
 
+  // Only the annual plan includes a free trial; monthly bills immediately.
+  // The footer copy/controls adapt so a monthly subscriber is never shown
+  // "No payment now" / "Start for $0.00" (App Store 3.1.2 pricing accuracy).
+  const hasTrial = plan === "annual" && PLUS_PRICING.annual.trialDays > 0;
+
   return (
     <PaywallShell
       eyebrow="Marco Plus"
       onClose={onSkip}
       footer={
         <div className="space-y-2">
-          {/* Trial reminder toggle */}
+          {/* Trial reminder toggle — annual only (monthly has no trial) */}
+          {hasTrial && (
           <div
             className="flex items-center justify-between rounded-xl px-3.5 py-2.5"
             style={{ background: "rgba(255,253,247,0.7)", border: "1px solid rgba(28,26,23,0.12)" }}
@@ -71,6 +77,7 @@ export default function PlusPaywallScreen({ onStartTrial, onSkip, onBack }: Prop
               />
             </button>
           </div>
+          )}
 
           <div className="flex items-center justify-center gap-1.5 py-0.5">
             <svg width="14" height="14" viewBox="0 0 24 24" fill={INK}>
@@ -78,12 +85,20 @@ export default function PlusPaywallScreen({ onStartTrial, onSkip, onBack }: Prop
               <path d="M14.53 4.42c.72-.87 1.2-2.08 1.07-3.29-1.03.04-2.28.69-3.02 1.56-.66.77-1.24 2-1.08 3.18 1.15.09 2.32-.58 3.03-1.45z" />
             </svg>
             <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: "13px", color: INK }}>
-              No payment now{" "}
-              <span style={{ color: "#16a34a", fontWeight: 700 }}>✓</span>
+              {hasTrial ? (
+                <>
+                  No payment now{" "}
+                  <span style={{ color: "#16a34a", fontWeight: 700 }}>✓</span>
+                </>
+              ) : (
+                <>{PLUS_PRICING.monthly.perLabel} · cancel anytime</>
+              )}
             </span>
           </div>
 
-          <PlusPrimaryButton onClick={() => onStartTrial(plan, remind)}>Start for $0.00</PlusPrimaryButton>
+          <PlusPrimaryButton onClick={() => onStartTrial(plan, remind)}>
+            {hasTrial ? "Start for $0.00" : `Subscribe · ${PLUS_PRICING.monthly.perLabel}`}
+          </PlusPrimaryButton>
 
           <button
             onClick={() => (showMore ? setShowMore(false) : setShowMore(true))}
