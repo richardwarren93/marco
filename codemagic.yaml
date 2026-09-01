@@ -105,6 +105,13 @@ workflows:
       - name: Sync Capacitor → iOS
         script: |
           npx cap sync ios
+          # The repo is developed on Windows, where `cap sync` writes SPM
+          # dependency paths with backslashes (..\..\..\node_modules\...). SPM on
+          # macOS can't resolve those, so xcodebuild fails at -showBuildSettings.
+          # Normalize any backslashes in the generated manifest to forward slashes.
+          sed -i '' 's|\\|/|g' ios/App/CapApp-SPM/Package.swift || true
+          echo "--- CapApp-SPM/Package.swift dependency paths after normalize ---"
+          grep 'node_modules' ios/App/CapApp-SPM/Package.swift || true
       - name: Set up code signing (idempotent — reuses one Distribution cert)
         script: |
           # Distribution certificates are capped by Apple (only a couple per
