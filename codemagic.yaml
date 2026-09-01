@@ -105,24 +105,44 @@ workflows:
       - name: Sync Capacitor → iOS
         script: |
           npx cap sync ios
-      - name: Set up code signing (explicit fetch + create)
+      - name: Set up code signing (idempotent — reuses one Distribution cert)
         script: |
-          # Apple's API requires a CSR (built from a private RSA key) to
-          # issue a Distribution certificate. The first attempt failed
-          # because no private key was available — fetch-signing-files
-          # fell back to ad-hoc signing with no profile, and the archive
-          # step rejected it. We generate a fresh key inline.
+          # Distribution certificates are capped by Apple (only a couple per
+          # account), so we must NOT mint a new one on every build — that's what
+          # caused cert "stacking" and the eventual "maximum number of
+          # certificates" failure.
           #
-          # TODO: once the first build succeeds and a Distribution cert
-          # exists on Apple's side, save the contents of /tmp/codemagic_key
-          # to a Codemagic environment variable named
-          # CERTIFICATE_PRIVATE_KEY so subsequent builds reuse the same
-          # Apple cert instead of stacking new ones.
+          # fetch-signing-files matches an existing certificate by the PUBLIC key
+          # derived from the private key we pass in. So as long as we feed it the
+          # SAME private key on every run, it REUSES the same Apple certificate
+          # instead of creating another one.
+          #
+          # ── One-time setup ───────────────────────────────────────────────
+          # On the first build (no CERTIFICATE_PRIVATE_KEY set) a fresh key is
+          # generated AND PRINTED below. Copy it into a SECURE Codemagic env var
+          # named CERTIFICATE_PRIVATE_KEY (Teams → Marco → Variables and secrets,
+          # "Secure" checked). Every later build then reuses it and never creates
+          # another certificate.
           keychain initialize
-          ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/codemagic_key -q -N ""
-          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/codemagic_key)
+          if [ -n "$CERTIFICATE_PRIVATE_KEY" ]; then
+            echo "Reusing stored CERTIFICATE_PRIVATE_KEY — no new certificate will be created."
+            printf '%s' "$CERTIFICATE_PRIVATE_KEY" > /tmp/codemagic_key
+          else
+            echo "No CERTIFICATE_PRIVATE_KEY set — generating a one-time signing key."
+            ssh-keygen -t rsa -b 2048 -m PEM -f /tmp/codemagic_key -q -N ""
+            echo "=================================================================="
+            echo " SAVE THIS PRIVATE KEY as a SECURE Codemagic env var named"
+            echo " CERTIFICATE_PRIVATE_KEY so future builds reuse this certificate"
+            echo " and stop creating new ones on every run:"
+            echo "------------------------------------------------------------------"
+            cat /tmp/codemagic_key
+            echo "=================================================================="
+          fi
+          # --create only mints a cert/profile when none matching this key exists;
+          # with a persisted key it simply fetches the existing one.
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --certificate-key @file:/tmp/codemagic_key \
             --create
           keychain add-certificates
           xcode-project use-profiles
