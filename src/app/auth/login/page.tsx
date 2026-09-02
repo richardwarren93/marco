@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Link from "next/link";
 import MarcoLockup from "@/components/layout/MarcoLockup";
+import { signInWithApple } from "@/lib/appleAuth";
 
 // Apple Sign in is required by App Store guideline 4.8 whenever any
 // third-party social sign-in is offered. The Apple OAuth provider must
@@ -20,13 +21,33 @@ export default function LoginPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  async function handleOAuth(provider: "apple") {
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+  async function handleAppleSignIn() {
+    setError("");
+    setLoading(true);
+    const result = await signInWithApple(supabase);
+    // Web fallback redirects the page away — nothing more to do here.
+    if (result.usedWebFallback) return;
+    if (!result.ok) {
+      if (result.error) setError(result.error); // empty = user cancelled
+      setLoading(false);
+      return;
+    }
+    // Native sign-in succeeded — route by onboarding status.
+    const { data: { user } } = await supabase.auth.getUser();
+    let onboarded = false;
+    if (user) {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .single();
+      onboarded = !!profile?.onboarding_completed;
+      if (onboarded) {
+        document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
+      }
+    }
+    router.push(onboarded ? "/recipes" : "/onboarding");
+    router.refresh();
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -155,7 +176,8 @@ export default function LoginPage() {
             </div>
             <button
               type="button"
-              onClick={() => handleOAuth("apple")}
+              onClick={handleAppleSignIn}
+              disabled={loading}
               className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border rounded-2xl font-semibold text-sm shadow-sm hover:bg-gray-50 transition-colors"
               style={{ borderColor: "rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
             >

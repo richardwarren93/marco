@@ -8,6 +8,7 @@ import WelcomeCollage from "@/components/onboarding/WelcomeCollage";
 import MarcoLockup from "@/components/layout/MarcoLockup";
 import BrandSplash from "@/components/onboarding/BrandSplash";
 import FeatureTour from "@/components/onboarding/FeatureTour";
+import { signInWithApple } from "@/lib/appleAuth";
 
 export default function SignupPage() {
   const [mode, setMode] = useState<"splash" | "welcome" | "tour" | "choose" | "email">("splash");
@@ -90,6 +91,35 @@ export default function SignupPage() {
         redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+  }
+
+  // Native Sign in with Apple (iOS) with a web-OAuth fallback. Replaces the
+  // pure redirect flow, which breaks inside the Capacitor WebView.
+  async function handleAppleSignIn() {
+    setError("");
+    setLoading(true);
+    const result = await signInWithApple(supabase);
+    if (result.usedWebFallback) return; // browser redirects away
+    if (!result.ok) {
+      if (result.error) setError(result.error); // empty = user cancelled
+      setLoading(false);
+      return;
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    let onboarded = false;
+    if (user) {
+      const { data: profile } = await supabase
+        .from("user_profiles")
+        .select("onboarding_completed")
+        .eq("user_id", user.id)
+        .single();
+      onboarded = !!profile?.onboarding_completed;
+      if (onboarded) {
+        document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
+      }
+    }
+    router.push(onboarded ? "/recipes" : "/onboarding");
+    router.refresh();
   }
 
   // Brand splash — the first screen on app open: the cute Marco tomato.
@@ -416,7 +446,8 @@ export default function SignupPage() {
         {/* Continue with Apple */}
         {APPLE_ENABLED && (
           <button
-            onClick={() => handleOAuth("apple")}
+            onClick={handleAppleSignIn}
+            disabled={loading}
             className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border border-gray-200 rounded-2xl font-semibold text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
