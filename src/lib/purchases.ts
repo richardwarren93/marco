@@ -122,8 +122,8 @@ export async function purchasePlus(plan: PlanKey): Promise<PurchaseResult> {
     // fallback when the store product id doesn't match directly.
     const wantedType = plan === "annual" ? "ANNUAL" : "MONTHLY";
     const pkg =
-      packages.find((p) => p.product.identifier === wantedProductId) ??
-      packages.find((p) => String(p.packageType) === wantedType);
+      packages.find((p: any) => p.product.identifier === wantedProductId) ??
+      packages.find((p: any) => String(p.packageType) === wantedType);
     if (!pkg) return { active: false, error: "Plan not available" };
 
     const { customerInfo } = await Purchases.purchasePackage({ aPackage: pkg });
