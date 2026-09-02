@@ -32,18 +32,29 @@ export interface PurchaseResult {
 
 // Lazily resolve the native plugin; returns null on web so callers no-op.
 //
-// Detection uses the injected `window.Capacitor` global rather than
-// `import("@capacitor/core")`: the app loads a REMOTE url in the WebView, where
-// bare-specifier dynamic imports don't resolve at runtime — they threw, so this
-// always returned null and purchases silently no-op'd on device. The RevenueCat
-// wrapper is imported normally (bundled as a lazy chunk) so its full API
-// (Purchases, LOG_LEVEL) is actually available at runtime.
-async function getPlugin() {
+// Uses the injected `window.Capacitor` global — NOT `import(...)`. The app loads
+// a REMOTE url in the WebView, where bare-specifier dynamic imports
+// (`import("@capacitor/core")` / `import("@revenuecat/purchases-capacitor")`)
+// don't resolve at runtime — they threw, so getPlugin always returned null and
+// every purchase/configure call silently no-op'd on device (no StoreKit sheet,
+// nothing in RevenueCat). The native plugin is registered as
+// `window.Capacitor.Plugins.Purchases`, and RevenueCat's exported `Purchases` is
+// just a Proxy over it that only transforms `trackCustomPaywallImpression` — so
+// every method we use (configure/logIn/getOfferings/purchasePackage/…) passes
+// straight through. LOG_LEVEL is a JS enum in the wrapper; the native side only
+// needs its string values, so we supply them.
+/* eslint-disable @typescript-eslint/no-explicit-any */
+async function getPlugin(): Promise<{ Purchases: any; LOG_LEVEL: Record<string, string> } | null> {
   try {
     if (typeof window === "undefined") return null;
-    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    const cap = (window as unknown as {
+      Capacitor?: { isNativePlatform?: () => boolean; Plugins?: Record<string, any> };
+    }).Capacitor;
     if (!cap?.isNativePlatform?.()) return null;
-    return await import("@revenuecat/purchases-capacitor");
+    const Purchases = cap.Plugins?.Purchases;
+    if (!Purchases) return null;
+    const LOG_LEVEL = { VERBOSE: "VERBOSE", DEBUG: "DEBUG", INFO: "INFO", WARN: "WARN", ERROR: "ERROR" };
+    return { Purchases, LOG_LEVEL };
   } catch {
     return null;
   }
