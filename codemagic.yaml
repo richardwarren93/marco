@@ -96,6 +96,12 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
         BUNDLE_ID: com.ACGC.crave
+      groups:
+        # Holds CERTIFICATE_PRIVATE_KEY — the saved private key for the one
+        # reused Distribution certificate, so builds stop creating new certs
+        # (Apple caps you at 2). Defined in Codemagic → Marco → Environment
+        # variables, group "apple_signing", marked Secure.
+        - apple_signing
     triggering:
       events: []  # manual until we want every merge to ship a build
     scripts:
