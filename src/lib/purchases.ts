@@ -31,11 +31,19 @@ export interface PurchaseResult {
 }
 
 // Lazily resolve the native plugin; returns null on web so callers no-op.
+//
+// Detection uses the injected `window.Capacitor` global rather than
+// `import("@capacitor/core")`: the app loads a REMOTE url in the WebView, where
+// bare-specifier dynamic imports don't resolve at runtime — they threw, so this
+// always returned null and purchases silently no-op'd on device. The RevenueCat
+// wrapper is imported normally (bundled as a lazy chunk) so its full API
+// (Purchases, LOG_LEVEL) is actually available at runtime.
 async function getPlugin() {
   try {
-    const { Capacitor } = await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ "@capacitor/core");
-    if (!Capacitor.isNativePlatform()) return null;
-    return await import(/* webpackIgnore: true */ /* turbopackIgnore: true */ "@revenuecat/purchases-capacitor");
+    if (typeof window === "undefined") return null;
+    const cap = (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+    if (!cap?.isNativePlatform?.()) return null;
+    return await import("@revenuecat/purchases-capacitor");
   } catch {
     return null;
   }
