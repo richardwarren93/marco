@@ -153,6 +153,16 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
+          echo "=================== provisioning profiles: capability check ==================="
+          for p in "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision; do
+            [ -e "$p" ] || continue
+            security cms -D -i "$p" 2>/dev/null > /tmp/pp.plist
+            NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/pp.plist 2>/dev/null)
+            APPID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' /tmp/pp.plist 2>/dev/null)
+            APS=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:aps-environment' /tmp/pp.plist 2>/dev/null)
+            echo "profile: $NAME | app-id: $APPID | aps-environment: ${APS:-<<MISSING>>}"
+          done
+          echo "=================== end capability check ==================="
       - name: Increment build number
         script: |
           cd ios/App
