@@ -153,42 +153,10 @@ workflows:
             --create
           keychain add-certificates
           xcode-project use-profiles
-          echo "=================== provisioning profiles: capability check ==================="
-          for p in "$HOME/Library/MobileDevice/Provisioning Profiles/"*.mobileprovision; do
-            [ -e "$p" ] || continue
-            security cms -D -i "$p" 2>/dev/null > /tmp/pp.plist
-            NAME=$(/usr/libexec/PlistBuddy -c 'Print :Name' /tmp/pp.plist 2>/dev/null)
-            APPID=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:application-identifier' /tmp/pp.plist 2>/dev/null)
-            APS=$(/usr/libexec/PlistBuddy -c 'Print :Entitlements:aps-environment' /tmp/pp.plist 2>/dev/null)
-            echo "profile: $NAME | app-id: $APPID | aps-environment: ${APS:-<<MISSING>>}"
-          done
-          echo "=================== end capability check ==================="
       - name: Increment build number
         script: |
           cd ios/App
           agvtool new-version -all $(($BUILD_NUMBER + 1))
-      - name: Diagnose Xcode / SPM (verbose — surfaces the real error)
-        script: |
-          # `xcode-project build-ipa` hides the underlying xcodebuild error and
-          # only prints "Failed to show build settings". Run the same commands
-          # directly here so the ACTUAL error appears in the Codemagic log.
-          set +e
-          echo "=================== xcodebuild -version ==================="
-          xcodebuild -version
-          echo "=================== Package.swift (post cap sync + normalize) ==================="
-          cat ios/App/CapApp-SPM/Package.swift
-          echo "=================== node_modules/@capacitor present? ==================="
-          ls -la node_modules/@capacitor/ 2>&1 | head -30
-          echo "=================== shared schemes present? ==================="
-          ls -la ios/App/App.xcodeproj/xcshareddata/xcschemes/ 2>&1
-          echo "=================== xcodebuild -list ==================="
-          xcodebuild -project ios/App/App.xcodeproj -list 2>&1
-          echo "=================== resolvePackageDependencies ==================="
-          xcodebuild -resolvePackageDependencies -project ios/App/App.xcodeproj -scheme App 2>&1
-          echo "=================== showBuildSettings (direct, real error) ==================="
-          xcodebuild -project ios/App/App.xcodeproj -scheme App -showBuildSettings 2>&1 | head -80
-          echo "=================== end diagnostics ==================="
-          exit 0
       - name: Build .ipa
         script: |
           xcode-project build-ipa \
