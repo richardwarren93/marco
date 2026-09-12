@@ -195,10 +195,9 @@ export default function TonightPage() {
                   <div className="min-w-0 flex-1">
                     <h2 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: 18, color: INK, lineHeight: 1.15, letterSpacing: "-0.01em", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{primary.title}</h2>
                     <div className="flex items-center gap-1.5 mt-1 text-[12px]" style={{ color: INK_SOFT }}>
-                      {primary.total_time_minutes != null && (
-                        <span className="inline-flex items-center gap-1"><ClockIcon /> {primary.total_time_minutes} min</span>
-                      )}
+                      <span className="inline-flex items-center gap-1"><ClockIcon /> {primary.total_time_minutes ?? 30} min</span>
                       {primary.difficulty != null && <><Dotsep /><span>{primary.difficulty <= 2 ? "Easy" : primary.difficulty >= 4 ? "Involved" : "Medium"}</span></>}
+                      {primary.cuisine && <><Dotsep /><span className="capitalize">{primary.cuisine}</span></>}
                     </div>
                   </div>
                 </div>
@@ -536,7 +535,7 @@ function BottomNav() {
       <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onPhoto} />
 
       <div
-        className="-mx-5 flex items-end justify-around px-2 pt-2"
+        className="-mx-5 flex items-end px-2 pt-2"
         style={{
           marginBottom: "-1.5rem",
           borderTop: "1px solid rgba(28,26,23,0.08)",
@@ -547,17 +546,19 @@ function BottomNav() {
       >
         <NavItem href="/tonight" label="Home" active icon={<HomeIcon />} />
         <NavItem href="/recipes" label="Recipes" icon={<RecipesNavIcon />} />
-        <button
-          onClick={() => setFabOpen(true)}
-          aria-label="Add a recipe"
-          className="flex items-center justify-center rounded-full active:scale-95 transition-transform"
-          style={{
-            width: 56, height: 56, marginTop: -22, background: "#FFF9EF",
-            border: `2px solid ${TOMATO}`, boxShadow: "0 8px 20px rgba(229,70,46,0.28)",
-          }}
-        >
-          <TomatoMascot state="thriving" size={38} />
-        </button>
+        <div className="flex-1 flex justify-center">
+          <button
+            onClick={() => setFabOpen(true)}
+            aria-label="Add a recipe"
+            className="flex items-center justify-center rounded-full active:scale-95 transition-transform"
+            style={{
+              width: 56, height: 56, marginTop: -22, background: "#FFF9EF",
+              border: `2px solid ${TOMATO}`, boxShadow: "0 8px 20px rgba(229,70,46,0.28)",
+            }}
+          >
+            <TomatoMascot state="thriving" size={38} />
+          </button>
+        </div>
         <NavItem href="/meal-plan" label="Plan" icon={<PlanIcon />} />
         <NavItem href="/grocery" label="Groceries" icon={<NavCartIcon />} />
       </div>
@@ -581,7 +582,7 @@ const TextGlyph = () => (<svg {...GP}><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2
 
 function NavItem({ href, label, icon, active }: { href: string; label: string; icon: React.ReactNode; active?: boolean }) {
   return (
-    <Link href={href} className="flex flex-col items-center gap-1 py-1" style={{ color: active ? TOMATO : INK_SOFT, width: 60 }}>
+    <Link href={href} className="flex flex-col items-center gap-1 py-1 flex-1" style={{ color: active ? TOMATO : INK_SOFT }}>
       <span>{icon}</span>
       <span className="text-[10px] font-medium">{label}</span>
     </Link>

@@ -270,23 +270,25 @@ export function buildReasoning(
   ctx: CookContext,
   parts: Record<string, number>
 ): string {
-  const bits: string[] = [];
-  if (r.totalTimeMinutes != null) bits.push(`${r.totalTimeMinutes} min`);
-  if (r.difficulty != null && r.difficulty <= 2) bits.push("easy");
-
-  // Lead with whichever signal contributed most (besides base fit).
+  // Reasoning is the "why this one" narrative — NOT the time/difficulty chips
+  // (those render separately). Lead with whichever signal contributed most.
   const top = Object.entries(parts).sort((a, b) => b[1] - a[1])[0]?.[0];
   if (top === "spoilage" && ctx.expiringSoon?.length) {
-    bits.push(`uses your ${ctx.expiringSoon[0]} before it turns`);
-  } else if (top === "ingredient" && ctx.ingredientMode === "have") {
-    bits.push("mostly from what you have");
-  } else if (top === "cuisine" && r.cuisine) {
-    bits.push(`${r.cuisine} — right up your alley`);
-  } else if (ctx.energy === "low") {
-    bits.push("low-effort for tonight");
+    return `Uses your ${ctx.expiringSoon[0]} before it turns.`;
   }
-  return bits.join(" · ");
+  if (top === "ingredient" && ctx.ingredientMode === "have") {
+    return "Mostly from what you already have.";
+  }
+  if (top === "cuisine" && r.cuisine) {
+    return `${cap(r.cuisine)} — right up your alley.`;
+  }
+  if (ctx.energy === "low" || (r.difficulty != null && r.difficulty <= 2)) {
+    return "A low-effort win for tonight.";
+  }
+  return "A good fit for tonight.";
 }
+
+const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 // ── Online learning (update the profile from a single event) ─────────────────
 

@@ -150,7 +150,9 @@ async function importFromDb() {
     );
     const steps = (Array.isArray(r.steps) ? r.steps : []).map((s) => (typeof s === "string" ? s : s?.step || "")).filter(Boolean);
     const text = norm([r.title, r.description, (r.tags || []).join(" "), ings.join(" ")].join(" "));
-    const total = (r.prep_time_minutes || 0) + (r.cook_time_minutes || 0) || null;
+    // Estimate a time when the recipe has none, so every card shows one.
+    const rawTotal = (r.prep_time_minutes || 0) + (r.cook_time_minutes || 0) || null;
+    const total = rawTotal ?? Math.max(15, Math.min(90, Math.round((10 + steps.length * 4 + ings.length * 2) / 5) * 5));
     return {
       title: r.title,
       description: stripHtml(r.description),
