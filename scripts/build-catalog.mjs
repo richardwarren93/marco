@@ -180,31 +180,43 @@ async function importFromDb() {
 const SPOON_CUISINES = ["Italian", "Asian", "Mexican", "Mediterranean", "Indian", "American", "French", "Thai", "Chinese", "Japanese", "Greek", "Korean"];
 const SPOON_TYPES = ["main course", "breakfast", "salad", "soup"];
 
+const PAGE = 20;          // results per request (Spoonacular max is 100, but 20 keeps point-cost low)
+const MAX_OFFSET = 180;   // up to 10 pages per cuisine/type combo
+
 async function importFromSpoonacular(target) {
   if (!SPOON_KEY) { console.error("Missing SPOONACULAR_API_KEY"); return; }
-  console.log(`→ importing up to ${target} from Spoonacular…`);
+  console.log(`→ importing up to ${target} new recipes from Spoonacular…`);
   let total = 0;
   outer: for (const type of SPOON_TYPES) {
     for (const cuisine of SPOON_CUISINES) {
       if (total >= target) break outer;
-      const url = new URL("https://api.spoonacular.com/recipes/complexSearch");
-      url.searchParams.set("apiKey", SPOON_KEY);
-      url.searchParams.set("cuisine", cuisine);
-      url.searchParams.set("type", type);
-      url.searchParams.set("number", "20");
-      url.searchParams.set("addRecipeInformation", "true");
-      url.searchParams.set("fillIngredients", "true");
-      url.searchParams.set("instructionsRequired", "true");
-      url.searchParams.set("sort", "popularity");
-      const res = await fetch(url);
-      if (res.status === 402) { console.error("  Spoonacular daily quota reached — stopping. Re-run tomorrow (resumes automatically)."); break outer; }
-      if (!res.ok) { console.error(`  ${cuisine}/${type}: HTTP ${res.status}`); continue; }
-      const json = await res.json();
-      const rows = (json.results || []).map((r) => mapSpoon(r, cuisine)).filter(Boolean);
-      const n = await upsert(rows);
-      total += n;
-      console.log(`  ${cuisine} / ${type}: +${n} (total ${total})`);
-      await new Promise((r) => setTimeout(r, 800)); // gentle throttle
+      // Paginate through this combo so re-runs pull NEW recipes (page 2, 3, …)
+      // rather than re-fetching the same top-20 (which just dedup away).
+      for (let offset = 0; offset <= MAX_OFFSET; offset += PAGE) {
+        if (total >= target) break outer;
+        const url = new URL("https://api.spoonacular.com/recipes/complexSearch");
+        url.searchParams.set("apiKey", SPOON_KEY);
+        url.searchParams.set("cuisine", cuisine);
+        url.searchParams.set("type", type);
+        url.searchParams.set("number", String(PAGE));
+        url.searchParams.set("offset", String(offset));
+        url.searchParams.set("addRecipeInformation", "true");
+        url.searchParams.set("fillIngredients", "true");
+        url.searchParams.set("instructionsRequired", "true");
+        url.searchParams.set("sort", "popularity");
+        const res = await fetch(url);
+        if (res.status === 402) { console.error("  Spoonacular daily quota reached — stopping. Re-run tomorrow (resumes automatically)."); break outer; }
+        if (!res.ok) { console.error(`  ${cuisine}/${type} @${offset}: HTTP ${res.status}`); break; }
+        const json = await res.json();
+        const results = json.results || [];
+        if (results.length === 0) break; // no more pages for this combo
+        const rows = results.map((r) => mapSpoon(r, cuisine)).filter(Boolean);
+        const n = await upsert(rows);
+        total += n;
+        console.log(`  ${cuisine} / ${type} @${offset}: +${n} (total ${total})`);
+        await new Promise((r) => setTimeout(r, 800)); // gentle throttle
+        if (offset + PAGE >= (json.totalResults || 0)) break; // combo exhausted
+      }
     }
   }
   console.log(`  Spoonacular: ${total} new catalog rows`);
