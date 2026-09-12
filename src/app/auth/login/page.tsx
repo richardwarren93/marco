@@ -76,7 +76,7 @@ export default function LoginPage() {
           document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
         }
       }
-      router.push("/recipes");
+      router.push("/tonight");
       router.refresh();
     }
   }

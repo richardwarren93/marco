@@ -129,7 +129,7 @@ export default function TasteProfileOverlay({ rankedRecipes, signatureDish, alle
     // Paywall enabled: save the profile, then hand control to the Plus upsell
     // (the parent owns the final navigation into the app).
     if (onShowPaywall) { onShowPaywall(); return; }
-    router.replace("/recipes");
+    router.replace("/tonight");
     // Land on the (now populated) recipes page and pop the "add" bottom sheet
     // so they can keep adding — BottomTabBar listens for this event.
     setTimeout(() => { try { window.dispatchEvent(new CustomEvent("openFabImport")); } catch { /* noop */ } }, 800);

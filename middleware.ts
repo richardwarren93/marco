@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  const protectedPaths = ["/dashboard", "/recipes", "/pantry", "/meal-plan", "/collections", "/eats", "/friends", "/profile", "/grocery"];
+  const protectedPaths = ["/tonight", "/dashboard", "/recipes", "/pantry", "/meal-plan", "/collections", "/eats", "/friends", "/profile", "/grocery"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
   const isOnboarding = pathname.startsWith("/onboarding");
 
@@ -71,7 +71,7 @@ export async function middleware(request: NextRequest) {
     // Logged in on auth pages → redirect away
     if (pathname.startsWith("/auth/")) {
       return NextResponse.redirect(
-        new URL(onboarded ? "/recipes" : "/onboarding", request.url)
+        new URL(onboarded ? "/tonight" : "/onboarding", request.url)
       );
     }
 
@@ -86,6 +86,8 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/tonight/:path*",
+    "/tonight",
     "/dashboard/:path*",
     "/recipes/:path*",
     "/pantry/:path*",

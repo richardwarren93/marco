@@ -121,7 +121,7 @@ export default function OnboardingPage() {
 
       if (profile?.onboarding_completed) {
         document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
-        router.replace("/recipes");
+        router.replace("/tonight");
         return;
       }
 
@@ -232,7 +232,7 @@ export default function OnboardingPage() {
   // Final landing into the app. With the paywall off, TasteProfileOverlay still
   // handles this itself; with it on, the paywall step calls this on skip/start.
   const landInApp = useCallback(() => {
-    router.replace("/recipes");
+    router.replace("/tonight");
     setTimeout(() => { try { window.dispatchEvent(new CustomEvent("openFabImport")); } catch { /* noop */ } }, 800);
   }, [router]);
 
