@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Fraunces } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
@@ -10,6 +10,15 @@ import Providers from "@/components/ui/Providers";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+});
+
+// Warm humanist display serif — the brand voice for headlines. Self-hosted by
+// next/font so it loads inside the Capacitor remote-URL WebView too.
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -49,8 +58,8 @@ export default function RootLayout({
     // Cream on <html> paints the canvas itself: with viewport-fit=cover the
     // iOS WebView extends under the home indicator, and any strip the body
     // doesn't cover (there, or in a rubber-band overscroll) showed up white.
-    <html lang="en" className="bg-[#F5EEE2]">
-      <body className={`${geistSans.variable} font-sans antialiased bg-[#F5EEE2] text-[#1C1A17] h-full flex flex-col overscroll-none`}>
+    <html lang="en" className={`${geistSans.variable} ${fraunces.variable} bg-[#F5EEE2]`}>
+      <body className={`${geistSans.variable} ${fraunces.variable} font-sans antialiased bg-[#F5EEE2] text-[#1C1A17] h-full flex flex-col overscroll-none`}>
         {/* Prevent pinch-to-zoom and visual-viewport scroll on iOS PWA */}
         <Script id="prevent-zoom" strategy="afterInteractive">{`
           document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
