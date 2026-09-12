@@ -28,7 +28,7 @@
   --line-on-dark: rgba(245, 238, 226, 0.18);
 
   /* Type families */
-  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-display: var(--font-fraunces), 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-script: 'Caveat', 'Comic Sans MS', cursive;
   --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
 

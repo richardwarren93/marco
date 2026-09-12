@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
  * those screens exactly 80px taller than the viewport: the whole page scrolled
  * and iOS revealed a band of canvas under the content — the opposite of feeling
  * native. Drop the padding wherever the tab bar isn't shown. */
-const FULL_SCREEN_PREFIXES = ["/auth", "/onboarding", "/cookbook-pilot", "/cooking-is-family"];
+const FULL_SCREEN_PREFIXES = ["/auth", "/onboarding", "/cookbook-pilot", "/cooking-is-family", "/tonight"];
 
 export default function AppMain({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

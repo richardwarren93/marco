@@ -55,7 +55,7 @@ function BottomTabBarInner() {
     setFabOpen(false);
   }, [pathname]);
 
-  if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot") || pathname.startsWith("/cooking-is-family")) {
+  if (pathname.startsWith("/auth") || pathname.startsWith("/onboarding") || pathname.startsWith("/cookbook-pilot") || pathname.startsWith("/cooking-is-family") || pathname.startsWith("/tonight")) {
     return null;
   }
 

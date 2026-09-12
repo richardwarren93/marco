@@ -76,7 +76,7 @@ export default function MobileHeader({
   return (
     <>
       <div
-        className="flex items-center justify-between px-4 pb-1 sm:hidden"
+        className="flex items-start justify-between px-4 pb-1 sm:hidden"
         // Account for the iOS notch / status bar in PWA standalone mode.
         // env() returns 0 in browsers that have their own chrome, so this is
         // a no-op in regular Safari and only kicks in for installed PWAs.
