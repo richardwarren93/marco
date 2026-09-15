@@ -12,6 +12,7 @@
 import { useState, useEffect } from "react";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 import type { TomatoHealthState } from "@/lib/gamification";
+import { getKitchen, deriveKitchenState, zoneImage, type KitchenState } from "@/lib/kitchen/scene";
 
 const INK = "#1C1A17";
 const INK_SOFT = "#4A4742";
@@ -40,12 +41,13 @@ export interface KitchenSceneProps {
   /** When false, the zone tap-targets are not rendered (e.g. during onboarding,
    *  so they can't swallow taps meant for Marco or send the user wandering). */
   interactiveZones?: boolean;
-  /** How many cookbooks stand on the shelf (one per saved recipe, capped). */
+  /** How many cookbooks stand on the shelf (one per saved recipe, capped).
+   *  Legacy convenience — ignored when `kitchenState` is supplied. */
   shelfBooks?: number;
+  /** Full modular scene state. When set, the zones render from this; otherwise a
+   *  state is derived from herbLevel + shelfBooks (backward compatible). */
+  kitchenState?: KitchenState;
 }
-
-// Painterly cookbook colorways (cycled as the shelf fills).
-const BOOK_ART = ["/kitchen/book-1.png", "/kitchen/book-2.png", "/kitchen/book-3.png"];
 
 export default function KitchenScene({
   baseImage,
@@ -63,6 +65,7 @@ export default function KitchenScene({
   showMarco = true,
   interactiveZones = true,
   shelfBooks = 0,
+  kitchenState,
 }: KitchenSceneProps) {
   const [push, setPush] = useState<{ x: number; y: number } | null>(null);
   const [imgOk, setImgOk] = useState(true);
@@ -77,6 +80,10 @@ export default function KitchenScene({
     }, 300);
   }
 
+  // Which pre-composited zone-state to show, from structured state.
+  const sceneState = kitchenState ?? deriveKitchenState({ herbStage: herbLevel, savedRecipes: shelfBooks });
+  const sceneDef = getKitchen(sceneState.kitchenId);
+
   return (
     <div className="absolute inset-0 overflow-hidden select-none">
       {/* The room (base scene + progression layers), camera-pushable. Full-bleed:
@@ -90,13 +97,29 @@ export default function KitchenScene({
         }}
       >
         {usePhoto ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={baseImage}
-            alt="Marco's kitchen"
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={() => setImgOk(false)}
-          />
+          // Coordinate-locked stage: base + zone-state crops share the base's
+          // aspect and scale together (cover), so zone swaps never drift.
+          <div
+            className="absolute"
+            style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%)", minWidth: "100%", minHeight: "100%", aspectRatio: `${sceneDef.sceneW} / ${sceneDef.sceneH}` }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={baseImage} alt="Marco's kitchen" className="absolute inset-0 w-full h-full" onError={() => setImgOk(false)} />
+            {sceneDef.zones.map((z) => {
+              const src = zoneImage(z, sceneState);
+              if (!src) return null;
+              return (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={z.id}
+                  src={src}
+                  alt=""
+                  className="absolute block pointer-events-none"
+                  style={{ left: `${z.bounds.x}%`, top: `${z.bounds.y}%`, width: `${z.bounds.w}%`, height: `${z.bounds.h}%` }}
+                />
+              );
+            })}
+          </div>
         ) : (
         <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" className="w-full h-full" aria-hidden="true">
           <defs>
@@ -236,24 +259,6 @@ export default function KitchenScene({
           </div>
         )}
 
-        {/* Painterly herb on the sill — sprout at low levels, lush as it grows.
-            A contact shadow at the pot base grounds it so it doesn't float. */}
-        {usePhoto && (
-          <button onClick={() => go(6, 42, onWindow)} aria-label="This week" className="absolute active:scale-95 transition-transform" style={{ left: "3.5%", top: "35%", width: herbLevel >= 2 ? 46 : 34 }}>
-            <span aria-hidden className="absolute" style={{ left: "10%", right: "10%", bottom: -2, height: 6, borderRadius: "50%", background: "rgba(28,16,4,0.45)", filter: "blur(2.5px)" }} />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={herbLevel >= 2 ? "/kitchen/herb.png" : "/kitchen/herb-sprout.png"} alt="" className="w-full block relative" />
-          </button>
-        )}
-        {/* Painterly cookbooks filling the shelf — one per saved recipe, cycling colors. */}
-        {usePhoto && shelfBooks > 0 && (
-          <button onClick={() => go(64, 18, onBookshelf)} aria-label="Recipes" className="absolute flex items-end active:scale-95 transition-transform" style={{ left: "57%", top: "9%", height: "11%", gap: 1, filter: "drop-shadow(0 4px 7px rgba(30,18,6,0.45))" }}>
-            {Array.from({ length: Math.min(shelfBooks, 5) }).map((_, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={i} src={BOOK_ART[i % BOOK_ART.length]} alt="" className="h-full block" />
-            ))}
-          </button>
-        )}
       </div>
 
       {/* Marco's contextual line — becomes the primary CTA when onLineTap is set */}
