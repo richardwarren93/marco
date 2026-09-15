@@ -8,12 +8,21 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
+import type { TomatoHealthState } from "@/lib/gamification";
 import MobileHeader from "@/components/layout/MobileHeader";
+import KitchenScene from "@/components/kitchen/KitchenScene";
+import KitchenOnboarding from "@/components/kitchen/KitchenOnboarding";
 
 const CREAM = "#F5EEE2";
 const INK = "#1C1A17";
 const INK_SOFT = "#4A4742";
 const TOMATO = "#E5462E";
+// Warm fallback ground behind the full-bleed kitchen (image covers it; this only
+// shows for the split second before the art paints, or if it fails to load).
+const SHADOW = "#A9683A";
+// Hidden for now (fully immersive kitchen). Flip to true to bring back the
+// greeting + notifications/profile header on the home.
+const SHOW_HOME_HEADER = false;
 
 type TimeBudget = "quick" | "medium" | "long";
 type Energy = "low" | "medium" | "high";
@@ -33,6 +42,19 @@ interface Dish {
 }
 
 type Step = "home" | "checkin" | "loading" | "suggestion" | "cooking" | "done" | "empty";
+
+// What /api/cook/complete returns — drives the celebration screen.
+type ProgressionEvent =
+  | { type: "skill"; skill: string; label: string; level: string; experiences: number; leveledUp: boolean }
+  | { type: "goal"; cookedThisWeek: number; weeklyTarget: number; hitGoal: boolean; justHit: boolean }
+  | { type: "herb"; from: number; to: number; firstEver: boolean };
+interface CompletionResult {
+  ok: boolean;
+  events: ProgressionEvent[];
+  herbChanged: boolean;
+  herbLevel: number;
+  goalProgress: { cookedThisWeek: number; weeklyGoal: number; hasGoal: boolean };
+}
 
 // Energy is derived from the time budget (matches the mockup's 2-question flow).
 const ENERGY_FOR: Record<TimeBudget, Energy> = { quick: "low", medium: "medium", long: "high" };
@@ -55,40 +77,48 @@ export default function TonightPage() {
   const [name, setName] = useState("");
   const [cookedWeek, setCookedWeek] = useState(0);
   const [weeklyGoal, setWeeklyGoal] = useState(3);
+  const [hasGoal, setHasGoal] = useState(false);
+  const [savedRecipes, setSavedRecipes] = useState(0);
   const [homeReady, setHomeReady] = useState(false);
   const [planned, setPlanned] = useState(false);
   const [recipeSource, setRecipeSource] = useState<"catalog" | "user">("catalog");
+  // First-run walkthrough. For now triggered by ?onboarding=1 (preview); real
+  // first-run detection (user_profiles.onboarding_completed) lands once the
+  // beats are built out.
+  const [onboarding, setOnboarding] = useState(false);
 
-  // Load the Home screen's data once: greeting name, weekly progress, and a
-  // passive preview of tonight's suggestion (not logged until check-in).
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      try {
-        const res = await fetch("/api/cook/home");
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!alive) return;
-        setName(data.name ?? "");
-        setCookedWeek(data.cookedThisWeek ?? 0);
-        setWeeklyGoal(data.weeklyGoal ?? 3);
-        if (data.primary) {
-          setPrimary(data.primary);
-          setReasoning(data.reasoning ?? "");
-          setPlanned(!!data.planned);
-          setRecipeSource(data.recipeSource === "user" ? "user" : "catalog");
-          setCtx({ timeBudget: "medium", energy: "medium", ingredientMode: "either", mealType: "dinner" });
-        }
-      } catch {
-        /* offline / unauthenticated — Home still renders its warm empty state */
-      } finally {
-        if (alive) setHomeReady(true);
+  // Load everything the Home screen needs: greeting name, weekly progress + goal,
+  // and a passive preview of tonight's suggestion (not logged until check-in).
+  const loadHome = async () => {
+    try {
+      const res = await fetch("/api/cook/home");
+      if (!res.ok) return;
+      const data = await res.json();
+      setName(data.name ?? "");
+      setCookedWeek(data.cookedThisWeek ?? 0);
+      setWeeklyGoal(data.weeklyGoal ?? 3);
+      setHasGoal(!!data.hasGoal);
+      setSavedRecipes(data.savedRecipes ?? 0);
+      if (data.primary) {
+        setPrimary(data.primary);
+        setReasoning(data.reasoning ?? "");
+        setPlanned(!!data.planned);
+        setRecipeSource(data.recipeSource === "user" ? "user" : "catalog");
+        setCtx({ timeBudget: "medium", energy: "medium", ingredientMode: "either", mealType: "dinner" });
       }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, []);
+    } catch {
+      /* offline / unauthenticated — Home still renders its warm empty state */
+    } finally {
+      setHomeReady(true);
+    }
+  };
+
+  useEffect(() => {
+    try {
+      if (new URLSearchParams(window.location.search).get("onboarding") === "1") setOnboarding(true);
+    } catch { /* ignore */ }
+    loadHome();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchSuggestion(overrides?: { timeBudget?: TimeBudget; energy?: Energy }) {
     setStep("loading");
@@ -115,6 +145,29 @@ export default function TonightPage() {
     setStep(data.primary ? "suggestion" : "empty");
   }
 
+  // The one true completion: fired at "I made it!" (never on cook-mode entry).
+  // Logs the cook, runs the progression engine, and returns what changed so the
+  // celebration can narrate it.
+  const [completion, setCompletion] = useState<CompletionResult | null>(null);
+  const [completing, setCompleting] = useState(false);
+  async function completeCook() {
+    if (!primary) return;
+    setCompleting(true);
+    try {
+      const res = await fetch("/api/cook/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipeId: primary.id, recipeSource, context: ctx }),
+      });
+      setCompletion(res.ok ? await res.json() : null);
+    } catch {
+      setCompletion(null);
+    } finally {
+      setCompleting(false);
+      setStep("done");
+    }
+  }
+
   function act(action: "cooked" | "skipped" | "swapped", reason?: string) {
     if (!primary) return;
     fetch("/api/cook/action", {
@@ -126,125 +179,195 @@ export default function TonightPage() {
 
   const canFind = !!time && !!ing;
 
+  // Kitchen (Phase 1): the herb/window zone previews weekly consistency until the
+  // progression engine persists it (Phase 2). Marco's mood tracks whether you've
+  // cooked this week (full cadence repoint comes with /api/cook/complete).
+  const router = useRouter();
+  const progress = weeklyGoal > 0 ? cookedWeek / weeklyGoal : 0;
+  const herbLevel: 0 | 1 | 2 | 3 = progress >= 1 ? 3 : progress >= 0.66 ? 2 : progress >= 0.33 ? 1 : 0;
+  const marcoState: TomatoHealthState = cookedWeek > 0 ? "thriving" : "content";
+  const kitchenLine = planned && primary
+    ? "It's on your plan — ready when you are 🍅"
+    : "";
+  function startCook() {
+    // Entering cook mode is NOT cooking — the 'cooked' event fires at "I made
+    // it!" (completeCook). Here we just open the recipe.
+    if (planned && primary) {
+      setStep("cooking");
+    } else {
+      setStep("checkin");
+    }
+  }
+
+  // First-run: the whole screen IS the walkthrough (kitchen backdrop + beats).
+  if (onboarding) {
+    return (
+      <KitchenOnboarding
+        onComplete={() => {
+          try {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("onboarding");
+            window.history.replaceState({}, "", url.toString());
+          } catch { /* ignore */ }
+          setOnboarding(false);
+          setStep("home");
+          loadHome(); // pick up the goal they just set, etc.
+        }}
+      />
+    );
+  }
+
   return (
     <div className="min-h-[100dvh] flex flex-col" style={{ background: CREAM }}>
       <div
         className="mx-auto w-full max-w-md flex-1 flex flex-col px-5"
         style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 1.25rem)", paddingBottom: "1.5rem" }}
       >
-        {/* ── Home (warm landing) ── */}
+        {/* ── Home = Marco's Kitchen (the game's Home surface) ── */}
         {step === "home" && (
-          <div className="flex-1 flex flex-col">
-            {/* Top row — greeting on the left, the app's tomato balance +
-                notifications + profile on the right (MobileHeader), consistent
-                with the rest of Marco. Broken out of the container's top padding
-                so MobileHeader owns the safe-area inset. */}
-            <div className="-mx-5" style={{ marginTop: "calc(-1 * (env(safe-area-inset-top,0px) + 1.25rem))" }}>
-              <MobileHeader>
-                <div className="pr-2" style={{ paddingLeft: 4 }}>
-                  <h1
-                    style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: 30, lineHeight: 1.05, letterSpacing: "-0.02em", color: INK }}
-                  >
-                    {greeting()}{name ? `, ${name}` : ""}
-                  </h1>
-                  <p className="mt-1.5 text-[14px]" style={{ color: INK_SOFT }}>
-                    Let&apos;s cook something great tonight&nbsp;🍅
-                  </p>
-                </div>
-              </MobileHeader>
-            </div>
-
-            {/* Illustration — large & immersive, fades into the cream; the card
-                overlaps its base below so they read as one flow. */}
-            <div className="-mx-5" style={{ marginTop: 2 }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/mascot/marco-hero-couch.png"
-                alt="Marco relaxing at home"
-                className="w-full object-cover"
-                style={{
-                  height: 300,
-                  objectPosition: "center 42%",
-                  WebkitMaskImage: "radial-gradient(135% 112% at 50% 42%, #000 68%, transparent 96%)",
-                  maskImage: "radial-gradient(135% 112% at 50% 42%, #000 68%, transparent 96%)",
-                }}
+          <div
+            className="relative isolate flex-1 flex flex-col -mx-5"
+            style={{ marginTop: "calc(-1 * (env(safe-area-inset-top,0px) + 1.25rem))", background: SHADOW }}
+          >
+            {/* Full-bleed kitchen fills the screen — the tall art keeps the fridge
+                + window intact; content rests on the floor at the bottom. */}
+            <div className="absolute inset-0 -z-10">
+              <KitchenScene
+                baseImage="/kitchen/starter.png"
+                herbLevel={herbLevel}
+                marcoState={marcoState}
+                marcoLine={kitchenLine}
+                shelfBooks={savedRecipes}
+                showMarco={false}
+                onStove={startCook}
+                onBookshelf={() => router.push("/recipes")}
+                onFridge={() => router.push("/meal-plan")}
+                onGrocery={() => router.push("/grocery")}
+                onWindow={() => router.push("/meal-plan")}
+                onMarco={startCook}
               />
             </div>
 
-            {/* Tonight's suggestion — pulled up so the couch sits on it, one flow */}
-            {primary ? (
-              <div
-                className="rounded-3xl p-4 relative"
-                style={{ marginTop: -18, background: "#FFFDF9", border: "1px solid rgba(28,26,23,0.06)", boxShadow: "0 8px 22px rgba(28,26,23,0.07)" }}
-              >
-                <div className="flex items-center gap-2">
-                  <p className="text-[15px] font-semibold" style={{ color: INK }}>{planned ? "Today's plan" : "Tonight's suggestion"}</p>
-                  {planned && (
-                    <span className="text-[10px] uppercase tracking-widest font-semibold px-2 py-0.5 rounded-full" style={{ background: "rgba(94,110,56,0.12)", color: "#5E6E38" }}>Planned</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 mt-3">
+            {/* greeting + notifications, overlaid on the scene (hidden for now) */}
+            {SHOW_HOME_HEADER && (
+              <div className="relative">
+                <div className="absolute inset-x-0 top-0 pointer-events-none" style={{ height: 160, background: "linear-gradient(to bottom, rgba(250,244,232,0.9), rgba(250,244,232,0))" }} />
+                <MobileHeader hideBalance>
+                  <div style={{ paddingLeft: 20 }}>
+                    <h1 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: 24, lineHeight: 1.05, letterSpacing: "-0.02em", color: INK }}>
+                      {greeting()}{name ? `, ${name}` : ""}
+                    </h1>
+                  </div>
+                </MobileHeader>
+              </div>
+            )}
+
+            <div className="flex-1" />
+
+            {/* content rests on the floor at the bottom */}
+            <div className="relative">
+
+            {/* Tonight — a committed plan gets the card; otherwise a clean CTA into
+                the check-in (a contextual pick, not a random passive suggestion). */}
+            {planned && primary ? (
+              <div className="px-5 pb-2">
+                <div
+                  className="rounded-3xl p-3 flex items-center gap-3"
+                  style={{ background: "#FFFDF9", border: "1px solid rgba(28,26,23,0.06)", boxShadow: "0 8px 22px rgba(28,26,23,0.07)" }}
+                >
                   {primary.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={primary.image_url} alt={primary.title} className="rounded-2xl object-cover flex-shrink-0" style={{ width: 64, height: 64 }} />
+                    <img src={primary.image_url} alt={primary.title} className="rounded-2xl object-cover flex-shrink-0" style={{ width: 54, height: 54 }} />
                   ) : (
-                    <div className="rounded-2xl flex-shrink-0 flex items-center justify-center" style={{ width: 64, height: 64, background: "rgba(229,70,46,0.08)" }}>
-                      <TomatoMascot state="thriving" size={42} />
+                    <div className="rounded-2xl flex-shrink-0 flex items-center justify-center" style={{ width: 54, height: 54, background: "rgba(229,70,46,0.08)" }}>
+                      <TomatoMascot state="thriving" size={36} />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <h2 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: 18, color: INK, lineHeight: 1.15, letterSpacing: "-0.01em", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{primary.title}</h2>
-                    <div className="flex items-center gap-1.5 mt-1 text-[12px]" style={{ color: INK_SOFT }}>
+                    <span className="text-[10px] uppercase tracking-widest font-semibold" style={{ color: planned ? "#5E6E38" : TOMATO }}>
+                      {planned ? "Your plan" : "Marco suggests"}
+                    </span>
+                    <h2 className="truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: 16, color: INK, lineHeight: 1.15 }}>{primary.title}</h2>
+                    <div className="flex items-center gap-1.5 text-[12px]" style={{ color: INK_SOFT }}>
                       <span className="inline-flex items-center gap-1"><ClockIcon /> {primary.total_time_minutes ?? 30} min</span>
                       {primary.difficulty != null && <><Dotsep /><span>{primary.difficulty <= 2 ? "Easy" : primary.difficulty >= 4 ? "Involved" : "Medium"}</span></>}
-                      {primary.cuisine && <><Dotsep /><span className="capitalize">{primary.cuisine}</span></>}
                     </div>
                   </div>
+                  <button
+                    onClick={startCook}
+                    className="flex-shrink-0 px-4 py-2.5 rounded-2xl text-white font-semibold text-sm active:scale-95 transition-transform"
+                    style={{ background: TOMATO, boxShadow: "0 6px 18px rgba(229,70,46,0.28)" }}
+                  >
+                    Cook
+                  </button>
                 </div>
-                {reasoning && <p className="mt-3 text-[13px] leading-relaxed" style={{ color: INK_SOFT }}>{reasoning}</p>}
-                <button
-                  onClick={() => { act("cooked"); setStep("cooking"); }}
-                  className="w-full py-3.5 rounded-2xl text-white font-semibold mt-4"
-                  style={{ background: TOMATO, boxShadow: "0 6px 18px rgba(229,70,46,0.28)" }}
-                >
-                  Let&apos;s cook
-                </button>
-                <button
-                  onClick={() => setStep("checkin")}
-                  className="w-full py-2.5 mt-1 text-sm font-medium"
-                  style={{ color: INK_SOFT }}
-                >
-                  Something else&nbsp;→
-                </button>
+                <div className="flex justify-center gap-4 mt-2 text-[12px] font-semibold" style={{ color: "#FBF3E6", textShadow: "0 1px 3px rgba(60,34,10,0.5)" }}>
+                  <button onClick={() => { act("swapped"); fetchSuggestion(); }}>Swap</button>
+                  <span aria-hidden style={{ opacity: 0.5 }}>·</span>
+                  <button onClick={() => setStep("checkin")}>Something else</button>
+                </div>
               </div>
             ) : (
-              <button
-                onClick={() => setStep("checkin")}
-                className="w-full py-4 rounded-2xl text-white font-semibold"
-                style={{ background: TOMATO, boxShadow: "0 6px 18px rgba(229,70,46,0.28)" }}
-              >
-                {homeReady ? "Find tonight's recipe" : "Let's cook"}
-              </button>
-            )}
-
-            <div className="flex-1" style={{ minHeight: 12 }} />
-
-            {/* Weekly progress — generous card with the mascot, like the mockup */}
-            {homeReady && (
-              <div className="flex items-center gap-3.5 rounded-3xl p-4" style={{ background: "#FFFDF9", border: "1px solid rgba(28,26,23,0.06)" }}>
-                <div className="rounded-2xl flex-shrink-0 flex items-center justify-center" style={{ width: 56, height: 56, background: "rgba(229,70,46,0.08)" }}>
-                  <TomatoMascot state="thriving" size={42} />
+              <div className="px-5 pb-2 flex flex-col items-center">
+                {/* Bubble ABOVE Marco — tail points down to him, so it's clearly
+                    him speaking. Bubble + Marco are one tight, connected unit. */}
+                <button
+                  onClick={() => setStep("checkin")}
+                  className="relative active:scale-95 transition-transform text-center"
+                  style={{
+                    background: "#FFFDF9",
+                    border: "1.5px solid rgba(229,70,46,0.55)",
+                    borderRadius: 20,
+                    padding: "13px 20px",
+                    maxWidth: 300,
+                    boxShadow: "0 12px 26px rgba(28,26,23,0.22)",
+                    fontFamily: "var(--font-display, Georgia, serif)",
+                    fontStyle: "italic",
+                    fontSize: 16,
+                    lineHeight: 1.25,
+                    color: INK,
+                  }}
+                >
+                  What are we cooking tonight? <span className="not-italic font-bold" style={{ color: TOMATO }}>→</span>
+                  {/* tail pointing down to Marco */}
+                  <span
+                    aria-hidden
+                    className="absolute"
+                    style={{
+                      bottom: -7,
+                      left: "50%",
+                      transform: "translateX(-50%) rotate(45deg)",
+                      width: 14,
+                      height: 14,
+                      background: "#FFFDF9",
+                      borderBottom: "1.5px solid rgba(229,70,46,0.55)",
+                      borderRight: "1.5px solid rgba(229,70,46,0.55)",
+                      borderBottomRightRadius: 3,
+                    }}
+                  />
+                </button>
+                {/* Marco, tucked right under his bubble */}
+                <div style={{ marginTop: 8 }}>
+                  <TomatoMascot state={marcoState} size={78} greeting />
                 </div>
-                <p className="text-[14px] leading-snug" style={{ color: INK }}>
-                  {cookedWeek > 0 ? (
-                    <>You&apos;ve cooked <b>{cookedWeek}</b> {cookedWeek === 1 ? "meal" : "meals"} this week!{" "}
-                    {cookedWeek < weeklyGoal ? <>{weeklyGoal - cookedWeek} more to hit your goal 🌟</> : <>Goal hit — nice 🎉</>}</>
-                  ) : (
-                    <>Cook one meal tonight to start your week strong 🌟</>
-                  )}
-                </p>
               </div>
             )}
+
+            {/* This week — a simple goal count, only once a goal is actually set
+                (goal-setting happens in onboarding; before that it's meaningless) */}
+            {homeReady && hasGoal && (
+              <div className="flex items-center justify-center gap-2 pb-2" style={{ textShadow: "0 1px 3px rgba(50,28,8,0.6)" }}>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.max(1, weeklyGoal) }).map((_, i) => (
+                    <span key={i} className="rounded-full" style={{ width: 6, height: 6, background: i < cookedWeek ? TOMATO : "rgba(255,248,235,0.5)" }} />
+                  ))}
+                </div>
+                <span className="text-[12px] font-semibold" style={{ color: "#FBF3E6" }}>
+                  {cookedWeek} of {weeklyGoal} days this week
+                </span>
+              </div>
+            )}
+            </div>
 
             <BottomNav />
           </div>
@@ -363,7 +486,7 @@ export default function TonightPage() {
               </div>
             </div>
 
-            <button onClick={() => { act("cooked"); setStep("cooking"); }} className="w-full py-4 mt-4 rounded-2xl text-white font-semibold" style={{ background: TOMATO, boxShadow: "0 6px 18px rgba(229,70,46,0.28)" }}>
+            <button onClick={() => setStep("cooking")} className="w-full py-4 mt-4 rounded-2xl text-white font-semibold" style={{ background: TOMATO, boxShadow: "0 6px 18px rgba(229,70,46,0.28)" }}>
               Let&apos;s cook
             </button>
             <div className="mt-2 space-y-1.5">
@@ -400,7 +523,9 @@ export default function TonightPage() {
                 </ol>
               </div>
             )}
-            <button onClick={() => setStep("done")} className="w-full py-4 mt-6 rounded-2xl text-white font-semibold" style={{ background: TOMATO }}>I made it!</button>
+            <button onClick={completeCook} disabled={completing} className="w-full py-4 mt-6 rounded-2xl text-white font-semibold transition-opacity" style={{ background: TOMATO, opacity: completing ? 0.6 : 1 }}>
+              {completing ? "Saving…" : "I made it!"}
+            </button>
           </div>
         )}
 
@@ -538,8 +663,8 @@ function BottomNav() {
         className="-mx-5 flex items-end px-2 pt-2"
         style={{
           marginBottom: "-1.5rem",
-          borderTop: "1px solid rgba(28,26,23,0.08)",
-          background: "rgba(245,238,226,0.96)",
+          borderTop: "1px solid rgba(120,80,40,0.14)",
+          background: "rgba(231,199,155,0.97)",
           backdropFilter: "blur(8px)",
           paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 0.5rem)",
         }}

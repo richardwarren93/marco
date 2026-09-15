@@ -184,19 +184,27 @@ export async function getSuggestion(
   return rec;
 }
 
-/** Count meals actually cooked since the start of this week (Mon 00:00 local-ish,
- *  computed in UTC). Powers the Home streak nudge. */
+/** Count DISTINCT days cooked since the start of this week (Mon). The weekly
+ *  goal is a cadence — "how many days a week do you want to cook" — so two cooks
+ *  on the same day count once. Powers the Home "X of Y days this week" line and
+ *  the herb progression's weekly-goal milestone. */
 export async function cookedThisWeek(sb: SB, userId: string): Promise<number> {
   const now = new Date();
   const day = (now.getUTCDay() + 6) % 7; // 0 = Monday
   const monday = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - day));
-  const { count } = await sb
+  const { data } = await sb
     .from("cook_events")
-    .select("id", { count: "exact", head: true })
+    .select("created_at")
     .eq("user_id", userId)
     .eq("action", "cooked")
     .gte("created_at", monday.toISOString());
-  return count ?? 0;
+  // Dedupe by local calendar day so multiple cooks in one day = one "cook day".
+  const days = new Set<string>();
+  for (const r of (data ?? []) as { created_at: string }[]) {
+    const d = new Date(r.created_at);
+    days.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+  }
+  return days.size;
 }
 
 /** Record what the user did (cooked / skipped / swapped / rated), log it, and

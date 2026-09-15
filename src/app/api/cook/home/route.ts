@@ -4,9 +4,18 @@ import { getSuggestion, cookedThisWeek } from "@/lib/cook-engine-db";
 import type { CookContext } from "@/lib/cook-engine";
 
 // Local YYYY-MM-DD for "today" so it matches how planned_date is stored.
-function todayStr(): string {
-  const d = new Date();
+function fmt(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function todayStr(): string {
+  return fmt(new Date());
+}
+// The 7 dates of the current week (Mon–Sun), local.
+function weekDates(): string[] {
+  const now = new Date();
+  const dow = (now.getDay() + 6) % 7; // 0 = Monday
+  const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dow);
+  return Array.from({ length: 7 }, (_, i) => fmt(new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + i)));
 }
 
 // GET /api/cook/home — everything the Home screen needs in one call:
@@ -45,8 +54,11 @@ export async function GET() {
     dietary: (profile as { dietary_filters?: string[] } | null)?.dietary_filters ?? [],
   };
 
-  // Weekly streak (needed either way) + tonight's plan, in parallel.
-  const [cooked, { data: planRow }] = await Promise.all([
+  // Weekly streak + tonight's plan + this week's planned dinners + the user's
+  // actual weekly goal, in parallel.
+  const wk = weekDates();
+  const today = todayStr();
+  const [cooked, { data: planRow }, { data: weekRows }, { data: goalRow }, { count: savedRecipes }] = await Promise.all([
     cookedThisWeek(supabase, user.id),
     supabase
       .from("meal_plans")
@@ -54,16 +66,37 @@ export async function GET() {
         "recipe_id, servings, recipe:recipes(id,title,description,image_url,prep_time_minutes,cook_time_minutes,servings,ingredients,steps)"
       )
       .eq("user_id", user.id)
-      .eq("planned_date", todayStr())
+      .eq("planned_date", today)
       .eq("meal_type", ctx.mealType)
       .not("recipe_id", "is", null)
       .order("created_at", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("meal_plans")
+      .select("planned_date, recipe:recipes(title)")
+      .eq("user_id", user.id)
+      .in("planned_date", wk)
+      .eq("meal_type", ctx.mealType)
+      .not("recipe_id", "is", null)
+      .order("planned_date", { ascending: true }),
+    supabase.from("cooking_goals").select("weekly_target").eq("user_id", user.id).maybeSingle(),
+    supabase.from("recipes").select("id", { count: "exact", head: true }).eq("user_id", user.id),
   ]);
 
-  // A planned meal wins.
+  // The weekly goal is only real if the user has actually set one (a row exists).
+  // Before that — e.g. a fresh account still in onboarding — there's no goal to
+  // count against, so the Home "X of Y meals" line stays hidden.
+  const hasGoal = !!goalRow;
+  const weeklyGoal = (goalRow as { weekly_target?: number } | null)?.weekly_target ?? 3;
+
   /* eslint-disable @typescript-eslint/no-explicit-any */
+  // This week's planned dinners → compact list for the Home "This Week" card.
+  const week = ((weekRows as any[]) ?? [])
+    .map((r) => ({ date: r.planned_date as string, title: (r.recipe?.title as string) ?? null, isToday: r.planned_date === today }))
+    .filter((x) => x.title);
+
+  // A planned meal wins.
   const plan = planRow as any;
   if (plan?.recipe) {
     const r = plan.recipe;
@@ -71,7 +104,10 @@ export async function GET() {
     return NextResponse.json({
       name,
       cookedThisWeek: cooked,
-      weeklyGoal: 3,
+      weeklyGoal,
+      hasGoal,
+      savedRecipes: savedRecipes ?? 0,
+      week,
       planned: true,
       recipeSource: "user",
       reasoning: "You planned this for tonight.",
@@ -107,7 +143,9 @@ export async function GET() {
   return NextResponse.json({
     name,
     cookedThisWeek: cooked,
-    weeklyGoal: 3,
+    weeklyGoal,
+    hasGoal,
+    savedRecipes: savedRecipes ?? 0,
     planned: false,
     recipeSource: "catalog",
     reasoning,

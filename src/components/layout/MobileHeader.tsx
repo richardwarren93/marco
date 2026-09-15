@@ -21,9 +21,11 @@ const HeaderTomatoBalance = dynamic(() => import("@/components/gamification/Head
 export default function MobileHeader({
   title,
   children,
+  hideBalance = false,
 }: {
   title?: string;
   children?: React.ReactNode;
+  hideBalance?: boolean;
 }) {
   const supabase = createClient();
   const [user, setUser] = useState<User | null>(null);
@@ -106,7 +108,7 @@ export default function MobileHeader({
         {/* Right: notifications + profile (only once user is resolved) */}
         {user && (
         <div className="flex items-center gap-1 flex-shrink-0 ml-2">
-          <HeaderTomatoBalance />
+          {!hideBalance && <HeaderTomatoBalance />}
           <button
             onClick={() => setShowNotifications(true)}
             className="relative w-9 h-9 rounded-full hover:bg-gray-100/60 flex items-center justify-center transition-colors"
