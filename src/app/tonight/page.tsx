@@ -81,6 +81,7 @@ export default function TonightPage() {
   const [hasGoal, setHasGoal] = useState(false);
   const [savedRecipes, setSavedRecipes] = useState(0);
   const [roomPanel, setRoomPanel] = useState<RoomPanel>("center"); // which kitchen view is in focus
+  const [roomOverview, setRoomOverview] = useState(false); // zoomed out to the whole room
   const [homeReady, setHomeReady] = useState(false);
   const [planned, setPlanned] = useState(false);
   const [recipeSource, setRecipeSource] = useState<"catalog" | "user">("catalog");
@@ -236,7 +237,9 @@ export default function TonightPage() {
             <div className="absolute inset-0">
               <RoomView
                 hideDots
+                overviewBackdrop="/kitchen/room-center.png"
                 onPanelChange={setRoomPanel}
+                onOverviewChange={setRoomOverview}
                 /* eslint-disable @next/next/no-img-element */
                 left={<img src="/kitchen/room-left.png" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center bottom" }} />}
                 center={<img src="/kitchen/room-center.png" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center bottom" }} />}
@@ -265,7 +268,7 @@ export default function TonightPage() {
                 cooking view); it pans away when you look around the room. The
                 wrapper is click-through so swipes reach the room beneath. */}
             <div className="relative pointer-events-none">
-              {roomPanel === "center" && (
+              {roomPanel === "center" && !roomOverview && (
               <div className="pointer-events-auto">
 
             {/* Tonight — a committed plan gets the card; otherwise a clean CTA into

@@ -26,6 +26,7 @@ export default function RoomPreviewPage() {
       <RoomView
         initial="center"
         reveal={reveal}
+        overviewBackdrop="/kitchen/room-center.png"
         onPanelChange={setParked}
         left={<Panel src="/kitchen/room-left.png" />}
         center={<Panel src="/kitchen/room-center.png" />}

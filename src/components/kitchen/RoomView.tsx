@@ -32,9 +32,14 @@ export interface RoomViewProps {
   hint?: boolean;
   /** Hide the built-in panel dots (e.g. when the host screen supplies its own chrome/nav). */
   hideDots?: boolean;
+  /** Image used to fill the zoom-out surround with a soft blurred version of the room
+   *  (so the whole-room view reads as a framed card, not a letterboxed strip). */
+  overviewBackdrop?: string;
+  /** Fires when the user zooms out to (or back from) the whole-room overview. */
+  onOverviewChange?: (overview: boolean) => void;
 }
 
-export default function RoomView({ left, center, right, initial = "center", reveal, onPanelChange, hint = true, hideDots = false }: RoomViewProps) {
+export default function RoomView({ left, center, right, initial = "center", reveal, onPanelChange, hint = true, hideDots = false, overviewBackdrop, onOverviewChange }: RoomViewProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
   const [index, setIndex] = useState(idxOf(initial)); // where the user parked
@@ -43,6 +48,7 @@ export default function RoomView({ left, center, right, initial = "center", reve
   const [dragging, setDragging] = useState(false);
   const [showHint, setShowHint] = useState(hint);
   const [overview, setOverview] = useState(false); // zoomed out to see the whole room
+  useEffect(() => { onOverviewChange?.(overview); }, [overview]); // eslint-disable-line react-hooks/exhaustive-deps
   const startX = useRef(0);
   const startView = useRef(view);
   const revealTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -128,9 +134,25 @@ export default function RoomView({ left, center, right, initial = "center", reve
     <div
       ref={wrapRef}
       className="absolute inset-0 overflow-hidden touch-pan-y select-none"
-      style={{ background: overview ? "#0F0B06" : "#EFE5D2" }}
+      style={{ background: overview ? "#241C15" : "#EFE5D2" }}
       onDoubleClick={() => setOverview((o) => !o)}
     >
+      {/* Zoom-out surround: a soft, blurred, dimmed copy of the room fills the
+          letterbox so the whole-room view reads as a warm framed card. */}
+      {overviewBackdrop && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `url(${overviewBackdrop})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            filter: "blur(28px) saturate(1.15) brightness(0.6)",
+            transform: "scale(1.2)",
+            opacity: overview ? 1 : 0,
+            transition: "opacity 380ms ease",
+          }}
+        />
+      )}
       {/* The three-panel track */}
       <div
         className="absolute inset-y-0 left-0 flex"
@@ -140,6 +162,9 @@ export default function RoomView({ left, center, right, initial = "center", reve
           transformOrigin: "left center",
           transition: dragging ? "none" : "transform 460ms cubic-bezier(.22,.61,.36,1)",
           willChange: "transform",
+          borderRadius: overview ? 48 : 0, // ÷3 by the scale ≈ 16px visual
+          overflow: overview ? "hidden" : "visible",
+          boxShadow: overview ? "0 90px 150px rgba(0,0,0,0.55)" : "none", // ÷3 by the scale
         }}
         onPointerDown={onDown}
         onPointerMove={onMove}
