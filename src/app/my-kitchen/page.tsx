@@ -25,6 +25,19 @@ const MONO = "var(--font-mono, ui-monospace, monospace)";
 export default function MyKitchenPage() {
   const router = useRouter();
   const [stats, setStats] = useState({ meals: 12, dishes: 8, skills: 4, growing: 1 });
+  const [name, setName] = useState("Sunny Apartment");
+  const [editing, setEditing] = useState(false);
+  const month = new Date().toLocaleString("en-US", { month: "long" }).toUpperCase();
+
+  useEffect(() => {
+    try { const v = localStorage.getItem("marco_kitchen_name"); if (v) setName(v); } catch { /* ignore */ }
+  }, []);
+  function saveName(v: string) {
+    const t = v.trim() || "My Kitchen";
+    setName(t);
+    try { localStorage.setItem("marco_kitchen_name", t); } catch { /* ignore */ }
+    setEditing(false);
+  }
 
   // Pull whatever real numbers we have today; the rest stay as design placeholders
   // until the progression endpoint lands.
@@ -52,7 +65,7 @@ export default function MyKitchenPage() {
           >
             <svg viewBox="0 0 24 24" width={20} height={20} fill="none" stroke={INK} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
           </button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium active:scale-95 transition-transform" style={{ background: "rgba(46,42,34,0.06)", color: INK }}>
+          <button onClick={() => setEditing(true)} className="px-4 py-2 rounded-full text-sm font-medium active:scale-95 transition-transform" style={{ background: "rgba(46,42,34,0.06)", color: INK }}>
             Edit
           </button>
         </div>
@@ -61,7 +74,20 @@ export default function MyKitchenPage() {
         <div className="text-center mt-3 flex flex-col items-center">
           <TomatoMascot state="thriving" size={46} greeting />
           <h1 style={{ fontFamily: SERIF, fontSize: 46, lineHeight: 1.02, color: INK, marginTop: 8 }}>My Kitchen</h1>
-          <p className="mt-3" style={{ fontFamily: MONO, fontSize: 12.5, letterSpacing: "0.18em", color: INK_SOFT }}>SUNNY APARTMENT · SEPTEMBER</p>
+          {editing ? (
+            <input
+              autoFocus
+              defaultValue={name}
+              maxLength={28}
+              onFocus={(e) => e.target.select()}
+              onBlur={(e) => saveName(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveName((e.target as HTMLInputElement).value); }}
+              className="mt-3 text-center bg-transparent outline-none"
+              style={{ fontFamily: MONO, fontSize: 12.5, letterSpacing: "0.14em", color: INK, borderBottom: `1.5px solid ${GOLD}`, textTransform: "uppercase", width: "80%" }}
+            />
+          ) : (
+            <p className="mt-3" style={{ fontFamily: MONO, fontSize: 12.5, letterSpacing: "0.18em", color: INK_SOFT }}>{name.toUpperCase()} · {month}</p>
+          )}
           <p className="mt-3" style={{ fontFamily: SCRIPT, fontSize: 22, color: GOLD }}>A work in progress</p>
           <div className="mx-auto mt-3" style={{ width: 54, height: 2, background: "rgba(154,123,79,0.5)", borderRadius: 2 }} />
         </div>
