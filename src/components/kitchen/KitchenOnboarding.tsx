@@ -823,7 +823,7 @@ function ActionIcon({ id, size = 60, tint = "#C98A54" }: { id: ActionId; size?: 
 // its own cooking-action icon + the tokenized step (ingredient-amount chips,
 // timer labels — the CookMode treatment). A demo of the loop; ends on "You made
 // it!" which flows into the sprout.
-function GuidedCook({ title, steps, ingredients, onDone }: { title: string; steps: string[]; ingredients: Ingredient[]; onDone: () => void }) {
+export function GuidedCook({ title, steps, ingredients, onDone }: { title: string; steps: string[]; ingredients: Ingredient[]; onDone: () => void }) {
   const list = steps.length ? steps : ["Prep your ingredients.", "Cook everything through.", "Plate it up and dig in."];
   const [i, setI] = useState(0);
   const tracks = classifyAllSteps(list);
@@ -849,20 +849,37 @@ function GuidedCook({ title, steps, ingredients, onDone }: { title: string; step
     return (<span key={k}>{tok.matchedText}{amt ? <span className="inline-flex items-baseline ml-1.5" style={{ fontFamily: "var(--font-sans, system-ui, sans-serif)", fontSize: 13, fontWeight: 600, background: CREAM_WARM, color: "#B8331E", padding: "1px 8px", borderRadius: 999, whiteSpace: "nowrap" }}>{amt}</span> : null}</span>);
   });
 
-  // ── Following the recipe (CookMode-style) ──
+  // ── Following the recipe, at the stove (CookMode-style) ──
   return (
-    <div className="min-h-[100dvh] flex flex-col" style={{ background: CREAM, paddingTop: "env(safe-area-inset-top,0px)", paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
-      {/* Header */}
-      <div className="flex items-start justify-between px-5 pt-5">
+    <div className="relative min-h-[100dvh] flex flex-col overflow-hidden" style={{ background: CREAM, paddingBottom: "env(safe-area-inset-bottom,0px)" }}>
+      {/* Stove hero — you're cooking AT the stove. Fades into the cream sheet. */}
+      <div className="absolute inset-x-0 top-0 pointer-events-none" style={{ height: "44dvh" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/kitchen/cook-stove.png" alt="" className="w-full h-full object-cover" style={{ objectPosition: "center 42%" }} />
+        <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, rgba(28,20,10,0.34) 0%, rgba(28,20,10,0.04) 20%, rgba(245,238,226,0) 55%, ${CREAM} 100%)` }} />
+        {/* soft steam drifting off the burner */}
+        <svg className="mk-steam absolute" viewBox="0 0 40 44" aria-hidden="true" style={{ left: "46%", top: "40%", width: 46, height: 50, opacity: 0.5 }}>
+          <path d="M14 40 q-6 -8 0 -16 q6 -8 0 -16" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <path d="M26 40 q6 -8 0 -16 q-6 -8 0 -16" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {/* Header — over the stove */}
+      <div className="absolute inset-x-0 z-20 flex items-start justify-between px-5" style={{ top: "calc(env(safe-area-inset-top,0px) + 16px)" }}>
         <div className="min-w-0 flex-1">
-          <p className="truncate" style={{ ...mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: INK_SOFT, opacity: 0.75 }}>{title}</p>
-          <p className="mt-1" style={{ ...stepFont, fontStyle: "italic", fontSize: 20, color: INK, lineHeight: 1.1 }}>Step {i + 1} of {list.length}</p>
+          <p className="truncate" style={{ ...mono, fontSize: 11, letterSpacing: "0.1em", textTransform: "uppercase", color: "#FCEFDD", opacity: 0.92, textShadow: "0 1px 6px rgba(0,0,0,0.45)" }}>{title}</p>
+          <p className="mt-1" style={{ ...stepFont, fontStyle: "italic", fontSize: 20, color: "#FFFFFF", lineHeight: 1.1, textShadow: "0 1px 8px rgba(0,0,0,0.5)" }}>Step {i + 1} of {list.length}</p>
         </div>
         <div className="flex-shrink-0 ml-2"><TomatoMascot state="thriving" size={40} greeting /></div>
       </div>
 
+      {/* Spacer that reveals the stove above the recipe sheet */}
+      <div className="flex-shrink-0" style={{ height: "34dvh" }} />
+
+      {/* The recipe sheet — a cookbook propped on the counter in front of the stove */}
+      <div className="relative z-10 flex-1 flex flex-col rounded-t-[28px] pt-4" style={{ background: CREAM, boxShadow: "0 -12px 32px rgba(28,20,10,0.22)" }}>
       {/* Progress dots */}
-      <div className="px-5 mt-4 flex flex-wrap gap-1.5">
+      <div className="px-5 flex flex-wrap gap-1.5">
         {list.map((_, k) => (
           <span key={k} className="rounded-full" style={{ width: 8, height: 8, background: k <= i ? TOMATO : "transparent", border: `1px solid ${k <= i ? TOMATO : "rgba(28,26,23,0.18)"}` }} />
         ))}
@@ -923,6 +940,7 @@ function GuidedCook({ title, steps, ingredients, onDone }: { title: string; step
 
       <div className="flex-1" />
       <p className="text-center pb-4" style={{ ...stepFont, fontStyle: "italic", fontSize: 13, color: INK_SOFT }}>Marco&apos;s turning the pages · tap to skip</p>
+      </div>
 
       <style>{`
         @keyframes mk-page { 0%{opacity:0;transform:translateX(16px)} 100%{opacity:1;transform:translateX(0)} }
