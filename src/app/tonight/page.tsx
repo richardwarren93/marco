@@ -11,7 +11,8 @@ import TomatoMascot from "@/components/gamification/TomatoMascot";
 import type { TomatoHealthState } from "@/lib/gamification";
 import MobileHeader from "@/components/layout/MobileHeader";
 import KitchenScene from "@/components/kitchen/KitchenScene";
-import RoomView, { type RoomPanel } from "@/components/kitchen/RoomView";
+import { type RoomPanel } from "@/components/kitchen/RoomView";
+import RoomPan from "@/components/kitchen/RoomPan";
 import KitchenOnboarding from "@/components/kitchen/KitchenOnboarding";
 
 const CREAM = "#F5EEE2";
@@ -81,7 +82,6 @@ export default function TonightPage() {
   const [hasGoal, setHasGoal] = useState(false);
   const [savedRecipes, setSavedRecipes] = useState(0);
   const [roomPanel, setRoomPanel] = useState<RoomPanel>("center"); // which kitchen view is in focus
-  const [roomOverview, setRoomOverview] = useState(false); // zoomed out to the whole room
   const [homeReady, setHomeReady] = useState(false);
   const [planned, setPlanned] = useState(false);
   const [recipeSource, setRecipeSource] = useState<"catalog" | "user">("catalog");
@@ -235,18 +235,12 @@ export default function TonightPage() {
             {/* Full-bleed kitchen fills the screen — the tall art keeps the fridge
                 + window intact; content rests on the floor at the bottom. */}
             <div className="absolute inset-0">
-              <RoomView
+              <RoomPan
+                image="/kitchen/room-wide.png"
+                aspect={2159 / 728}
                 hideDots
-                overviewBackdrop="/kitchen/room-wide.png"
-                overviewImage="/kitchen/room-wide.png"
-                onPanelChange={setRoomPanel}
-                onOverviewChange={setRoomOverview}
                 onExpand={() => router.push("/my-kitchen")}
-                /* eslint-disable @next/next/no-img-element */
-                left={<img src="/kitchen/room-left.png" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center bottom" }} />}
-                center={<img src="/kitchen/room-center.png" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center bottom" }} />}
-                right={<img src="/kitchen/room-right.png" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center bottom" }} />}
-                /* eslint-enable @next/next/no-img-element */
+                onFocalChange={(i) => setRoomPanel(i === 0 ? "left" : i === 2 ? "right" : "center")}
               />
             </div>
 
@@ -270,7 +264,7 @@ export default function TonightPage() {
                 cooking view); it pans away when you look around the room. The
                 wrapper is click-through so swipes reach the room beneath. */}
             <div className="relative pointer-events-none">
-              {roomPanel === "center" && !roomOverview && (
+              {roomPanel === "center" && (
               <div className="pointer-events-auto">
 
             {/* Tonight — a committed plan gets the card; otherwise a clean CTA into
