@@ -35,11 +35,18 @@ export interface RoomViewProps {
   /** Image used to fill the zoom-out surround with a soft blurred version of the room
    *  (so the whole-room view reads as a framed card, not a letterboxed strip). */
   overviewBackdrop?: string;
+  /** The single wide master image. When set, the zoom-out shows THIS whole image
+   *  (a real continuous room, perfectly aligned with the L/C/R crops) instead of
+   *  stitching the three panels together. Tapping a region zooms into that view. */
+  overviewImage?: string;
   /** Fires when the user zooms out to (or back from) the whole-room overview. */
   onOverviewChange?: (overview: boolean) => void;
+  /** When set, the expand control calls this instead of toggling the in-place
+   *  overview — e.g. to navigate to a composed "My Kitchen" page. */
+  onExpand?: () => void;
 }
 
-export default function RoomView({ left, center, right, initial = "center", reveal, onPanelChange, hint = true, hideDots = false, overviewBackdrop, onOverviewChange }: RoomViewProps) {
+export default function RoomView({ left, center, right, initial = "center", reveal, onPanelChange, hint = true, hideDots = false, overviewBackdrop, overviewImage, onOverviewChange, onExpand }: RoomViewProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
   const [index, setIndex] = useState(idxOf(initial)); // where the user parked
@@ -160,11 +167,15 @@ export default function RoomView({ left, center, right, initial = "center", reve
           width: w ? w * ORDER.length : "300%",
           transform: trackTransform,
           transformOrigin: "left center",
-          transition: dragging ? "none" : "transform 460ms cubic-bezier(.22,.61,.36,1)",
+          transition: dragging ? "none" : "transform 460ms cubic-bezier(.22,.61,.36,1), opacity 300ms ease",
           willChange: "transform",
-          borderRadius: overview ? 48 : 0, // ÷3 by the scale ≈ 16px visual
-          overflow: overview ? "hidden" : "visible",
-          boxShadow: overview ? "0 90px 150px rgba(0,0,0,0.55)" : "none", // ÷3 by the scale
+          // When a wide master is supplied, the zoom-out shows that instead, so the
+          // stitched track is hidden. Otherwise fall back to scaling the track.
+          opacity: overview && overviewImage ? 0 : 1,
+          pointerEvents: overview && overviewImage ? "none" : undefined,
+          borderRadius: overview && !overviewImage ? 48 : 0, // ÷3 by the scale ≈ 16px visual
+          overflow: overview && !overviewImage ? "hidden" : "visible",
+          boxShadow: overview && !overviewImage ? "0 90px 150px rgba(0,0,0,0.55)" : "none", // ÷3 by the scale
         }}
         onPointerDown={onDown}
         onPointerMove={onMove}
@@ -201,10 +212,31 @@ export default function RoomView({ left, center, right, initial = "center", reve
         })}
       </div>
 
+      {/* Whole-room overview: the single wide master, framed. Tapping a region
+          zooms into that view. Perfectly aligned with the crops (same image). */}
+      {overview && overviewImage && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center px-3 pointer-events-none">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={overviewImage}
+            alt="Your whole kitchen"
+            onClick={(e) => {
+              const r = (e.currentTarget as HTMLImageElement).getBoundingClientRect();
+              const f = (e.clientX - r.left) / r.width;
+              const key: RoomPanel = f < 0.4 ? "left" : f > 0.66 ? "right" : "center";
+              setOverview(false);
+              settle(idxOf(key));
+            }}
+            className="mk-ov pointer-events-auto"
+            style={{ width: "94%", maxHeight: "84%", height: "auto", objectFit: "contain", borderRadius: 16, boxShadow: "0 28px 70px rgba(0,0,0,0.55)", cursor: "pointer" }}
+          />
+        </div>
+      )}
+
       {/* Zoom-out / focus toggle — see the whole room, or zoom back in */}
       <button
         aria-label={overview ? "Zoom into a view" : "See the whole kitchen"}
-        onClick={() => setOverview((o) => !o)}
+        onClick={() => (onExpand ? onExpand() : setOverview((o) => !o))}
         className="absolute z-20 flex items-center justify-center rounded-full active:scale-95 transition-transform"
         style={{ top: "calc(env(safe-area-inset-top,0px) + 12px)", right: 12, width: 36, height: 36, background: "rgba(255,253,247,0.82)", boxShadow: "0 4px 14px rgba(28,20,4,0.2)" }}
       >
@@ -251,6 +283,8 @@ export default function RoomView({ left, center, right, initial = "center", reve
       <style>{`
         @keyframes mk-hint { 0%{opacity:0;transform:translateY(-6px)} 12%{opacity:1;transform:none} 82%{opacity:1} 100%{opacity:0} }
         .mk-hint { animation: mk-hint 4.4s ease forwards; }
+        @keyframes mk-ov { 0%{opacity:0;transform:scale(.94)} 100%{opacity:1;transform:scale(1)} }
+        .mk-ov { animation: mk-ov 320ms cubic-bezier(.22,.61,.36,1) both; }
         @media (prefers-reduced-motion: reduce){ .mk-hint{ animation:none } }
       `}</style>
     </div>

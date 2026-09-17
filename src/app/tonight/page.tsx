@@ -237,9 +237,11 @@ export default function TonightPage() {
             <div className="absolute inset-0">
               <RoomView
                 hideDots
-                overviewBackdrop="/kitchen/room-center.png"
+                overviewBackdrop="/kitchen/room-wide.png"
+                overviewImage="/kitchen/room-wide.png"
                 onPanelChange={setRoomPanel}
                 onOverviewChange={setRoomOverview}
+                onExpand={() => router.push("/my-kitchen")}
                 /* eslint-disable @next/next/no-img-element */
                 left={<img src="/kitchen/room-left.png" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center bottom" }} />}
                 center={<img src="/kitchen/room-center.png" alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: "center bottom" }} />}
