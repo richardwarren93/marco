@@ -1,13 +1,15 @@
 "use client";
 
-// PROTOTYPE — Marco social pivot: the Friends feed as a VARIETY of auto-generated
-// module types (hero cook card, weekly roundup, friend note, "you missed" rec,
-// potluck invite, cooks-to-discover), all in the "beautiful chaos" language.
-// Real sample photos via loremflickr with graphic fallback. Dev-only.
+// Marco — the Table. Your crew's real cooks first, then an honest "Fresh from
+// Marco" featured floor so a brand-new table is alive but never fakes friends.
+// A persistent invite/post nudge keeps the cold-start action one tap away.
+// All in the "beautiful chaos" language.
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getTableCooks, saveCook, type Cook } from "@/lib/social";
+import { getTableCooks, saveCook, joinCrewByCode, type Cook } from "@/lib/social";
+
+const PENDING_CREW_KEY = "marco_pending_crew";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -16,7 +18,6 @@ const COBALT = "#2540E8";
 const LIME = "#C4EE45";
 const PINK = "#FF4D9D";
 const BUTTER = "#FFD84D";
-const ORANGE = "#FF7A1A";
 const LAV = "#C9B8FF";
 
 const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
@@ -40,7 +41,23 @@ function Scribble({ color = TOMATO, w = 180 }: { color?: string; w?: number }) {
 export default function FriendsFeed() {
   const router = useRouter();
   const [cooks, setCooks] = useState<Cook[] | null>(null);
-  useEffect(() => { getTableCooks().then(setCooks); }, []);
+  useEffect(() => {
+    (async () => {
+      // If they arrived via an invite link before signing in, finish the join now.
+      let pending: string | null = null;
+      try { pending = localStorage.getItem(PENDING_CREW_KEY); } catch { /* ignore */ }
+      if (pending) {
+        await joinCrewByCode(pending);
+        try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ }
+      }
+      setCooks(await getTableCooks());
+    })();
+  }, []);
+
+  const real = cooks?.filter((c) => !c.is_featured) ?? [];
+  const featured = cooks?.filter((c) => c.is_featured) ?? [];
+  const totallyEmpty = cooks !== null && cooks.length === 0;
+
   return (
     <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
@@ -64,14 +81,46 @@ export default function FriendsFeed() {
           ))}
         </div>
 
-        {/* ===== Real cooks from your crew ===== */}
-        {cooks === null ? (
-          <div style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.5, marginTop: 20, textAlign: "center" }}>loading your table…</div>
-        ) : cooks.length > 0 ? (
-          <div className="space-y-5" style={{ marginTop: 8 }}>
-            {cooks.map((c) => <RealCook key={c.id} c={c} />)}
+        {/* persistent cold-start nudge — always one tap from pulling people in */}
+        <button onClick={() => router.push("/crew")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 4, marginBottom: 4, background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", textAlign: "left", transform: "rotate(-0.6deg)", boxShadow: "0 10px 22px rgba(37,64,232,0.22)", position: "relative" }}>
+          <Tape style={{ top: -9, right: 18, background: "rgba(196,238,69,0.9)", transform: "rotate(7deg)" }} />
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: 26 }} aria-hidden>🍽️</span>
+            <div className="flex-1">
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: PAPER, lineHeight: 1 }}>pull your people in</div>
+              <div style={{ fontFamily: HAND, fontSize: 14.5, color: BUTTER, marginTop: 2 }}>share your table code · the feed gets real fast</div>
+            </div>
+            <span style={{ color: PAPER, fontSize: 20, opacity: 0.8 }}>›</span>
           </div>
-        ) : (
+        </button>
+
+        {/* ===== loading ===== */}
+        {cooks === null && (
+          <div style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.5, marginTop: 20, textAlign: "center" }}>loading your table…</div>
+        )}
+
+        {/* ===== real crew cooks ===== */}
+        {real.length > 0 && (
+          <div className="space-y-5" style={{ marginTop: 8 }}>
+            {real.map((c) => <RealCook key={c.id} c={c} />)}
+          </div>
+        )}
+
+        {/* ===== honest featured floor ===== */}
+        {featured.length > 0 && (
+          <div style={{ marginTop: real.length > 0 ? 28 : 10 }}>
+            <div className="flex items-baseline gap-2 px-1">
+              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Fresh from Marco 🍅</span>
+              <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-2deg)" }}>while your table fills up</span>
+            </div>
+            <div className="space-y-5" style={{ marginTop: 10 }}>
+              {featured.map((c) => <RealCook key={c.id} c={c} featured />)}
+            </div>
+          </div>
+        )}
+
+        {/* ===== truly empty (no featured seeded yet either) ===== */}
+        {totallyEmpty && (
           <div style={{ marginTop: 16, background: PAPER, border: `2.5px dashed ${INK}`, borderRadius: 16, padding: "22px 18px", textAlign: "center" }}>
             <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>your table&apos;s quiet 🍽️</div>
             <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, marginTop: 4 }}>be the first to cook — or pull your people in</div>
@@ -81,89 +130,6 @@ export default function FriendsFeed() {
             </div>
           </div>
         )}
-
-        {/* ===== MODULE 2 — weekly roundup (ranked, horizontal) ===== */}
-        <div style={{ marginTop: 26 }}>
-          <div className="flex items-baseline justify-between px-1">
-            <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>your people this week</span>
-            <span style={{ fontFamily: HAND, fontSize: 15, color: COBALT, transform: "rotate(-2deg)" }}>🔥 6 cooked</span>
-          </div>
-          <div className="flex gap-3 overflow-x-auto py-3 px-1" style={{ scrollbarWidth: "none" }}>
-            {[["Pork dumplings", "/food/meal2.jpg", "Rohan", ORANGE], ["Chili tacos", "/food/meal3.jpg", "Maya", PINK], ["Cacio e pepe", "/food/meal4.jpg", "Alex", LIME]].map(([name, img, who, c], i) => (
-              <div key={name as string} style={{ flexShrink: 0, width: 156, background: PAPER, borderRadius: 12, border: `2px solid ${INK}`, overflow: "hidden", transform: `rotate(${i % 2 ? 1.5 : -1.5}deg)`, boxShadow: "0 8px 20px rgba(23,20,16,0.14)" }}>
-                <div style={{ position: "relative" }}>
-                  <Photo img={img as string} h={110} emoji="🍽️" tint={c as string} />
-                  <div className="flex items-center justify-center" style={{ position: "absolute", top: 8, left: 8, width: 28, height: 28, borderRadius: 99, background: INK, color: c as string, fontFamily: DISP, fontWeight: 700, fontSize: 14, border: `2px solid ${PAPER}` }}>{i + 1}</div>
-                </div>
-                <div style={{ padding: "8px 10px 10px" }}>
-                  <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, lineHeight: 1.05 }}>{name as string}</div>
-                  <div style={{ fontFamily: HAND, fontSize: 14, color: TOMATO }}>{who as string}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ===== MODULE 3 — "you gotta make this" highlighted rec ===== */}
-        <div style={{ marginTop: 22, transform: "rotate(0.8deg)" }}>
-          <div style={{ background: LIME, borderRadius: 14, border: `2.5px solid ${INK}`, padding: 14, boxShadow: "0 12px 26px rgba(23,20,16,0.16)" }}>
-            <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.15em", color: "#3B5200", textTransform: "uppercase" }}>maya says you gotta make this</div>
-            <div className="flex gap-3" style={{ marginTop: 10 }}>
-              <div style={{ flexShrink: 0, width: 96, borderRadius: 10, overflow: "hidden", border: `2px solid ${INK}`, transform: "rotate(-2deg)" }}>
-                <Photo img="/food/meal5.jpg" h={96} emoji="🍳" tint={ORANGE} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK, lineHeight: 1.05 }}>Weekend Shakshuka</div>
-                <div style={{ fontFamily: HAND, fontSize: 16, color: "#2B4A00", marginTop: 3 }}>“15 min, one pan, unreal.”</div>
-                <button style={{ marginTop: 8, background: INK, color: LIME, fontFamily: DISP, fontWeight: 700, fontSize: 13, padding: "8px 14px", borderRadius: 99, border: "none" }}>Add to my kitchen</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== MODULE 4 — friend note (light receipt) ===== */}
-        <div style={{ marginTop: 22, transform: "rotate(-0.8deg)" }}>
-          <div style={{ background: PAPER, borderRadius: 6, borderTop: `3px solid ${INK}`, padding: "14px 16px 16px", boxShadow: "0 8px 20px rgba(23,20,16,0.12)" }}>
-            <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.14em", color: INK, textTransform: "uppercase" }}>· cooked your recipe ·</div>
-            <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
-              <div className="flex items-center justify-center" style={{ width: 22, height: 22, borderRadius: 99, background: COBALT, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 10 }}>R</div>
-              <span style={{ fontFamily: SANS, fontSize: 13, color: INK }}><b>Rohan</b> made your chili oil noodles</span>
-            </div>
-            <div style={{ fontFamily: HAND, fontSize: 17, color: COBALT, marginTop: 6, transform: "rotate(-1deg)" }}>added crispy garlic 🔥 10/10 would slurp again</div>
-          </div>
-        </div>
-
-        {/* ===== MODULE 5 — potluck invite ===== */}
-        <div style={{ marginTop: 22, transform: "rotate(1.4deg)" }}>
-          <div style={{ background: PINK, borderRadius: 14, border: `2.5px solid ${INK}`, padding: "16px 18px", boxShadow: "0 12px 26px rgba(23,20,16,0.18)", position: "relative" }}>
-            <Tape style={{ top: -9, right: 22, background: "rgba(196,238,69,0.9)", transform: "rotate(6deg)" }} />
-            <div className="flex items-center justify-between">
-              <div>
-                <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.16em", color: "#5A0033", textTransform: "uppercase" }}>potluck · this sunday</div>
-                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 23, color: PAPER, marginTop: 3, lineHeight: 1.02 }}>Something Spicy 🌶️</div>
-                <div style={{ fontFamily: HAND, fontSize: 15, color: PAPER, marginTop: 2 }}>Maya + 4 cooking</div>
-              </div>
-              <button style={{ background: INK, color: PINK, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "11px 20px", borderRadius: 99, border: `2px solid ${PAPER}`, transform: "rotate(3deg)" }}>Join</button>
-            </div>
-          </div>
-        </div>
-
-        {/* ===== MODULE 6 — cooks to discover ===== */}
-        <div style={{ marginTop: 26 }}>
-          <div className="px-1" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>cooks worth stealing from</div>
-          <div className="flex gap-3 overflow-x-auto py-3 px-1" style={{ scrollbarWidth: "none" }}>
-            {[["priya", "35 cooks", LAV, 41], ["ben", "chef · thai", BUTTER, 42], ["noor", "28 cooks", PINK, 43]].map(([n, m, c, seed], i) => (
-              <div key={n as string} style={{ flexShrink: 0, width: 120, background: PAPER, borderRadius: 12, border: `2px solid ${INK}`, padding: 10, textAlign: "center", transform: `rotate(${i % 2 ? -2 : 2}deg)` }}>
-                <div style={{ width: 56, height: 56, borderRadius: 99, margin: "0 auto", overflow: "hidden", border: `2.5px solid ${c as string}` }}>
-                  <Photo h={56} emoji="👩‍🍳" tint={c as string} />
-                </div>
-                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, marginTop: 6 }}>{n as string}</div>
-                <div style={{ fontFamily: MONO, fontSize: 10, color: INK, opacity: 0.7 }}>{m as string}</div>
-                <button style={{ marginTop: 6, width: "100%", background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 12, padding: "6px 0", borderRadius: 99, border: "none" }}>Follow</button>
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
     </div>
@@ -178,11 +144,14 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function RealCook({ c }: { c: Cook }) {
+function RealCook({ c, featured = false }: { c: Cook; featured?: boolean }) {
   const [saved, setSaved] = useState(false);
   return (
     <div style={{ transform: "rotate(-1.2deg)" }}>
       <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, boxShadow: "0 18px 40px rgba(23,20,16,0.22)", border: `2px solid ${INK}` }}>
+        {featured && (
+          <div style={{ position: "absolute", top: -11, right: 16, zIndex: 2, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
+        )}
         <div style={{ position: "relative", transform: "rotate(1.2deg)" }}>
           <Tape style={{ top: -8, left: "50%", marginLeft: -40, transform: "rotate(-4deg)" }} />
           <div style={{ background: "#fff", padding: 8, border: `1px solid rgba(23,20,16,0.12)`, boxShadow: "0 6px 14px rgba(23,20,16,0.14)" }}>
@@ -191,7 +160,7 @@ function RealCook({ c }: { c: Cook }) {
         </div>
         <div style={{ padding: "14px 4px 0" }}>
           <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center" style={{ width: 24, height: 24, borderRadius: 99, background: PINK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, border: `1.5px solid ${INK}` }}>{c.author_avatar ?? "?"}</div>
+            <div className="flex items-center justify-center" style={{ width: 24, height: 24, borderRadius: 99, background: featured ? TOMATO : PINK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, border: `1.5px solid ${INK}` }}>{c.author_avatar ?? "?"}</div>
             <span style={{ fontFamily: SANS, fontSize: 13, color: INK }}><b>{c.author_name ?? "someone"}</b> cooked · {timeAgo(c.created_at)}</span>
           </div>
           {c.title && <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 27, color: INK, lineHeight: 1.02, marginTop: 8 }}>{c.title}</div>}

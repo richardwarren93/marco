@@ -14,8 +14,9 @@ export interface Crew {
 
 export interface Cook {
   id: string;
-  user_id: string;
+  user_id: string | null;
   crew_id: string | null;
+  is_featured?: boolean;
   title: string | null;
   note: string | null;
   photo_url: string | null;
@@ -127,10 +128,22 @@ export async function postCook(opts: {
 }
 
 // The Table feed: cooks from every crew I'm in (RLS already scopes this), plus
-// my own. Newest first.
+// my own, plus the featured "Marco" floor. Real crew/own cooks rank first
+// (newest → oldest); featured cooks fill in below so the table is never blank.
 export async function getTableCooks(limit = 30): Promise<Cook[]> {
   const sb = createClient();
   const { data } = await sb.from("cooks").select("*").order("created_at", { ascending: false }).limit(limit);
+  const cooks = (data ?? []) as Cook[];
+  const real = cooks.filter((c) => !c.is_featured);
+  const featured = cooks.filter((c) => c.is_featured);
+  return [...real, ...featured];
+}
+
+// Just the featured floor — used for the empty/onboarding state so we can label
+// it honestly ("Fresh from Marco") separate from a user's own crew cooks.
+export async function getFeaturedCooks(limit = 12): Promise<Cook[]> {
+  const sb = createClient();
+  const { data } = await sb.from("cooks").select("*").eq("is_featured", true).order("created_at", { ascending: false }).limit(limit);
   return (data ?? []) as Cook[];
 }
 

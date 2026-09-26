@@ -44,8 +44,15 @@ export default function CrewPage() {
     if (c) { setCrews((cs) => [...(cs ?? []).filter((x) => x.id !== c.id), c]); setCode(""); }
     else setErr("no crew with that code");
   }
-  function copyCode(c: Crew) {
-    try { navigator.clipboard.writeText(c.invite_code); setCopied(c.id); setTimeout(() => setCopied(""), 1500); } catch { /* ignore */ }
+  async function copyCode(c: Crew) {
+    const origin = typeof window !== "undefined" ? window.location.origin : "https://marco-eta-lyart.vercel.app";
+    const link = `${origin}/join/${c.invite_code}`;
+    const msg = `come sit at my table on Marco 🍅\n${link}\n(or enter code ${c.invite_code})`;
+    try {
+      if (navigator.share) { await navigator.share({ title: `Join ${c.name} on Marco`, text: msg, url: link }); }
+      else { await navigator.clipboard.writeText(msg); }
+      setCopied(c.id); setTimeout(() => setCopied(""), 1500);
+    } catch { /* user dismissed share sheet, or clipboard blocked */ }
   }
 
   return (
@@ -68,7 +75,7 @@ export default function CrewPage() {
                 <div className="flex items-center gap-2" style={{ marginTop: 10 }}>
                   <span style={{ fontFamily: MONO, fontSize: 11, color: INK, opacity: 0.6 }}>invite code</span>
                   <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 15, letterSpacing: "0.2em", color: INK, background: LIME, border: `2px solid ${INK}`, borderRadius: 8, padding: "3px 10px" }}>{c.invite_code}</span>
-                  <button onClick={() => copyCode(c)} style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: PAPER, background: INK, borderRadius: 99, padding: "6px 14px", border: "none" }}>{copied === c.id ? "copied ✓" : "share"}</button>
+                  <button onClick={() => copyCode(c)} style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: PAPER, background: INK, borderRadius: 99, padding: "6px 14px", border: "none" }}>{copied === c.id ? "shared ✓" : "invite"}</button>
                 </div>
               </div>
             ))}
