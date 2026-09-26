@@ -88,6 +88,19 @@ export async function joinCrewByCode(code: string): Promise<Crew | null> {
   return crew;
 }
 
+// ── Featured floor ───────────────────────────────────────────────────────────
+// Day-1 content baked into the app so the Table is NEVER blank — no migration
+// required. Honest ("from Marco", never fake friends). Photos ship in /public.
+// When real featured cooks exist in the DB, those take over.
+const LOCAL_FEATURED: Cook[] = [
+  { id: "feat-miso",      user_id: null, crew_id: null, is_featured: true, title: "Miso butter noodles",  note: "double the garlic. trust me.",      photo_url: "/food/meal1.jpg", card_treatment: "polaroid", author_name: "Marco", author_avatar: "M", from_user: null, created_at: "2026-09-06T12:00:00Z" },
+  { id: "feat-dumpling",  user_id: null, crew_id: null, is_featured: true, title: "Pork dumplings",        note: "crispy bottoms are non-negotiable", photo_url: "/food/meal2.jpg", card_treatment: "polaroid", author_name: "Marco", author_avatar: "M", from_user: null, created_at: "2026-09-05T12:00:00Z" },
+  { id: "feat-tacos",     user_id: null, crew_id: null, is_featured: true, title: "Chili tacos",           note: "the char is the whole point",       photo_url: "/food/meal3.jpg", card_treatment: "poster",   author_name: "Marco", author_avatar: "M", from_user: null, created_at: "2026-09-04T12:00:00Z" },
+  { id: "feat-wings",     user_id: null, crew_id: null, is_featured: true, title: "Gochujang wings",       note: "sticky, sweet, a little mean",      photo_url: "/food/meal4.jpg", card_treatment: "receipt",  author_name: "Marco", author_avatar: "M", from_user: null, created_at: "2026-09-03T12:00:00Z" },
+  { id: "feat-shakshuka", user_id: null, crew_id: null, is_featured: true, title: "Weekend shakshuka",     note: "15 min, one pan, unreal.",          photo_url: "/food/meal5.jpg", card_treatment: "polaroid", author_name: "Marco", author_avatar: "M", from_user: null, created_at: "2026-09-02T12:00:00Z" },
+  { id: "feat-nashville", user_id: null, crew_id: null, is_featured: true, title: "Nashville hot chicken", note: "bring napkins.",                    photo_url: "/food/meal6.jpg", card_treatment: "poster",   author_name: "Marco", author_avatar: "M", from_user: null, created_at: "2026-09-01T12:00:00Z" },
+];
+
 // ── Cooks ────────────────────────────────────────────────────────────────────
 export async function postCook(opts: {
   crewId: string | null;
@@ -135,7 +148,9 @@ export async function getTableCooks(limit = 30): Promise<Cook[]> {
   const { data } = await sb.from("cooks").select("*").order("created_at", { ascending: false }).limit(limit);
   const cooks = (data ?? []) as Cook[];
   const real = cooks.filter((c) => !c.is_featured);
-  const featured = cooks.filter((c) => c.is_featured);
+  const dbFeatured = cooks.filter((c) => c.is_featured);
+  // Never blank: fall back to the baked-in Marco floor when the DB has no featured.
+  const featured = dbFeatured.length > 0 ? dbFeatured : LOCAL_FEATURED;
   return [...real, ...featured];
 }
 
@@ -144,7 +159,8 @@ export async function getTableCooks(limit = 30): Promise<Cook[]> {
 export async function getFeaturedCooks(limit = 12): Promise<Cook[]> {
   const sb = createClient();
   const { data } = await sb.from("cooks").select("*").eq("is_featured", true).order("created_at", { ascending: false }).limit(limit);
-  return (data ?? []) as Cook[];
+  const featured = (data ?? []) as Cook[];
+  return featured.length > 0 ? featured : LOCAL_FEATURED;
 }
 
 // ── Classes (live, via a third-party video room) ────────────────────────────
@@ -211,6 +227,8 @@ export async function isRegistered(id: string): Promise<boolean> {
 
 // ── Saves (Add to My Kitchen) ────────────────────────────────────────────────
 export async function saveCook(cook: Cook): Promise<boolean> {
+  // Baked-in featured cooks aren't real DB rows — nothing to reference yet.
+  if (cook.id.startsWith("feat-")) return true;
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return false;
