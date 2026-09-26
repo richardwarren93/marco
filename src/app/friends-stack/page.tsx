@@ -54,8 +54,6 @@ export default function FriendsFeed() {
     })();
   }, []);
 
-  const [view, setView] = useState<"all" | "crew" | "marco">("all");
-
   const real = cooks?.filter((c) => !c.is_featured) ?? [];
   const featured = cooks?.filter((c) => c.is_featured) ?? [];
 
@@ -73,50 +71,46 @@ export default function FriendsFeed() {
           <div className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, transform: "rotate(5deg)", border: `2px solid ${LIME}` }}>S</div>
         </div>
 
-        {/* real feed filter — operates on data we actually have day one.
-            (dish tags like quick/veggie come later, once cooks carry them.) */}
-        <div className="flex gap-2 py-3 px-1">
-          {([["all", "everything", TOMATO], ["crew", "my crew", LIME], ["marco", "Marco 🍅", COBALT]] as const).map(([key, label, c], i) => {
-            const on = view === key;
-            return (
-              <button key={key} onClick={() => setView(key)} className="flex-1 active:scale-95 transition-transform" style={{ background: on ? INK : PAPER, color: on ? PAPER : INK, border: `2px solid ${INK}`, borderRadius: 99, padding: "7px 4px", fontFamily: DISP, fontWeight: 700, fontSize: 13.5, whiteSpace: "nowrap", transform: `rotate(${i % 2 ? 0.8 : -0.8}deg)` }}>
-                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: 99, background: c, marginRight: 6, verticalAlign: "middle" }} />{label}
-              </button>
-            );
-          })}
-        </div>
-
         {/* the invite job: share your code so the feed gets real. (distinct from
             the "post your first cook" card below — different action.) */}
-        {view !== "marco" && (
-          <button onClick={() => router.push("/crew")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 4, marginBottom: 4, background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", textAlign: "left", transform: "rotate(-0.6deg)", boxShadow: "0 10px 22px rgba(37,64,232,0.22)", position: "relative" }}>
-            <Tape style={{ top: -9, right: 18, background: "rgba(196,238,69,0.9)", transform: "rotate(7deg)" }} />
-            <div className="flex items-center gap-3">
-              <span style={{ fontSize: 26 }} aria-hidden>🍽️</span>
-              <div className="flex-1">
-                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: PAPER, lineHeight: 1 }}>pull your people in</div>
-                <div style={{ fontFamily: HAND, fontSize: 14.5, color: BUTTER, marginTop: 2 }}>share your table code · the feed gets real fast</div>
-              </div>
-              <span style={{ color: PAPER, fontSize: 20, opacity: 0.8 }}>›</span>
+        <button onClick={() => router.push("/crew")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, marginBottom: 4, background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", textAlign: "left", transform: "rotate(-0.6deg)", boxShadow: "0 10px 22px rgba(37,64,232,0.22)", position: "relative" }}>
+          <Tape style={{ top: -9, right: 18, background: "rgba(196,238,69,0.9)", transform: "rotate(7deg)" }} />
+          <div className="flex items-center gap-3">
+            <span style={{ fontSize: 26 }} aria-hidden>🍽️</span>
+            <div className="flex-1">
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: PAPER, lineHeight: 1 }}>pull your people in</div>
+              <div style={{ fontFamily: HAND, fontSize: 14.5, color: BUTTER, marginTop: 2 }}>share your table code · the feed gets real fast</div>
             </div>
-          </button>
-        )}
+            <span style={{ color: PAPER, fontSize: 20, opacity: 0.8 }}>›</span>
+          </div>
+        </button>
 
         {/* ===== loading ===== */}
         {cooks === null && (
           <div style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.5, marginTop: 20, textAlign: "center" }}>loading your table…</div>
         )}
 
-        {/* ===== everything: real crew cooks, then the honest Marco floor ===== */}
-        {cooks !== null && view === "all" && (
+        {/* ===== one crew-first feed: your people on top, Marco backfill below ===== */}
+        {cooks !== null && (
           <>
-            {real.length > 0 && (
-              <div className="space-y-5" style={{ marginTop: 8 }}>
-                {real.map((c) => <RealCook key={c.id} c={c} />)}
+            {/* your crew — the hero */}
+            {real.length > 0 ? (
+              <div style={{ marginTop: 14 }}>
+                <div className="flex items-baseline gap-2 px-1" style={{ marginBottom: 10 }}>
+                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>your crew 🔥</span>
+                  <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-2deg)" }}>hot off the stove</span>
+                </div>
+                <div className="space-y-5">
+                  {real.map((c) => <RealCook key={c.id} c={c} />)}
+                </div>
               </div>
+            ) : (
+              <FirstCookCard onPost={() => router.push("/i-cooked")} />
             )}
+
+            {/* Marco backfill — never blank */}
             {featured.length > 0 && (
-              <div style={{ marginTop: real.length > 0 ? 28 : 10 }}>
+              <div style={{ marginTop: real.length > 0 ? 28 : 22 }}>
                 <div className="flex items-baseline gap-2 px-1">
                   <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Fresh from Marco 🍅</span>
                   <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-2deg)" }}>while your table fills up</span>
@@ -126,31 +120,7 @@ export default function FriendsFeed() {
                 </div>
               </div>
             )}
-            {real.length === 0 && featured.length === 0 && <FirstCookCard onPost={() => router.push("/i-cooked")} />}
           </>
-        )}
-
-        {/* ===== my crew: real cooks only; if none, nudge the first post ===== */}
-        {cooks !== null && view === "crew" && (
-          real.length > 0 ? (
-            <div className="space-y-5" style={{ marginTop: 8 }}>
-              {real.map((c) => <RealCook key={c.id} c={c} />)}
-            </div>
-          ) : <FirstCookCard onPost={() => router.push("/i-cooked")} />
-        )}
-
-        {/* ===== from Marco: the featured floor on its own ===== */}
-        {cooks !== null && view === "marco" && (
-          featured.length > 0 ? (
-            <div className="space-y-5" style={{ marginTop: 8 }}>
-              {featured.map((c) => <RealCook key={c.id} c={c} featured />)}
-            </div>
-          ) : (
-            <div style={{ marginTop: 16, background: PAPER, border: `2px dashed ${INK}`, borderRadius: 16, padding: "20px 18px", textAlign: "center" }}>
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Marco&apos;s picks land here 🍅</div>
-              <div style={{ fontFamily: HAND, fontSize: 15, color: TOMATO, marginTop: 4 }}>fresh cooks to steal while your table fills up</div>
-            </div>
-          )
         )}
       </div>
 
