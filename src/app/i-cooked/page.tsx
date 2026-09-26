@@ -4,7 +4,9 @@
 // and Marco auto-art-directs a beautiful card. Capture → anticipation → reveal
 // with flippable treatments (polaroid / receipt / poster). Dev-only.
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { postCook, getPrimaryCrew } from "@/lib/social";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -23,11 +25,39 @@ const MONO = "ui-monospace, monospace";
 const PHOTOS = ["/food/meal1.jpg", "/food/meal2.jpg", "/food/meal3.jpg", "/food/meal4.jpg"];
 
 export default function ICooked() {
+  const router = useRouter();
   const [step, setStep] = useState<"capture" | "cooking" | "reveal">("capture");
   const [photo, setPhoto] = useState(PHOTOS[0]);
   const [title, setTitle] = useState("Miso Butter Noodles");
   const [note, setNote] = useState("double the garlic. trust me.");
   const [look, setLook] = useState(0);
+  const [file, setFile] = useState<File | null>(null); // real uploaded photo
+  const [crewId, setCrewId] = useState<string | null>(null);
+  const [posting, setPosting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => { getPrimaryCrew().then((c) => setCrewId(c?.id ?? null)); }, []);
+
+  function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setFile(f);
+    try { setPhoto(URL.createObjectURL(f)); } catch { /* ignore */ }
+  }
+  async function share() {
+    if (posting) return;
+    setPosting(true);
+    await postCook({
+      crewId,
+      title,
+      note,
+      treatment: ["polaroid", "receipt", "poster"][look],
+      photoFile: file,
+      photoUrl: file ? undefined : photo,
+    });
+    setPosting(false);
+    router.push("/friends-stack");
+  }
 
   useEffect(() => {
     if (step !== "cooking") return;
@@ -62,7 +92,8 @@ export default function ICooked() {
                 <img src={p} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </button>
             ))}
-            <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, border: `2.5px dashed rgba(23,20,16,0.4)`, fontSize: 24, color: INK }}>+</div>
+            <button onClick={() => fileRef.current?.click()} className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, border: `2.5px dashed rgba(23,20,16,0.4)`, fontSize: 24, color: INK, background: "transparent" }} aria-label="Upload a photo">+</button>
+            <input ref={fileRef} type="file" accept="image/*" onChange={pickFile} style={{ display: "none" }} />
           </div>
 
           {/* fields — all optional */}
@@ -108,7 +139,7 @@ export default function ICooked() {
             ))}
           </div>
           <button onClick={() => setLook((look + 1) % 3)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 14, background: "transparent", color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 14, border: `2px solid rgba(251,247,238,0.4)` }}>↻ try another look</button>
-          <button className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: "none", boxShadow: "0 10px 24px rgba(196,238,69,0.3)" }}>Share to friends →</button>
+          <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: "none", boxShadow: "0 10px 24px rgba(196,238,69,0.3)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : "Share to friends →"}</button>
         </div>
       )}
     </div>

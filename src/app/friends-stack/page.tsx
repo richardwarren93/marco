@@ -5,7 +5,9 @@
 // potluck invite, cooks-to-discover), all in the "beautiful chaos" language.
 // Real sample photos via loremflickr with graphic fallback. Dev-only.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getTableCooks, saveCook, type Cook } from "@/lib/social";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -36,6 +38,9 @@ function Scribble({ color = TOMATO, w = 180 }: { color?: string; w?: number }) {
 }
 
 export default function FriendsFeed() {
+  const router = useRouter();
+  const [cooks, setCooks] = useState<Cook[] | null>(null);
+  useEffect(() => { getTableCooks().then(setCooks); }, []);
   return (
     <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
@@ -59,35 +64,23 @@ export default function FriendsFeed() {
           ))}
         </div>
 
-        {/* ===== MODULE 1 — hero cook card ===== */}
-        <div style={{ transform: "rotate(-1.2deg)", marginTop: 8 }}>
-          <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, boxShadow: "0 18px 40px rgba(23,20,16,0.22)", border: `2px solid ${INK}` }}>
-            <div className="absolute flex items-center justify-center" style={{ top: -16, right: -6, width: 60, height: 60, zIndex: 5 }}>
-              <svg width="60" height="60" viewBox="0 0 64 64" aria-hidden><path d="M32 2l6 12 13-6-4 14 14 4-12 8 9 12-15-3-1 15-10-11-10 11-1-15-15 3 9-12-12-8 14-4-4-14 13 6z" fill={LIME} stroke={INK} strokeWidth="2.5" strokeLinejoin="round" /></svg>
-              <span style={{ position: "absolute", fontFamily: DISP, fontWeight: 700, fontSize: 11, color: INK, transform: "rotate(-8deg)", lineHeight: 0.9, textAlign: "center" }}>10<br />min</span>
-            </div>
-            <div style={{ position: "relative", transform: "rotate(1.2deg)" }}>
-              <Tape style={{ top: -8, left: "50%", marginLeft: -40, transform: "rotate(-4deg)" }} />
-              <div style={{ background: "#fff", padding: 8, border: `1px solid rgba(23,20,16,0.12)`, boxShadow: "0 6px 14px rgba(23,20,16,0.14)" }}>
-                <Photo img="/food/meal1.jpg" h={196} emoji="🍜" />
-              </div>
-            </div>
-            <div style={{ padding: "14px 4px 0" }}>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center" style={{ width: 24, height: 24, borderRadius: 99, background: PINK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, border: `1.5px solid ${INK}` }}>D</div>
-                <span style={{ fontFamily: SANS, fontSize: 13, color: INK }}><b>Divya</b> cooked · 2h</span>
-              </div>
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 27, color: INK, lineHeight: 1.02, marginTop: 8 }}>Miso Butter Noodles</div>
-              <div style={{ marginTop: 2, marginLeft: 2 }}><Scribble /></div>
-              <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, marginTop: 8, transform: "rotate(-1deg)" }}>double the garlic. trust me.</div>
-            </div>
-            <div className="flex items-center gap-2" style={{ marginTop: 14 }}>
-              <SaveBtn />
-              <button style={{ background: BUTTER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 16px", borderRadius: 12, border: `2px solid ${INK}` }}>Cook</button>
-              <button aria-label="Pass" style={{ background: PAPER, color: INK, width: 46, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}`, fontSize: 17 }}>➦</button>
+        {/* ===== Real cooks from your crew ===== */}
+        {cooks === null ? (
+          <div style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.5, marginTop: 20, textAlign: "center" }}>loading your table…</div>
+        ) : cooks.length > 0 ? (
+          <div className="space-y-5" style={{ marginTop: 8 }}>
+            {cooks.map((c) => <RealCook key={c.id} c={c} />)}
+          </div>
+        ) : (
+          <div style={{ marginTop: 16, background: PAPER, border: `2.5px dashed ${INK}`, borderRadius: 16, padding: "22px 18px", textAlign: "center" }}>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>your table&apos;s quiet 🍽️</div>
+            <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, marginTop: 4 }}>be the first to cook — or pull your people in</div>
+            <div className="flex gap-2 justify-center" style={{ marginTop: 14 }}>
+              <button onClick={() => router.push("/i-cooked")} style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 18px", borderRadius: 12, border: "none" }}>I cooked something</button>
+              <button onClick={() => router.push("/crew")} style={{ background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 18px", borderRadius: 12, border: `2px solid ${INK}` }}>my crew</button>
             </div>
           </div>
-        </div>
+        )}
 
         {/* ===== MODULE 2 — weekly roundup (ranked, horizontal) ===== */}
         <div style={{ marginTop: 26 }}>
@@ -177,7 +170,39 @@ export default function FriendsFeed() {
   );
 }
 
-function SaveBtn() {
+function timeAgo(iso: string) {
+  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 60) return "just now";
+  const m = Math.floor(s / 60); if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60); if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
+}
+
+function RealCook({ c }: { c: Cook }) {
   const [saved, setSaved] = useState(false);
-  return <button onClick={() => setSaved(true)} className="flex-1 active:scale-[0.97] transition-transform" style={{ background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}`, transform: "rotate(-0.5deg)" }}>{saved ? "✓ in your kitchen" : "Add to my kitchen"}</button>;
+  return (
+    <div style={{ transform: "rotate(-1.2deg)" }}>
+      <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, boxShadow: "0 18px 40px rgba(23,20,16,0.22)", border: `2px solid ${INK}` }}>
+        <div style={{ position: "relative", transform: "rotate(1.2deg)" }}>
+          <Tape style={{ top: -8, left: "50%", marginLeft: -40, transform: "rotate(-4deg)" }} />
+          <div style={{ background: "#fff", padding: 8, border: `1px solid rgba(23,20,16,0.12)`, boxShadow: "0 6px 14px rgba(23,20,16,0.14)" }}>
+            <Photo img={c.photo_url ?? undefined} h={196} emoji="🍳" />
+          </div>
+        </div>
+        <div style={{ padding: "14px 4px 0" }}>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center" style={{ width: 24, height: 24, borderRadius: 99, background: PINK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, border: `1.5px solid ${INK}` }}>{c.author_avatar ?? "?"}</div>
+            <span style={{ fontFamily: SANS, fontSize: 13, color: INK }}><b>{c.author_name ?? "someone"}</b> cooked · {timeAgo(c.created_at)}</span>
+          </div>
+          {c.title && <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 27, color: INK, lineHeight: 1.02, marginTop: 8 }}>{c.title}</div>}
+          <div style={{ marginTop: 2, marginLeft: 2 }}><Scribble /></div>
+          {c.note && <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, marginTop: 8, transform: "rotate(-1deg)" }}>{c.note}</div>}
+        </div>
+        <div className="flex items-center gap-2" style={{ marginTop: 14 }}>
+          <button onClick={async () => { if (!saved) { await saveCook(c); setSaved(true); } }} className="flex-1 active:scale-[0.97] transition-transform" style={{ background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}` }}>{saved ? "✓ in your kitchen" : "Add to my kitchen"}</button>
+          <button style={{ background: BUTTER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 16px", borderRadius: 12, border: `2px solid ${INK}` }}>Cook</button>
+        </div>
+      </div>
+    </div>
+  );
 }
