@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { postCook, getPrimaryCrew } from "@/lib/social";
+import { postCook, getPrimaryCrew, ensureCrew, type Crew } from "@/lib/social";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -32,11 +32,11 @@ export default function ICooked() {
   const [note, setNote] = useState("double the garlic. trust me.");
   const [look, setLook] = useState(0);
   const [file, setFile] = useState<File | null>(null); // real uploaded photo
-  const [crewId, setCrewId] = useState<string | null>(null);
+  const [crew, setCrew] = useState<Crew | null>(null);
   const [posting, setPosting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { getPrimaryCrew().then((c) => setCrewId(c?.id ?? null)); }, []);
+  useEffect(() => { getPrimaryCrew().then(setCrew); }, []);
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -47,8 +47,9 @@ export default function ICooked() {
   async function share() {
     if (posting) return;
     setPosting(true);
+    const target = await ensureCrew(); // always post into a group (auto-create if none)
     await postCook({
-      crewId,
+      crewId: target?.id ?? null,
       title,
       note,
       treatment: ["polaroid", "receipt", "poster"][look],
@@ -139,7 +140,7 @@ export default function ICooked() {
             ))}
           </div>
           <button onClick={() => setLook((look + 1) % 3)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 14, background: "transparent", color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 14, border: `2px solid rgba(251,247,238,0.4)` }}>↻ try another look</button>
-          <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: "none", boxShadow: "0 10px 24px rgba(196,238,69,0.3)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : "Share to friends →"}</button>
+          <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: "none", boxShadow: "0 10px 24px rgba(196,238,69,0.3)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : `Share to ${crew?.name ?? "your crew"} →`}</button>
         </div>
       )}
     </div>

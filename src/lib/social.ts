@@ -53,6 +53,14 @@ export async function getPrimaryCrew(): Promise<Crew | null> {
   return crews[0] ?? null;
 }
 
+// Always returns a crew to post into — creates a default one if you have none,
+// so a cook is never stranded as self-only.
+export async function ensureCrew(): Promise<Crew | null> {
+  const existing = await getPrimaryCrew();
+  if (existing) return existing;
+  return createCrew("My table");
+}
+
 export async function createCrew(name: string, emoji = "🍽️"): Promise<Crew | null> {
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();
