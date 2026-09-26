@@ -50,10 +50,10 @@ export default function CreateTray() {
             <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginTop: 4, lineHeight: 1 }}>Start a Potluck</div>
             <div style={{ fontFamily: SANS, fontSize: 12.5, color: "#3B5200", marginTop: 3 }}>a theme + a deadline for your crew</div>
           </button>
-          <button className="flex-1 active:scale-[0.97] transition-transform" style={{ background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "14px 14px", textAlign: "left", transform: "rotate(-1.5deg)" }}>
+          <button onClick={() => router.push("/host")} className="flex-1 active:scale-[0.97] transition-transform" style={{ background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "14px 14px", textAlign: "left", transform: "rotate(-1.5deg)" }}>
             <span style={{ fontSize: 28 }} aria-hidden>🎥</span>
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: PAPER, marginTop: 4, lineHeight: 1 }}>Host / go live</div>
-            <div style={{ fontFamily: SANS, fontSize: 12.5, color: "rgba(251,247,238,0.85)", marginTop: 3 }}>cook with people</div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: PAPER, marginTop: 4, lineHeight: 1 }}>Host a class</div>
+            <div style={{ fontFamily: SANS, fontSize: 12.5, color: "rgba(251,247,238,0.85)", marginTop: 3 }}>cook with people, live</div>
           </button>
         </div>
 

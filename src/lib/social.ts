@@ -134,6 +134,68 @@ export async function getTableCooks(limit = 30): Promise<Cook[]> {
   return (data ?? []) as Cook[];
 }
 
+// ── Classes (live, via a third-party video room) ────────────────────────────
+export interface CookClass {
+  id: string;
+  host_id: string;
+  host_name: string | null;
+  host_avatar: string | null;
+  title: string;
+  dish: string | null;
+  description: string | null;
+  cover_url: string | null;
+  starts_at: string | null;
+  capacity: number;
+  price_cents: number;
+  room_url: string | null;
+  status: string;
+  created_at: string;
+}
+
+export async function createClass(opts: {
+  title: string; dish: string; description: string; startsAt: string | null; capacity: number; roomUrl: string; coverUrl?: string | null;
+}): Promise<CookClass | null> {
+  const sb = createClient();
+  const me = await getMe();
+  if (!me) return null;
+  const { data, error } = await sb.from("classes").insert({
+    host_id: me.id, host_name: me.name, host_avatar: me.avatar,
+    title: opts.title, dish: opts.dish || null, description: opts.description || null,
+    starts_at: opts.startsAt, capacity: opts.capacity, room_url: opts.roomUrl || null,
+    cover_url: opts.coverUrl ?? null, price_cents: 0,
+  }).select("*").single();
+  if (error) return null;
+  return data as CookClass;
+}
+
+export async function getUpcomingClasses(): Promise<CookClass[]> {
+  const sb = createClient();
+  const { data } = await sb.from("classes").select("*").neq("status", "ended").order("starts_at", { ascending: true, nullsFirst: false }).limit(30);
+  return (data ?? []) as CookClass[];
+}
+
+export async function getClass(id: string): Promise<CookClass | null> {
+  const sb = createClient();
+  const { data } = await sb.from("classes").select("*").eq("id", id).single();
+  return (data as CookClass) ?? null;
+}
+
+export async function registerForClass(id: string): Promise<boolean> {
+  const sb = createClient();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+  const { error } = await sb.from("class_registrations").upsert({ class_id: id, user_id: user.id }, { onConflict: "class_id,user_id" });
+  return !error;
+}
+
+export async function isRegistered(id: string): Promise<boolean> {
+  const sb = createClient();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+  const { data } = await sb.from("class_registrations").select("id").eq("class_id", id).eq("user_id", user.id).maybeSingle();
+  return !!data;
+}
+
 // ── Saves (Add to My Kitchen) ────────────────────────────────────────────────
 export async function saveCook(cook: Cook): Promise<boolean> {
   const sb = createClient();

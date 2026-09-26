@@ -1,8 +1,11 @@
 "use client";
 
-// PROTOTYPE — Marco social pivot, Explore: discovery beyond your circle — cooks,
-// chefs, trending dishes, classes. Follow a cook and they join your Friends feed.
-// Dev-only.
+// Marco — Explore: discovery beyond your circle. Trending dishes + cooks to
+// follow are demo texture for now; "cook with a pro" is REAL live classes.
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getUpcomingClasses, type CookClass } from "@/lib/social";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -19,7 +22,16 @@ const DISP = '"Marker Felt", Georgia, serif';
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
+function whenLabel(iso: string | null) {
+  if (!iso) return "anytime";
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-US", { weekday: "short" }) + " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+}
+
 export default function Explore() {
+  const router = useRouter();
+  const [classes, setClasses] = useState<CookClass[] | null>(null);
+  useEffect(() => { getUpcomingClasses().then(setClasses); }, []);
   return (
     <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
@@ -64,23 +76,41 @@ export default function Explore() {
           ))}
         </div>
 
-        {/* a class */}
-        <div className="px-1" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginTop: 18 }}>cook with a pro</div>
-        <div style={{ marginTop: 10, background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 16, padding: 14, color: PAPER, transform: "rotate(-0.8deg)", boxShadow: "0 12px 26px rgba(23,20,16,0.18)", position: "relative" }}>
-          <div style={{ position: "absolute", top: -12, right: 16, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 12, padding: "4px 12px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)" }}>live · Sat 6pm</div>
-          <div className="flex gap-3">
-            <div style={{ flexShrink: 0, width: 92, borderRadius: 10, overflow: "hidden", border: `2px solid ${PAPER}`, transform: "rotate(-2deg)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/food/meal5.jpg" alt="" style={{ width: "100%", height: 92, objectFit: "cover", display: "block" }} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.14em", color: LIME }}>COOK WITH ME</div>
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, lineHeight: 1.02, marginTop: 2 }}>Mom&apos;s Bengali Fish Curry</div>
-              <div style={{ fontFamily: HAND, fontSize: 15, color: BUTTER, marginTop: 2 }}>chef Ben · 12 people · $15</div>
-              <button style={{ marginTop: 8, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "8px 18px", borderRadius: 99, border: `2px solid ${INK}` }}>Join</button>
-            </div>
-          </div>
+        {/* cook with a pro — REAL classes */}
+        <div className="flex items-baseline justify-between px-1" style={{ marginTop: 18 }}>
+          <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>cook with a pro</span>
+          <button onClick={() => router.push("/host")} style={{ fontFamily: HAND, fontSize: 15, color: COBALT, background: "none", border: "none" }}>+ host one</button>
         </div>
+        {classes === null ? (
+          <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.5, marginTop: 10 }}>loading classes…</div>
+        ) : classes.length === 0 ? (
+          <div style={{ marginTop: 10, background: PAPER, border: `2px dashed ${INK}`, borderRadius: 14, padding: 16, textAlign: "center" }}>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK }}>no classes yet</div>
+            <div style={{ fontFamily: HAND, fontSize: 15, color: TOMATO, marginTop: 2 }}>be the first to teach your people</div>
+            <button onClick={() => router.push("/host")} style={{ marginTop: 10, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "9px 18px", borderRadius: 99, border: "none" }}>Host a class 🎥</button>
+          </div>
+        ) : (
+          <div className="space-y-3" style={{ marginTop: 10 }}>
+            {classes.map((cl) => (
+              <button key={cl.id} onClick={() => router.push(`/class/${cl.id}`)} className="w-full text-left active:scale-[0.98] transition-transform" style={{ background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 16, padding: 14, color: PAPER, transform: "rotate(-0.6deg)", boxShadow: "0 12px 26px rgba(23,20,16,0.18)", position: "relative" }}>
+                <div style={{ position: "absolute", top: -12, right: 16, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 11, padding: "4px 12px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)" }}>{cl.price_cents === 0 ? "free" : `$${(cl.price_cents / 100).toFixed(0)}`} · {whenLabel(cl.starts_at)}</div>
+                <div className="flex gap-3">
+                  <div style={{ flexShrink: 0, width: 92, height: 92, borderRadius: 10, overflow: "hidden", border: `2px solid ${PAPER}`, transform: "rotate(-2deg)", background: "#101E63", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>
+                    {cl.cover_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={cl.cover_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : <span aria-hidden>🍳</span>}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.14em", color: LIME }}>COOK WITH ME</div>
+                    <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, lineHeight: 1.02, marginTop: 2 }}>{cl.title}</div>
+                    <div style={{ fontFamily: HAND, fontSize: 15, color: BUTTER, marginTop: 2 }}>{cl.host_name ?? "a cook"} · {cl.capacity} spots</div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
