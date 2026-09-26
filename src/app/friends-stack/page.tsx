@@ -54,9 +54,10 @@ export default function FriendsFeed() {
     })();
   }, []);
 
+  const [view, setView] = useState<"all" | "crew" | "marco">("all");
+
   const real = cooks?.filter((c) => !c.is_featured) ?? [];
   const featured = cooks?.filter((c) => c.is_featured) ?? [];
-  const totallyEmpty = cooks !== null && cooks.length === 0;
 
   return (
     <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
@@ -72,66 +73,100 @@ export default function FriendsFeed() {
           <div className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, transform: "rotate(5deg)", border: `2px solid ${LIME}` }}>S</div>
         </div>
 
-        {/* filter pills */}
-        <div className="flex gap-2 overflow-x-auto py-3 px-1" style={{ scrollbarWidth: "none" }}>
-          {[["tonight", TOMATO], ["quick ⚡", BUTTER], ["veggie", LIME], ["potlucks", PINK], ["new cooks", LAV]].map(([t, c], i) => (
-            <span key={t} style={{ flexShrink: 0, background: i === 0 ? INK : PAPER, color: i === 0 ? PAPER : INK, border: `2px solid ${INK}`, borderRadius: 99, padding: "6px 14px", fontFamily: DISP, fontWeight: 700, fontSize: 13, transform: `rotate(${i % 2 ? 1 : -1}deg)` }}>
-              <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 99, background: c as string, marginRight: 6, verticalAlign: "middle" }} />{t as string}
-            </span>
-          ))}
+        {/* real feed filter — operates on data we actually have day one.
+            (dish tags like quick/veggie come later, once cooks carry them.) */}
+        <div className="flex gap-2 py-3 px-1">
+          {([["all", "everything", TOMATO], ["crew", "my crew", LIME], ["marco", "Marco 🍅", COBALT]] as const).map(([key, label, c], i) => {
+            const on = view === key;
+            return (
+              <button key={key} onClick={() => setView(key)} className="flex-1 active:scale-95 transition-transform" style={{ background: on ? INK : PAPER, color: on ? PAPER : INK, border: `2px solid ${INK}`, borderRadius: 99, padding: "7px 4px", fontFamily: DISP, fontWeight: 700, fontSize: 13.5, whiteSpace: "nowrap", transform: `rotate(${i % 2 ? 0.8 : -0.8}deg)` }}>
+                <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: 99, background: c, marginRight: 6, verticalAlign: "middle" }} />{label}
+              </button>
+            );
+          })}
         </div>
 
-        {/* persistent cold-start nudge — always one tap from pulling people in */}
-        <button onClick={() => router.push("/crew")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 4, marginBottom: 4, background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", textAlign: "left", transform: "rotate(-0.6deg)", boxShadow: "0 10px 22px rgba(37,64,232,0.22)", position: "relative" }}>
-          <Tape style={{ top: -9, right: 18, background: "rgba(196,238,69,0.9)", transform: "rotate(7deg)" }} />
-          <div className="flex items-center gap-3">
-            <span style={{ fontSize: 26 }} aria-hidden>🍽️</span>
-            <div className="flex-1">
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: PAPER, lineHeight: 1 }}>pull your people in</div>
-              <div style={{ fontFamily: HAND, fontSize: 14.5, color: BUTTER, marginTop: 2 }}>share your table code · the feed gets real fast</div>
+        {/* the invite job: share your code so the feed gets real. (distinct from
+            the "post your first cook" card below — different action.) */}
+        {view !== "marco" && (
+          <button onClick={() => router.push("/crew")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 4, marginBottom: 4, background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", textAlign: "left", transform: "rotate(-0.6deg)", boxShadow: "0 10px 22px rgba(37,64,232,0.22)", position: "relative" }}>
+            <Tape style={{ top: -9, right: 18, background: "rgba(196,238,69,0.9)", transform: "rotate(7deg)" }} />
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: 26 }} aria-hidden>🍽️</span>
+              <div className="flex-1">
+                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: PAPER, lineHeight: 1 }}>pull your people in</div>
+                <div style={{ fontFamily: HAND, fontSize: 14.5, color: BUTTER, marginTop: 2 }}>share your table code · the feed gets real fast</div>
+              </div>
+              <span style={{ color: PAPER, fontSize: 20, opacity: 0.8 }}>›</span>
             </div>
-            <span style={{ color: PAPER, fontSize: 20, opacity: 0.8 }}>›</span>
-          </div>
-        </button>
+          </button>
+        )}
 
         {/* ===== loading ===== */}
         {cooks === null && (
           <div style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.5, marginTop: 20, textAlign: "center" }}>loading your table…</div>
         )}
 
-        {/* ===== real crew cooks ===== */}
-        {real.length > 0 && (
-          <div className="space-y-5" style={{ marginTop: 8 }}>
-            {real.map((c) => <RealCook key={c.id} c={c} />)}
-          </div>
+        {/* ===== everything: real crew cooks, then the honest Marco floor ===== */}
+        {cooks !== null && view === "all" && (
+          <>
+            {real.length > 0 && (
+              <div className="space-y-5" style={{ marginTop: 8 }}>
+                {real.map((c) => <RealCook key={c.id} c={c} />)}
+              </div>
+            )}
+            {featured.length > 0 && (
+              <div style={{ marginTop: real.length > 0 ? 28 : 10 }}>
+                <div className="flex items-baseline gap-2 px-1">
+                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Fresh from Marco 🍅</span>
+                  <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-2deg)" }}>while your table fills up</span>
+                </div>
+                <div className="space-y-5" style={{ marginTop: 10 }}>
+                  {featured.map((c) => <RealCook key={c.id} c={c} featured />)}
+                </div>
+              </div>
+            )}
+            {real.length === 0 && featured.length === 0 && <FirstCookCard onPost={() => router.push("/i-cooked")} />}
+          </>
         )}
 
-        {/* ===== honest featured floor ===== */}
-        {featured.length > 0 && (
-          <div style={{ marginTop: real.length > 0 ? 28 : 10 }}>
-            <div className="flex items-baseline gap-2 px-1">
-              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Fresh from Marco 🍅</span>
-              <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-2deg)" }}>while your table fills up</span>
+        {/* ===== my crew: real cooks only; if none, nudge the first post ===== */}
+        {cooks !== null && view === "crew" && (
+          real.length > 0 ? (
+            <div className="space-y-5" style={{ marginTop: 8 }}>
+              {real.map((c) => <RealCook key={c.id} c={c} />)}
             </div>
-            <div className="space-y-5" style={{ marginTop: 10 }}>
+          ) : <FirstCookCard onPost={() => router.push("/i-cooked")} />
+        )}
+
+        {/* ===== from Marco: the featured floor on its own ===== */}
+        {cooks !== null && view === "marco" && (
+          featured.length > 0 ? (
+            <div className="space-y-5" style={{ marginTop: 8 }}>
               {featured.map((c) => <RealCook key={c.id} c={c} featured />)}
             </div>
-          </div>
-        )}
-
-        {/* ===== truly empty (no featured seeded yet either) ===== */}
-        {totallyEmpty && (
-          <div style={{ marginTop: 16, background: PAPER, border: `2.5px dashed ${INK}`, borderRadius: 16, padding: "22px 18px", textAlign: "center" }}>
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>your table&apos;s quiet 🍽️</div>
-            <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, marginTop: 4 }}>be the first to cook — or pull your people in</div>
-            <div className="flex gap-2 justify-center" style={{ marginTop: 14 }}>
-              <button onClick={() => router.push("/i-cooked")} style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 18px", borderRadius: 12, border: "none" }}>I cooked something</button>
-              <button onClick={() => router.push("/crew")} style={{ background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 18px", borderRadius: 12, border: `2px solid ${INK}` }}>my crew</button>
+          ) : (
+            <div style={{ marginTop: 16, background: PAPER, border: `2px dashed ${INK}`, borderRadius: 16, padding: "20px 18px", textAlign: "center" }}>
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Marco&apos;s picks land here 🍅</div>
+              <div style={{ fontFamily: HAND, fontSize: 15, color: TOMATO, marginTop: 4 }}>fresh cooks to steal while your table fills up</div>
             </div>
-          </div>
+          )
         )}
       </div>
 
+    </div>
+  );
+}
+
+// The empty state's ONE job: post your first cook. Inviting lives in the blue
+// banner above, so this never repeats it.
+function FirstCookCard({ onPost }: { onPost: () => void }) {
+  return (
+    <div style={{ marginTop: 16, background: PAPER, border: `2.5px dashed ${INK}`, borderRadius: 16, padding: "22px 18px", textAlign: "center", transform: "rotate(-0.5deg)" }}>
+      <div style={{ fontSize: 34 }} aria-hidden>🍳</div>
+      <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK, marginTop: 4 }}>nothing cooking yet</div>
+      <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, marginTop: 4 }}>post what you made — your table starts here</div>
+      <button onClick={onPost} className="active:scale-[0.97] transition-transform" style={{ marginTop: 14, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 22px", borderRadius: 12, border: "none" }}>I cooked something</button>
     </div>
   );
 }
