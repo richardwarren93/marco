@@ -1,12 +1,12 @@
 "use client";
 
 import GroceryList from "@/components/grocery/GroceryList";
-import MobileHeader from "@/components/layout/MobileHeader";
+import KitchenLayerHeader from "@/components/layout/KitchenLayerHeader";
 
 export default function GroceryPage() {
   return (
     <>
-      <MobileHeader title="Grocery" />
+      <KitchenLayerHeader title="Grocery" sub="everything you need · tap to check off" emoji="🛒" />
       <GroceryList />
     </>
   );

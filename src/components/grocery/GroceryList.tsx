@@ -916,9 +916,11 @@ export default function GroceryList() {
             return (
               <div
                 key={groupKey}
-                className="bg-white rounded-3xl overflow-hidden"
+                className="rounded-2xl overflow-hidden"
                 style={{
-                  boxShadow: "0 2px 16px rgba(0,0,0,0.06)",
+                  background: "#FBF7EE",
+                  border: "2px solid #171410",
+                  boxShadow: "0 8px 18px rgba(23,20,16,0.14)",
                   animation: `fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) ${gi * 60}ms both`,
                 }}
               >
