@@ -169,32 +169,44 @@ export async function getTableCooks(limit = 30): Promise<Cook[]> {
 // migration-social-3); degrades to "friend" seats before that migration runs.
 export interface TableMember { id: string; name: string; avatar: string; isYou: boolean }
 
-export async function getTable(): Promise<{ crew: Crew | null; members: TableMember[] }> {
-  const sb = createClient();
-  const me = await getMe();
-  const crew = await getPrimaryCrew();
-  const you: TableMember[] = me ? [{ id: me.id, name: me.name, avatar: me.avatar, isYou: true }] : [];
-  if (!crew) return { crew: null, members: you };
+type Me = { id: string; name: string; avatar: string };
 
-  // Try the denormalized columns; fall back to bare rows if the migration
-  // hasn't run yet, so this never breaks.
+// Seated members of one crew (denormalized names when migration-social-3 ran;
+// degrades to "friend" otherwise). You always appear, first.
+async function crewMembers(crewId: string, me: Me | null): Promise<TableMember[]> {
+  const sb = createClient();
   let rows: { user_id: string; display_name?: string | null; avatar?: string | null }[] = [];
-  const rich = await sb.from("crew_members").select("user_id, display_name, avatar").eq("crew_id", crew.id);
+  const rich = await sb.from("crew_members").select("user_id, display_name, avatar").eq("crew_id", crewId);
   if (rich.error) {
-    const basic = await sb.from("crew_members").select("user_id").eq("crew_id", crew.id);
+    const basic = await sb.from("crew_members").select("user_id").eq("crew_id", crewId);
     rows = (basic.data ?? []) as { user_id: string }[];
   } else {
     rows = (rich.data ?? []) as typeof rows;
   }
-
   const members: TableMember[] = rows.map((r) => {
     const isYou = !!me && r.user_id === me.id;
     const name = (r.display_name || (isYou ? me?.name : null) || "friend") as string;
     return { id: r.user_id, name, avatar: r.avatar || name.slice(0, 1).toUpperCase(), isYou };
   });
-  if (me && !members.some((m) => m.isYou)) members.unshift(you[0]);
+  if (me && !members.some((m) => m.isYou)) members.unshift({ id: me.id, name: me.name, avatar: me.avatar, isYou: true });
   members.sort((a, b) => (a.isYou === b.isYou ? 0 : a.isYou ? -1 : 1)); // you first
-  return { crew, members };
+  return members;
+}
+
+export async function getTable(): Promise<{ crew: Crew | null; members: TableMember[] }> {
+  const me = await getMe();
+  const crew = await getPrimaryCrew();
+  const you: TableMember[] = me ? [{ id: me.id, name: me.name, avatar: me.avatar, isYou: true }] : [];
+  if (!crew) return { crew: null, members: you };
+  return { crew, members: await crewMembers(crew.id, me) };
+}
+
+// All the tables you're in, each with its seated members — for the rotating
+// seats strip. (The feed stays aggregate across every table.)
+export async function getTables(): Promise<{ crew: Crew; members: TableMember[] }[]> {
+  const me = await getMe();
+  const crews = await getMyCrews();
+  return Promise.all(crews.map(async (crew) => ({ crew, members: await crewMembers(crew.id, me) })));
 }
 
 // Just the featured floor — used for the empty/onboarding state so we can label

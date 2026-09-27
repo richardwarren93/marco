@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getTableCooks, getTable, saveCook, joinCrewByCode, type Cook, type TableMember } from "@/lib/social";
+import { getTableCooks, getTables, getMe, saveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
@@ -41,7 +41,8 @@ function Scribble({ color = TOMATO, w = 180 }: { color?: string; w?: number }) {
 export default function FriendsFeed() {
   const router = useRouter();
   const [cooks, setCooks] = useState<Cook[] | null>(null);
-  const [members, setMembers] = useState<TableMember[]>([]);
+  const [tables, setTables] = useState<{ crew: Crew; members: TableMember[] }[]>([]);
+  const [me, setMe] = useState<TableMember | null>(null);
   useEffect(() => {
     (async () => {
       // If they arrived via an invite link before signing in, finish the join now.
@@ -51,9 +52,10 @@ export default function FriendsFeed() {
         await joinCrewByCode(pending);
         try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ }
       }
-      const [cs, table] = await Promise.all([getTableCooks(), getTable()]);
+      const [cs, tbls, meData] = await Promise.all([getTableCooks(), getTables(), getMe()]);
       setCooks(cs);
-      setMembers(table.members);
+      setTables(tbls);
+      if (meData) setMe({ id: meData.id, name: meData.name, avatar: meData.avatar, isYou: true });
     })();
   }, []);
 
@@ -74,7 +76,7 @@ export default function FriendsFeed() {
         </div>
 
         {/* your table — who's seated, and empty chairs to pull people in */}
-        <TableSeats members={members} onInvite={() => router.push("/crew")} />
+        <TableSeats tables={tables} you={me} onInvite={() => router.push("/crew")} />
 
         {/* ===== loading ===== */}
         {cooks === null && (
@@ -102,24 +104,44 @@ export default function FriendsFeed() {
   );
 }
 
-// "Your table" — a tabletop with your crew seated around it and open chairs
-// that pull the rest in. This is the cold-start hero: even solo it reads as a
-// table waiting to fill, not a blank feed.
+// "Your table" — a tabletop with your table seated around it and open chairs
+// that pull the rest in. With multiple tables it rotates through them (the feed
+// stays aggregate). The cold-start hero: even solo it reads as a table waiting.
 const SEAT_COLORS = [LIME, BUTTER, PINK, LAV, "#FFB86B"];
-function TableSeats({ members, onInvite }: { members: TableMember[]; onInvite: () => void }) {
+function TableSeats({ tables, you, onInvite }: { tables: { crew: Crew; members: TableMember[] }[]; you: TableMember | null; onInvite: () => void }) {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (tables.length <= 1) return;
+    const t = setInterval(() => setIdx((v) => (v + 1) % tables.length), 4200); // rotate through your tables
+    return () => clearInterval(t);
+  }, [tables.length]);
+
+  const active = tables.length > 0 ? tables[Math.min(idx, tables.length - 1)] : null;
+  const members = active ? active.members : (you ? [you] : []);
+  const title = active ? `${active.crew.emoji ?? "🍽️"} ${active.crew.name}` : "your table";
   const filled = members.length;
-  const empties = Math.max(2, 4 - filled); // always a couple of open chairs
+  const empties = Math.max(2, 4 - filled);
+  const multi = tables.length > 1;
+
   return (
     <div style={{ marginTop: 12 }}>
       <div className="flex items-baseline justify-between px-1">
-        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>your table</span>
-        <button onClick={onInvite} style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-2deg)", background: "none", border: "none" }}>
-          {filled <= 1 ? "pull up some chairs →" : `${filled} seated · invite more →`}
-        </button>
+        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "62%" }}>{title}</span>
+        {multi ? (
+          <div className="flex items-center gap-1.5">
+            {tables.map((t, k) => (
+              <button key={t.crew.id} onClick={() => setIdx(k)} aria-label={`Table ${k + 1}`} style={{ width: k === idx ? 20 : 8, height: 8, borderRadius: 99, background: k === idx ? INK : "rgba(23,20,16,0.2)", border: "none", transition: "width .2s" }} />
+            ))}
+          </div>
+        ) : (
+          <button onClick={onInvite} style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-2deg)", background: "none", border: "none" }}>
+            {filled <= 1 ? "pull up some chairs →" : `${filled} seated · invite more →`}
+          </button>
+        )}
       </div>
       <div style={{ position: "relative", marginTop: 8, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "16px 10px 12px", boxShadow: "0 10px 22px rgba(23,20,16,0.14)", transform: "rotate(-0.5deg)" }}>
         <Tape style={{ top: -9, left: 22, transform: "rotate(-6deg)" }} />
-        <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+        <div key={active?.crew.id ?? "solo"} className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none", animation: "seatFade .35s ease" }}>
           {members.map((m, i) => (
             <div key={m.id} style={{ flexShrink: 0, width: 64, textAlign: "center" }}>
               <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", background: SEAT_COLORS[i % SEAT_COLORS.length], color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, border: `2.5px solid ${INK}`, transform: `rotate(${i % 2 ? 3 : -3}deg)` }}>{m.avatar}</div>
@@ -134,6 +156,7 @@ function TableSeats({ members, onInvite }: { members: TableMember[]; onInvite: (
           ))}
         </div>
       </div>
+      <style>{`@keyframes seatFade{from{opacity:0}to{opacity:1}}`}</style>
     </div>
   );
 }
