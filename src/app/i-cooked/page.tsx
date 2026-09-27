@@ -7,6 +7,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { postCook, getPrimaryCrew, ensureCrew, type Crew } from "@/lib/social";
+import CardPeek from "@/components/social/CardPeek";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -87,10 +88,10 @@ export default function ICooked() {
               <button onClick={() => fileRef.current?.click()} style={{ position: "absolute", bottom: -12, right: -6, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 12, padding: "7px 14px", borderRadius: 99, border: `2px solid ${PAPER}` }}>change photo</button>
             </div>
           ) : (
-            <button onClick={() => fileRef.current?.click()} className="w-full active:scale-[0.99] transition-transform" style={{ marginTop: 18, height: 300, borderRadius: 14, border: `3px dashed ${INK}`, background: PAPER, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              <span style={{ fontSize: 52 }} aria-hidden>📸</span>
-              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>snap what you made</span>
-              <span style={{ fontFamily: HAND, fontSize: 16, color: TOMATO }}>tap to add your photo</span>
+            <button onClick={() => fileRef.current?.click()} className="w-full active:scale-[0.99] transition-transform" style={{ marginTop: 18, borderRadius: 14, border: `3px dashed ${INK}`, background: PAPER, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "18px 18px 20px" }}>
+              <span style={{ fontFamily: HAND, fontSize: 16, color: TOMATO }}>Marco makes it look like this ✨</span>
+              <div style={{ width: "100%", maxWidth: 230, pointerEvents: "none" }}><CardPeek h={128} /></div>
+              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: INK, marginTop: 4 }}>📸 snap what you made</span>
             </button>
           )}
 

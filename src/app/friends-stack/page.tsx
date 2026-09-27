@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getTableCooks, getTable, saveCook, joinCrewByCode, type Cook, type TableMember } from "@/lib/social";
+import CardPeek from "@/components/social/CardPeek";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
 
@@ -137,15 +138,16 @@ function TableSeats({ members, onInvite }: { members: TableMember[]; onInvite: (
   );
 }
 
-// The empty state's ONE job: post your first cook. Inviting lives in the seats
-// visual above, so this never repeats it.
+// The empty state's ONE job: post your first cook. Show a rotating PREVIEW of
+// what a cook becomes so it feels worth doing (clearly a preview, never a fake
+// post). Inviting lives in the seats visual above, so this never repeats it.
 function FirstCookCard({ onPost }: { onPost: () => void }) {
   return (
-    <div style={{ marginTop: 16, background: PAPER, border: `2.5px dashed ${INK}`, borderRadius: 16, padding: "22px 18px", textAlign: "center", transform: "rotate(-0.5deg)" }}>
-      <div style={{ fontSize: 34 }} aria-hidden>🍳</div>
-      <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK, marginTop: 4 }}>nothing cooking yet</div>
-      <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, marginTop: 4 }}>post what you made — your table starts here</div>
-      <button onClick={onPost} className="active:scale-[0.97] transition-transform" style={{ marginTop: 14, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 22px", borderRadius: 12, border: "none" }}>I cooked something</button>
+    <div style={{ marginTop: 8, textAlign: "center" }}>
+      <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, transform: "rotate(-1.5deg)" }}>here&apos;s what your cook becomes ✨</div>
+      <div style={{ maxWidth: 268, margin: "12px auto 0" }}><CardPeek /></div>
+      <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK, marginTop: 18 }}>your table starts with one cook</div>
+      <button onClick={onPost} className="active:scale-[0.97] transition-transform" style={{ marginTop: 12, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 17, padding: "13px 26px", borderRadius: 14, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.32)" }}>I cooked something</button>
     </div>
   );
 }
