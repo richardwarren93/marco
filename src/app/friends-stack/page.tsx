@@ -82,7 +82,7 @@ export default function FriendsFeed() {
         </div>
 
         {/* your table — who's seated, and empty chairs to pull people in */}
-        <TableSeats tables={tables} you={me} onInvite={() => router.push("/crew")} />
+        <TableSeats tables={tables} you={me} cooks={cooks ?? []} onInvite={() => router.push("/crew")} />
 
         {/* ===== loading ===== */}
         {cooks === null && (
@@ -123,7 +123,7 @@ export default function FriendsFeed() {
 // that pull the rest in. With multiple tables it rotates through them (the feed
 // stays aggregate). The cold-start hero: even solo it reads as a table waiting.
 const SEAT_COLORS = [LIME, BUTTER, PINK, LAV, "#FFB86B"];
-function TableSeats({ tables, you, onInvite }: { tables: { crew: Crew; members: TableMember[] }[]; you: TableMember | null; onInvite: () => void }) {
+function TableSeats({ tables, you, cooks, onInvite }: { tables: { crew: Crew; members: TableMember[] }[]; you: TableMember | null; cooks: Cook[]; onInvite: () => void }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (tables.length <= 1) return;
@@ -133,9 +133,20 @@ function TableSeats({ tables, you, onInvite }: { tables: { crew: Crew; members: 
 
   const active = tables.length > 0 ? tables[Math.min(idx, tables.length - 1)] : null;
   const members = active ? active.members : (you ? [you] : []);
+
+  // "how often" — cooks per member in this table over the last 7 days
+  const weekAgo = Date.now() - 7 * 864e5;
+  const counts = new Map<string, number>();
+  if (active) for (const ck of cooks) {
+    if (ck.crew_id === active.crew.id && ck.user_id && new Date(ck.created_at).getTime() >= weekAgo) {
+      counts.set(ck.user_id, (counts.get(ck.user_id) ?? 0) + 1);
+    }
+  }
   const title = active ? `${active.crew.emoji ?? "🍽️"} ${active.crew.name}` : "your table";
   const filled = members.length;
-  const empties = Math.max(2, 4 - filled);
+  // Solo → several open chairs (invite-forward). Once your people are here, just
+  // one open chair, so the table reads full instead of half-empty.
+  const empties = filled >= 2 ? 1 : 3;
   const multi = tables.length > 1;
 
   return (
@@ -157,12 +168,16 @@ function TableSeats({ tables, you, onInvite }: { tables: { crew: Crew; members: 
       <div style={{ position: "relative", marginTop: 8, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "16px 10px 12px", boxShadow: "0 10px 22px rgba(23,20,16,0.14)", transform: "rotate(-0.5deg)" }}>
         <Tape style={{ top: -9, left: 22, transform: "rotate(-6deg)" }} />
         <div key={active?.crew.id ?? "solo"} className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none", animation: "seatFade .35s ease" }}>
-          {members.map((m, i) => (
-            <div key={m.id} style={{ flexShrink: 0, width: 64, textAlign: "center" }}>
-              <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", background: SEAT_COLORS[i % SEAT_COLORS.length], color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, border: `2.5px solid ${INK}`, transform: `rotate(${i % 2 ? 3 : -3}deg)` }}>{m.avatar}</div>
-              <div style={{ fontFamily: SANS, fontSize: 11.5, color: INK, marginTop: 5, fontWeight: m.isYou ? 700 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.isYou ? "you" : m.name}</div>
-            </div>
-          ))}
+          {members.map((m, i) => {
+            const n = counts.get(m.id) ?? 0;
+            return (
+              <div key={m.id} style={{ flexShrink: 0, width: 64, textAlign: "center" }}>
+                <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", background: SEAT_COLORS[i % SEAT_COLORS.length], color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, border: `2.5px solid ${INK}`, transform: `rotate(${i % 2 ? 3 : -3}deg)` }}>{m.avatar}</div>
+                <div style={{ fontFamily: SANS, fontSize: 11.5, color: INK, marginTop: 5, fontWeight: m.isYou ? 700 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.isYou ? "you" : m.name}</div>
+                <div style={{ fontFamily: MONO, fontSize: 9, color: n > 0 ? TOMATO : "rgba(23,20,16,0.4)", marginTop: 1 }}>{n > 0 ? `🍳 ${n}× this wk` : "quiet"}</div>
+              </div>
+            );
+          })}
           {Array.from({ length: empties }, (_, i) => (
             <button key={`e${i}`} onClick={onInvite} className="active:scale-95 transition-transform" style={{ flexShrink: 0, width: 64, textAlign: "center", background: "none", border: "none", padding: 0 }}>
               <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", color: INK, fontSize: 22, border: `2.5px dashed ${INK}`, opacity: 0.5 }}>+</div>
