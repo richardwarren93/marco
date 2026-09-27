@@ -50,18 +50,14 @@ export default function CardPeek({ h = 150 }: { h?: number }) {
   return (
     <div style={{ position: "relative", minHeight: h + 150 }}>
       {phase === "camera" ? (
-        // raw camera shot — viewfinder framing
-        <div key={`cam${i}`} style={{ animation: "cpFade .4s ease", background: INK, borderRadius: 12, padding: 8, transform: "rotate(1.4deg)", boxShadow: "0 14px 30px rgba(23,20,16,0.22)" }}>
-          <div style={{ position: "relative", overflow: "hidden", borderRadius: 6 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={e.photo} alt="" style={{ width: "100%", height: h + 58, objectFit: "cover", display: "block", filter: "saturate(0.92) contrast(1.02)" }} />
-            <Corner at="tl" /><Corner at="tr" /><Corner at="bl" /><Corner at="br" />
-            <div style={{ position: "absolute", top: 10, right: 12, display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 99, background: TOMATO, display: "inline-block" }} className="cpPulse" />
-              <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.18em", color: PAPER }}>SNAP</span>
-            </div>
+        // the "you snap it" beat — a camera viewfinder, no photo yet
+        <div key={`cam${i}`} style={{ animation: "cpFade .4s ease", position: "relative", background: INK, borderRadius: 12, transform: "rotate(1.4deg)", boxShadow: "0 14px 30px rgba(23,20,16,0.22)", height: h + 116, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Corner at="tl" /><Corner at="tr" /><Corner at="bl" /><Corner at="br" />
+          <div style={{ position: "absolute", top: 12, right: 14, display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ width: 8, height: 8, borderRadius: 99, background: TOMATO, display: "inline-block" }} className="cpPulse" />
+            <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.18em", color: PAPER }}>SNAP</span>
           </div>
-          <div style={{ fontFamily: HAND, fontSize: 14.5, color: PAPER, textAlign: "center", marginTop: 8 }}>your photo</div>
+          <span style={{ fontSize: 66 }} aria-hidden>📸</span>
         </div>
       ) : (
         // the art-directed card
