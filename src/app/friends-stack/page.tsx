@@ -1,13 +1,12 @@
 "use client";
 
-// Marco — the Table. Your crew's real cooks first, then an honest "Fresh from
-// Marco" featured floor so a brand-new table is alive but never fakes friends.
-// A persistent invite/post nudge keeps the cold-start action one tap away.
-// All in the "beautiful chaos" language.
+// Marco — the Table. Sacred to your crew: only your people's cooks. A "your
+// table" seats visual up top shows who's here and pulls the rest in; the Marco
+// floor lives in Explore, not here. All in the "beautiful chaos" language.
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getTableCooks, saveCook, joinCrewByCode, type Cook } from "@/lib/social";
+import { getTableCooks, getTable, saveCook, joinCrewByCode, type Cook, type TableMember } from "@/lib/social";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
 
@@ -41,6 +40,7 @@ function Scribble({ color = TOMATO, w = 180 }: { color?: string; w?: number }) {
 export default function FriendsFeed() {
   const router = useRouter();
   const [cooks, setCooks] = useState<Cook[] | null>(null);
+  const [members, setMembers] = useState<TableMember[]>([]);
   useEffect(() => {
     (async () => {
       // If they arrived via an invite link before signing in, finish the join now.
@@ -50,12 +50,13 @@ export default function FriendsFeed() {
         await joinCrewByCode(pending);
         try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ }
       }
-      setCooks(await getTableCooks());
+      const [cs, table] = await Promise.all([getTableCooks(), getTable()]);
+      setCooks(cs);
+      setMembers(table.members);
     })();
   }, []);
 
-  const real = cooks?.filter((c) => !c.is_featured) ?? [];
-  const featured = cooks?.filter((c) => c.is_featured) ?? [];
+  const real = cooks ?? [];
 
   return (
     <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
@@ -71,56 +72,28 @@ export default function FriendsFeed() {
           <div className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, transform: "rotate(5deg)", border: `2px solid ${LIME}` }}>S</div>
         </div>
 
-        {/* the invite job: share your code so the feed gets real. (distinct from
-            the "post your first cook" card below — different action.) */}
-        <button onClick={() => router.push("/crew")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, marginBottom: 4, background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", textAlign: "left", transform: "rotate(-0.6deg)", boxShadow: "0 10px 22px rgba(37,64,232,0.22)", position: "relative" }}>
-          <Tape style={{ top: -9, right: 18, background: "rgba(196,238,69,0.9)", transform: "rotate(7deg)" }} />
-          <div className="flex items-center gap-3">
-            <span style={{ fontSize: 26 }} aria-hidden>🍽️</span>
-            <div className="flex-1">
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: PAPER, lineHeight: 1 }}>pull your people in</div>
-              <div style={{ fontFamily: HAND, fontSize: 14.5, color: BUTTER, marginTop: 2 }}>share your table code · the feed gets real fast</div>
-            </div>
-            <span style={{ color: PAPER, fontSize: 20, opacity: 0.8 }}>›</span>
-          </div>
-        </button>
+        {/* your table — who's seated, and empty chairs to pull people in */}
+        <TableSeats members={members} onInvite={() => router.push("/crew")} />
 
         {/* ===== loading ===== */}
         {cooks === null && (
           <div style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.5, marginTop: 20, textAlign: "center" }}>loading your table…</div>
         )}
 
-        {/* ===== one crew-first feed: your people on top, Marco backfill below ===== */}
+        {/* ===== your crew's cooks — the whole point ===== */}
         {cooks !== null && (
-          <>
-            {/* your crew — the hero */}
-            {real.length > 0 ? (
-              <div style={{ marginTop: 14 }}>
-                <div className="flex items-baseline gap-2 px-1" style={{ marginBottom: 10 }}>
-                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>your crew 🔥</span>
-                  <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-2deg)" }}>hot off the stove</span>
-                </div>
-                <div className="space-y-5">
-                  {real.map((c) => <RealCook key={c.id} c={c} />)}
-                </div>
+          real.length > 0 ? (
+            <div style={{ marginTop: 20 }}>
+              <div className="flex items-baseline gap-2 px-1" style={{ marginBottom: 10 }}>
+                <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>hot off the stove 🔥</span>
               </div>
-            ) : (
-              <FirstCookCard onPost={() => router.push("/i-cooked")} />
-            )}
-
-            {/* Marco backfill — never blank */}
-            {featured.length > 0 && (
-              <div style={{ marginTop: real.length > 0 ? 28 : 22 }}>
-                <div className="flex items-baseline gap-2 px-1">
-                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Fresh from Marco 🍅</span>
-                  <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-2deg)" }}>while your table fills up</span>
-                </div>
-                <div className="space-y-5" style={{ marginTop: 10 }}>
-                  {featured.map((c) => <RealCook key={c.id} c={c} featured />)}
-                </div>
+              <div className="space-y-5">
+                {real.map((c) => <RealCook key={c.id} c={c} />)}
               </div>
-            )}
-          </>
+            </div>
+          ) : (
+            <div style={{ marginTop: 18 }}><FirstCookCard onPost={() => router.push("/i-cooked")} /></div>
+          )
         )}
       </div>
 
@@ -128,8 +101,44 @@ export default function FriendsFeed() {
   );
 }
 
-// The empty state's ONE job: post your first cook. Inviting lives in the blue
-// banner above, so this never repeats it.
+// "Your table" — a tabletop with your crew seated around it and open chairs
+// that pull the rest in. This is the cold-start hero: even solo it reads as a
+// table waiting to fill, not a blank feed.
+const SEAT_COLORS = [LIME, BUTTER, PINK, LAV, "#FFB86B"];
+function TableSeats({ members, onInvite }: { members: TableMember[]; onInvite: () => void }) {
+  const filled = members.length;
+  const empties = Math.max(2, 4 - filled); // always a couple of open chairs
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div className="flex items-baseline justify-between px-1">
+        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>your table</span>
+        <button onClick={onInvite} style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-2deg)", background: "none", border: "none" }}>
+          {filled <= 1 ? "pull up some chairs →" : `${filled} seated · invite more →`}
+        </button>
+      </div>
+      <div style={{ position: "relative", marginTop: 8, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "16px 10px 12px", boxShadow: "0 10px 22px rgba(23,20,16,0.14)", transform: "rotate(-0.5deg)" }}>
+        <Tape style={{ top: -9, left: 22, transform: "rotate(-6deg)" }} />
+        <div className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none" }}>
+          {members.map((m, i) => (
+            <div key={m.id} style={{ flexShrink: 0, width: 64, textAlign: "center" }}>
+              <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", background: SEAT_COLORS[i % SEAT_COLORS.length], color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, border: `2.5px solid ${INK}`, transform: `rotate(${i % 2 ? 3 : -3}deg)` }}>{m.avatar}</div>
+              <div style={{ fontFamily: SANS, fontSize: 11.5, color: INK, marginTop: 5, fontWeight: m.isYou ? 700 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.isYou ? "you" : m.name}</div>
+            </div>
+          ))}
+          {Array.from({ length: empties }, (_, i) => (
+            <button key={`e${i}`} onClick={onInvite} className="active:scale-95 transition-transform" style={{ flexShrink: 0, width: 64, textAlign: "center", background: "none", border: "none", padding: 0 }}>
+              <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", color: INK, fontSize: 22, border: `2.5px dashed ${INK}`, opacity: 0.5 }}>+</div>
+              <div style={{ fontFamily: HAND, fontSize: 12.5, color: TOMATO, marginTop: 5 }}>invite</div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// The empty state's ONE job: post your first cook. Inviting lives in the seats
+// visual above, so this never repeats it.
 function FirstCookCard({ onPost }: { onPost: () => void }) {
   return (
     <div style={{ marginTop: 16, background: PAPER, border: `2.5px dashed ${INK}`, borderRadius: 16, padding: "22px 18px", textAlign: "center", transform: "rotate(-0.5deg)" }}>

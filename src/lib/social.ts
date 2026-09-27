@@ -64,12 +64,20 @@ export async function ensureCrew(): Promise<Crew | null> {
 
 export async function createCrew(name: string, emoji = "🍽️"): Promise<Crew | null> {
   const sb = createClient();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return null;
-  const { data: crew, error } = await sb.from("crews").insert({ name, emoji, created_by: user.id }).select("*").single();
+  const me = await getMe();
+  if (!me) return null;
+  const { data: crew, error } = await sb.from("crews").insert({ name, emoji, created_by: me.id }).select("*").single();
   if (error || !crew) return null;
-  await sb.from("crew_members").insert({ crew_id: crew.id, user_id: user.id, role: "owner" });
+  await sb.from("crew_members").insert({ crew_id: crew.id, user_id: me.id, role: "owner" });
+  await denormMember(crew.id, me.id, me.name, me.avatar);
   return crew as Crew;
+}
+
+// Best-effort: stamp your name/avatar onto your crew_members row so others can
+// see your seat. No-ops silently if the columns don't exist yet.
+async function denormMember(crewId: string, userId: string, name: string, avatar: string) {
+  const sb = createClient();
+  try { await sb.from("crew_members").update({ display_name: name, avatar }).eq("crew_id", crewId).eq("user_id", userId); } catch { /* columns not migrated yet */ }
 }
 
 export async function getCrewByCode(code: string): Promise<Crew | null> {
@@ -80,11 +88,12 @@ export async function getCrewByCode(code: string): Promise<Crew | null> {
 
 export async function joinCrewByCode(code: string): Promise<Crew | null> {
   const sb = createClient();
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return null;
+  const me = await getMe();
+  if (!me) return null;
   const crew = await getCrewByCode(code);
   if (!crew) return null;
-  await sb.from("crew_members").upsert({ crew_id: crew.id, user_id: user.id }, { onConflict: "crew_id,user_id" });
+  await sb.from("crew_members").upsert({ crew_id: crew.id, user_id: me.id }, { onConflict: "crew_id,user_id" });
+  await denormMember(crew.id, me.id, me.name, me.avatar);
   return crew;
 }
 
@@ -143,15 +152,46 @@ export async function postCook(opts: {
 // The Table feed: cooks from every crew I'm in (RLS already scopes this), plus
 // my own, plus the featured "Marco" floor. Real crew/own cooks rank first
 // (newest → oldest); featured cooks fill in below so the table is never blank.
+// The Table is sacred to your crew — only real cooks from your people (RLS
+// already scopes this). The Marco floor lives in Explore, not here.
 export async function getTableCooks(limit = 30): Promise<Cook[]> {
   const sb = createClient();
   const { data } = await sb.from("cooks").select("*").order("created_at", { ascending: false }).limit(limit);
   const cooks = (data ?? []) as Cook[];
-  const real = cooks.filter((c) => !c.is_featured);
-  const dbFeatured = cooks.filter((c) => c.is_featured);
-  // Never blank: fall back to the baked-in Marco floor when the DB has no featured.
-  const featured = dbFeatured.length > 0 ? dbFeatured : LOCAL_FEATURED;
-  return [...real, ...featured];
+  return cooks.filter((c) => !c.is_featured);
+}
+
+// Who's seated at your table — you + your crew, for the seats visual. Member
+// names/avatars are denormalized onto crew_members when present (see
+// migration-social-3); degrades to "friend" seats before that migration runs.
+export interface TableMember { id: string; name: string; avatar: string; isYou: boolean }
+
+export async function getTable(): Promise<{ crew: Crew | null; members: TableMember[] }> {
+  const sb = createClient();
+  const me = await getMe();
+  const crew = await getPrimaryCrew();
+  const you: TableMember[] = me ? [{ id: me.id, name: me.name, avatar: me.avatar, isYou: true }] : [];
+  if (!crew) return { crew: null, members: you };
+
+  // Try the denormalized columns; fall back to bare rows if the migration
+  // hasn't run yet, so this never breaks.
+  let rows: { user_id: string; display_name?: string | null; avatar?: string | null }[] = [];
+  const rich = await sb.from("crew_members").select("user_id, display_name, avatar").eq("crew_id", crew.id);
+  if (rich.error) {
+    const basic = await sb.from("crew_members").select("user_id").eq("crew_id", crew.id);
+    rows = (basic.data ?? []) as { user_id: string }[];
+  } else {
+    rows = (rich.data ?? []) as typeof rows;
+  }
+
+  const members: TableMember[] = rows.map((r) => {
+    const isYou = !!me && r.user_id === me.id;
+    const name = (r.display_name || (isYou ? me?.name : null) || "friend") as string;
+    return { id: r.user_id, name, avatar: r.avatar || name.slice(0, 1).toUpperCase(), isYou };
+  });
+  if (me && !members.some((m) => m.isYou)) members.unshift(you[0]);
+  members.sort((a, b) => (a.isYou === b.isYou ? 0 : a.isYou ? -1 : 1)); // you first
+  return { crew, members };
 }
 
 // Just the featured floor — used for the empty/onboarding state so we can label
