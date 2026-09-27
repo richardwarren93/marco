@@ -57,8 +57,8 @@ export default function CreateTray() {
           </button>
         </div>
 
-        {/* quiet — add a recipe */}
-        <button className="w-full active:scale-[0.98] transition-transform flex items-center gap-3" style={{ marginTop: 14, background: PAPER, border: `2px solid ${INK}`, borderRadius: 14, padding: "12px 16px", textAlign: "left" }}>
+        {/* quiet — add a recipe (imports to your Kitchen, not the feed) */}
+        <button onClick={() => router.push("/recipes/new?mode=url")} className="w-full active:scale-[0.98] transition-transform flex items-center gap-3" style={{ marginTop: 14, background: PAPER, border: `2px solid ${INK}`, borderRadius: 14, padding: "12px 16px", textAlign: "left" }}>
           <span style={{ fontSize: 22 }} aria-hidden>🔖</span>
           <div className="flex-1">
             <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, lineHeight: 1 }}>Add a recipe</div>
