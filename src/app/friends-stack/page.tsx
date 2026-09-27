@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getTableCooks, getTables, getMe, getSavedCookIds, saveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
+import CookCard from "@/components/social/CookCard";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
 
@@ -25,17 +26,8 @@ const DISP = '"Marker Felt", Georgia, serif';
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
-function Photo({ img, h, emoji, tint = COBALT, style }: { img?: string; h: number; emoji: string; tint?: string; style?: React.CSSProperties }) {
-  const [err, setErr] = useState(false);
-  if (!img || err) return <div style={{ height: h, width: "100%", background: `linear-gradient(135deg, ${tint}, #101E63)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: h * 0.42, ...style }} aria-hidden>{emoji}</div>;
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img src={img} alt="" onError={() => setErr(true)} style={{ height: h, width: "100%", objectFit: "cover", display: "block", ...style }} />;
-}
 function Tape({ style }: { style?: React.CSSProperties }) {
   return <div style={{ position: "absolute", width: 80, height: 24, background: "rgba(255,216,77,0.82)", ...style }} />;
-}
-function Scribble({ color = TOMATO, w = 180 }: { color?: string; w?: number }) {
-  return <svg width={w} height="11" viewBox="0 0 180 11" fill="none" aria-hidden style={{ display: "block" }}><path d="M2 7 C 28 2, 52 10, 78 6 S 132 2, 178 6" stroke={color} strokeWidth="3.5" strokeLinecap="round" /></svg>;
 }
 
 export default function FriendsFeed() {
@@ -200,44 +192,31 @@ function RealCook({ c, featured = false, myId = null, initialSaved = false }: { 
   const isMine = !!myId && c.user_id === myId;
   const openRecipe = () => c.source_recipe_id && router.push(`/recipes/${c.source_recipe_id}`);
   return (
-    <div style={{ transform: "rotate(-1.2deg)" }}>
-      <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, boxShadow: "0 18px 40px rgba(23,20,16,0.22)", border: `2px solid ${INK}` }}>
+    <div>
+      <div style={{ position: "relative" }}>
         {featured && (
-          <div style={{ position: "absolute", top: -11, right: 16, zIndex: 2, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
+          <div style={{ position: "absolute", top: -11, right: 16, zIndex: 3, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
         )}
-        <div style={{ position: "relative", transform: "rotate(1.2deg)" }}>
-          <Tape style={{ top: -8, left: "50%", marginLeft: -40, transform: "rotate(-4deg)" }} />
-          <div style={{ background: "#fff", padding: 8, border: `1px solid rgba(23,20,16,0.12)`, boxShadow: "0 6px 14px rgba(23,20,16,0.14)" }}>
-            <Photo img={c.photo_url ?? undefined} h={196} emoji="🍳" />
-          </div>
-        </div>
-        <div style={{ padding: "14px 4px 0" }}>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center justify-center" style={{ width: 24, height: 24, borderRadius: 99, background: featured ? TOMATO : PINK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, border: `1.5px solid ${INK}` }}>{c.author_avatar ?? "?"}</div>
-            <span style={{ fontFamily: SANS, fontSize: 13, color: INK }}><b>{c.author_name ?? "someone"}</b> cooked · {timeAgo(c.created_at)}</span>
-          </div>
-          {c.title && <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 27, color: INK, lineHeight: 1.02, marginTop: 8 }}>{c.title}</div>}
-          <div style={{ marginTop: 2, marginLeft: 2 }}><Scribble /></div>
-          {c.note && <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, marginTop: 8, transform: "rotate(-1deg)" }}>{c.note}</div>}
-        </div>
-        {/* recipe — every cook with a recipe is one tap from the full recipe */}
-        {c.source_recipe_id ? (
-          <button onClick={openRecipe} className="w-full flex items-center justify-between active:scale-[0.99] transition-transform" style={{ marginTop: 12, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px" }}>
-            <span className="flex items-center gap-2">
-              <span style={{ fontSize: 18 }} aria-hidden>📖</span>
-              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>see the recipe</span>
-            </span>
-            <span style={{ color: INK, fontSize: 18 }}>›</span>
-          </button>
-        ) : (
-          <div style={{ marginTop: 12, fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5, textAlign: "center" }}>no recipe on this one yet</div>
-        )}
-
-        {/* your own cook doesn't get "add to my kitchen" — it's already yours */}
-        {!isMine && (
-          <button onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} className="w-full active:scale-[0.97] transition-transform" style={{ marginTop: 10, background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}` }}>{saved ? "✓ saved to your kitchen" : "Add to my kitchen"}</button>
-        )}
+        <CookCard treatment={c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} />
       </div>
+
+      {/* recipe — every cook with a recipe is one tap from the full recipe */}
+      {c.source_recipe_id ? (
+        <button onClick={openRecipe} className="w-full flex items-center justify-between active:scale-[0.99] transition-transform" style={{ marginTop: 14, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px" }}>
+          <span className="flex items-center gap-2">
+            <span style={{ fontSize: 18 }} aria-hidden>📖</span>
+            <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>see the recipe</span>
+          </span>
+          <span style={{ color: INK, fontSize: 18 }}>›</span>
+        </button>
+      ) : (
+        <div style={{ marginTop: 12, fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5, textAlign: "center" }}>no recipe on this one yet</div>
+      )}
+
+      {/* your own cook doesn't get "add to my kitchen" — it's already yours */}
+      {!isMine && (
+        <button onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} className="w-full active:scale-[0.97] transition-transform" style={{ marginTop: 10, background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}` }}>{saved ? "✓ saved to your kitchen" : "Add to my kitchen"}</button>
+      )}
     </div>
   );
 }
