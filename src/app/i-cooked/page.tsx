@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { postCook, getPrimaryCrew, ensureCrew, type Crew } from "@/lib/social";
+import { postCook, getPrimaryCrew, ensureCrew, extractAndSaveRecipe, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 
 const INK = "#171410";
@@ -35,7 +35,25 @@ export default function ICooked() {
   const [posting, setPosting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // attach recipe — optional, for a more accurate one than Marco reads off the photo
+  const [attach, setAttach] = useState(false);
+  const [attachKind, setAttachKind] = useState<"link" | "text">("link");
+  const [link, setLink] = useState("");
+  const [text, setText] = useState("");
+  const recipePromise = useRef<Promise<string | null> | null>(null);
+
   useEffect(() => { getPrimaryCrew().then(setCrew); }, []);
+
+  // Kick off recipe extraction the moment they commit, so it's ready by "share".
+  // Prefer an attached link/text (accurate); otherwise read the photo.
+  function startExtraction() {
+    const src =
+      link.trim() ? ({ kind: "link", url: link.trim() } as const)
+      : text.trim() ? ({ kind: "text", text: text.trim() } as const)
+      : file ? ({ kind: "photo", file } as const)
+      : null;
+    recipePromise.current = src ? extractAndSaveRecipe(src) : Promise.resolve(null);
+  }
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -46,6 +64,7 @@ export default function ICooked() {
   async function share() {
     if (posting) return;
     setPosting(true);
+    const recipeId = recipePromise.current ? await recipePromise.current : null; // resolves the extraction started earlier
     const target = await ensureCrew(); // always post into a group (auto-create if none)
     await postCook({
       crewId: target?.id ?? null,
@@ -54,6 +73,7 @@ export default function ICooked() {
       treatment: ["polaroid", "receipt", "poster"][look],
       photoFile: file,
       photoUrl: file ? undefined : photo,
+      sourceRecipeId: recipeId,
     });
     setPosting(false);
     router.push("/friends-stack");
@@ -99,8 +119,33 @@ export default function ICooked() {
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="what did you make?" style={{ marginTop: 18, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "13px 15px", fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }} />
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="anything to say? (optional)" style={{ marginTop: 10, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 15px", fontFamily: HAND, fontSize: 17, color: TOMATO }} />
 
+          {/* attach recipe — optional; otherwise Marco reads it off the photo */}
+          {!attach ? (
+            <button onClick={() => setAttach(true)} className="flex items-center gap-2" style={{ marginTop: 12, background: "none", border: "none", padding: "2px 2px" }}>
+              <span style={{ border: `1.5px solid ${INK}`, borderRadius: 99, padding: "6px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>📎 attach recipe</span>
+              <span style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO }}>for a more accurate one</span>
+            </button>
+          ) : (
+            <div style={{ marginTop: 12, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: 12 }}>
+              <div className="flex items-center justify-between">
+                <div className="flex gap-1.5">
+                  {(["link", "text"] as const).map((k) => (
+                    <button key={k} onClick={() => setAttachKind(k)} style={{ background: attachKind === k ? INK : "transparent", color: attachKind === k ? PAPER : INK, border: `1.5px solid ${INK}`, borderRadius: 99, padding: "5px 13px", fontFamily: DISP, fontWeight: 700, fontSize: 12.5 }}>{k === "link" ? "paste link" : "paste text"}</button>
+                  ))}
+                </div>
+                <button onClick={() => { setAttach(false); setLink(""); setText(""); }} aria-label="Remove" style={{ background: "none", border: "none", fontSize: 16, color: INK, opacity: 0.6 }}>✕</button>
+              </div>
+              {attachKind === "link" ? (
+                <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="paste a recipe link (IG, TikTok, site…)" style={{ marginTop: 10, width: "100%", background: "#fff", border: `1.5px solid ${INK}`, borderRadius: 10, padding: "10px 12px", fontFamily: SANS, fontSize: 14, color: INK }} />
+              ) : (
+                <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="paste the recipe text…" rows={3} style={{ marginTop: 10, width: "100%", background: "#fff", border: `1.5px solid ${INK}`, borderRadius: 10, padding: "10px 12px", fontFamily: SANS, fontSize: 14, color: INK, resize: "none" }} />
+              )}
+              <div style={{ fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.6, marginTop: 6 }}>skip it and Marco reads the recipe off your photo ✨</div>
+            </div>
+          )}
+
           {photo && (
-            <button onClick={() => setStep("cooking")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 24, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.35)" }}>
+            <button onClick={() => { startExtraction(); setStep("cooking"); }} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 20, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.35)" }}>
             Make my card ✨
           </button>
           )}
@@ -124,9 +169,9 @@ export default function ICooked() {
           </div>
 
           <div style={{ marginTop: 22 }}>
-            {look === 0 && <Polaroid photo={photo} title={title} note={note} />}
-            {look === 1 && <Receipt photo={photo} title={title} note={note} />}
-            {look === 2 && <Poster photo={photo} title={title} note={note} />}
+            {look === 0 && <Polaroid photo={photo ?? ""} title={title} note={note} />}
+            {look === 1 && <Receipt photo={photo ?? ""} title={title} note={note} />}
+            {look === 2 && <Poster photo={photo ?? ""} title={title} note={note} />}
           </div>
 
           {/* try another look */}

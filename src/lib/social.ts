@@ -24,6 +24,7 @@ export interface Cook {
   author_name: string | null;
   author_avatar: string | null;
   from_user: string | null;
+  source_recipe_id?: string | null; // the recipe a friend can Cook from this post
   created_at: string;
 }
 
@@ -119,6 +120,7 @@ export async function postCook(opts: {
   photoFile?: File | null;
   photoUrl?: string | null;   // fallback (e.g. a sample photo) when no file is picked
   fromUser?: string | null;
+  sourceRecipeId?: string | null; // the extracted/attached recipe to Cook from
 }): Promise<Cook | null> {
   const sb = createClient();
   const me = await getMe();
@@ -144,6 +146,7 @@ export async function postCook(opts: {
     author_name: me.name,
     author_avatar: me.avatar,
     from_user: opts.fromUser ?? null,
+    source_recipe_id: opts.sourceRecipeId ?? null,
   }).select("*").single();
   if (error) return null;
   return data as Cook;
@@ -263,6 +266,42 @@ export async function isRegistered(id: string): Promise<boolean> {
   if (!user) return false;
   const { data } = await sb.from("class_registrations").select("id").eq("class_id", id).eq("user_id", user.id).maybeSingle();
   return !!data;
+}
+
+// ── Recipe attach / auto-extract ─────────────────────────────────────────────
+// Reuse the existing extractors: the cook photo (Marco reads it), or a link /
+// pasted text (more accurate). Persist via /api/recipes/save and return the new
+// recipe id to stamp onto the cook. Best-effort — returns null on any failure
+// (unauth, extractor error) so posting a cook never blocks on it.
+export type RecipeSource =
+  | { kind: "photo"; file: File }
+  | { kind: "link"; url: string }
+  | { kind: "text"; text: string };
+
+export async function extractAndSaveRecipe(source: RecipeSource): Promise<string | null> {
+  try {
+    let recipe: Record<string, unknown> | null = null;
+    if (source.kind === "photo") {
+      const fd = new FormData();
+      fd.append("file", source.file);
+      const r = await fetch("/api/recipes/extract-image", { method: "POST", body: fd });
+      if (!r.ok) return null;
+      recipe = (await r.json()).recipe ?? null;
+    } else if (source.kind === "link") {
+      const r = await fetch("/api/recipes/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: source.url }) });
+      if (!r.ok) return null;
+      recipe = (await r.json()).recipe ?? null;
+    } else {
+      const r = await fetch("/api/recipes/extract-text", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: source.text }) });
+      if (!r.ok) return null;
+      recipe = (await r.json()).recipe ?? null;
+    }
+    if (!recipe || !recipe.title) return null;
+    const s = await fetch("/api/recipes/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(recipe) });
+    if (s.ok) return ((await s.json()).recipe?.id as string) ?? null;
+    if (s.status === 409) return ((await s.json()).recipeId as string) ?? null; // dup → reuse existing
+    return null;
+  } catch { return null; }
 }
 
 // ── Saves (Add to My Kitchen) ────────────────────────────────────────────────

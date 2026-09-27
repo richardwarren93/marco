@@ -162,6 +162,7 @@ function timeAgo(iso: string) {
 
 function RealCook({ c, featured = false }: { c: Cook; featured?: boolean }) {
   const [saved, setSaved] = useState(false);
+  const router = useRouter();
   return (
     <div style={{ transform: "rotate(-1.2deg)" }}>
       <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, boxShadow: "0 18px 40px rgba(23,20,16,0.22)", border: `2px solid ${INK}` }}>
@@ -185,7 +186,9 @@ function RealCook({ c, featured = false }: { c: Cook; featured?: boolean }) {
         </div>
         <div className="flex items-center gap-2" style={{ marginTop: 14 }}>
           <button onClick={async () => { if (!saved) { await saveCook(c); setSaved(true); } }} className="flex-1 active:scale-[0.97] transition-transform" style={{ background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}` }}>{saved ? "✓ in your kitchen" : "Add to my kitchen"}</button>
-          <button style={{ background: BUTTER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 16px", borderRadius: 12, border: `2px solid ${INK}` }}>Cook</button>
+          {c.source_recipe_id && (
+            <button onClick={() => router.push(`/recipes/${c.source_recipe_id}`)} className="active:scale-[0.97] transition-transform" style={{ background: BUTTER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 18px", borderRadius: 12, border: `2px solid ${INK}` }}>Cook →</button>
+          )}
         </div>
       </div>
     </div>
