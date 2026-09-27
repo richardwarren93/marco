@@ -22,14 +22,12 @@ const DISP = '"Marker Felt", Georgia, serif';
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
-const PHOTOS = ["/food/meal1.jpg", "/food/meal2.jpg", "/food/meal3.jpg", "/food/meal4.jpg"];
-
 export default function ICooked() {
   const router = useRouter();
   const [step, setStep] = useState<"capture" | "cooking" | "reveal">("capture");
-  const [photo, setPhoto] = useState(PHOTOS[0]);
-  const [title, setTitle] = useState("Miso Butter Noodles");
-  const [note, setNote] = useState("double the garlic. trust me.");
+  const [photo, setPhoto] = useState<string | null>(null); // your photo — required
+  const [title, setTitle] = useState("");
+  const [note, setNote] = useState("");
   const [look, setLook] = useState(0);
   const [file, setFile] = useState<File | null>(null); // real uploaded photo
   const [crew, setCrew] = useState<Crew | null>(null);
@@ -74,39 +72,34 @@ export default function ICooked() {
         <div className="relative mx-auto w-full max-w-md px-5" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 40 }}>
           <div className="flex items-center justify-between">
             <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 24, color: INK }}>I cooked something</span>
-            <span style={{ fontSize: 22, color: INK }}>✕</span>
+            <button onClick={() => router.back()} aria-label="Close" style={{ fontSize: 22, color: INK, background: "none", border: "none" }}>✕</button>
           </div>
           <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>show your people. takes 10 seconds.</div>
 
-          {/* photo */}
-          <div style={{ marginTop: 18, position: "relative", transform: "rotate(-1deg)" }}>
-            <div style={{ background: "#fff", padding: 10, border: `2px solid ${INK}`, boxShadow: "0 14px 32px rgba(23,20,16,0.2)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo} alt="" style={{ width: "100%", height: 300, objectFit: "cover", display: "block" }} />
-            </div>
-          </div>
-          {/* photo strip */}
-          <div className="flex gap-2" style={{ marginTop: 12 }}>
-            {PHOTOS.map((p) => (
-              <button key={p} onClick={() => setPhoto(p)} style={{ width: 56, height: 56, borderRadius: 8, overflow: "hidden", border: `2.5px solid ${p === photo ? TOMATO : INK}`, padding: 0 }}>
+          {/* photo — yours only (camera or camera roll) */}
+          <input ref={fileRef} type="file" accept="image/*" onChange={pickFile} style={{ display: "none" }} />
+          {photo ? (
+            <div style={{ marginTop: 18, position: "relative", transform: "rotate(-1deg)" }}>
+              <div style={{ background: "#fff", padding: 10, border: `2px solid ${INK}`, boxShadow: "0 14px 32px rgba(23,20,16,0.2)" }}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={p} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </button>
-            ))}
-            <button onClick={() => fileRef.current?.click()} className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: 8, border: `2.5px dashed rgba(23,20,16,0.4)`, fontSize: 24, color: INK, background: "transparent" }} aria-label="Upload a photo">+</button>
-            <input ref={fileRef} type="file" accept="image/*" onChange={pickFile} style={{ display: "none" }} />
-          </div>
+                <img src={photo} alt="" style={{ width: "100%", height: 300, objectFit: "cover", display: "block" }} />
+              </div>
+              <button onClick={() => fileRef.current?.click()} style={{ position: "absolute", bottom: -12, right: -6, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 12, padding: "7px 14px", borderRadius: 99, border: `2px solid ${PAPER}` }}>change photo</button>
+            </div>
+          ) : (
+            <button onClick={() => fileRef.current?.click()} className="w-full active:scale-[0.99] transition-transform" style={{ marginTop: 18, height: 300, borderRadius: 14, border: `3px dashed ${INK}`, background: PAPER, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <span style={{ fontSize: 52 }} aria-hidden>📸</span>
+              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>snap what you made</span>
+              <span style={{ fontFamily: HAND, fontSize: 16, color: TOMATO }}>tap to add your photo</span>
+            </button>
+          )}
 
-          {/* fields — all optional */}
+          {/* fields — empty, optional */}
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="what did you make?" style={{ marginTop: 18, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "13px 15px", fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }} />
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="anything to say? (optional)" style={{ marginTop: 10, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 15px", fontFamily: HAND, fontSize: 17, color: TOMATO }} />
-          <div className="flex items-center gap-2" style={{ marginTop: 10, fontFamily: SANS, fontSize: 13, color: INK }}>
-            <span style={{ border: `1.5px solid ${INK}`, borderRadius: 99, padding: "6px 12px" }}>📎 attach recipe</span>
-            <span style={{ opacity: 0.6 }}>optional</span>
-          </div>
 
-          <button onClick={() => setStep("cooking")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 24, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.35)" }}>
-            Make my card ✨
+          <button onClick={() => photo && setStep("cooking")} disabled={!photo} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 24, background: photo ? TOMATO : "rgba(23,20,16,0.25)", color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: photo ? "0 10px 24px rgba(229,70,46,0.35)" : "none" }}>
+            {photo ? "Make my card ✨" : "add a photo first"}
           </button>
         </div>
       )}
