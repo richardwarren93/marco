@@ -180,9 +180,13 @@ export default function ICooked() {
               <button onClick={clearRecipe} aria-label="Remove" style={{ background: "none", border: "none", fontSize: 16, color: INK, opacity: 0.6 }}>✕</button>
             </div>
           ) : (
-            <button onClick={() => { setSheetMode("menu"); setAttachOpen(true); }} className="flex items-center gap-2" style={{ marginTop: 12, background: "none", border: "none", padding: "2px 2px" }}>
-              <span style={{ border: `1.5px solid ${INK}`, borderRadius: 99, padding: "6px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>📎 add the recipe</span>
-              <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO }}>more accurate than a photo alone</span>
+            <button onClick={() => { setSheetMode("menu"); setAttachOpen(true); }} className="w-full flex items-center gap-3 active:scale-[0.99] transition-transform" style={{ marginTop: 12, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 14px", textAlign: "left" }}>
+              <span style={{ fontSize: 20 }} aria-hidden>📎</span>
+              <div className="flex-1">
+                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, lineHeight: 1 }}>add the recipe</div>
+                <div style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, marginTop: 2 }}>more accurate than a photo alone</div>
+              </div>
+              <span style={{ color: INK, fontSize: 18, opacity: 0.4 }}>›</span>
             </button>
           )}
 
