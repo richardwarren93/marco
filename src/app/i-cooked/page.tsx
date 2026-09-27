@@ -186,8 +186,6 @@ export default function ICooked() {
                 <CardPeek fullBleed label="tap to snap what you made" />
               </button>
               <button onClick={() => router.back()} aria-label="Close" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,0px) + 16px)", right: 18, zIndex: 2, fontSize: 24, color: PAPER, background: "rgba(0,0,0,0.3)", border: "none", width: 40, height: 40, borderRadius: 99, lineHeight: 1 }}>✕</button>
-              {/* TEMP: preview the rest of the flow without a real photo */}
-              <button onClick={() => { setPhoto("/food/meal1.jpg"); setFile(null); setTitle("Shakshuka"); setNote("15 min, one pan, unreal."); setStep("recipe"); }} style={{ position: "absolute", bottom: "calc(env(safe-area-inset-bottom,0px) + 16px)", left: 0, right: 0, zIndex: 2, textAlign: "center", background: "none", border: "none", fontFamily: HAND, fontSize: 15, color: "rgba(251,247,238,0.6)" }}>skip · preview a sample →</button>
             </div>
           )}
         </>
