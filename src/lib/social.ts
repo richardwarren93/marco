@@ -93,7 +93,8 @@ export async function joinCrewByCode(code: string): Promise<Crew | null> {
   if (!me) return null;
   const crew = await getCrewByCode(code);
   if (!crew) return null;
-  await sb.from("crew_members").upsert({ crew_id: crew.id, user_id: me.id }, { onConflict: "crew_id,user_id" });
+  const { error } = await sb.from("crew_members").upsert({ crew_id: crew.id, user_id: me.id }, { onConflict: "crew_id,user_id" });
+  if (error) return null; // surface the failure so callers can retry instead of dropping the invite
   await denormMember(crew.id, me.id, me.name, me.avatar);
   return crew;
 }

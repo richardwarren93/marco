@@ -44,6 +44,15 @@ export default function FriendsFeed() {
   const [tables, setTables] = useState<{ crew: Crew; members: TableMember[] }[]>([]);
   const [me, setMe] = useState<TableMember | null>(null);
   const load = useCallback(async () => {
+    // Finish a pending invite join (from an invite link opened before sign-in).
+    // Retry every load and only clear on success, so a not-yet-ready session
+    // right after signup doesn't drop the invite.
+    let pending: string | null = null;
+    try { pending = localStorage.getItem(PENDING_CREW_KEY); } catch { /* ignore */ }
+    if (pending) {
+      const joined = await joinCrewByCode(pending);
+      if (joined) { try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ } }
+    }
     const [cs, tbls, meData] = await Promise.all([getTableCooks(), getTables(), getMe()]);
     setCooks(cs);
     setTables(tbls);
@@ -51,18 +60,8 @@ export default function FriendsFeed() {
   }, []);
 
   useEffect(() => {
-    (async () => {
-      // If they arrived via an invite link before signing in, finish the join now.
-      let pending: string | null = null;
-      try { pending = localStorage.getItem(PENDING_CREW_KEY); } catch { /* ignore */ }
-      if (pending) {
-        await joinCrewByCode(pending);
-        try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ }
-      }
-      await load();
-    })();
-    // Refetch when the app comes back to the foreground, so new joins/cooks show
-    // without a manual reload.
+    load();
+    // Refetch (and retry a pending invite) when the app returns to the foreground.
     const onVisible = () => { if (document.visibilityState === "visible") load(); };
     window.addEventListener("focus", load);
     document.addEventListener("visibilitychange", onVisible);
