@@ -156,8 +156,8 @@ export default function ICooked() {
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="min-h-[100dvh] w-full" style={{ background: step === "reveal" ? INK : "#E9E2D3", position: "relative", overflowX: "hidden" }}>
-      {step !== "reveal" && <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />}
+    <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
 
       {/* ── STEP 1: the camera (immersive when empty) ── */}
       {step === "capture" && (
@@ -183,9 +183,11 @@ export default function ICooked() {
             // immersive full-screen "camera": viewfinder + food image fill the whole screen
             <div className="fixed inset-0" style={{ zIndex: 20 }}>
               <button onClick={() => fileRef.current?.click()} aria-label="Snap what you made" className="absolute inset-0 active:opacity-90" style={{ background: "none", border: "none", padding: 0 }}>
-                <CardPeek fullBleed label="snap what you made" />
+                <CardPeek fullBleed label="tap to snap what you made" />
               </button>
               <button onClick={() => router.back()} aria-label="Close" style={{ position: "absolute", top: "calc(env(safe-area-inset-top,0px) + 16px)", right: 18, zIndex: 2, fontSize: 24, color: PAPER, background: "rgba(0,0,0,0.3)", border: "none", width: 40, height: 40, borderRadius: 99, lineHeight: 1 }}>✕</button>
+              {/* TEMP: preview the rest of the flow without a real photo */}
+              <button onClick={() => { setPhoto("/food/meal1.jpg"); setFile(null); setStep("recipe"); }} style={{ position: "absolute", bottom: "calc(env(safe-area-inset-bottom,0px) + 16px)", left: 0, right: 0, zIndex: 2, textAlign: "center", background: "none", border: "none", fontFamily: HAND, fontSize: 15, color: "rgba(251,247,238,0.6)" }}>skip · preview a sample →</button>
             </div>
           )}
         </>
@@ -248,8 +250,8 @@ export default function ICooked() {
       {step === "reveal" && (
         <div className="relative mx-auto w-full max-w-md px-5" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 22px)", paddingBottom: 40 }}>
           <div className="text-center">
-            <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.3em", color: LIME }}>YOUR CARD IS READY</div>
-            <div style={{ fontFamily: HAND, fontSize: 19, color: BUTTER, marginTop: 4, transform: "rotate(-1.5deg)" }}>Marco made you look good ✨</div>
+            <div style={{ fontFamily: MONO, fontSize: 12, letterSpacing: "0.3em", color: COBALT }}>YOUR CARD IS READY</div>
+            <div style={{ fontFamily: HAND, fontSize: 19, color: TOMATO, marginTop: 4, transform: "rotate(-1.5deg)" }}>Marco made you look good ✨</div>
           </div>
 
           <div style={{ marginTop: 22 }}>
@@ -260,18 +262,18 @@ export default function ICooked() {
 
           {/* edit — Marco filled these in; changes update the card live */}
           <div style={{ marginTop: 18 }}>
-            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="name your dish" style={{ width: "100%", background: "rgba(251,247,238,0.08)", border: "1.5px solid rgba(251,247,238,0.35)", borderRadius: 10, padding: "11px 13px", fontFamily: DISP, fontWeight: 700, fontSize: 16, color: PAPER }} />
-            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="a line about it (optional)" style={{ marginTop: 8, width: "100%", background: "rgba(251,247,238,0.08)", border: "1.5px solid rgba(251,247,238,0.35)", borderRadius: 10, padding: "11px 13px", fontFamily: HAND, fontSize: 16, color: BUTTER }} />
+            <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="name your dish" style={{ width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 14px", fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK }} />
+            <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="a line about it (optional)" style={{ marginTop: 8, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px", fontFamily: HAND, fontSize: 16, color: TOMATO }} />
           </div>
 
           {/* try another look */}
           <div className="flex items-center justify-center gap-2" style={{ marginTop: 22 }}>
             {[0, 1, 2].map((i) => (
-              <button key={i} onClick={() => setLook(i)} style={{ width: look === i ? 26 : 10, height: 10, borderRadius: 99, background: look === i ? LIME : "rgba(251,247,238,0.35)", border: "none" }} aria-label={`Look ${i + 1}`} />
+              <button key={i} onClick={() => setLook(i)} style={{ width: look === i ? 26 : 10, height: 10, borderRadius: 99, background: look === i ? INK : "rgba(23,20,16,0.2)", border: "none" }} aria-label={`Look ${i + 1}`} />
             ))}
           </div>
-          <button onClick={() => setLook((look + 1) % 3)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 14, background: "transparent", color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 14, border: `2px solid rgba(251,247,238,0.4)` }}>↻ try another look</button>
-          <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: "none", boxShadow: "0 10px 24px rgba(196,238,69,0.3)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : `Share to ${crew?.name ?? "your crew"} →`}</button>
+          <button onClick={() => setLook((look + 1) % 3)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 14, background: "transparent", color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 14, border: `2px solid ${INK}` }}>↻ try another look</button>
+          <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.32)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : `Share to ${crew?.name ?? "your crew"} →`}</button>
         </div>
       )}
 
