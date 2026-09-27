@@ -98,9 +98,11 @@ export default function ICooked() {
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="what did you make?" style={{ marginTop: 18, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "13px 15px", fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }} />
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="anything to say? (optional)" style={{ marginTop: 10, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 15px", fontFamily: HAND, fontSize: 17, color: TOMATO }} />
 
-          <button onClick={() => photo && setStep("cooking")} disabled={!photo} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 24, background: photo ? TOMATO : "rgba(23,20,16,0.25)", color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: photo ? "0 10px 24px rgba(229,70,46,0.35)" : "none" }}>
-            {photo ? "Make my card ✨" : "add a photo first"}
+          {photo && (
+            <button onClick={() => setStep("cooking")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 24, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.35)" }}>
+            Make my card ✨
           </button>
+          )}
         </div>
       )}
 
