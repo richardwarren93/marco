@@ -4,7 +4,7 @@
 // table" seats visual up top shows who's here and pulls the rest in; the Marco
 // floor lives in Explore, not here. All in the "beautiful chaos" language.
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getTableCooks, getTables, getMe, saveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
@@ -43,6 +43,13 @@ export default function FriendsFeed() {
   const [cooks, setCooks] = useState<Cook[] | null>(null);
   const [tables, setTables] = useState<{ crew: Crew; members: TableMember[] }[]>([]);
   const [me, setMe] = useState<TableMember | null>(null);
+  const load = useCallback(async () => {
+    const [cs, tbls, meData] = await Promise.all([getTableCooks(), getTables(), getMe()]);
+    setCooks(cs);
+    setTables(tbls);
+    if (meData) setMe({ id: meData.id, name: meData.name, avatar: meData.avatar, isYou: true });
+  }, []);
+
   useEffect(() => {
     (async () => {
       // If they arrived via an invite link before signing in, finish the join now.
@@ -52,12 +59,15 @@ export default function FriendsFeed() {
         await joinCrewByCode(pending);
         try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ }
       }
-      const [cs, tbls, meData] = await Promise.all([getTableCooks(), getTables(), getMe()]);
-      setCooks(cs);
-      setTables(tbls);
-      if (meData) setMe({ id: meData.id, name: meData.name, avatar: meData.avatar, isYou: true });
+      await load();
     })();
-  }, []);
+    // Refetch when the app comes back to the foreground, so new joins/cooks show
+    // without a manual reload.
+    const onVisible = () => { if (document.visibilityState === "visible") load(); };
+    window.addEventListener("focus", load);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { window.removeEventListener("focus", load); document.removeEventListener("visibilitychange", onVisible); };
+  }, [load]);
 
   const real = cooks ?? [];
 
