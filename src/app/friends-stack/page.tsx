@@ -30,6 +30,9 @@ function Tape({ style }: { style?: React.CSSProperties }) {
   return <div style={{ position: "absolute", width: 80, height: 24, background: "rgba(255,216,77,0.82)", ...style }} />;
 }
 
+const TREATMENTS = ["polaroid", "receipt", "poster"];
+function hashStr(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+
 export default function FriendsFeed() {
   const router = useRouter();
   const [cooks, setCooks] = useState<Cook[] | null>(null);
@@ -94,7 +97,16 @@ export default function FriendsFeed() {
                 <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>hot off the stove 🔥</span>
               </div>
               <div className="space-y-5">
-                {real.map((c) => <RealCook key={c.id} c={c} myId={me?.id ?? null} initialSaved={savedIds.has(c.id)} />)}
+                {(() => {
+                  // random treatment, but never the same as the card above it
+                  let prev = "";
+                  return real.map((c) => {
+                    let t = c.card_treatment || "polaroid";
+                    if (t === prev) { const opts = TREATMENTS.filter((x) => x !== prev); t = opts[hashStr(c.id) % opts.length]; }
+                    prev = t;
+                    return <RealCook key={c.id} c={c} treatment={t} myId={me?.id ?? null} initialSaved={savedIds.has(c.id)} />;
+                  });
+                })()}
               </div>
             </div>
           ) : (
@@ -186,7 +198,7 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function RealCook({ c, featured = false, myId = null, initialSaved = false }: { c: Cook; featured?: boolean; myId?: string | null; initialSaved?: boolean }) {
+function RealCook({ c, featured = false, treatment, myId = null, initialSaved = false }: { c: Cook; featured?: boolean; treatment?: string; myId?: string | null; initialSaved?: boolean }) {
   const [saved, setSaved] = useState(initialSaved);
   const router = useRouter();
   const isMine = !!myId && c.user_id === myId;
@@ -197,7 +209,7 @@ function RealCook({ c, featured = false, myId = null, initialSaved = false }: { 
         {featured && (
           <div style={{ position: "absolute", top: -11, right: 16, zIndex: 3, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
         )}
-        <CookCard treatment={c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} />
+        <CookCard treatment={treatment ?? c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} />
       </div>
 
       {/* recipe — every cook with a recipe is one tap from the full recipe */}
