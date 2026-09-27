@@ -313,6 +313,14 @@ export async function extractAndSaveRecipe(source: RecipeSource): Promise<string
 }
 
 // ── Saves (Add to My Kitchen) ────────────────────────────────────────────────
+// A person's cooks (RLS shows the ones in tables you share with them) — for the
+// lightweight member profile: how many they've cooked, and what.
+export async function getUserCooks(userId: string): Promise<Cook[]> {
+  const sb = createClient();
+  const { data } = await sb.from("cooks").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(50);
+  return (data ?? []) as Cook[];
+}
+
 // Which cooks the current user has already saved — so the "in your kitchen"
 // state survives a refresh instead of being ephemeral UI state.
 export async function getSavedCookIds(): Promise<string[]> {
