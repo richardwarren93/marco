@@ -273,7 +273,7 @@ export default function ICooked() {
             ))}
           </div>
           <button onClick={() => setLook((look + 1) % 3)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 14, background: "transparent", color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 14, border: `2px solid ${INK}` }}>↻ try another look</button>
-          <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.32)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : `Share to ${crew?.name ?? "your crew"} →`}</button>
+          <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.32)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : `Share to ${crew?.name ?? "your table"} →`}</button>
         </div>
       )}
 

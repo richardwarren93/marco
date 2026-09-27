@@ -48,7 +48,7 @@ export default function Potluck() {
             <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 24, color: INK }}>Start a Potluck</span>
             <span style={{ fontSize: 22, color: INK }}>✕</span>
           </div>
-          <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>give your crew a reason to cook this week.</div>
+          <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>give your table a reason to cook this week.</div>
 
           <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", color: INK, textTransform: "uppercase", marginTop: 20 }}>pick a theme</div>
           <div className="grid grid-cols-2 gap-2.5" style={{ marginTop: 10 }}>

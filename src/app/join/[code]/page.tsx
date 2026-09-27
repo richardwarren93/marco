@@ -58,7 +58,7 @@ export default function JoinCrew() {
             <div style={{ fontSize: 48 }} aria-hidden>🤔</div>
             <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 26, color: INK, marginTop: 8 }}>that code&apos;s cold</div>
             <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, marginTop: 4 }}>the invite may have expired or the link&apos;s off</div>
-            <button onClick={() => router.replace("/crew")} style={{ marginTop: 20, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 22px", borderRadius: 14, border: "none" }}>Go to my crews</button>
+            <button onClick={() => router.replace("/crew")} style={{ marginTop: 20, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 22px", borderRadius: 14, border: "none" }}>Go to my tables</button>
           </>
         ) : state === "need-auth" ? (
           <>

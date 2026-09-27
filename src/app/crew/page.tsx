@@ -42,7 +42,7 @@ export default function CrewPage() {
     const c = await joinCrewByCode(code.trim());
     setBusy(false);
     if (c) { setCrews((cs) => [...(cs ?? []).filter((x) => x.id !== c.id), c]); setCode(""); }
-    else setErr("no crew with that code");
+    else setErr("no table with that code");
   }
   async function copyCode(c: Crew) {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://marco-eta-lyart.vercel.app";
@@ -59,7 +59,7 @@ export default function CrewPage() {
     <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
       <div className="relative mx-auto w-full max-w-md px-5" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 120 }}>
-        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1 }}>Your crews</div>
+        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1 }}>Your tables</div>
         <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-2deg)", marginTop: 5 }}>your people. your table.</div>
 
         {/* existing crews */}
@@ -82,11 +82,11 @@ export default function CrewPage() {
             <button onClick={() => router.push("/friends-stack")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 6, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 16, border: `2.5px solid ${INK}` }}>Go to the table →</button>
           </div>
         ) : (
-          <div style={{ fontFamily: HAND, fontSize: 16, color: INK, marginTop: 18, opacity: 0.7 }}>no crew yet — start one or join with a code.</div>
+          <div style={{ fontFamily: HAND, fontSize: 16, color: INK, marginTop: 18, opacity: 0.7 }}>no table yet — start one or join with a code.</div>
         )}
 
         {/* create */}
-        <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", color: INK, textTransform: "uppercase", marginTop: 28 }}>start a crew</div>
+        <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", color: INK, textTransform: "uppercase", marginTop: 28 }}>start a table</div>
         <div className="flex gap-2" style={{ marginTop: 10 }}>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. the usual suspects" maxLength={30}
             style={{ flex: 1, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 14px", fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK }} />
