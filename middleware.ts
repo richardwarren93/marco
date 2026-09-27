@@ -59,26 +59,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // For logged-in users, check onboarding status from the cookie only.
-  // The cookie is set at login, signup callback, and onboarding completion;
-  // hitting the DB here makes middleware too slow under load (504
-  // MIDDLEWARE_INVOCATION_TIMEOUT). When the cookie is missing — e.g. a
-  // returning user on a new device — we redirect to /onboarding, which does
-  // its own DB check and either shows the flow or sends the user on.
-  if (user && (isProtected || isOnboarding || pathname.startsWith("/auth/"))) {
-    const onboarded = request.cookies.get("marco_onboarded")?.value === "1";
-
-    // Logged in on auth pages → redirect away
-    if (pathname.startsWith("/auth/")) {
-      return NextResponse.redirect(
-        new URL(onboarded ? "/tonight" : "/onboarding", request.url)
-      );
-    }
-
-    // Logged in on protected pages without onboarded cookie → defer to /onboarding
-    if (isProtected && !isPublicPath && !onboarded) {
-      return NextResponse.redirect(new URL("/onboarding", request.url));
-    }
+  // Onboarding is deferred while we build the new social app: don't gate on it.
+  // Logged-in users hitting an auth page just go to the Table (the new home).
+  if (user && pathname.startsWith("/auth/")) {
+    return NextResponse.redirect(new URL("/friends-stack", request.url));
   }
 
   return response;

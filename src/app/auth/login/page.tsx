@@ -46,7 +46,7 @@ export default function LoginPage() {
         document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
       }
     }
-    router.push(onboarded ? "/recipes" : "/onboarding");
+    router.push("/friends-stack"); // land in the new social app (onboarding deferred)
     router.refresh();
   }
 
@@ -76,7 +76,7 @@ export default function LoginPage() {
           document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
         }
       }
-      router.push("/tonight");
+      router.push("/friends-stack"); // land in the new social app
       router.refresh();
     }
   }

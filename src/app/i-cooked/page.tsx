@@ -35,12 +35,21 @@ export default function ICooked() {
   const [posting, setPosting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // attach recipe — optional, for a more accurate one than Marco reads off the photo
+  // attach recipe — optional, for a more accurate one than Marco reads off the
+  // food photo. Same capabilities as the prior importer: link, text, or a photo
+  // of the actual recipe (cookbook page / handwritten card).
   const [attach, setAttach] = useState(false);
-  const [attachKind, setAttachKind] = useState<"link" | "text">("link");
+  const [attachKind, setAttachKind] = useState<"link" | "text" | "photo">("link");
   const [link, setLink] = useState("");
   const [text, setText] = useState("");
+  const [recipeFile, setRecipeFile] = useState<File | null>(null); // photo of the recipe itself
+  const recipeFileRef = useRef<HTMLInputElement>(null);
   const recipePromise = useRef<Promise<string | null> | null>(null);
+
+  function pickRecipeFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) setRecipeFile(f);
+  }
 
   useEffect(() => { getPrimaryCrew().then(setCrew); }, []);
 
@@ -50,7 +59,8 @@ export default function ICooked() {
     const src =
       link.trim() ? ({ kind: "link", url: link.trim() } as const)
       : text.trim() ? ({ kind: "text", text: text.trim() } as const)
-      : file ? ({ kind: "photo", file } as const)
+      : recipeFile ? ({ kind: "photo", file: recipeFile } as const) // a photo of the actual recipe
+      : file ? ({ kind: "photo", file } as const)                    // else read the food photo
       : null;
     recipePromise.current = src ? extractAndSaveRecipe(src) : Promise.resolve(null);
   }
@@ -119,28 +129,35 @@ export default function ICooked() {
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="what did you make?" style={{ marginTop: 18, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "13px 15px", fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }} />
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="anything to say? (optional)" style={{ marginTop: 10, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 15px", fontFamily: HAND, fontSize: 17, color: TOMATO }} />
 
-          {/* attach recipe — optional; otherwise Marco reads it off the photo */}
+          {/* attach recipe — optional; otherwise Marco reads it off the food photo */}
+          <input ref={recipeFileRef} type="file" accept="image/*" onChange={pickRecipeFile} style={{ display: "none" }} />
           {!attach ? (
             <button onClick={() => setAttach(true)} className="flex items-center gap-2" style={{ marginTop: 12, background: "none", border: "none", padding: "2px 2px" }}>
-              <span style={{ border: `1.5px solid ${INK}`, borderRadius: 99, padding: "6px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>📎 attach recipe</span>
-              <span style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO }}>for a more accurate one</span>
+              <span style={{ border: `1.5px solid ${INK}`, borderRadius: 99, padding: "6px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>📎 add the recipe</span>
+              <span style={{ fontFamily: HAND, fontSize: 14, color: TOMATO }}>more accurate than a photo alone</span>
             </button>
           ) : (
             <div style={{ marginTop: 12, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: 12 }}>
               <div className="flex items-center justify-between">
                 <div className="flex gap-1.5">
-                  {(["link", "text"] as const).map((k) => (
-                    <button key={k} onClick={() => setAttachKind(k)} style={{ background: attachKind === k ? INK : "transparent", color: attachKind === k ? PAPER : INK, border: `1.5px solid ${INK}`, borderRadius: 99, padding: "5px 13px", fontFamily: DISP, fontWeight: 700, fontSize: 12.5 }}>{k === "link" ? "paste link" : "paste text"}</button>
+                  {([["link", "link"], ["text", "paste"], ["photo", "photo"]] as const).map(([k, label]) => (
+                    <button key={k} onClick={() => setAttachKind(k)} style={{ background: attachKind === k ? INK : "transparent", color: attachKind === k ? PAPER : INK, border: `1.5px solid ${INK}`, borderRadius: 99, padding: "5px 14px", fontFamily: DISP, fontWeight: 700, fontSize: 12.5 }}>{label}</button>
                   ))}
                 </div>
-                <button onClick={() => { setAttach(false); setLink(""); setText(""); }} aria-label="Remove" style={{ background: "none", border: "none", fontSize: 16, color: INK, opacity: 0.6 }}>✕</button>
+                <button onClick={() => { setAttach(false); setLink(""); setText(""); setRecipeFile(null); }} aria-label="Remove" style={{ background: "none", border: "none", fontSize: 16, color: INK, opacity: 0.6 }}>✕</button>
               </div>
-              {attachKind === "link" ? (
+              {attachKind === "link" && (
                 <input value={link} onChange={(e) => setLink(e.target.value)} placeholder="paste a recipe link (IG, TikTok, site…)" style={{ marginTop: 10, width: "100%", background: "#fff", border: `1.5px solid ${INK}`, borderRadius: 10, padding: "10px 12px", fontFamily: SANS, fontSize: 14, color: INK }} />
-              ) : (
+              )}
+              {attachKind === "text" && (
                 <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="paste the recipe text…" rows={3} style={{ marginTop: 10, width: "100%", background: "#fff", border: `1.5px solid ${INK}`, borderRadius: 10, padding: "10px 12px", fontFamily: SANS, fontSize: 14, color: INK, resize: "none" }} />
               )}
-              <div style={{ fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.6, marginTop: 6 }}>skip it and Marco reads the recipe off your photo ✨</div>
+              {attachKind === "photo" && (
+                <button onClick={() => recipeFileRef.current?.click()} className="w-full flex items-center justify-center gap-2" style={{ marginTop: 10, background: "#fff", border: `1.5px ${recipeFile ? "solid" : "dashed"} ${INK}`, borderRadius: 10, padding: "12px", fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>
+                  <span style={{ fontSize: 18 }} aria-hidden>📖</span>{recipeFile ? "recipe photo added ✓ · change" : "photo of the recipe (cookbook, card…)"}
+                </button>
+              )}
+              <div style={{ fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.65, marginTop: 8 }}>add to get a more accurate recipe than possible with just a photo of the dish.</div>
             </div>
           )}
 
