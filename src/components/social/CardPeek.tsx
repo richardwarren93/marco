@@ -70,13 +70,21 @@ export default function CardPeek({ h = 150, label, fullBleed = false }: { h?: nu
             {label && <div style={{ position: "absolute", bottom: 64, left: 0, right: 0, textAlign: "center", fontFamily: DISP, fontWeight: 700, fontSize: 23, color: PAPER }}>{label}</div>}
           </div>
         ) : (
-          <div key={`img${i}`} style={{ position: "absolute", inset: 0, animation: "cpFade .45s ease" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={e.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
-            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "70px 24px 34px", background: "linear-gradient(to top, rgba(14,12,10,0.9), transparent)" }}>
-              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.16em", color: LIME }}>YOU COOKED · JUST NOW</div>
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 28, color: PAPER, marginTop: 3 }}>{e.title}</div>
-              <div style={{ fontFamily: HAND, fontSize: 18, color: BUTTER, marginTop: 2 }}>{e.note}</div>
+          <div key={`card${i}`} className="flex items-center justify-center" style={{ position: "absolute", inset: 0, padding: "0 26px", animation: "cpFade .5s ease" }}>
+            <div style={{ width: "100%", maxWidth: 330, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: 14, transform: "rotate(-1.6deg)", boxShadow: "0 26px 54px rgba(0,0,0,0.55)" }}>
+              <div style={{ position: "relative" }}>
+                <div style={{ position: "absolute", top: -9, left: "50%", marginLeft: -42, width: 84, height: 24, background: "rgba(255,216,77,0.85)", transform: "rotate(-4deg)" }} />
+                <div style={{ background: "#fff", padding: 8, border: "1px solid rgba(23,20,16,0.12)" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={e.photo} alt="" style={{ width: "100%", height: 300, objectFit: "cover", display: "block" }} />
+                </div>
+              </div>
+              <div className="flex items-center gap-2" style={{ marginTop: 12 }}>
+                <div className="flex items-center justify-center" style={{ width: 22, height: 22, borderRadius: 99, background: e.seat, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 10, border: `1.5px solid ${INK}` }}>you</div>
+                <span style={{ fontFamily: SANS, fontSize: 12.5, color: INK }}><b>you</b> cooked · just now</span>
+              </div>
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 24, color: INK, marginTop: 8, lineHeight: 1.03 }}>{e.title}</div>
+              <div style={{ fontFamily: HAND, fontSize: 17, color: e.accent, marginTop: 3 }}>{e.note}</div>
             </div>
           </div>
         )}
