@@ -69,16 +69,10 @@ export async function createCrew(name: string, emoji = "🍽️"): Promise<Crew 
   if (!me) return null;
   const { data: crew, error } = await sb.from("crews").insert({ name, emoji, created_by: me.id }).select("*").single();
   if (error || !crew) return null;
-  await sb.from("crew_members").insert({ crew_id: crew.id, user_id: me.id, role: "owner" });
-  await denormMember(crew.id, me.id, me.name, me.avatar);
+  // Plain insert (NOT upsert): an ON CONFLICT upsert needs an UPDATE policy on
+  // crew_members that doesn't exist, so RLS rejects it. Name/avatar go in here.
+  await sb.from("crew_members").insert({ crew_id: crew.id, user_id: me.id, role: "owner", display_name: me.name, avatar: me.avatar });
   return crew as Crew;
-}
-
-// Best-effort: stamp your name/avatar onto your crew_members row so others can
-// see your seat. No-ops silently if the columns don't exist yet.
-async function denormMember(crewId: string, userId: string, name: string, avatar: string) {
-  const sb = createClient();
-  try { await sb.from("crew_members").update({ display_name: name, avatar }).eq("crew_id", crewId).eq("user_id", userId); } catch { /* columns not migrated yet */ }
 }
 
 export async function getCrewByCode(code: string): Promise<Crew | null> {
@@ -93,9 +87,10 @@ export async function joinCrewByCode(code: string): Promise<Crew | null> {
   if (!me) return null;
   const crew = await getCrewByCode(code);
   if (!crew) return null;
-  const { error } = await sb.from("crew_members").upsert({ crew_id: crew.id, user_id: me.id }, { onConflict: "crew_id,user_id" });
-  if (error) return null; // surface the failure so callers can retry instead of dropping the invite
-  await denormMember(crew.id, me.id, me.name, me.avatar);
+  // Plain insert (see createCrew): upsert's ON CONFLICT is blocked by RLS.
+  // A duplicate (already a member) is success, not a failure.
+  const { error } = await sb.from("crew_members").insert({ crew_id: crew.id, user_id: me.id, display_name: me.name, avatar: me.avatar });
+  if (error && error.code !== "23505") return null; // 23505 = unique violation = already joined
   return crew;
 }
 
@@ -269,8 +264,8 @@ export async function registerForClass(id: string): Promise<boolean> {
   const sb = createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return false;
-  const { error } = await sb.from("class_registrations").upsert({ class_id: id, user_id: user.id }, { onConflict: "class_id,user_id" });
-  return !error;
+  const { error } = await sb.from("class_registrations").insert({ class_id: id, user_id: user.id });
+  return !error || error.code === "23505"; // already registered = success (upsert would be blocked by RLS)
 }
 
 export async function isRegistered(id: string): Promise<boolean> {
