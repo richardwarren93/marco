@@ -34,7 +34,7 @@ function Corner({ at }: { at: "tl" | "tr" | "bl" | "br" }) {
   return <div style={s} aria-hidden />;
 }
 
-export default function CardPeek({ h = 150 }: { h?: number }) {
+export default function CardPeek({ h = 150, label, fullBleed = false }: { h?: number; label?: string; fullBleed?: boolean }) {
   const [i, setI] = useState(0);
   const [phase, setPhase] = useState<"camera" | "card">("camera");
 
@@ -47,6 +47,44 @@ export default function CardPeek({ h = 150 }: { h?: number }) {
   }, [phase, i]);
 
   const e = EX[i];
+
+  // Full-screen mode: the viewfinder and the food image each fill the whole
+  // screen, alternating — an immersive "camera".
+  if (fullBleed) {
+    const brackets = [
+      { top: 24, left: 24, bt: 1, bl: 1 }, { top: 24, right: 24, bt: 1, br: 1 },
+      { bottom: 24, left: 24, bb: 1, bl: 1 }, { bottom: 24, right: 24, bb: 1, br: 1 },
+    ];
+    return (
+      <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: "#0E0C0A" }}>
+        {phase === "camera" ? (
+          <div key={`cam${i}`} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", animation: "cpFade .45s ease" }}>
+            {brackets.map((b, k) => (
+              <div key={k} style={{ position: "absolute", top: b.top, bottom: b.bottom, left: b.left, right: b.right, width: 28, height: 28, borderColor: PAPER, borderStyle: "solid", borderWidth: 0, opacity: 0.85, borderTopWidth: b.bt ? 4 : 0, borderBottomWidth: b.bb ? 4 : 0, borderLeftWidth: b.bl ? 4 : 0, borderRightWidth: b.br ? 4 : 0 }} />
+            ))}
+            <div style={{ position: "absolute", top: 26, right: 58, display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 9, height: 9, borderRadius: 99, background: TOMATO, display: "inline-block" }} className="cpPulse" />
+              <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", color: PAPER }}>SNAP</span>
+            </div>
+            <span style={{ fontSize: 94 }} aria-hidden>📸</span>
+            {label && <div style={{ position: "absolute", bottom: 64, left: 0, right: 0, textAlign: "center", fontFamily: DISP, fontWeight: 700, fontSize: 23, color: PAPER }}>{label}</div>}
+          </div>
+        ) : (
+          <div key={`img${i}`} style={{ position: "absolute", inset: 0, animation: "cpFade .45s ease" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={e.photo} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+            <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, padding: "70px 24px 34px", background: "linear-gradient(to top, rgba(14,12,10,0.9), transparent)" }}>
+              <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: "0.16em", color: LIME }}>YOU COOKED · JUST NOW</div>
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 28, color: PAPER, marginTop: 3 }}>{e.title}</div>
+              <div style={{ fontFamily: HAND, fontSize: 18, color: BUTTER, marginTop: 2 }}>{e.note}</div>
+            </div>
+          </div>
+        )}
+        <style>{`@keyframes cpFade{from{opacity:0}to{opacity:1}}@keyframes cpP{0%,100%{opacity:.3}50%{opacity:1}}.cpPulse{animation:cpP 1s infinite}`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ position: "relative", minHeight: h + 150 }}>
       {phase === "camera" ? (
@@ -58,6 +96,7 @@ export default function CardPeek({ h = 150 }: { h?: number }) {
             <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.18em", color: PAPER }}>SNAP</span>
           </div>
           <span style={{ fontSize: 66 }} aria-hidden>📸</span>
+          {label && <div style={{ position: "absolute", bottom: 16, left: 0, right: 0, textAlign: "center", fontFamily: DISP, fontWeight: 700, fontSize: 18, color: PAPER }}>{label}</div>}
         </div>
       ) : (
         // the art-directed card
