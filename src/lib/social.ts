@@ -313,6 +313,16 @@ export async function extractAndSaveRecipe(source: RecipeSource): Promise<string
 }
 
 // ── Saves (Add to My Kitchen) ────────────────────────────────────────────────
+// Which cooks the current user has already saved — so the "in your kitchen"
+// state survives a refresh instead of being ephemeral UI state.
+export async function getSavedCookIds(): Promise<string[]> {
+  const sb = createClient();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return [];
+  const { data } = await sb.from("saves").select("cook_id").eq("user_id", user.id);
+  return (data ?? []).map((r: { cook_id: string }) => r.cook_id).filter(Boolean);
+}
+
 export async function saveCook(cook: Cook): Promise<boolean> {
   // Baked-in featured cooks aren't real DB rows — nothing to reference yet.
   if (cook.id.startsWith("feat-")) return true;

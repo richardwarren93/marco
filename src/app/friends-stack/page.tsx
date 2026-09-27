@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getTableCooks, getTables, getMe, saveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
+import { getTableCooks, getTables, getMe, getSavedCookIds, saveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
@@ -43,6 +43,7 @@ export default function FriendsFeed() {
   const [cooks, setCooks] = useState<Cook[] | null>(null);
   const [tables, setTables] = useState<{ crew: Crew; members: TableMember[] }[]>([]);
   const [me, setMe] = useState<TableMember | null>(null);
+  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
   const load = useCallback(async () => {
     // Finish a pending invite join (from an invite link opened before sign-in).
     // Retry every load and only clear on success, so a not-yet-ready session
@@ -53,9 +54,10 @@ export default function FriendsFeed() {
       const joined = await joinCrewByCode(pending);
       if (joined) { try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ } }
     }
-    const [cs, tbls, meData] = await Promise.all([getTableCooks(), getTables(), getMe()]);
+    const [cs, tbls, meData, saved] = await Promise.all([getTableCooks(), getTables(), getMe(), getSavedCookIds()]);
     setCooks(cs);
     setTables(tbls);
+    setSavedIds(new Set(saved));
     if (meData) setMe({ id: meData.id, name: meData.name, avatar: meData.avatar, isYou: true });
   }, []);
 
@@ -100,7 +102,7 @@ export default function FriendsFeed() {
                 <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>hot off the stove 🔥</span>
               </div>
               <div className="space-y-5">
-                {real.map((c) => <RealCook key={c.id} c={c} />)}
+                {real.map((c) => <RealCook key={c.id} c={c} myId={me?.id ?? null} initialSaved={savedIds.has(c.id)} />)}
               </div>
             </div>
           ) : (
@@ -192,9 +194,11 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function RealCook({ c, featured = false }: { c: Cook; featured?: boolean }) {
-  const [saved, setSaved] = useState(false);
+function RealCook({ c, featured = false, myId = null, initialSaved = false }: { c: Cook; featured?: boolean; myId?: string | null; initialSaved?: boolean }) {
+  const [saved, setSaved] = useState(initialSaved);
   const router = useRouter();
+  const isMine = !!myId && c.user_id === myId;
+  const openRecipe = () => c.source_recipe_id && router.push(`/recipes/${c.source_recipe_id}`);
   return (
     <div style={{ transform: "rotate(-1.2deg)" }}>
       <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, boxShadow: "0 18px 40px rgba(23,20,16,0.22)", border: `2px solid ${INK}` }}>
@@ -216,12 +220,23 @@ function RealCook({ c, featured = false }: { c: Cook; featured?: boolean }) {
           <div style={{ marginTop: 2, marginLeft: 2 }}><Scribble /></div>
           {c.note && <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, marginTop: 8, transform: "rotate(-1deg)" }}>{c.note}</div>}
         </div>
-        <div className="flex items-center gap-2" style={{ marginTop: 14 }}>
-          <button onClick={async () => { if (!saved) { await saveCook(c); setSaved(true); } }} className="flex-1 active:scale-[0.97] transition-transform" style={{ background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}` }}>{saved ? "✓ in your kitchen" : "Add to my kitchen"}</button>
-          {c.source_recipe_id && (
-            <button onClick={() => router.push(`/recipes/${c.source_recipe_id}`)} className="active:scale-[0.97] transition-transform" style={{ background: BUTTER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 18px", borderRadius: 12, border: `2px solid ${INK}` }}>Cook →</button>
-          )}
-        </div>
+        {/* recipe — every cook with a recipe is one tap from the full recipe */}
+        {c.source_recipe_id ? (
+          <button onClick={openRecipe} className="w-full flex items-center justify-between active:scale-[0.99] transition-transform" style={{ marginTop: 12, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px" }}>
+            <span className="flex items-center gap-2">
+              <span style={{ fontSize: 18 }} aria-hidden>📖</span>
+              <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>see the recipe</span>
+            </span>
+            <span style={{ color: INK, fontSize: 18 }}>›</span>
+          </button>
+        ) : (
+          <div style={{ marginTop: 12, fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5, textAlign: "center" }}>no recipe on this one yet</div>
+        )}
+
+        {/* your own cook doesn't get "add to my kitchen" — it's already yours */}
+        {!isMine && (
+          <button onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} className="w-full active:scale-[0.97] transition-transform" style={{ marginTop: 10, background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}` }}>{saved ? "✓ saved to your kitchen" : "Add to my kitchen"}</button>
+        )}
       </div>
     </div>
   );
