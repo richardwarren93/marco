@@ -41,7 +41,7 @@ export default function SignupPage() {
       setGuestLoading(false);
       return;
     }
-    router.push("/onboarding");
+    router.push("/friends-stack"); // land on the Table so a pending invite gets consumed
     router.refresh();
   }
 
@@ -69,6 +69,10 @@ export default function SignupPage() {
       // Email already exists — Supabase returns empty identities
       setError("This email already has an account. Please sign in instead.");
       setLoading(false);
+    } else if (data.session) {
+      // Auto-confirmed → straight to the Table (consumes any pending invite).
+      router.push("/friends-stack");
+      router.refresh();
     } else {
       setSuccess(true);
       setLoading(false);
@@ -105,20 +109,7 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
-    const { data: { user } } = await supabase.auth.getUser();
-    let onboarded = false;
-    if (user) {
-      const { data: profile } = await supabase
-        .from("user_profiles")
-        .select("onboarding_completed")
-        .eq("user_id", user.id)
-        .single();
-      onboarded = !!profile?.onboarding_completed;
-      if (onboarded) {
-        document.cookie = "marco_onboarded=1; path=/; max-age=31536000; SameSite=Lax";
-      }
-    }
-    router.push(onboarded ? "/recipes" : "/onboarding");
+    router.push("/friends-stack"); // land on the Table so a pending invite gets consumed
     router.refresh();
   }
 
