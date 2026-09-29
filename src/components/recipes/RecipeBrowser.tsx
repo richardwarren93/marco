@@ -320,8 +320,11 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           <>
             {/* "Recently added" header + inline View all / Show less */}
             {showSections && (
-              <div className="flex items-center justify-between mb-3">
-                <h2 style={SECTION_HEADING}>Recently added</h2>
+              <div className="flex items-end justify-between mb-3">
+                <div>
+                  <h2 style={SECTION_HEADING}>Recently added</h2>
+                  <svg width="132" height="9" viewBox="0 0 132 9" fill="none" aria-hidden style={{ marginTop: 1 }}><path d="M2 6 C 26 2, 44 8, 66 5 S 110 2, 130 5" stroke="#E5462E" strokeWidth="3" strokeLinecap="round" /></svg>
+                </div>
                 {canExpand && (
                   <button
                     onClick={() => setShowAll((v) => !v)}
@@ -337,28 +340,38 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-              {gridRecipes.map((recipe, i) => (
-                <BrowserCard
-                  key={recipe.id}
-                  recipe={recipe}
-                  index={i}
-                  mode={props.mode}
-                  aspect={cardAspect}
-                  onAdd={props.mode === "library" && props.onAddToMealPlan ? () => props.onAddToMealPlan!(recipe.id) : undefined}
-                  onCollection={props.mode === "library" && props.onAddToCollection ? () => props.onAddToCollection!(recipe.id) : undefined}
-                  isInCollection={props.mode === "library" && props.inCollectionIds ? props.inCollectionIds.has(recipe.id) : false}
-                  onPick={props.mode === "pick" ? () => handlePick(recipe.id) : undefined}
-                  isPicking={selectingId === recipe.id}
-                />
-              ))}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {gridRecipes.map((recipe, i) => {
+                const tilt = [-2.4, 1.7, 1.3, -1.8, 2.1, -1.2][i % 6];
+                const tape = ["rgba(255,216,77,0.88)", "rgba(196,238,69,0.82)", "rgba(255,77,157,0.72)", "rgba(201,184,255,0.85)"][i % 4];
+                return (
+                  <div key={recipe.id} style={{ position: "relative", transform: `rotate(${tilt}deg)` }}>
+                    {/* washi tape — a little chaos on each card */}
+                    <div aria-hidden style={{ position: "absolute", top: -7, left: "50%", marginLeft: -27, width: 56, height: 17, background: tape, transform: `rotate(${i % 2 ? 5 : -6}deg)`, zIndex: 20, boxShadow: "0 1px 2px rgba(23,20,16,0.12)" }} />
+                    <BrowserCard
+                      recipe={recipe}
+                      index={i}
+                      mode={props.mode}
+                      aspect={cardAspect}
+                      onAdd={props.mode === "library" && props.onAddToMealPlan ? () => props.onAddToMealPlan!(recipe.id) : undefined}
+                      onCollection={props.mode === "library" && props.onAddToCollection ? () => props.onAddToCollection!(recipe.id) : undefined}
+                      isInCollection={props.mode === "library" && props.inCollectionIds ? props.inCollectionIds.has(recipe.id) : false}
+                      onPick={props.mode === "pick" ? () => handlePick(recipe.id) : undefined}
+                      isPicking={selectingId === recipe.id}
+                    />
+                  </div>
+                );
+              })}
             </div>
 
             {/* ── Collections section ─────────────────────────────────── */}
             {showSections && (
               <div className="mt-8">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 style={SECTION_HEADING}>Collections</h2>
+                <div className="flex items-end justify-between mb-3">
+                  <div>
+                    <h2 style={SECTION_HEADING}>Collections</h2>
+                    <svg width="96" height="9" viewBox="0 0 96 9" fill="none" aria-hidden style={{ marginTop: 1 }}><path d="M2 6 C 20 2, 34 8, 50 5 S 80 2, 94 5" stroke="#2540E8" strokeWidth="3" strokeLinecap="round" /></svg>
+                  </div>
                   <button
                     onClick={() => router.push("/collections")}
                     className="flex items-center gap-1 text-[13px] font-semibold transition-colors active:scale-95"

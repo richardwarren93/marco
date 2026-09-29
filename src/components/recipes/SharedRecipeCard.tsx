@@ -115,7 +115,7 @@ export default function SharedRecipeCard({
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 55%, rgba(20,12,5,0.40) 80%, rgba(20,12,5,0.72) 100%)",
+            "linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0) 30%, rgba(20,12,5,0.45) 58%, rgba(20,12,5,0.82) 82%, rgba(20,12,5,0.94) 100%)",
         }}
       />
 
@@ -143,7 +143,7 @@ export default function SharedRecipeCard({
             fontSize: "17px",
             lineHeight: "1.12",
             letterSpacing: "-0.01em",
-            textShadow: "0 1px 6px rgba(0,0,0,0.5)",
+            textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.65)",
           }}
         >
           {title}
