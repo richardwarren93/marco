@@ -39,6 +39,7 @@ export default function FriendsFeed() {
   const [tables, setTables] = useState<{ crew: Crew; members: TableMember[] }[]>([]);
   const [me, setMe] = useState<TableMember | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [counts, setCounts] = useState<Record<string, number>>({});
   const load = useCallback(async () => {
     // Finish a pending invite join (from an invite link opened before sign-in).
     // Retry every load and only clear on success, so a not-yet-ready session
@@ -54,6 +55,14 @@ export default function FriendsFeed() {
     setTables(tbls);
     setSavedIds(new Set(saved));
     if (meData) setMe({ id: meData.id, name: meData.name, avatar: meData.avatar, isYou: true });
+    // Lineage counts for the "cooked N×" stamp — true totals via the admin route.
+    const rids = Array.from(new Set(cs.map((c) => c.source_recipe_id).filter((x): x is string => !!x)));
+    if (rids.length) {
+      try {
+        const r = await fetch("/api/recipes/lineage-counts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: rids }) });
+        if (r.ok) setCounts((await r.json()).counts ?? {});
+      } catch { /* best-effort — the stamp just won't show */ }
+    }
   }, []);
 
   useEffect(() => {
@@ -104,7 +113,7 @@ export default function FriendsFeed() {
                     let t = c.card_treatment || "polaroid";
                     if (t === prev) { const opts = TREATMENTS.filter((x) => x !== prev); t = opts[hashStr(c.id) % opts.length]; }
                     prev = t;
-                    return <RealCook key={c.id} c={c} treatment={t} myId={me?.id ?? null} initialSaved={savedIds.has(c.id)} />;
+                    return <RealCook key={c.id} c={c} treatment={t} myId={me?.id ?? null} initialSaved={savedIds.has(c.id)} cookedCount={c.source_recipe_id ? counts[c.source_recipe_id] : undefined} />;
                   });
                 })()}
               </div>
@@ -200,7 +209,7 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function RealCook({ c, featured = false, treatment, myId = null, initialSaved = false }: { c: Cook; featured?: boolean; treatment?: string; myId?: string | null; initialSaved?: boolean }) {
+function RealCook({ c, featured = false, treatment, myId = null, initialSaved = false, cookedCount }: { c: Cook; featured?: boolean; treatment?: string; myId?: string | null; initialSaved?: boolean; cookedCount?: number }) {
   const [saved, setSaved] = useState(initialSaved);
   const router = useRouter();
   const isMine = !!myId && c.user_id === myId;
@@ -214,31 +223,23 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
           {featured && (
             <div style={{ position: "absolute", top: -11, right: 16, zIndex: 3, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
           )}
-          <CookCard treatment={treatment ?? c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} />
+          <CookCard treatment={treatment ?? c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} cookedCount={cookedCount} />
         </div>
       </button>
 
-      {/* recipe actions, right on the feed — save · plan · cooked it */}
+      {/* recipe actions — a compact cornered cluster (save · plan · cooked),
+          not a full-width bar, so it sits lightly under the art */}
       {rid ? (
-        <div className="flex gap-2" style={{ marginTop: 12 }}>
+        <div className="flex items-center justify-end gap-2" style={{ marginTop: 10 }}>
           {!isMine && (
-            <Act icon="🔖" label={saved ? "saved" : "save"} active={saved} onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} />
+            <button onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} aria-label={saved ? "Saved to your kitchen" : "Save to your kitchen"} className="flex items-center justify-center active:scale-90 transition-transform" style={{ width: 40, height: 40, borderRadius: 99, background: saved ? LIME : PAPER, border: `2px solid ${INK}`, fontSize: 17 }}>🔖</button>
           )}
-          <Act icon="📅" label="plan" onClick={() => router.push(`/recipes/${rid}?openMealSheet=true`)} />
-          <Act icon="🍳" label="cooked" primary onClick={() => router.push(`/i-cooked?recipe=${rid}`)} />
+          <button onClick={() => router.push(`/recipes/${rid}?openMealSheet=true`)} aria-label="Add to meal plan" className="flex items-center justify-center active:scale-90 transition-transform" style={{ width: 40, height: 40, borderRadius: 99, background: PAPER, border: `2px solid ${INK}`, fontSize: 17 }}>📅</button>
+          <button onClick={() => router.push(`/i-cooked?recipe=${rid}`)} className="flex items-center gap-1.5 active:scale-95 transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "9px 15px", borderRadius: 99, border: `2px solid ${INK}` }}><span aria-hidden>🍳</span> cooked</button>
         </div>
       ) : (
-        <div style={{ marginTop: 12, fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5, textAlign: "center" }}>no recipe on this one yet</div>
+        <div style={{ marginTop: 10, textAlign: "right", fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5 }}>no recipe on this one yet</div>
       )}
     </div>
-  );
-}
-
-// A compact feed-card recipe action (save / plan / cooked it).
-function Act({ icon, label, onClick, active = false, primary = false }: { icon: string; label: string; onClick: () => void; active?: boolean; primary?: boolean }) {
-  return (
-    <button onClick={onClick} className="flex-1 flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform" style={{ background: active ? LIME : primary ? TOMATO : PAPER, color: primary ? PAPER : INK, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "11px 6px", borderRadius: 12, border: `2px solid ${INK}`, whiteSpace: "nowrap" }}>
-      <span aria-hidden style={{ fontSize: 15 }}>{icon}</span> {label}
-    </button>
   );
 }

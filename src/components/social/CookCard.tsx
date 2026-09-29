@@ -32,6 +32,7 @@ export interface CookCardProps {
   authorAvatar?: string;
   timeLabel?: string;
   h?: number; // photo height (feed uses a smaller card than the reveal)
+  cookedCount?: number; // times this recipe has been cooked (lineage size) — a stamp
 }
 
 export default function CookCard(p: CookCardProps) {
@@ -40,9 +41,19 @@ export default function CookCard(p: CookCardProps) {
   return <Polaroid {...p} />;
 }
 
-function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 224 }: CookCardProps) {
+// "cooked N×" stamp — social proof, in the cards' own badge language. Shown only
+// once a recipe has more than one cook in its lineage.
+function CountStamp({ n, style }: { n: number; style?: React.CSSProperties }) {
+  if (!n || n < 2) return null;
+  return (
+    <div style={{ position: "absolute", zIndex: 4, background: BUTTER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 12, padding: "4px 9px", borderRadius: 99, border: `2px solid ${INK}`, boxShadow: "0 3px 8px rgba(23,20,16,0.22)", whiteSpace: "nowrap", ...style }}>🍳 {n}×</div>
+  );
+}
+
+function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 224, cookedCount }: CookCardProps) {
   return (
     <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, border: `2px solid ${INK}`, transform: "rotate(-1.4deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)" }}>
+      <CountStamp n={cookedCount ?? 0} style={{ top: 4, left: -6, transform: "rotate(-7deg)" }} />
       <div style={{ position: "relative", transform: "rotate(1.2deg)" }}>
         <Tape style={{ top: -8, left: "50%", marginLeft: -41, transform: "rotate(-4deg)" }} />
         <div style={{ background: "#fff", padding: 8, border: `1px solid rgba(23,20,16,0.12)` }}><Img photo={photo} h={h} /></div>
@@ -57,9 +68,10 @@ function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 
   );
 }
 
-function Receipt({ photo, title, note, authorName, h = 200 }: CookCardProps) {
+function Receipt({ photo, title, note, authorName, h = 200, cookedCount }: CookCardProps) {
   return (
     <div style={{ position: "relative", background: "#fff", padding: "18px 18px 22px", border: `2px solid ${INK}`, transform: "rotate(1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)", backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(23,20,16,0.05) 27px)" }}>
+      <CountStamp n={cookedCount ?? 0} style={{ top: 6, left: -6, transform: "rotate(-7deg)" }} />
       <div className="text-center" style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.22em", color: INK }}>· MARCO KITCHEN ·<br />FRESH OUT THE PAN</div>
       <div style={{ borderTop: `1.5px dashed ${INK}`, margin: "12px 0" }} />
       <div style={{ position: "relative", transform: "rotate(-1.6deg)", border: `2px solid ${INK}`, padding: 6, background: "#fff", width: "88%", margin: "0 auto" }}>
@@ -75,10 +87,11 @@ function Receipt({ photo, title, note, authorName, h = 200 }: CookCardProps) {
   );
 }
 
-function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel = "just now", h = 230 }: CookCardProps) {
+function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel = "just now", h = 230, cookedCount }: CookCardProps) {
   return (
     <div style={{ position: "relative", background: COBALT, borderRadius: 12, padding: 16, border: `2.5px solid ${INK}`, transform: "rotate(-1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.24)", overflow: "hidden" }}>
       <div className="absolute" style={{ top: 10, left: 12, fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", color: LIME }}>NOW COOKING</div>
+      <CountStamp n={cookedCount ?? 0} style={{ bottom: 14, right: 14, transform: "rotate(6deg)" }} />
       <div style={{ position: "relative", transform: "rotate(2deg)", border: `4px solid ${PAPER}`, marginTop: 26, boxShadow: "0 10px 20px rgba(0,0,0,0.35)" }}>
         <Img photo={photo} h={h} />
         <div style={{ position: "absolute", top: -14, right: -12, background: PINK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 13, padding: "6px 12px", borderRadius: 99, transform: "rotate(10deg)", border: `2px solid ${INK}` }}>hot 🔥</div>
