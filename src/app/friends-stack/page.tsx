@@ -6,7 +6,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getTableCooks, getTables, getMe, getSavedCookIds, saveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
+import { getTableCooks, getTables, getMe, getSavedCookIds, saveCook, unsaveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
 
@@ -215,7 +215,10 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
   const isMine = !!myId && c.user_id === myId;
   const rid = c.source_recipe_id;
   const openRecipe = () => rid && router.push(`/recipes/${rid}`);
-  async function save() { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }
+  async function toggleSave() {
+    if (saved) { setSaved(false); const ok = await unsaveCook(c.id); if (!ok) setSaved(true); }
+    else { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); }
+  }
   return (
     <div style={{ position: "relative" }}>
       {featured && (
@@ -235,9 +238,9 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
         cookedCount={cookedCount}
         onOpen={rid ? openRecipe : undefined}
         onCook={rid ? () => router.push(`/i-cooked?recipe=${rid}`) : undefined}
-        onSave={rid && !isMine ? save : undefined}
+        onToggleSave={rid && !isMine ? toggleSave : undefined}
         onPlan={rid ? () => router.push(`/recipes/${rid}?openMealSheet=true`) : undefined}
-        saved={saved}
+        saved={rid ? (isMine || saved) : false}
       />
       {!rid && (
         <div style={{ marginTop: 10, textAlign: "center", fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5 }}>no recipe on this one yet</div>

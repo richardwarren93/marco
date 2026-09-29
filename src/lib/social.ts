@@ -338,5 +338,15 @@ export async function saveCook(cook: Cook): Promise<boolean> {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return false;
   const { error } = await sb.from("saves").insert({ user_id: user.id, cook_id: cook.id, from_user: cook.user_id });
+  // A duplicate save (already in the kitchen) is success, not an error.
+  return !error || error.code === "23505";
+}
+
+export async function unsaveCook(cookId: string): Promise<boolean> {
+  if (cookId.startsWith("feat-")) return true;
+  const sb = createClient();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+  const { error } = await sb.from("saves").delete().eq("user_id", user.id).eq("cook_id", cookId);
   return !error;
 }
