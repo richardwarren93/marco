@@ -243,7 +243,6 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
         onToggleSave={rid && !isMine ? toggleSave : undefined}
         onPlan={rid ? () => router.push(`/recipes/${rid}?openMealSheet=true`) : undefined}
         saved={rid ? (isMine || saved) : false}
-        mine={isMine}
       />
       {!rid && (
         <div style={{ marginTop: 10, textAlign: "center", fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5 }}>no recipe on this one yet</div>
