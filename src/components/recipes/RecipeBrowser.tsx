@@ -205,7 +205,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const isLoading = props.mode === "library" && props.loading;
 
   return (
-    <div className="flex flex-col" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }}>
+    <div className="flex flex-col">
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div>
         <div className="max-w-5xl mx-auto">

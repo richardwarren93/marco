@@ -7,7 +7,7 @@ import dynamic from "next/dynamic";
 import useSWR from "swr";
 import { useRecipes, useCollections, apiFetcher } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
-import MobileHeader from "@/components/layout/MobileHeader";
+import ChaosHeader from "@/components/layout/ChaosHeader";
 import { useToast } from "@/components/ui/Toast";
 
 // ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
@@ -103,58 +103,65 @@ function RecipesInner() {
 
   return (
     <>
-      {/* ── Mobile header — every tab gets the same top chrome ───── */}
-      {activeTab === "recipes" && <MobileHeader title="My Recipes" />}
-      {activeTab === "discover" && <MobileHeader title="Explore Recipes" />}
-      {activeTab === "meal-plan" && <MobileHeader title="Meal Plan" />}
-      {activeTab === "grocery" && <MobileHeader title="Grocery" />}
-
-      {/* ── Tab content ────────────────────────────────────────────── */}
+      {/* Every tab now wears the same identity header as the Table (friends)
+          tab — Marker Felt wordmark + handwritten subtitle + avatar — on the
+          shared dotted-cream background, instead of the old utility top nav. */}
 
       {/* Recipes tab */}
       {activeTab === "recipes" && (
-        <RecipeBrowser
-          mode="library"
-          recipes={recipes}
-          loading={loading}
-          onAddToMealPlan={(id) => {
-            const recipe = recipes.find((r) => r.id === id);
-            setAddSheetRecipeId(id);
-            setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
-            setAddSheetOpen(true);
-          }}
-          onAddToCollection={(id) => setCollectionRecipeId(id)}
-          inCollectionIds={inCollectionIds}
-          onCollectionChanged={() => mutateCollRecipes()}
-          collections={collections}
-        />
+        <div style={{ minHeight: "100dvh", background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }}>
+          <ChaosHeader title="My Recipes" subtitle="everything you've saved" />
+          <RecipeBrowser
+            mode="library"
+            recipes={recipes}
+            loading={loading}
+            onAddToMealPlan={(id) => {
+              const recipe = recipes.find((r) => r.id === id);
+              setAddSheetRecipeId(id);
+              setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
+              setAddSheetOpen(true);
+            }}
+            onAddToCollection={(id) => setCollectionRecipeId(id)}
+            inCollectionIds={inCollectionIds}
+            onCollectionChanged={() => mutateCollRecipes()}
+            collections={collections}
+          />
+        </div>
       )}
 
       {/* Discover tab */}
       {activeTab === "discover" && (
-        <DiscoverTab
-          onAddToMealPlan={(id) => {
-            const recipe = recipes.find((r) => r.id === id);
-            setAddSheetRecipeId(id);
-            setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
-            setAddSheetOpen(true);
-          }}
-          onAddToCollection={(id) => setCollectionRecipeId(id)}
-        />
+        <>
+          <ChaosHeader title="Explore" subtitle="find your next cook" />
+          <DiscoverTab
+            onAddToMealPlan={(id) => {
+              const recipe = recipes.find((r) => r.id === id);
+              setAddSheetRecipeId(id);
+              setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
+              setAddSheetOpen(true);
+            }}
+            onAddToCollection={(id) => setCollectionRecipeId(id)}
+          />
+        </>
       )}
 
       {/* Meal Plan tab */}
       {activeTab === "meal-plan" && (
-        <MealPlanPageContent />
+        <>
+          <ChaosHeader title="Meal Plan" subtitle="your week, sorted" />
+          <MealPlanPageContent />
+        </>
       )}
 
       {/* Grocery tab */}
       {activeTab === "grocery" && (
-        <GroceryPageContent />
+        <>
+          <ChaosHeader title="Grocery" subtitle="what to grab" />
+          <GroceryPageContent />
+        </>
       )}
 
-      {/* Profile tab — Profile page renders its own MobileHeader, so we
-          intentionally skip the recipes/page.tsx one for this tab. */}
+      {/* Profile tab renders its own header. */}
       {activeTab === "profile" && <ProfilePage />}
 
       <AddMealSheet
