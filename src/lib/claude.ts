@@ -284,13 +284,19 @@ export async function extractRecipeFromImage(
   imageBase64: string,
   mimeType: string,
   knownDishes: string[] = [],
-  similarDishes: string[] = []
+  similarDishes: string[] = [],
+  correction?: { from: string; to: string }
 ): Promise<Partial<Recipe>> {
   const dishHint = knownDishes.length
     ? `\n\nFor reference, dishes people commonly cook in this community include: ${[...new Set(knownDishes)].slice(0, 50).join(", ")}. Use this only as a tie-breaker for naming/identification when the photo is ambiguous — always trust what you actually see in the photo over this list.`
     : "";
   const simHint = similarDishes.length
-    ? `\n\nLEARNED CONTEXT: Photos visually very similar to this one were previously identified (and human-confirmed) as: ${[...new Set(similarDishes)].join(", ")}. Weight these heavily when identifying the dish and especially the protein — but still trust what you clearly see.`
+    ? `\n\nLEARNED CONTEXT: Photos visually similar to this one were previously identified (and human-confirmed) as: ${[...new Set(similarDishes)].join(", ")}. Use these as a hint for the likely protein/style — but identify THIS dish from the photo (its exact vegetables, sauce, and sides may differ).`
+    : "";
+  // A targeted correction: fix the protein, but let the model read the specifics
+  // of THIS photo (pork with peppers vs pork with green beans — not a copy).
+  const correctionHint = correction
+    ? `\n\nCORRECTION: An earlier read guessed the protein was "${correction.from}", but near-identical photos were human-confirmed as "${correction.to}". The protein is almost certainly ${correction.to}, NOT ${correction.from}. Re-identify the SPECIFIC dish in THIS photo with ${correction.to} as the protein — read its actual vegetables, sauce, and sides from the image; do not copy another dish's name.`
     : "";
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -301,7 +307,7 @@ The image is ONE of two things:
 1. A photo of a FINISHED, PLATED DISH that someone just cooked — identify the dish and produce its most likely recipe (ingredients, steps, timing). Look carefully at the actual food: proteins (pork, chicken, fish, beef, tofu), vegetables, sauces, cooking method. Name the specific protein correctly.
 2. A photo of a physical cookbook page or handwritten recipe card — transcribe the recipe you can read.
 
-Decide which it is, then extract accordingly. If it's a finished dish, infer a realistic recipe for what you see. If something is partially obscured, make your best educated guess.${simHint}${dishHint}`,
+Decide which it is, then extract accordingly. If it's a finished dish, infer a realistic recipe for what you see. If something is partially obscured, make your best educated guess.${correctionHint}${simHint}${dishHint}`,
     messages: [
       {
         role: "user",

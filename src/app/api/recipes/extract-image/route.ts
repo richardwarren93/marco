@@ -93,7 +93,9 @@ export async function POST(request: Request) {
       const titleP = PROTEINS.find((p) => (recipe.title ?? "").toLowerCase().includes(p));
       const consP = PROTEINS.find((p) => consensus.toLowerCase().includes(p));
       if (best >= 2 && consP && titleP && consP !== titleP) {
-        recipe = await extractRecipeFromImage(base64, file.type, knownDishes, [consensus]);
+        // Don't overwrite with the neighbour's exact dish — just correct the
+        // protein and let the model re-read THIS photo's specifics.
+        recipe = await extractRecipeFromImage(base64, file.type, knownDishes, similarDishes, { from: titleP, to: consP });
       }
     } catch { /* after-check is best-effort */ }
 
