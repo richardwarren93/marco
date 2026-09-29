@@ -261,20 +261,22 @@ Return ONLY valid JSON. No markdown, no code blocks.`,
 
 export async function extractRecipeFromImage(
   imageBase64: string,
-  mimeType: string
+  mimeType: string,
+  knownDishes: string[] = []
 ): Promise<Partial<Recipe>> {
+  const dishHint = knownDishes.length
+    ? `\n\nFor reference, dishes people commonly cook in this community include: ${[...new Set(knownDishes)].slice(0, 50).join(", ")}. Use this only as a tie-breaker for naming/identification when the photo is ambiguous — always trust what you actually see in the photo over this list.`
+    : "";
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 3000,
     system: `You are a recipe extraction assistant. You ALWAYS respond with valid JSON only — no explanations, no apologies, no markdown. Even if the image is blurry or partially visible, you must return a JSON object with your best interpretation. Never refuse. Never say "I cannot". Always produce JSON.
 
-CRITICAL: You are extracting recipes from photos of physical cookbooks or handwritten recipe cards. The image may show:
-- A printed cookbook page with a recipe
-- A handwritten recipe card
-- Multiple pages of the same recipe
-- A recipe with photos alongside it
+The image is ONE of two things:
+1. A photo of a FINISHED, PLATED DISH that someone just cooked — identify the dish and produce its most likely recipe (ingredients, steps, timing). Look carefully at the actual food: proteins (pork, chicken, fish, beef, tofu), vegetables, sauces, cooking method. Name the specific protein correctly.
+2. A photo of a physical cookbook page or handwritten recipe card — transcribe the recipe you can read.
 
-Extract everything you can see — ingredients with amounts, all steps, timing, servings. If something is partially obscured, make your best educated guess.`,
+Decide which it is, then extract accordingly. If it's a finished dish, infer a realistic recipe for what you see. If something is partially obscured, make your best educated guess.${dishHint}`,
     messages: [
       {
         role: "user",

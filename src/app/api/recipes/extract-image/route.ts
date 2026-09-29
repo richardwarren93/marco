@@ -48,8 +48,13 @@ export async function POST(request: Request) {
 
     const admin = createAdminClient();
 
+    // Global dish vocabulary — what people actually cook in the app — so
+    // identification/naming leans toward real dishes and stays consistent.
+    const { data: known } = await admin.from("recipes").select("title").order("created_at", { ascending: false }).limit(60);
+    const knownDishes = (known ?? []).map((r: { title: string | null }) => r.title).filter((t): t is string => !!t);
+
     const [recipe, uploadResult] = await Promise.all([
-      extractRecipeFromImage(base64, file.type),
+      extractRecipeFromImage(base64, file.type, knownDishes),
       admin.storage
         .from("recipe-images")
         .upload(filename, buffer, { contentType: file.type, upsert: false }),
