@@ -31,7 +31,7 @@ export default function ScheduleScreen({
   const pool = selectedPool.length > 0 ? selectedPool : undefined;
 
   return (
-    <div style={{ background: "var(--cream, #F5EEE2)", minHeight: "100%" }}>
+    <div style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", minHeight: "100%" }}>
       {/* Content — sticky header now lives inside MealPlanListView */}
       <div className="px-4 pt-0 max-w-3xl mx-auto" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
         <MealPlanListView

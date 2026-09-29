@@ -30,14 +30,16 @@ import { MealTypeIcon } from "@/components/icons/MealIcons";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
-const ACCENT = "#e8530a";          // slightly calmer orange
-const ACCENT_LIGHT = "#fff4ec";
-const BG = "#F5EEE2"; // Marco cream — matches the rest of the app body background
+const ACCENT = "#E5462E";          // Marco tomato — the app's primary
+const ACCENT_LIGHT = "rgba(229,70,46,0.12)";
+const BG = "transparent"; // the dotted cream shows through from ScheduleScreen
 const SURFACE = "#ffffff";
-const TEXT_1 = "#141414";          // deeper near-black
+const TEXT_1 = "#171410";          // ink
 const TEXT_2 = "#888";
 const BORDER = "#e8e8e5";
-const CARD_SHADOW = "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)";
+// An ink "border" via box-shadow — rings every surface card in the app's
+// beautiful-chaos language without touching each call site.
+const CARD_SHADOW = "0 0 0 2px #171410, 0 8px 20px rgba(23,20,16,0.13)";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -874,7 +876,7 @@ export default function MealPlanListView({
                   <div
                     key={recipe.id}
                     className="relative flex-shrink-0 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform group"
-                    style={{ width: 170, height: 220, boxShadow: "0 4px 16px rgba(20,12,5,0.10)" }}
+                    style={{ width: 170, height: 220, border: "2px solid #171410", boxShadow: "0 10px 24px rgba(23,20,16,0.18)" }}
                     onClick={() => router.push(`/recipes/${recipe.id}`)}
                   >
                     {recipe.image_url ? (
@@ -891,7 +893,7 @@ export default function MealPlanListView({
                         <MealTypeIcon type={recipe.meal_type} className="opacity-50" size={36} strokeWidth={1.5} />
                       </div>
                     )}
-                    <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)" }} />
+                    <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 24%, rgba(20,12,5,0.5) 60%, rgba(20,12,5,0.9) 100%)" }} />
                     {/* Plus button */}
                     <button
                       onClick={(e) => { e.stopPropagation(); openAddSheetWithRecipe(selectedDate, recipe.id); }}
@@ -906,12 +908,12 @@ export default function MealPlanListView({
                       <h4
                         className="text-white line-clamp-2"
                         style={{
-                          fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-                          fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
+                          fontFamily: '"Marker Felt", Georgia, serif',
+                          fontWeight: 700,
                           fontSize: "16px",
                           lineHeight: 1.18,
                           letterSpacing: "-0.015em",
-                          textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+                          textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.6)",
                         }}
                       >
                         {recipe.title}
@@ -964,7 +966,7 @@ export default function MealPlanListView({
                   <div
                     key={recipe.recipeId}
                     className="relative flex-shrink-0 rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform group"
-                    style={{ width: 170, height: 220, boxShadow: "0 4px 16px rgba(20,12,5,0.10)" }}
+                    style={{ width: 170, height: 220, border: "2px solid #171410", boxShadow: "0 10px 24px rgba(23,20,16,0.18)" }}
                     onClick={() => router.push(`/recipes/${recipe.recipeId}`)}
                   >
                     {/* Image fills card */}
@@ -992,7 +994,7 @@ export default function MealPlanListView({
                     <div
                       className="absolute inset-0 pointer-events-none"
                       style={{
-                        background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.75) 100%)",
+                        background: "linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 24%, rgba(20,12,5,0.5) 60%, rgba(20,12,5,0.9) 100%)",
                       }}
                     />
                     <button
@@ -1009,12 +1011,12 @@ export default function MealPlanListView({
                       <h4
                         className="text-white line-clamp-2"
                         style={{
-                          fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-                          fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
+                          fontFamily: '"Marker Felt", Georgia, serif',
+                          fontWeight: 700,
                           fontSize: "16px",
                           lineHeight: 1.18,
                           letterSpacing: "-0.015em",
-                          textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+                          textShadow: "0 2px 8px rgba(0,0,0,0.8), 0 1px 2px rgba(0,0,0,0.6)",
                         }}
                       >
                         {recipe.title}
@@ -1113,7 +1115,7 @@ export default function MealPlanListView({
 
         {/* ── This Week + collapse-all ────────────────────────────────── */}
         <div className="flex items-center justify-between px-1 pt-1">
-          <h2 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: "18px", letterSpacing: "-0.015em", color: TEXT_1 }}>
+          <h2 style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "20px", letterSpacing: "-0.01em", color: TEXT_1 }}>
             This Week
           </h2>
           <button onClick={toggleAll} className="flex items-center gap-1 text-[12.5px] font-semibold active:scale-95" style={{ color: TEXT_2 }}>
@@ -1274,7 +1276,7 @@ export default function MealPlanListView({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-3xl marco-h1 whitespace-nowrap" style={{ color: "#1C1A17" }}>{weekLabel}</span>
+            <span className="text-2xl whitespace-nowrap" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
             <button
               onClick={() => changeWeek(addDays(weekStart, 7))}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
