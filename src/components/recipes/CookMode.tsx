@@ -319,7 +319,9 @@ export default function CookMode({ recipe, onClose }: Props) {
     <div
       className="fixed inset-0 z-[80] flex flex-col"
       style={{
-        background: "var(--cream, #F5EEE2)",
+        background: "#E9E2D3",
+        backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)",
+        backgroundSize: "13px 13px",
         paddingTop: "env(safe-area-inset-top, 0px)",
         paddingBottom: "env(safe-area-inset-bottom, 0px)",
       }}
@@ -336,12 +338,11 @@ export default function CookMode({ recipe, onClose }: Props) {
           <p
             className="mt-1.5"
             style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontStyle: "italic",
-              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 400',
-              fontSize: "20px",
-              color: "var(--ink, #1C1A17)",
-              lineHeight: 1.1,
+              fontFamily: '"Marker Felt", Georgia, serif',
+              fontWeight: 700,
+              fontSize: "22px",
+              color: "#171410",
+              lineHeight: 1.05,
             }}
           >
             {isFinished
@@ -575,8 +576,8 @@ export default function CookMode({ recipe, onClose }: Props) {
           <div
             className="relative rounded-2xl bg-white"
             style={{
-              boxShadow: "0 2px 16px rgba(20,12,5,0.08)",
-              border: "1px solid var(--line, rgba(28,26,23,0.08))",
+              boxShadow: "0 10px 24px rgba(23,20,16,0.16)",
+              border: "2px solid #171410",
               padding: "20px 20px 22px 22px",
             }}
           >
@@ -753,8 +754,8 @@ export default function CookMode({ recipe, onClose }: Props) {
         <div className="px-5 pt-4 pb-5">
           <button
             onClick={handleDone}
-            className="w-full py-3.5 rounded-2xl text-white font-semibold text-[15px] active:scale-[0.98] transition-transform"
-            style={{ background: "var(--tomato, #E5462E)" }}
+            className="w-full py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
+            style={{ background: "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "17px", border: "2.5px solid #171410", boxShadow: "0 8px 18px rgba(229,70,46,0.28)" }}
           >
             {isLastStep ? "Finish cooking" : "Mark step done"}
           </button>
