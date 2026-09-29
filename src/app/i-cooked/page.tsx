@@ -4,8 +4,8 @@
 // and Marco auto-art-directs a beautiful card. Capture → anticipation → reveal
 // with flippable treatments (polaroid / receipt / poster). Dev-only.
 
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { postCook, getPrimaryCrew, ensureCrew, type Crew, type RecipeSource } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
@@ -43,7 +43,19 @@ function captionFor(recipe: { description?: string; title?: string }): string {
 }
 
 export default function ICooked() {
+  return (
+    <Suspense fallback={<div className="min-h-[100dvh]" style={{ background: "#E9E2D3" }} />}>
+      <ICookedInner />
+    </Suspense>
+  );
+}
+
+function ICookedInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // "I cooked this" from a recipe pre-binds it: the cook joins that recipe's
+  // lineage, the attach-a-recipe step is skipped, and the title is pre-filled.
+  const preRecipeId = searchParams?.get("recipe") || null;
   const [step, setStep] = useState<"capture" | "recipe" | "cooking" | "reveal">("capture");
   const [photo, setPhoto] = useState<string | null>(null); // your photo — required
   const [title, setTitle] = useState("");
@@ -77,6 +89,19 @@ export default function ICooked() {
   function clearRecipe() { setLink(""); setText(""); setRecipeFile(null); }
 
   useEffect(() => { getPrimaryCrew().then(setCrew); }, []);
+
+  // Pre-bound recipe (from "I cooked this"): bind it as the cook's source so it
+  // joins the lineage, and seed the title from the recipe name.
+  useEffect(() => {
+    if (!preRecipeId) return;
+    recipePromise.current = Promise.resolve(preRecipeId);
+    (async () => {
+      try {
+        const r = await fetch(`/api/recipes/${preRecipeId}`);
+        if (r.ok) { const t = (await r.json()).recipe?.title as string | undefined; if (t) setTitle((v) => v || t); }
+      } catch { /* best-effort */ }
+    })();
+  }, [preRecipeId]);
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -149,7 +174,8 @@ export default function ICooked() {
     let cancelled = false;
     (async () => {
       const source: RecipeSource | null =
-        link.trim() ? { kind: "link", url: link.trim() }
+        preRecipeId ? null // recipe already bound — don't re-extract, keep the lineage link
+        : link.trim() ? { kind: "link", url: link.trim() }
         : text.trim() ? { kind: "text", text: text.trim() }
         : recipeFile ? { kind: "photo", file: recipeFile }
         : file ? { kind: "photo", file }
@@ -177,7 +203,7 @@ export default function ICooked() {
                 <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 24, color: INK }}>I cooked something</span>
                 <button onClick={() => router.back()} aria-label="Close" style={{ fontSize: 22, color: INK, background: "none", border: "none" }}>✕</button>
               </div>
-              <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>looking good — post it?</div>
+              <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>ooh — that looks good ✨</div>
               <div style={{ marginTop: 22, position: "relative", transform: "rotate(-1.4deg)" }}>
                 <div style={{ background: "#fff", padding: 12, border: `2.5px solid ${INK}`, boxShadow: "0 22px 46px rgba(23,20,16,0.28)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -185,7 +211,7 @@ export default function ICooked() {
                 </div>
                 <button onClick={() => fileRef.current?.click()} style={{ position: "absolute", bottom: -12, right: -6, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 12, padding: "7px 14px", borderRadius: 99, border: `2px solid ${PAPER}` }}>change photo</button>
               </div>
-              <button onClick={() => setStep("recipe")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 30, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.35)" }}>Next →</button>
+              <button onClick={() => setStep(preRecipeId ? "cooking" : "recipe")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 30, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.35)" }}>{preRecipeId ? "Make my card ✨" : "Next →"}</button>
             </div>
           ) : (
             // immersive full-screen "camera": viewfinder + food image fill the whole screen
@@ -205,7 +231,7 @@ export default function ICooked() {
           <input ref={recipeFileRef} type="file" accept="image/*" onChange={pickRecipeFile} style={{ display: "none" }} />
           <div className="flex items-center justify-between">
             <button onClick={() => setStep("capture")} aria-label="Back" style={{ fontFamily: HAND, fontSize: 16, color: INK, background: "none", border: "none" }}>← back</button>
-            <button onClick={() => { clearRecipe(); setStep("cooking"); }} style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, background: "none", border: "none", opacity: 0.55 }}>not right now →</button>
+            <button onClick={() => { clearRecipe(); setStep("cooking"); }} style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, background: "none", border: "none", opacity: 0.7 }}>not right now →</button>
           </div>
 
           <div style={{ marginTop: 10 }}>

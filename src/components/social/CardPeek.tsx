@@ -58,16 +58,16 @@ export default function CardPeek({ h = 150, label, fullBleed = false }: { h?: nu
     return (
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", background: "#0E0C0A" }}>
         {phase === "camera" ? (
-          <div key={`cam${i}`} style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", animation: "cpFade .45s ease" }}>
+          <div key={`cam${i}`} style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20, animation: "cpFade .45s ease" }}>
             {brackets.map((b, k) => (
               <div key={k} style={{ position: "absolute", top: b.top, bottom: b.bottom, left: b.left, right: b.right, width: 28, height: 28, borderColor: PAPER, borderStyle: "solid", borderWidth: 0, opacity: 0.85, borderTopWidth: b.bt ? 4 : 0, borderBottomWidth: b.bb ? 4 : 0, borderLeftWidth: b.bl ? 4 : 0, borderRightWidth: b.br ? 4 : 0 }} />
             ))}
-            <div style={{ position: "absolute", top: 26, right: 58, display: "flex", alignItems: "center", gap: 6 }}>
+            <div style={{ position: "absolute", top: 26, left: "50%", transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 9, height: 9, borderRadius: 99, background: TOMATO, display: "inline-block" }} className="cpPulse" />
               <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", color: PAPER }}>SNAP</span>
             </div>
             <span style={{ fontSize: 94 }} aria-hidden>📸</span>
-            {label && <div style={{ position: "absolute", bottom: 64, left: 0, right: 0, textAlign: "center", fontFamily: DISP, fontWeight: 700, fontSize: 23, color: PAPER }}>{label}</div>}
+            {label && <div style={{ textAlign: "center", padding: "0 34px", fontFamily: DISP, fontWeight: 700, fontSize: 23, color: PAPER }}>{label}</div>}
           </div>
         ) : (
           <div key={`card${i}`} className="flex items-center justify-center" style={{ position: "absolute", inset: 0, padding: "0 26px", animation: "cpFade .5s ease" }}>

@@ -14,6 +14,14 @@ import MyNotesCard from "@/components/recipes/MyNotesCard";
 import RecipeRating from "@/components/recipes/RecipeRating";
 import { useToast } from "@/components/ui/Toast";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import CookCard from "@/components/social/CookCard";
+
+// One entry in a recipe's lineage — a cook posted from it (photo + variation).
+interface LineageCook {
+  id: string; user_id: string | null; title: string | null; note: string | null;
+  photo_url: string | null; card_treatment: string; author_name: string | null;
+  author_avatar: string | null; created_at: string; isMine: boolean;
+}
 
 /* ── Accordion wrapper ──────────────────────────────────────────────── */
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
@@ -249,6 +257,19 @@ function formatAmount(n: number): string {
   return rounded % 1 === 0 ? `${rounded}` : `${Math.round(rounded * 10) / 10}`;
 }
 
+/* ── Short relative time for lineage cook cards ──────────────────────── */
+function relTime(iso: string): string {
+  const d = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(d / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const days = Math.floor(h / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 /* ── Tag chip with a contextual icon ─────────────────────────────────── */
 function tagIconPath(tag: string): string {
   const t = tag.toLowerCase();
@@ -394,6 +415,17 @@ export default function RecipeDetailPage() {
   );
   const ratingAvg = ratingData?.average ?? 0;
   const ratingCount = ratingData?.count ?? 0;
+
+  // The lineage — every cook posted from this recipe (mine + others', same or
+  // tweaked), with the true total count. This is what makes a recipe a living
+  // thread rather than a static card.
+  const { data: lineageData } = useSWR<{ count: number; cooks: LineageCook[] }>(
+    id ? `/api/recipes/${id}/lineage` : null,
+    apiFetcher,
+    { revalidateOnFocus: false, dedupingInterval: 10000 },
+  );
+  const lineageCooks = lineageData?.cooks ?? [];
+  const cookedCount = lineageData?.count ?? 0;
 
   async function handleDelete() {
     if (!confirm("Delete this recipe?")) return;
@@ -745,17 +777,21 @@ export default function RecipeDetailPage() {
         {/* ── 2. Title + rating + tags ──────────────────────────────── */}
         <div className="pt-5 pb-4 space-y-3">
           <h1
-            className="leading-[1.05]"
+            className="leading-[1.02]"
             style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontVariationSettings: '"opsz" 144, "SOFT" 100, "wght" 600',
+              fontFamily: '"Marker Felt", Georgia, serif',
+              fontWeight: 700,
               fontSize: "clamp(1.9rem, 7vw, 2.5rem)",
-              letterSpacing: "-0.02em",
-              color: "var(--ink, #1C1A17)",
+              letterSpacing: "-0.01em",
+              color: "#171410",
             }}
           >
             {recipe.title}
           </h1>
+          {/* hand-drawn underline — ties the page to the cook card it came from */}
+          <svg width="188" height="11" viewBox="0 0 188 11" fill="none" aria-hidden className="-mt-1.5 block">
+            <path d="M2 7 C 30 2, 56 10, 84 6 S 146 2, 186 6" stroke="#E5462E" strokeWidth="3.5" strokeLinecap="round" />
+          </svg>
 
           {/* Rating + stats inline */}
           <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[13.5px]" style={{ color: "var(--ink-soft, #4A4742)" }}>
@@ -786,6 +822,12 @@ export default function RecipeDetailPage() {
             {recipe.servings ? <span>{recipe.servings} servings</span> : null}
           </div>
 
+          {/* Cooked count — the lineage anchor, in the app's hand */}
+          <a href="#lineage" className="inline-flex items-center gap-1.5 no-underline" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 14, color: "#171410", background: "#FFD84D", border: "2px solid #171410", borderRadius: 99, padding: "5px 12px", transform: "rotate(-1.2deg)" }}>
+            <span aria-hidden>🍳</span>
+            {cookedCount > 0 ? `cooked ${cookedCount} time${cookedCount === 1 ? "" : "s"}` : "no one's cooked this yet"}
+          </a>
+
           {/* Icon tags */}
           {(recipe.tags || []).length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
@@ -793,6 +835,16 @@ export default function RecipeDetailPage() {
             </div>
           )}
         </div>
+
+        {/* ── "I cooked this" — the lineage entry: capture flow bound to this
+              recipe, so your photo + variation join the thread ─────────── */}
+        <button
+          onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)}
+          className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mb-4"
+          style={{ background: "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: "0 10px 24px rgba(229,70,46,0.3)" }}
+        >
+          <span aria-hidden>🍳</span> I cooked this →
+        </button>
 
         {/* ── 3. Actions (owner) ─────────────────────────────────────── */}
         {!isPublicView && (
@@ -945,6 +997,42 @@ export default function RecipeDetailPage() {
           </button>
         )}
 
+        {/* ── The lineage — every cook of this recipe, same or tweaked ── */}
+        <div id="lineage" className="mb-4" style={{ scrollMarginTop: 80 }}>
+          <div className="flex items-baseline gap-2 mb-3">
+            <h3 style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 22, color: "#171410" }}>The lineage</h3>
+            {cookedCount > 0 && <span style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 16, color: "#E5462E", transform: "rotate(-1.5deg)", display: "inline-block" }}>{cookedCount} {cookedCount === 1 ? "cook" : "cooks"}, same or tweaked</span>}
+          </div>
+          {lineageCooks.length > 0 ? (
+            <div className="flex flex-col" style={{ gap: 26 }}>
+              {lineageCooks.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => c.user_id && router.push(`/u/${c.user_id}`)}
+                  className="block w-full text-left active:scale-[0.99] transition-transform"
+                  style={{ background: "none", border: "none", padding: 0 }}
+                >
+                  <CookCard
+                    treatment={c.card_treatment}
+                    photo={c.photo_url ?? ""}
+                    title={c.title ?? ""}
+                    note={c.note ?? ""}
+                    authorName={c.isMine ? "you" : (c.author_name ?? "a cook")}
+                    authorAvatar={c.author_avatar ?? (c.author_name ?? "?").slice(0, 1)}
+                    timeLabel={relTime(c.created_at)}
+                    h={200}
+                  />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div style={{ background: "#FBF7EE", border: "2px dashed #171410", borderRadius: 14, padding: "22px 18px", textAlign: "center" }}>
+              <div style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 18, color: "#171410" }}>no one&apos;s cooked this yet.</div>
+              <div style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 15, color: "#E5462E", marginTop: 4 }}>be the first — tap &ldquo;I cooked this&rdquo; ↑</div>
+            </div>
+          )}
+        </div>
+
         {/* ── I Made This — log the cook (owner only) ─────────────────── */}
         {!isPublicView && (
           <div className="mb-4">
@@ -1047,7 +1135,7 @@ export default function RecipeDetailPage() {
 
       {/* ── Sticky save bar (public view only) ───────────────────────── */}
       {isPublicView && (
-      <div className="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto z-40 rounded-t-2xl overflow-hidden" style={{ paddingBottom: "var(--safe-bottom, 0px)", background: "#ffffff", boxShadow: "0 -8px 30px rgba(0,0,0,0.12)" }}>
+      <div className="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto z-40 rounded-t-2xl overflow-hidden" style={{ paddingBottom: "var(--safe-bottom, 0px)", background: "#FBF7EE", borderTop: "2px solid #171410", boxShadow: "0 -8px 30px rgba(23,20,16,0.16)" }}>
         <div className="px-4 py-3 space-y-2">
             <button
               onClick={async () => {
@@ -1092,7 +1180,7 @@ export default function RecipeDetailPage() {
                       },
                       false,
                     );
-                    showToast("Recipe saved to your library");
+                    showToast("Saved to your kitchen");
                     router.replace(`/recipes/${saved.id}`);
                   } else {
                     showToast("Could not save recipe");
@@ -1104,10 +1192,10 @@ export default function RecipeDetailPage() {
                 }
               }}
               disabled={alreadySaved || savingPublic}
-              className="w-full py-3.5 rounded-xl font-semibold text-sm text-white active:scale-[0.98] transition-all disabled:opacity-60"
-              style={{ background: alreadySaved ? "#94a394" : "#e8530a" }}
+              className="w-full active:scale-[0.98] transition-transform disabled:opacity-60"
+              style={{ background: alreadySaved ? "#94a394" : "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: alreadySaved ? "none" : "0 10px 24px rgba(229,70,46,0.32)" }}
             >
-              {alreadySaved ? "✓ Already in your library" : savingPublic ? "Saving…" : "Save to my library"}
+              {alreadySaved ? "✓ In your kitchen" : savingPublic ? "Saving…" : "Save to my kitchen →"}
             </button>
         </div>
       </div>
@@ -1137,7 +1225,7 @@ export default function RecipeDetailPage() {
               marginTop: "1.75rem",
             }}
           >
-            Saving to your library
+            Saving to your kitchen
           </p>
           <p
             className="marco-mono"
