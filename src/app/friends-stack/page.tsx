@@ -215,30 +215,32 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
   const isMine = !!myId && c.user_id === myId;
   const rid = c.source_recipe_id;
   const openRecipe = () => rid && router.push(`/recipes/${rid}`);
+  async function save() { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }
   return (
-    <div>
-      {/* the card itself opens the recipe — tapping it is the obvious gesture */}
-      <button onClick={openRecipe} disabled={!rid} aria-label={rid ? "See the recipe" : undefined} className="block w-full text-left active:scale-[0.99] transition-transform" style={{ background: "none", border: "none", padding: 0, cursor: rid ? "pointer" : "default" }}>
-        <div style={{ position: "relative" }}>
-          {featured && (
-            <div style={{ position: "absolute", top: -11, right: 16, zIndex: 3, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
-          )}
-          <CookCard treatment={treatment ?? c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} cookedCount={cookedCount} />
-        </div>
-      </button>
-
-      {/* recipe actions — a compact cornered cluster (save · plan · cooked),
-          not a full-width bar, so it sits lightly under the art */}
-      {rid ? (
-        <div className="flex items-center justify-end gap-2" style={{ marginTop: 10 }}>
-          {!isMine && (
-            <button onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} aria-label={saved ? "Saved to your kitchen" : "Save to your kitchen"} className="flex items-center justify-center active:scale-90 transition-transform" style={{ width: 40, height: 40, borderRadius: 99, background: saved ? LIME : PAPER, border: `2px solid ${INK}`, fontSize: 17 }}>🔖</button>
-          )}
-          <button onClick={() => router.push(`/recipes/${rid}?openMealSheet=true`)} aria-label="Add to meal plan" className="flex items-center justify-center active:scale-90 transition-transform" style={{ width: 40, height: 40, borderRadius: 99, background: PAPER, border: `2px solid ${INK}`, fontSize: 17 }}>📅</button>
-          <button onClick={() => router.push(`/i-cooked?recipe=${rid}`)} className="flex items-center gap-1.5 active:scale-95 transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "9px 15px", borderRadius: 99, border: `2px solid ${INK}` }}><span aria-hidden>🍳</span> cooked</button>
-        </div>
-      ) : (
-        <div style={{ marginTop: 10, textAlign: "right", fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5 }}>no recipe on this one yet</div>
+    <div style={{ position: "relative" }}>
+      {featured && (
+        <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
+      )}
+      {/* actions live INSIDE the card (see CookCard) so it's clear they belong
+          to this cook — the whole card also opens the recipe on tap */}
+      <CookCard
+        treatment={treatment ?? c.card_treatment}
+        photo={c.photo_url ?? ""}
+        title={c.title ?? ""}
+        note={c.note ?? ""}
+        authorName={isMine ? "you" : (c.author_name ?? "someone")}
+        authorAvatar={c.author_avatar ?? "?"}
+        timeLabel={timeAgo(c.created_at)}
+        h={180}
+        cookedCount={cookedCount}
+        onOpen={rid ? openRecipe : undefined}
+        onCook={rid ? () => router.push(`/i-cooked?recipe=${rid}`) : undefined}
+        onSave={rid && !isMine ? save : undefined}
+        onPlan={rid ? () => router.push(`/recipes/${rid}?openMealSheet=true`) : undefined}
+        saved={saved}
+      />
+      {!rid && (
+        <div style={{ marginTop: 10, textAlign: "center", fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5 }}>no recipe on this one yet</div>
       )}
     </div>
   );

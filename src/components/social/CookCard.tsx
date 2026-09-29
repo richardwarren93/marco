@@ -1,6 +1,8 @@
 // The art-directed cook card — one of three treatments (polaroid / receipt /
 // poster). Shared by the "I cooked" reveal and the Table feed so a posted cook
 // looks the same everywhere and cooks visually vary by their saved treatment.
+// In the feed, the recipe actions live INSIDE the card's border (so it's
+// unambiguous they belong to this cook, not the one above or below).
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -33,6 +35,13 @@ export interface CookCardProps {
   timeLabel?: string;
   h?: number; // photo height (feed uses a smaller card than the reveal)
   cookedCount?: number; // times this recipe has been cooked (lineage size) — a stamp
+  // Recipe actions (feed only). When onCook is set, a labeled action bar renders
+  // INSIDE the card's border. onOpen makes the card tap-to-open-recipe.
+  onOpen?: () => void;
+  onCook?: () => void;
+  onSave?: () => void;
+  onPlan?: () => void;
+  saved?: boolean;
 }
 
 export default function CookCard(p: CookCardProps) {
@@ -50,9 +59,38 @@ function CountStamp({ n, style }: { n: number; style?: React.CSSProperties }) {
   );
 }
 
-function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 224, cookedCount }: CookCardProps) {
+// The labeled recipe actions, rendered INSIDE the card. "I cooked this" leads
+// (it grows the lineage); save + meal-plan sit under it. Tone adapts to the
+// card's background so outlines read on light (paper) or dark (cobalt).
+function CardActions({ tone, saved, onCook, onSave, onPlan }: { tone: "light" | "dark"; saved?: boolean; onCook?: () => void; onSave?: () => void; onPlan?: () => void }) {
+  if (!onCook) return null;
+  const dark = tone === "dark";
+  const line = dark ? "rgba(251,247,238,0.30)" : "rgba(23,20,16,0.14)";
+  const edge = dark ? PAPER : INK;
+  const txt = dark ? PAPER : INK;
+  const stop = (fn?: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); fn?.(); };
   return (
-    <div style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, border: `2px solid ${INK}`, transform: "rotate(-1.4deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)" }}>
+    <div style={{ marginTop: 14, borderTop: `1.5px solid ${line}`, paddingTop: 12 }}>
+      <button onClick={stop(onCook)} className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 0", borderRadius: 11, border: `2px solid ${INK}` }}><span aria-hidden>🍳</span> I cooked this</button>
+      <div className="flex gap-2" style={{ marginTop: 8 }}>
+        {onSave && (
+          <button onClick={stop(onSave)} className="flex-1 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform" style={{ background: saved ? LIME : "transparent", color: saved ? INK : txt, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "10px 0", borderRadius: 11, border: `2px solid ${saved ? INK : edge}` }}><span aria-hidden>🔖</span> {saved ? "Saved" : "Save recipe"}</button>
+        )}
+        <button onClick={stop(onPlan)} className="flex-1 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform" style={{ background: "transparent", color: txt, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "10px 0", borderRadius: 11, border: `2px solid ${edge}` }}><span aria-hidden>📅</span> Meal plan</button>
+      </div>
+    </div>
+  );
+}
+
+function openProps(onOpen?: () => void): React.HTMLAttributes<HTMLDivElement> {
+  if (!onOpen) return {};
+  return { onClick: onOpen, role: "button", tabIndex: 0, style: { cursor: "pointer" } };
+}
+
+function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 224, cookedCount, onOpen, onCook, onSave, onPlan, saved }: CookCardProps) {
+  const op = openProps(onOpen);
+  return (
+    <div {...op} style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, border: `2px solid ${INK}`, transform: "rotate(-1.4deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)", ...op.style }}>
       <CountStamp n={cookedCount ?? 0} style={{ top: 4, left: -6, transform: "rotate(-7deg)" }} />
       <div style={{ position: "relative", transform: "rotate(1.2deg)" }}>
         <Tape style={{ top: -8, left: "50%", marginLeft: -41, transform: "rotate(-4deg)" }} />
@@ -64,13 +102,15 @@ function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 
         <svg width="180" height="11" viewBox="0 0 180 11" fill="none" aria-hidden style={{ marginTop: 3 }}><path d="M2 7 C 28 2, 52 10, 78 6 S 132 2, 178 6" stroke={TOMATO} strokeWidth="3.5" strokeLinecap="round" /></svg>
         {note && <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, marginTop: 8, transform: "rotate(-1deg)" }}>{note}</div>}
       </div>
+      <CardActions tone="light" saved={saved} onCook={onCook} onSave={onSave} onPlan={onPlan} />
     </div>
   );
 }
 
-function Receipt({ photo, title, note, authorName, h = 200, cookedCount }: CookCardProps) {
+function Receipt({ photo, title, note, authorName, h = 200, cookedCount, onOpen, onCook, onSave, onPlan, saved }: CookCardProps) {
+  const op = openProps(onOpen);
   return (
-    <div style={{ position: "relative", background: "#fff", padding: "18px 18px 22px", border: `2px solid ${INK}`, transform: "rotate(1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)", backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(23,20,16,0.05) 27px)" }}>
+    <div {...op} style={{ position: "relative", background: "#fff", padding: "18px 18px 22px", border: `2px solid ${INK}`, transform: "rotate(1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)", backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(23,20,16,0.05) 27px)", ...op.style }}>
       <CountStamp n={cookedCount ?? 0} style={{ top: 6, left: -6, transform: "rotate(-7deg)" }} />
       <div className="text-center" style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.22em", color: INK }}>· MARCO KITCHEN ·<br />FRESH OUT THE PAN</div>
       <div style={{ borderTop: `1.5px dashed ${INK}`, margin: "12px 0" }} />
@@ -83,15 +123,17 @@ function Receipt({ photo, title, note, authorName, h = 200, cookedCount }: CookC
       <div style={{ borderTop: `1.5px dashed ${INK}`, margin: "14px 0 8px" }} />
       <div className="text-center" style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.14em", color: INK }}>by {authorName} · thank you · come again</div>
       <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 8 }}>{Array.from({ length: 28 }).map((_, i) => <span key={i} style={{ width: i % 3 ? 2 : 4, height: 22, background: INK }} />)}</div>
+      <CardActions tone="light" saved={saved} onCook={onCook} onSave={onSave} onPlan={onPlan} />
     </div>
   );
 }
 
-function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel = "just now", h = 230, cookedCount }: CookCardProps) {
+function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel = "just now", h = 230, cookedCount, onOpen, onCook, onSave, onPlan, saved }: CookCardProps) {
+  const op = openProps(onOpen);
   return (
-    <div style={{ position: "relative", background: COBALT, borderRadius: 12, padding: 16, border: `2.5px solid ${INK}`, transform: "rotate(-1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.24)", overflow: "hidden" }}>
+    <div {...op} style={{ position: "relative", background: COBALT, borderRadius: 12, padding: 16, border: `2.5px solid ${INK}`, transform: "rotate(-1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.24)", overflow: "hidden", ...op.style }}>
       <div className="absolute" style={{ top: 10, left: 12, fontFamily: MONO, fontSize: 11, letterSpacing: "0.2em", color: LIME }}>NOW COOKING</div>
-      <CountStamp n={cookedCount ?? 0} style={{ bottom: 14, right: 14, transform: "rotate(6deg)" }} />
+      <CountStamp n={cookedCount ?? 0} style={{ top: 8, right: 12, transform: "rotate(6deg)" }} />
       <div style={{ position: "relative", transform: "rotate(2deg)", border: `4px solid ${PAPER}`, marginTop: 26, boxShadow: "0 10px 20px rgba(0,0,0,0.35)" }}>
         <Img photo={photo} h={h} />
         <div style={{ position: "absolute", top: -14, right: -12, background: PINK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 13, padding: "6px 12px", borderRadius: 99, transform: "rotate(10deg)", border: `2px solid ${INK}` }}>hot 🔥</div>
@@ -102,6 +144,7 @@ function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel 
         <div className="flex items-center justify-center" style={{ width: 26, height: 26, borderRadius: 99, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 12, border: `1.5px solid ${INK}` }}>{(authorAvatar || "?").slice(0, 1)}</div>
         <span style={{ fontFamily: SANS, fontSize: 13, color: PAPER }}>{authorName} · {timeLabel}</span>
       </div>
+      <CardActions tone="dark" saved={saved} onCook={onCook} onSave={onSave} onPlan={onPlan} />
     </div>
   );
 }
