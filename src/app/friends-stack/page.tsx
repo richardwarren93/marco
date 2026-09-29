@@ -204,33 +204,41 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
   const [saved, setSaved] = useState(initialSaved);
   const router = useRouter();
   const isMine = !!myId && c.user_id === myId;
-  const openRecipe = () => c.source_recipe_id && router.push(`/recipes/${c.source_recipe_id}`);
+  const rid = c.source_recipe_id;
+  const openRecipe = () => rid && router.push(`/recipes/${rid}`);
   return (
     <div>
-      <div style={{ position: "relative" }}>
-        {featured && (
-          <div style={{ position: "absolute", top: -11, right: 16, zIndex: 3, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
-        )}
-        <CookCard treatment={treatment ?? c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} />
-      </div>
+      {/* the card itself opens the recipe — tapping it is the obvious gesture */}
+      <button onClick={openRecipe} disabled={!rid} aria-label={rid ? "See the recipe" : undefined} className="block w-full text-left active:scale-[0.99] transition-transform" style={{ background: "none", border: "none", padding: 0, cursor: rid ? "pointer" : "default" }}>
+        <div style={{ position: "relative" }}>
+          {featured && (
+            <div style={{ position: "absolute", top: -11, right: 16, zIndex: 3, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
+          )}
+          <CookCard treatment={treatment ?? c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={isMine ? "you" : (c.author_name ?? "someone")} authorAvatar={c.author_avatar ?? "?"} timeLabel={timeAgo(c.created_at)} h={180} />
+        </div>
+      </button>
 
-      {/* recipe — every cook with a recipe is one tap from the full recipe */}
-      {c.source_recipe_id ? (
-        <button onClick={openRecipe} className="w-full flex items-center justify-between active:scale-[0.99] transition-transform" style={{ marginTop: 14, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px" }}>
-          <span className="flex items-center gap-2">
-            <span style={{ fontSize: 18 }} aria-hidden>📖</span>
-            <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>see the recipe</span>
-          </span>
-          <span style={{ color: INK, fontSize: 18 }}>›</span>
-        </button>
+      {/* recipe actions, right on the feed — save · plan · cooked it */}
+      {rid ? (
+        <div className="flex gap-2" style={{ marginTop: 12 }}>
+          {!isMine && (
+            <Act icon="🔖" label={saved ? "saved" : "save"} active={saved} onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} />
+          )}
+          <Act icon="📅" label="plan" onClick={() => router.push(`/recipes/${rid}?openMealSheet=true`)} />
+          <Act icon="🍳" label="cooked" primary onClick={() => router.push(`/i-cooked?recipe=${rid}`)} />
+        </div>
       ) : (
         <div style={{ marginTop: 12, fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5, textAlign: "center" }}>no recipe on this one yet</div>
       )}
-
-      {/* your own cook doesn't get "add to my kitchen" — it's already yours */}
-      {!isMine && (
-        <button onClick={async () => { if (!saved) { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); } }} className="w-full active:scale-[0.97] transition-transform" style={{ marginTop: 10, background: saved ? LIME : INK, color: saved ? INK : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2px solid ${INK}` }}>{saved ? "✓ saved to your kitchen" : "Add to my kitchen"}</button>
-      )}
     </div>
+  );
+}
+
+// A compact feed-card recipe action (save / plan / cooked it).
+function Act({ icon, label, onClick, active = false, primary = false }: { icon: string; label: string; onClick: () => void; active?: boolean; primary?: boolean }) {
+  return (
+    <button onClick={onClick} className="flex-1 flex items-center justify-center gap-1.5 active:scale-[0.97] transition-transform" style={{ background: active ? LIME : primary ? TOMATO : PAPER, color: primary ? PAPER : INK, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "11px 6px", borderRadius: 12, border: `2px solid ${INK}`, whiteSpace: "nowrap" }}>
+      <span aria-hidden style={{ fontSize: 15 }}>{icon}</span> {label}
+    </button>
   );
 }
