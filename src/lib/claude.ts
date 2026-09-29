@@ -270,7 +270,7 @@ export async function describeDishPhoto(imageBase64: string, mimeType: string): 
         role: "user",
         content: [
           { type: "image", source: { type: "base64", media_type: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: imageBase64 } },
-          { type: "text", text: "In one sentence, describe the visible food: the main protein, key vegetables, sauce/seasoning, and cooking method. Just the description, no preamble." },
+          { type: "text", text: "Describe ONLY the visual appearance of the food, in 1-2 sentences: colors, textures, the cut/shape/size of the main item, any sear/char/breading, visible vegetables and garnishes, sauce sheen, and plating. Do NOT name the dish and do NOT guess the protein or cuisine — just describe what it physically looks like. No preamble." },
         ],
       }],
     });
