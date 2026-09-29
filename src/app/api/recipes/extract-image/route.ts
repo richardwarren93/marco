@@ -57,6 +57,7 @@ export async function POST(request: Request) {
     // Learning loop (best-effort): describe the photo → embed → retrieve the most
     // visually similar human-corrected dishes to hint the extraction.
     let similarDishes: string[] = [];
+    let matches: { dish_name: string; similarity: number }[] = [];
     let embedding: number[] | null = null;
     let description = "";
     try {
@@ -64,20 +65,37 @@ export async function POST(request: Request) {
       if (description) {
         embedding = await embedText(description);
         if (embedding) {
-          const { data: matches } = await admin.rpc("match_extraction_memory", { query_embedding: embedding, match_count: 5 });
-          similarDishes = ((matches ?? []) as { dish_name: string | null; similarity: number }[])
-            .filter((m) => m.similarity > 0.62 && m.dish_name)
-            .map((m) => m.dish_name as string);
+          const { data } = await admin.rpc("match_extraction_memory", { query_embedding: embedding, match_count: 5 });
+          matches = ((data ?? []) as { dish_name: string | null; similarity: number }[])
+            .filter((m): m is { dish_name: string; similarity: number } => m.similarity > 0.62 && !!m.dish_name);
+          similarDishes = matches.map((m) => m.dish_name);
         }
       }
     } catch { /* learning is best-effort — never block extraction */ }
 
-    const [recipe, uploadResult] = await Promise.all([
+    let [recipe, uploadResult] = await Promise.all([ // eslint-disable-line prefer-const
       extractRecipeFromImage(base64, file.type, knownDishes, similarDishes),
       admin.storage
         .from("recipe-images")
         .upload(filename, buffer, { contentType: file.type, upsert: false }),
     ]);
+
+    // After-check (free unless there's a real conflict): if the model's protein
+    // disagrees with a confident consensus of very-similar past photos, re-extract
+    // once forcing the consensus dish. Only fires in the rare mismatch case.
+    try {
+      const PROTEINS = ["pork", "chicken", "beef", "fish", "salmon", "shrimp", "tofu", "lamb", "turkey", "duck"];
+      const strong = matches.filter((m) => m.similarity > 0.75);
+      const tally = new Map<string, number>();
+      for (const m of strong) tally.set(m.dish_name, (tally.get(m.dish_name) ?? 0) + 1);
+      let consensus = "", best = 0;
+      for (const [k, v] of tally) if (v > best) { best = v; consensus = k; }
+      const titleP = PROTEINS.find((p) => (recipe.title ?? "").toLowerCase().includes(p));
+      const consP = PROTEINS.find((p) => consensus.toLowerCase().includes(p));
+      if (best >= 2 && consP && titleP && consP !== titleP) {
+        recipe = await extractRecipeFromImage(base64, file.type, knownDishes, [consensus]);
+      }
+    } catch { /* after-check is best-effort */ }
 
     let image_url: string | null = null;
     if (!uploadResult.error) {
