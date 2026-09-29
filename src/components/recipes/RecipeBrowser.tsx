@@ -16,13 +16,13 @@ const ACCENT = "#E5462E";
 // How many recipes the "Recently added" preview shows before "View all".
 const RECENT_LIMIT = 4;
 
-// Section heading — Fraunces display, matching the app's editorial voice.
+// Section heading — Marker Felt display, the app's beautiful-chaos voice.
 const SECTION_HEADING: CSSProperties = {
-  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-  fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-  fontSize: "19px",
-  letterSpacing: "-0.015em",
-  color: "var(--ink, #1C1A17)",
+  fontFamily: '"Marker Felt", Georgia, serif',
+  fontWeight: 700,
+  fontSize: "20px",
+  letterSpacing: "-0.01em",
+  color: "#171410",
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const isLoading = props.mode === "library" && props.loading;
 
   return (
-    <div className="flex flex-col" style={{ background: "#F5EEE2" }}>
+    <div className="flex flex-col" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }}>
       {/* ── Sticky header ─────────────────────────────────────────── */}
       <div>
         <div className="max-w-5xl mx-auto">
@@ -234,7 +234,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         {/* Search + filter — same clean schema as Discover */}
         <div className="px-4 pt-3 pb-2.5">
           <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 rounded-full px-3.5 h-11" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}>
+            <div className="flex-1 flex items-center gap-2 rounded-full px-3.5 h-11" style={{ background: "#FBF7EE", border: "2px solid #171410" }}>
               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#a8a29a" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
               </svg>
@@ -259,7 +259,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               onClick={() => setSheetOpen(true)}
               aria-label="Filter and sort"
               className="relative w-11 h-11 flex items-center justify-center rounded-full active:scale-95 transition-transform flex-shrink-0"
-              style={{ background: filterCount > 0 ? ACCENT : "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}
+              style={{ background: filterCount > 0 ? ACCENT : "#FBF7EE", border: "2px solid #171410" }}
             >
               <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={filterCount > 0 ? "#fff" : INK} strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18M6 12h12M10 19h4" />
@@ -299,19 +299,19 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             <div className="flex justify-center mb-4" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.45 }}>
               {hasFilters ? <SearchIcon className="w-12 h-12" /> : <MealIcon className="w-12 h-12" strokeWidth={1.5} />}
             </div>
-            <p className="font-bold text-gray-700 text-base mb-1">
+            <p style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 22, color: "#171410", marginBottom: 4 }}>
               {hasFilters ? "No matches" : "Nothing saved yet"}
             </p>
-            <p className="text-gray-400 text-sm mb-5">
-              {hasFilters ? "Try different filters" : "Save your first recipe to get started"}
+            <p style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 17, color: "#E5462E", marginBottom: 20 }}>
+              {hasFilters ? "try different filters" : "save your first recipe to get started"}
             </p>
             {hasFilters && (
-              <button onClick={clearFilters} className="px-4 py-2 rounded-full text-sm font-bold text-orange-500 bg-orange-50 hover:bg-orange-100 transition-colors">
+              <button onClick={clearFilters} style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 15, color: "#171410", background: "#FBF7EE", border: "2px solid #171410", borderRadius: 12, padding: "10px 18px" }}>
                 Clear filters
               </button>
             )}
             {!hasFilters && props.mode === "library" && (
-              <Link href="/recipes/new" className="px-4 py-2 rounded-full text-sm font-bold text-white bg-orange-500 hover:bg-orange-600 transition-colors">
+              <Link href="/recipes/new" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 16, color: "#FBF7EE", background: "#E5462E", border: "2.5px solid #171410", borderRadius: 12, padding: "12px 20px", boxShadow: "0 8px 18px rgba(229,70,46,0.28)" }}>
                 Save a recipe →
               </Link>
             )}

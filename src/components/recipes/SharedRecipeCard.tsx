@@ -71,10 +71,11 @@ export default function SharedRecipeCard({
 }: SharedRecipeCardProps) {
   return (
     <div
-      className={`relative rounded-3xl overflow-hidden cursor-pointer select-none group transition-transform duration-200 active:scale-[0.97] ${excluded ? "opacity-50 grayscale" : ""} ${className}`}
+      className={`relative rounded-2xl overflow-hidden cursor-pointer select-none group transition-transform duration-200 active:scale-[0.97] ${excluded ? "opacity-50 grayscale" : ""} ${className}`}
       style={{
         aspectRatio: aspect,
-        boxShadow: "0 4px 16px rgba(20,12,5,0.10)",
+        border: "2px solid #171410",
+        boxShadow: "0 10px 24px rgba(23,20,16,0.18)",
         animation: `cardPop 0.4s ease ${index * 40}ms both`,
       }}
       onClick={excluded ? undefined : onClick}
@@ -137,12 +138,12 @@ export default function SharedRecipeCard({
         <h4
           className={`text-white mb-1.5 line-clamp-2 ${excluded ? "line-through" : ""}`}
           style={{
-            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-            fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
-            fontSize: "16px",
-            lineHeight: "1.18",
-            letterSpacing: "-0.015em",
-            textShadow: "0 1px 6px rgba(0,0,0,0.45)",
+            fontFamily: '"Marker Felt", Georgia, serif',
+            fontWeight: 700,
+            fontSize: "17px",
+            lineHeight: "1.12",
+            letterSpacing: "-0.01em",
+            textShadow: "0 1px 6px rgba(0,0,0,0.5)",
           }}
         >
           {title}

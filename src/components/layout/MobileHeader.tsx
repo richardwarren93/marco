@@ -89,14 +89,13 @@ export default function MobileHeader({
           <div className="flex-1 min-w-0">{children}</div>
         ) : title ? (
           <h1
-            className="font-black"
             style={{
-              color: "#1C1A17",
-              letterSpacing: "-0.02em",
-              fontSize: "22px",
-              lineHeight: 1.1,
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 700',
+              color: "#171410",
+              letterSpacing: "-0.01em",
+              fontSize: "26px",
+              lineHeight: 1.05,
+              fontFamily: '"Marker Felt", Georgia, serif',
+              fontWeight: 700,
             }}
           >
             {title}
