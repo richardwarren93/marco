@@ -5,6 +5,9 @@
 // you enter (Meal Plan, Grocery — the existing features, re-homed here). Dev-only.
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getMe, getUserCooks, type Cook } from "@/lib/social";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -21,35 +24,34 @@ const DISP = '"Marker Felt", Georgia, serif';
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
-const COOKED = [
-  ["Miso butter noodles", "/food/meal1.jpg", -2], ["Pork dumplings", "/food/meal2.jpg", 2],
-  ["Chili tacos", "/food/meal3.jpg", 2], ["Gochujang wings", "/food/meal4.jpg", -2],
-];
 const WANT = [
   ["Weekend shakshuka", "/food/meal5.jpg", "Maya", PINK], ["Dan dan noodles", "/food/meal2.jpg", "Rohan", COBALT],
 ];
 
 export default function KitchenHub() {
+  const router = useRouter();
+  const [me, setMe] = useState<{ name: string; avatar: string } | null>(null);
+  const [cooked, setCooked] = useState<Cook[]>([]);
+  useEffect(() => {
+    (async () => {
+      const m = await getMe();
+      if (m) { setMe({ name: m.name, avatar: m.avatar }); setCooked(await getUserCooks(m.id)); }
+    })();
+  }, []);
+  const openCook = (c: Cook) => { if (c.source_recipe_id) router.push(`/recipes/${c.source_recipe_id}`); };
+
   return (
     <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
 
       <div className="relative mx-auto w-full max-w-md px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 120 }}>
-        {/* header + stats */}
+        {/* header */}
         <div className="flex items-center gap-3 px-1">
-          <div className="flex items-center justify-center" style={{ width: 52, height: 52, borderRadius: 99, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 22, border: `2.5px solid ${INK}`, transform: "rotate(-4deg)" }}>S</div>
+          <div className="flex items-center justify-center" style={{ width: 52, height: 52, borderRadius: 99, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 22, border: `2.5px solid ${INK}`, transform: "rotate(-4deg)" }}>{me?.avatar ?? "·"}</div>
           <div>
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 26, color: INK, lineHeight: 1 }}>Saptak&apos;s Kitchen</div>
-            <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO }}>a work in progress ♡</div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 26, color: INK, lineHeight: 1 }}>{me ? `${me.name}'s Kitchen` : "Your Kitchen"}</div>
+            <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO }}>🍳 {cooked.length} cooked · a work in progress ♡</div>
           </div>
-        </div>
-        <div className="flex gap-2" style={{ marginTop: 14 }}>
-          {[["32", "cooked", TOMATO], ["18", "want to", LIME], ["4", "potlucks", PINK], ["2", "classes", COBALT]].map(([n, l, c], i) => (
-            <div key={l as string} className="flex-1 text-center" style={{ background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "8px 2px", transform: `rotate(${i % 2 ? 1 : -1}deg)` }}>
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 22, color: c as string, lineHeight: 1 }}>{n as string}</div>
-              <div style={{ fontFamily: MONO, fontSize: 9.5, color: INK, marginTop: 2 }}>{l as string}</div>
-            </div>
-          ))}
         </div>
 
         {/* FUNCTIONAL LAYERS — calm, you go into them */}
@@ -73,17 +75,32 @@ export default function KitchenHub() {
         </div>
         <div style={{ fontFamily: HAND, fontSize: 13, color: INK, opacity: 0.55, marginTop: 6, marginLeft: 4 }}>your plan + list live here — tap to open</div>
 
-        {/* COOKED scrapbook */}
+        {/* My recipes — the full collection (old recipe browser) */}
+        <Link href="/recipes" className="w-full flex items-center gap-3 active:scale-[0.99] transition-transform" style={{ marginTop: 12, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 14, padding: "13px 16px" }}>
+          <span style={{ fontSize: 22 }} aria-hidden>📖</span>
+          <div className="flex-1">
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, lineHeight: 1 }}>My recipes</div>
+            <div style={{ fontFamily: SANS, fontSize: 12.5, color: INK, opacity: 0.65, marginTop: 2 }}>everything you&apos;ve cooked &amp; saved</div>
+          </div>
+          <span style={{ color: INK, fontSize: 18, opacity: 0.5 }}>›</span>
+        </Link>
+
+        {/* COOKED — your real cooks, tap into the recipe */}
         <Section title="Cooked" hint="your real dishes" />
-        <div className="grid grid-cols-2 gap-3">
-          {COOKED.map(([name, img, rot]) => (
-            <div key={name as string} style={{ background: "#fff", border: `2px solid ${INK}`, padding: 6, transform: `rotate(${rot}deg)`, boxShadow: "0 8px 18px rgba(23,20,16,0.16)" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img as string} alt="" style={{ width: "100%", height: 116, objectFit: "cover", display: "block" }} />
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, marginTop: 5, lineHeight: 1.05 }}>{name as string}</div>
-            </div>
-          ))}
-        </div>
+        {cooked.length === 0 ? (
+          <div style={{ background: PAPER, border: `2px dashed ${INK}`, borderRadius: 14, padding: "18px", textAlign: "center", fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.6 }}>nothing cooked yet — post an “I cooked” and it lands here.</div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {cooked.map((c, i) => (
+              <button key={c.id} onClick={() => openCook(c)} style={{ background: "#fff", border: `2px solid ${INK}`, padding: 6, transform: `rotate(${i % 2 ? 2 : -2}deg)`, boxShadow: "0 8px 18px rgba(23,20,16,0.16)", textAlign: "left" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={c.photo_url ?? "/food/meal1.jpg"} alt="" style={{ width: "100%", height: 116, objectFit: "cover", display: "block" }} />
+                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, marginTop: 5, lineHeight: 1.05 }}>{c.title ?? "a cook"}</div>
+                {c.source_recipe_id && <div style={{ fontFamily: MONO, fontSize: 9, color: TOMATO, marginTop: 2 }}>📖 recipe ›</div>}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* WANT TO COOK — with provenance */}
         <Section title="Want to cook" hint="saved from your people" />
