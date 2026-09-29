@@ -63,6 +63,8 @@ export default function ICooked() {
   const [recipeFile, setRecipeFile] = useState<File | null>(null); // a photo of the actual recipe
   const recipeFileRef = useRef<HTMLInputElement>(null);
   const recipePromise = useRef<Promise<string | null> | null>(null);
+  const memoryRef = useRef<string | null>(null);        // extraction_memory id (photo learning)
+  const extractedTitleRef = useRef<string | null>(null); // what the model guessed, to detect a correction
   const [reading, setReading] = useState(false); // Marco reading the recipe during "generate"
 
   const hasRecipe = !!(link.trim() || text.trim() || recipeFile);
@@ -94,7 +96,7 @@ export default function ICooked() {
       if (source.kind === "photo") {
         const fd = new FormData(); fd.append("file", source.file);
         const r = await fetch("/api/recipes/extract-image", { method: "POST", body: fd });
-        if (r.ok) recipe = (await r.json()).recipe ?? null;
+        if (r.ok) { const j = await r.json(); recipe = j.recipe ?? null; memoryRef.current = j.memoryId ?? null; extractedTitleRef.current = recipe?.title ?? null; }
       } else if (source.kind === "link") {
         const r = await fetch("/api/recipes/extract", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: source.url }) });
         if (r.ok) recipe = (await r.json()).recipe ?? null;
@@ -131,6 +133,11 @@ export default function ICooked() {
       sourceRecipeId: recipeId,
     });
     setPosting(false);
+    // learning signal: if you renamed what Marco guessed, teach the system so
+    // visually-similar photos get the corrected answer next time.
+    if (memoryRef.current && title.trim() && title.trim() !== (extractedTitleRef.current ?? "")) {
+      fetch("/api/recipes/learn", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ memoryId: memoryRef.current, dishName: title.trim() }) }).catch(() => { /* best-effort */ });
+    }
     router.push("/friends-stack");
   }
 

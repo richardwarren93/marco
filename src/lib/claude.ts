@@ -259,13 +259,38 @@ Return ONLY valid JSON. No markdown, no code blocks.`,
   }
 }
 
+// A one-line visual description of a dish photo — the text we embed for the
+// learning loop's visual similarity search. Cheap model, best-effort.
+export async function describeDishPhoto(imageBase64: string, mimeType: string): Promise<string> {
+  try {
+    const r = await anthropic.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 120,
+      messages: [{
+        role: "user",
+        content: [
+          { type: "image", source: { type: "base64", media_type: mimeType as "image/jpeg" | "image/png" | "image/webp" | "image/gif", data: imageBase64 } },
+          { type: "text", text: "In one sentence, describe the visible food: the main protein, key vegetables, sauce/seasoning, and cooking method. Just the description, no preamble." },
+        ],
+      }],
+    });
+    return r.content[0].type === "text" ? r.content[0].text.trim() : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function extractRecipeFromImage(
   imageBase64: string,
   mimeType: string,
-  knownDishes: string[] = []
+  knownDishes: string[] = [],
+  similarDishes: string[] = []
 ): Promise<Partial<Recipe>> {
   const dishHint = knownDishes.length
     ? `\n\nFor reference, dishes people commonly cook in this community include: ${[...new Set(knownDishes)].slice(0, 50).join(", ")}. Use this only as a tie-breaker for naming/identification when the photo is ambiguous — always trust what you actually see in the photo over this list.`
+    : "";
+  const simHint = similarDishes.length
+    ? `\n\nLEARNED CONTEXT: Photos visually very similar to this one were previously identified (and human-confirmed) as: ${[...new Set(similarDishes)].join(", ")}. Weight these heavily when identifying the dish and especially the protein — but still trust what you clearly see.`
     : "";
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -276,7 +301,7 @@ The image is ONE of two things:
 1. A photo of a FINISHED, PLATED DISH that someone just cooked — identify the dish and produce its most likely recipe (ingredients, steps, timing). Look carefully at the actual food: proteins (pork, chicken, fish, beef, tofu), vegetables, sauces, cooking method. Name the specific protein correctly.
 2. A photo of a physical cookbook page or handwritten recipe card — transcribe the recipe you can read.
 
-Decide which it is, then extract accordingly. If it's a finished dish, infer a realistic recipe for what you see. If something is partially obscured, make your best educated guess.${dishHint}`,
+Decide which it is, then extract accordingly. If it's a finished dish, infer a realistic recipe for what you see. If something is partially obscured, make your best educated guess.${simHint}${dishHint}`,
     messages: [
       {
         role: "user",
