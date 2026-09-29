@@ -221,9 +221,11 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
   }
   return (
     <div style={{ position: "relative" }}>
-      {featured && (
+      {featured ? (
         <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
-      )}
+      ) : isMine ? (
+        <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>✦ your cook</div>
+      ) : null}
       {/* actions live INSIDE the card (see CookCard) so it's clear they belong
           to this cook — the whole card also opens the recipe on tap */}
       <CookCard
@@ -237,10 +239,11 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
         h={180}
         cookedCount={cookedCount}
         onOpen={rid ? openRecipe : undefined}
-        onCook={rid ? () => router.push(`/i-cooked?recipe=${rid}`) : undefined}
+        onCook={rid && !isMine ? () => router.push(`/i-cooked?recipe=${rid}`) : undefined}
         onToggleSave={rid && !isMine ? toggleSave : undefined}
         onPlan={rid ? () => router.push(`/recipes/${rid}?openMealSheet=true`) : undefined}
         saved={rid ? (isMine || saved) : false}
+        mine={isMine}
       />
       {!rid && (
         <div style={{ marginTop: 10, textAlign: "center", fontFamily: HAND, fontSize: 13.5, color: INK, opacity: 0.5 }}>no recipe on this one yet</div>

@@ -42,6 +42,7 @@ export interface CookCardProps {
   onToggleSave?: () => void; // toggle save/unsave (omitted for your own cook = static "saved")
   onPlan?: () => void;
   saved?: boolean;
+  mine?: boolean; // your own cook — shows a "your cook" state instead of "I cooked this"
 }
 
 export default function CookCard(p: CookCardProps) {
@@ -62,8 +63,8 @@ function CountStamp({ n, style }: { n: number; style?: React.CSSProperties }) {
 // The labeled recipe actions, rendered INSIDE the card. "I cooked this" leads
 // (it grows the lineage); save + meal-plan sit under it. Tone adapts to the
 // card's background so outlines read on light (paper) or dark (cobalt).
-function CardActions({ tone, saved, onCook, onToggleSave, onPlan }: { tone: "light" | "dark"; saved?: boolean; onCook?: () => void; onToggleSave?: () => void; onPlan?: () => void }) {
-  if (!onCook) return null;
+function CardActions({ tone, saved, mine, onCook, onToggleSave, onPlan }: { tone: "light" | "dark"; saved?: boolean; mine?: boolean; onCook?: () => void; onToggleSave?: () => void; onPlan?: () => void }) {
+  if (!onPlan) return null; // no recipe → no actions
   const dark = tone === "dark";
   const line = dark ? "rgba(251,247,238,0.30)" : "rgba(23,20,16,0.14)";
   const edge = dark ? PAPER : INK;
@@ -71,8 +72,14 @@ function CardActions({ tone, saved, onCook, onToggleSave, onPlan }: { tone: "lig
   const stop = (fn?: () => void) => (e: React.MouseEvent) => { e.stopPropagation(); fn?.(); };
   return (
     <div style={{ marginTop: 14, borderTop: `1.5px solid ${line}`, paddingTop: 12 }}>
-      <button onClick={stop(onCook)} className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 0", borderRadius: 11, border: `2px solid ${INK}` }}><span aria-hidden>🍳</span> I cooked this</button>
-      <div className="flex gap-2" style={{ marginTop: 8 }}>
+      {/* "I cooked this" only on someone else's cook — on your own it's silly.
+          Your own shows a "your cook" state instead. */}
+      {onCook ? (
+        <button onClick={stop(onCook)} className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 0", borderRadius: 11, border: `2px solid ${INK}` }}><span aria-hidden>🍳</span> I cooked this</button>
+      ) : mine ? (
+        <div className="w-full flex items-center justify-center gap-2" style={{ color: txt, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "9px 0", borderRadius: 11, border: `2px dashed ${edge}`, opacity: 0.8 }}><span aria-hidden>✓</span> your cook</div>
+      ) : null}
+      <div className="flex gap-2" style={{ marginTop: (onCook || mine) ? 8 : 0 }}>
         <button onClick={stop(onPlan)} className="flex-1 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform" style={{ background: "transparent", color: txt, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "10px 0", borderRadius: 11, border: `2px solid ${edge}` }}><span aria-hidden>📅</span> Meal plan</button>
         <BookmarkBtn saved={saved} edge={edge} onToggle={onToggleSave} />
       </div>
@@ -105,7 +112,7 @@ function openProps(onOpen?: () => void): React.HTMLAttributes<HTMLDivElement> {
   return { onClick: onOpen, role: "button", tabIndex: 0, style: { cursor: "pointer" } };
 }
 
-function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 224, cookedCount, onOpen, onCook, onToggleSave, onPlan, saved }: CookCardProps) {
+function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 224, cookedCount, onOpen, onCook, onToggleSave, onPlan, saved, mine }: CookCardProps) {
   const op = openProps(onOpen);
   return (
     <div {...op} style={{ position: "relative", background: PAPER, borderRadius: 12, padding: 14, border: `2px solid ${INK}`, transform: "rotate(-1.4deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)", ...op.style }}>
@@ -120,12 +127,12 @@ function Polaroid({ photo, title, note, authorName, timeLabel = "just now", h = 
         <svg width="180" height="11" viewBox="0 0 180 11" fill="none" aria-hidden style={{ marginTop: 3 }}><path d="M2 7 C 28 2, 52 10, 78 6 S 132 2, 178 6" stroke={TOMATO} strokeWidth="3.5" strokeLinecap="round" /></svg>
         {note && <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, marginTop: 8, transform: "rotate(-1deg)" }}>{note}</div>}
       </div>
-      <CardActions tone="light" saved={saved} onCook={onCook} onToggleSave={onToggleSave} onPlan={onPlan} />
+      <CardActions tone="light" saved={saved} mine={mine} onCook={onCook} onToggleSave={onToggleSave} onPlan={onPlan} />
     </div>
   );
 }
 
-function Receipt({ photo, title, note, authorName, h = 200, cookedCount, onOpen, onCook, onToggleSave, onPlan, saved }: CookCardProps) {
+function Receipt({ photo, title, note, authorName, h = 200, cookedCount, onOpen, onCook, onToggleSave, onPlan, saved, mine }: CookCardProps) {
   const op = openProps(onOpen);
   return (
     <div {...op} style={{ position: "relative", background: "#fff", padding: "18px 18px 22px", border: `2px solid ${INK}`, transform: "rotate(1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.22)", backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 26px, rgba(23,20,16,0.05) 27px)", ...op.style }}>
@@ -141,12 +148,12 @@ function Receipt({ photo, title, note, authorName, h = 200, cookedCount, onOpen,
       <div style={{ borderTop: `1.5px dashed ${INK}`, margin: "14px 0 8px" }} />
       <div className="text-center" style={{ fontFamily: MONO, fontSize: 10, letterSpacing: "0.14em", color: INK }}>by {authorName} · thank you · come again</div>
       <div style={{ display: "flex", gap: 2, justifyContent: "center", marginTop: 8 }}>{Array.from({ length: 28 }).map((_, i) => <span key={i} style={{ width: i % 3 ? 2 : 4, height: 22, background: INK }} />)}</div>
-      <CardActions tone="light" saved={saved} onCook={onCook} onToggleSave={onToggleSave} onPlan={onPlan} />
+      <CardActions tone="light" saved={saved} mine={mine} onCook={onCook} onToggleSave={onToggleSave} onPlan={onPlan} />
     </div>
   );
 }
 
-function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel = "just now", h = 230, cookedCount, onOpen, onCook, onToggleSave, onPlan, saved }: CookCardProps) {
+function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel = "just now", h = 230, cookedCount, onOpen, onCook, onToggleSave, onPlan, saved, mine }: CookCardProps) {
   const op = openProps(onOpen);
   return (
     <div {...op} style={{ position: "relative", background: COBALT, borderRadius: 12, padding: 16, border: `2.5px solid ${INK}`, transform: "rotate(-1deg)", boxShadow: "0 18px 40px rgba(23,20,16,0.24)", overflow: "hidden", ...op.style }}>
@@ -162,7 +169,7 @@ function Poster({ photo, title, note, authorName, authorAvatar = "?", timeLabel 
         <div className="flex items-center justify-center" style={{ width: 26, height: 26, borderRadius: 99, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 12, border: `1.5px solid ${INK}` }}>{(authorAvatar || "?").slice(0, 1)}</div>
         <span style={{ fontFamily: SANS, fontSize: 13, color: PAPER }}>{authorName} · {timeLabel}</span>
       </div>
-      <CardActions tone="dark" saved={saved} onCook={onCook} onToggleSave={onToggleSave} onPlan={onPlan} />
+      <CardActions tone="dark" saved={saved} mine={mine} onCook={onCook} onToggleSave={onToggleSave} onPlan={onPlan} />
     </div>
   );
 }

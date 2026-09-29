@@ -836,15 +836,22 @@ export default function RecipeDetailPage() {
           )}
         </div>
 
-        {/* ── "I cooked this" — the lineage entry: capture flow bound to this
-              recipe, so your photo + variation join the thread ─────────── */}
-        <button
-          onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)}
-          className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mb-4"
-          style={{ background: "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: "0 10px 24px rgba(229,70,46,0.3)" }}
-        >
-          <span aria-hidden>🍳</span> I cooked this →
-        </button>
+        {/* ── The lineage entry. If you've already cooked it, this is a state,
+              not an action (cooking your own again is silly); otherwise it's
+              the capture flow bound to this recipe. ─────────────────────── */}
+        {lineageCooks.some((c) => c.isMine) ? (
+          <div className="w-full flex items-center justify-center gap-2 mb-4" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 14, border: "2px dashed #171410", background: "#C4EE45" }}>
+            <span aria-hidden>✓</span> you cooked this
+          </div>
+        ) : (
+          <button
+            onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)}
+            className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mb-4"
+            style={{ background: "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: "0 10px 24px rgba(229,70,46,0.3)" }}
+          >
+            <span aria-hidden>🍳</span> I cooked this →
+          </button>
+        )}
 
         {/* ── 3. Actions (owner) ─────────────────────────────────────── */}
         {!isPublicView && (
@@ -1006,23 +1013,27 @@ export default function RecipeDetailPage() {
           {lineageCooks.length > 0 ? (
             <div className="flex flex-col" style={{ gap: 26 }}>
               {lineageCooks.map((c) => (
-                <button
-                  key={c.id}
-                  onClick={() => c.user_id && router.push(`/u/${c.user_id}`)}
-                  className="block w-full text-left active:scale-[0.99] transition-transform"
-                  style={{ background: "none", border: "none", padding: 0 }}
-                >
-                  <CookCard
-                    treatment={c.card_treatment}
-                    photo={c.photo_url ?? ""}
-                    title={c.title ?? ""}
-                    note={c.note ?? ""}
-                    authorName={c.isMine ? "you" : (c.author_name ?? "a cook")}
-                    authorAvatar={c.author_avatar ?? (c.author_name ?? "?").slice(0, 1)}
-                    timeLabel={relTime(c.created_at)}
-                    h={200}
-                  />
-                </button>
+                <div key={c.id} style={{ position: "relative" }}>
+                  {c.isMine && (
+                    <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: "#C4EE45", color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: "2px solid #171410", transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>✦ your cook</div>
+                  )}
+                  <button
+                    onClick={() => c.user_id && router.push(`/u/${c.user_id}`)}
+                    className="block w-full text-left active:scale-[0.99] transition-transform"
+                    style={{ background: "none", border: "none", padding: 0 }}
+                  >
+                    <CookCard
+                      treatment={c.card_treatment}
+                      photo={c.photo_url ?? ""}
+                      title={c.title ?? ""}
+                      note={c.note ?? ""}
+                      authorName={c.isMine ? "you" : (c.author_name ?? "a cook")}
+                      authorAvatar={c.author_avatar ?? (c.author_name ?? "?").slice(0, 1)}
+                      timeLabel={relTime(c.created_at)}
+                      h={200}
+                    />
+                  </button>
+                </div>
               ))}
             </div>
           ) : (
