@@ -133,9 +133,9 @@ export default function ICooked() {
       sourceRecipeId: recipeId,
     });
     setPosting(false);
-    // learning signal: if you renamed what Marco guessed, teach the system so
-    // visually-similar photos get the corrected answer next time.
-    if (memoryRef.current && title.trim() && title.trim() !== (extractedTitleRef.current ?? "")) {
+    // Posting = you reviewed it. Confirm the label (kept OR corrected) so
+    // visually-similar photos learn from it next time.
+    if (memoryRef.current && title.trim()) {
       fetch("/api/recipes/learn", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ memoryId: memoryRef.current, dishName: title.trim() }) }).catch(() => { /* best-effort */ });
     }
     router.push("/friends-stack");

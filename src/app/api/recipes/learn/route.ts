@@ -16,7 +16,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false }, { status: 400 });
     }
     const admin = createAdminClient();
-    await admin.from("extraction_memory").update({ dish_name: dishName.trim().slice(0, 120) }).eq("id", memoryId).eq("user_id", user.id);
+    // Posting = a human reviewed it. Trust this label (kept or corrected) and
+    // mark the memory confirmed so future similar photos can learn from it.
+    await admin.from("extraction_memory").update({ dish_name: dishName.trim().slice(0, 120), confirmed: true }).eq("id", memoryId).eq("user_id", user.id);
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ ok: true }); // never surface learning failures to the user
