@@ -552,10 +552,10 @@ export default function GroceryList() {
   }, [dateRange.start, dateRange.end]);
 
   return (
-    <div className="pb-24" style={{ background: "#F5EEE2" }}>
+    <div className="pb-24" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", minHeight: "100%" }}>
 
       {/* ── Header: week navigation bar (matches Meal Plan) ────────────── */}
-      <div className="px-4 pt-3 pb-2" style={{ background: "#F5EEE2" }}>
+      <div className="px-4 pt-3 pb-2">
         <div className="flex items-center justify-between mb-2 max-w-3xl mx-auto">
           {/* Left: prev arrow + week label + next arrow + calendar icon */}
           <div className="flex items-center gap-1">
@@ -568,7 +568,7 @@ export default function GroceryList() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{weekLabel}</span>
+            <span className="text-2xl whitespace-nowrap" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
             <button
               onClick={() => navigateWeek(7)}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
@@ -780,15 +780,15 @@ export default function GroceryList() {
               {/* + Add meal card */}
               <button
                 onClick={() => router.push("/recipes?tab=meal-plan")}
-                className="flex-shrink-0 snap-start rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 transition-colors hover:bg-gray-100"
-                style={{ width: 152, minHeight: 152, background: "#f9f7f5", border: "2px dashed #e0dbd6" }}
+                className="flex-shrink-0 snap-start rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 transition-transform active:scale-[0.98]"
+                style={{ width: 152, minHeight: 152, background: "#FBF7EE", border: "2px dashed #171410" }}
               >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#eee9e3" }}>
-                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: "#C4EE45", border: "2px solid #171410" }}>
+                  <svg className="w-5 h-5" style={{ color: "#171410" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                   </svg>
                 </div>
-                <span className="text-xs font-medium text-gray-400">Add meal</span>
+                <span style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 13, color: "#171410" }}>Add meal</span>
               </button>
             </div>
           )}
@@ -886,18 +886,11 @@ export default function GroceryList() {
 
       ) : grouped.length === 0 ? (
         <div className="mx-4 mt-3 text-center py-8">
-          <p
-            style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontStyle: "italic",
-              fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
-              fontSize: "16px",
-              color: "var(--ink-soft, #4A4742)",
-              padding: "0 1.5rem",
-              lineHeight: 1.5,
-            }}
-          >
-            No items yet — add meals to your plan to see what you'll need this week.
+          <p style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 20, color: "#171410", marginBottom: 4 }}>
+            Nothing to grab yet
+          </p>
+          <p style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 17, color: "#E5462E", padding: "0 1.5rem", lineHeight: 1.45 }}>
+            add meals to your plan and your list builds itself
           </p>
         </div>
 
