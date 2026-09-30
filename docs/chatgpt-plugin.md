@@ -1,29 +1,46 @@
 # Marco in the public ChatGPT plugin directory
 
-Status: implementation prepared locally; not deployed, connected, packaged for
-submission, submitted, or published. Publisher requested: **ACGC**. This release
-is **free**, with no Marco Plus entitlement check. Country targeting is pending.
+Status: implementation deployed in commit `93ae434` and connected in ChatGPT;
+not packaged for submission, submitted, or published. Publisher requested: **ACGC**. This release
+is **free**, with no Marco Plus entitlement check. User selected all supported countries and questions@windwalk.com for support.
 
 Verified on September 30, 2026: all six automated plugin tests passed; targeted
 ESLint and project TypeScript passed; the full Next.js production build passed
 after rerunning outside the Windows filesystem sandbox. The build still warns
-about multiple workspace lockfiles. OAuth, SQL migration, consent UI interaction,
-and ChatGPT review cases have not been tested against a live deployment.
+about multiple workspace lockfiles. The SQL migration and synthetic SQL checks
+passed on the live project. Live OAuth connection and one read-only recipe
+search passed in ChatGPT. The full public-review cases have not been run.
 
 OAuth setup progress (September 30, 2026): inspected the live Marco Supabase
 project `jwioqapvtejfjckrjwcv`. Its current signing key is ECC P-256 and there
 were no configured Auth hooks. Applied `migration-chatgpt-plugin.sql` after a
 rollback-only dry run and synthetic tests of token claims and the Data API
 guard. Verified the client table, token-hook function, pre-request RPC guard,
-and 58 restrictive policies. The allowlist has zero clients. The token-hook
-function is installed but NOT enabled in Auth settings. OAuth Server remains
-disabled; the consent-path form was reset without saving.
+and 58 restrictive policies. With the user's approval, enabled OAuth Server and
+the `public.marco_plugin_access_token_hook` Auth hook. Dynamic registration is
+disabled. Registered the public PKCE client `0268bcfc-f47e-452c-8d3c-2f1a666b900f`
+as "Marco for ChatGPT", using the exact callback shown by ChatGPT:
+`https://chatgpt.com/connector/oauth/-v-FYZP7l0s1`. Added it to the database
+allowlist and production `MARCO_MCP_CLIENT_IDS`.
 
-The live Supabase Site URL is `https://marco-windwalk.vercel.app/`, which leads
-to a Vercel sign-in wall. The app at `https://marco-eta-lyart.vercel.app` is public,
-but `/connect/marco` returns 404 until this code is deployed. Vercel and ChatGPT
-sign-in are pending to resolve the deployment and exact OAuth callback. Do not
-change the Site URL or register an inferred callback without resolving this.
+The old Supabase Site URL `https://marco-windwalk.vercel.app/` led to a Vercel
+sign-in wall. Changed it to `https://marco-eta-lyart.vercel.app`, which is public,
+and Vercel confirms it is the production domain. Set production
+`NEXT_PUBLIC_APP_URL=https://marco-eta-lyart.vercel.app`. Vercel deployment
+`HD26LroUBpDvC7B2d4XGbm8xn9wj` reached Ready, and the public `/connect/marco`
+page was verified in the browser. The saved OAuth consent URL is
+`https://marco-eta-lyart.vercel.app/connect/marco`. OAuth metadata is live and
+advertises PKCE S256, public clients, and refresh tokens.
+Production redeployment `5XuwbkGiiUQ6NcKzDezEbazd1zew` reached Ready. Verified
+the MCP's unauthenticated 401 challenge and protected-resource metadata.
+ChatGPT successfully discovered the endpoints and began authorization with the
+registered client; it redirected to the live Marco sign-in/consent page. The
+user completed authorization, and ChatGPT shows Marco as connected. A live
+read-only saved-recipe search with limit 1 succeeded, verifying the connection
+through an authenticated tool call. Refresh, denial, and revocation remain
+untested. The ChatGPT connection is personal development setup, not a
+public-directory publication. Plugin ID:
+`plugin_asdk_app_6abd782c66c0819187dcd0b663352171`.
 
 ## Implemented release
 
@@ -88,7 +105,7 @@ and ESLint on the changed files. Protocol tests use synthetic fixtures and the
 real SDK transport. They do not connect to a production account. Tests cover
 initialization, tool annotations, validation, bounded inputs, redacted errors,
 JWT checks, first-party token rejection, ownership filters, shared list overrides,
-and membership lookup failure. Live Supabase SQL/OAuth tests are still pending.
+and membership lookup failure. Live SQL/OAuth tests passed; see docs/plugin-review-results.md.
 
 For local HTTP checks, configure a localhost `NEXT_PUBLIC_APP_URL`, the existing
 Supabase public environment values, and a development client ID. No secrets go
@@ -103,8 +120,8 @@ cases, and release notes. Those review cases have **not been run in ChatGPT**.
 brand colors have not been added.
 
 Do not export a skills-only ZIP from this source: its promised functionality
-requires the MCP connection. After deployment, verify the actual HTTPS endpoint
-and add root `mcp.json` with schema
+requires the MCP connection. The deployed HTTPS endpoint has been verified and
+root `mcp.json` now uses schema
 `https://agent-plugins.org/schemas/1.0.0/mcp.schema.json`, server name `marco`,
 type `streamable-http`, and that verified URL. Do not add `.app.json`, hooks,
 credentials, or app bindings to the author-supplied public upload.
@@ -140,7 +157,7 @@ and grocery override. Finish with the unsupported purchase request. Record real
 interactions with readable results, excluding passwords and unrelated data.
 Verify playback and host the recording where reviewers can access it. A script
 is not a completed recording. Record each case as Passed, Failed, Blocked, or
-Not run; all ChatGPT cases currently remain Not run.
+Not run; see plugin-review-results.md for API results and ChatGPT rehearsal evidence.
 
 Once preparation is complete, upload a draft in the intended OpenAI organization,
 connect the real MCP endpoint, verify the saved metadata, and run the portal's

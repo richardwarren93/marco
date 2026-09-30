@@ -4,9 +4,8 @@ export const metadata = {
   title: "Support · Marco",
 };
 
-// Support email surfaced to users and to App Store review. Swap for a dedicated
-// address (e.g. support@ your domain) if/when you set one up.
-const SUPPORT_EMAIL = "saptakray@gmail.com";
+// Publisher-confirmed support address.
+const SUPPORT_EMAIL = "questions@windwalk.com";
 
 export default function SupportPage() {
   return (
@@ -33,6 +32,13 @@ export default function SupportPage() {
 
           <Section title="Common questions">
             <ul className="list-disc pl-5 space-y-2">
+              <li>
+                <strong>Marco in ChatGPT.</strong> The free plugin by ACGC reads your saved
+                recipes, personal meal plan, pantry, and saved grocery lists. It does not
+                require Marco Plus. Connect your Marco account in ChatGPT and approve
+                access; disconnect from ChatGPT&apos;s plugin settings when needed.
+                <Link href="/connect/about" className="underline"> Learn about the plugin.</Link>
+              </li>
               <li>
                 <strong>How do I save a recipe?</strong> Open the Recipes tab, tap Import, and paste a
                 link from a video or website — or share directly to Marco from another app.

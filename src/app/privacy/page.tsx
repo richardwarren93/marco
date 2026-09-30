@@ -12,7 +12,7 @@ export default function PrivacyPage() {
         <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
           Privacy Policy
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "#a09890" }}>Last updated: May 7, 2026</p>
+        <p className="mt-2 text-sm" style={{ color: "#a09890" }}>Last updated: September 30, 2026</p>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed" style={{ color: "#1C1A17" }}>
           <Section title="What we collect">
@@ -34,6 +34,22 @@ export default function PrivacyPage() {
             </ul>
           </Section>
 
+          <Section title="Marco in ChatGPT">
+            <p>Marco&apos;s free, read-only ChatGPT plugin is published by ACGC. When you
+              connect it, Supabase authenticates your Marco account and asks you to approve
+              access. Your account identity and email link the connection.</p>
+            <p className="mt-2">At your request, the plugin sends saved recipe details,
+              personal meal plans, recorded pantry items, and saved grocery lists to
+              OpenAI for use in ChatGPT. Grocery results can include your shared household
+              list. The plugin does not create purchases, send messages, or edit these
+              records. Its tools do not accept or store chat transcripts.</p>
+            <p className="mt-2">Disconnect Marco in ChatGPT to remove its connection.
+              Disconnecting does not delete the cooking records in your Marco account
+              or information already returned to ChatGPT. Manage your ChatGPT data
+              through OpenAI&apos;s controls and policies. Contact questions@windwalk.com
+              for help with your Marco data.</p>
+          </Section>
+
           <Section title="SMS data">
             If you verify a phone number on your Profile page, we store the number, the date
             you opted in, and a log of inbound and outbound messages so the Service can route
@@ -53,14 +69,14 @@ export default function PrivacyPage() {
               <li><strong>Vercel</strong> — hosting and CDN.</li>
             </ul>
             <p className="mt-2">
-              We don&apos;t sell your data. We don&apos;t share it with advertisers. We only
+              We don&apos;t sell your data. We don&apos;t share it with advertisers. We may also
               disclose data when required by law.
             </p>
           </Section>
 
           <Section title="Your rights">
             You can update or delete your account from the app at any time. Email
-            support@marco.app to request a copy of your data or full deletion.
+            questions@windwalk.com to request a copy of your data or full deletion.
           </Section>
 
           <Section title="Security">
@@ -70,7 +86,7 @@ export default function PrivacyPage() {
 
           <Section title="Children">
             Marco isn&apos;t intended for users under 13. If you think a child has signed up,
-            email support@marco.app and we&apos;ll remove the account.
+            email questions@windwalk.com and we&apos;ll remove the account.
           </Section>
 
           <Section title="Changes">
@@ -79,7 +95,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="Contact">
-            Questions? Email support@marco.app.
+            Questions? Email questions@windwalk.com.
           </Section>
         </div>
       </div>

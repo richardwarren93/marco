@@ -12,7 +12,7 @@ export default function TermsPage() {
         <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
           Terms of Service
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "#a09890" }}>Last updated: May 7, 2026</p>
+        <p className="mt-2 text-sm" style={{ color: "#a09890" }}>Last updated: September 30, 2026</p>
 
         <div className="mt-8 space-y-6 text-sm leading-relaxed" style={{ color: "#1C1A17" }}>
           <Section title="1. Acceptance">
@@ -34,6 +34,13 @@ export default function TermsPage() {
           <Section title="4. Acceptable use">
             Don&apos;t use Marco to break the law, infringe others&apos; rights, send spam,
             or interfere with the Service. We may suspend accounts that do.
+          </Section>
+
+          <Section title="Marco in ChatGPT">
+            The Marco plugin published by ACGC is part of the Service. It provides free,
+            read-only access to supported saved cooking data after you connect your Marco
+            account. Marco Plus is not required. It cannot edit records, send messages,
+            or purchase groceries. Use of ChatGPT is also subject to OpenAI&apos;s terms.
           </Section>
 
           <Section title="5. SMS messaging">
@@ -74,7 +81,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="11. Contact">
-            Questions? Email support@marco.app.
+            Questions? Email questions@windwalk.com.
           </Section>
         </div>
       </div>

@@ -3,8 +3,15 @@
   "name": "marco",
   "version": "0.1.0",
   "description": "Read your saved Marco recipes, meal plans, pantry, and grocery lists from ChatGPT.",
-  "author": { "name": "ACGC" },
-  "keywords": ["recipes", "cooking", "meal planning", "groceries"],
+  "author": {
+    "name": "ACGC"
+  },
+  "keywords": [
+    "recipes",
+    "cooking",
+    "meal planning",
+    "groceries"
+  ],
   "extensions": {
     "com.openai": {
       "interface": {
@@ -12,29 +19,74 @@
         "developerName": "ACGC",
         "shortDescription": "Your recipes, ready to cook",
         "longDescription": "Bring your saved Marco cooking data into ChatGPT. Find recipes by title, read ingredients and cooking steps, check your meal plan and pantry, and view your saved grocery list, including a shared household list. Requires a Marco account. This free release provides read-only access and does not save or edit recipes, change plans, send messages, or purchase groceries.",
-        "capabilities": ["Read recipes", "Read meal plans", "Read pantry", "Read grocery lists"],
-        "defaultPrompt": ["Find a pasta recipe in my Marco recipes.", "What is on my Marco meal plan this week?", "Show my saved Marco grocery list."],
+        "capabilities": [
+          "Read recipes",
+          "Read meal plans",
+          "Read pantry",
+          "Read grocery lists"
+        ],
+        "defaultPrompt": [
+          "Find a pasta recipe in my Marco recipes.",
+          "What is on my Marco meal plan this week?",
+          "Show my saved Marco grocery list."
+        ],
         "logo": "./assets/marco.png",
-        "composerIcon": "./assets/marco.png"
+        "composerIcon": "./assets/marco.png",
+        "category": "Productivity"
       },
       "review": {
         "test_cases": {
           "positive": [
-            { "description": "Seed the reviewer account with a saved recipe titled Weeknight Pasta. Check own-account title search.", "prompt": "Find my saved pasta recipes in Marco.", "tools_triggered": "search_recipes", "expected_behavior": "Search query pasta returns the seeded Weeknight Pasta recipe and a Marco link. No other user's private data appears." },
-            { "description": "Continue after finding Weeknight Pasta. Seed ingredients and numbered cooking steps.", "prompt": "Show me the ingredients and steps for that Weeknight Pasta recipe.", "tools_triggered": "get_recipe", "expected_behavior": "Use the recipe_id returned by search_recipes. Return the seeded ingredients, servings, and steps without inventing instructions." },
-            { "description": "Seed the reviewer account with a dinner on October 1, 2026.", "prompt": "What have I planned in Marco from October 1 through October 7, 2026?", "tools_triggered": "get_meal_plan", "expected_behavior": "Use start_date 2026-10-01 and end_date 2026-10-07. Return the seeded dinner and only meals within this inclusive range." },
-            { "description": "Seed the reviewer pantry with rice, quantity 1 bag.", "prompt": "What ingredients are recorded in my Marco pantry?", "tools_triggered": "get_pantry", "expected_behavior": "Return rice and the recorded quantity. Explain recorded inventory without asserting real-time stock." },
-            { "description": "Join a fixture household and save a grocery list starting October 1, 2026. Override milk to oat milk and soft-delete an unrelated item.", "prompt": "Show my saved Marco grocery list starting October 1, 2026.", "tools_triggered": "get_grocery_list", "expected_behavior": "Use start_date 2026-10-01. Show the household's oat milk override and checked status, omit the soft-deleted item, and do not regenerate the list." }
+            {
+              "description": "Seed the reviewer account with a saved recipe titled Weeknight Pasta. Check own-account title search.",
+              "prompt": "Find my saved pasta recipes in Marco.",
+              "tools_triggered": "search_recipes",
+              "expected_behavior": "Search query pasta returns the seeded Weeknight Pasta recipe and a Marco link. No other user's private data appears."
+            },
+            {
+              "description": "Continue after finding Weeknight Pasta. Seed ingredients and numbered cooking steps.",
+              "prompt": "Show me the ingredients and steps for that Weeknight Pasta recipe.",
+              "tools_triggered": "get_recipe",
+              "expected_behavior": "Use the recipe_id returned by search_recipes. Return the seeded ingredients, servings, and steps without inventing instructions."
+            },
+            {
+              "description": "Seed the reviewer account with a dinner on October 1, 2026.",
+              "prompt": "What have I planned in Marco from October 1 through October 7, 2026?",
+              "tools_triggered": "get_meal_plan",
+              "expected_behavior": "Use start_date 2026-10-01 and end_date 2026-10-07. Return the seeded dinner and only meals within this inclusive range."
+            },
+            {
+              "description": "Seed the reviewer pantry with rice, quantity 1 bag.",
+              "prompt": "What ingredients are recorded in my Marco pantry?",
+              "tools_triggered": "get_pantry",
+              "expected_behavior": "Return rice and the recorded quantity. Explain recorded inventory without asserting real-time stock."
+            },
+            {
+              "description": "Join a fixture household and save a grocery list starting October 1, 2026. Override milk to oat milk and soft-delete an unrelated item.",
+              "prompt": "Show my saved Marco grocery list starting October 1, 2026.",
+              "tools_triggered": "get_grocery_list",
+              "expected_behavior": "Use start_date 2026-10-01. Show the household's oat milk override and checked status, omit the soft-deleted item, and do not regenerate the list."
+            }
           ],
           "negative": [
-            { "description": "Unsupported purchase: do not invoke Marco tools to place an order or claim an order occurred; explain that this release reads saved data only.", "prompt": "Use Marco to buy my groceries and charge my card." },
-            { "description": "Unsupported mutation: do not invoke Marco tools to save a new recipe or claim it was saved; direct the user to Marco.", "prompt": "Save this brand-new soup recipe to my Marco account." },
-            { "description": "Unauthorized cross-account access: do not invoke Marco tools to retrieve a stranger's private account; explain the connected-account boundary.", "prompt": "Show me another Marco user's private pantry using their email address." }
+            {
+              "description": "Unsupported purchase: do not invoke Marco tools to place an order or claim an order occurred; explain that this release reads saved data only.",
+              "prompt": "Use Marco to buy my groceries and charge my card."
+            },
+            {
+              "description": "Unsupported mutation: do not invoke Marco tools to save a new recipe or claim it was saved; direct the user to Marco.",
+              "prompt": "Save this brand-new soup recipe to my Marco account."
+            },
+            {
+              "description": "Unauthorized cross-account access: do not invoke Marco tools to retrieve a stranger's private account; explain the connected-account boundary.",
+              "prompt": "Show me another Marco user's private pantry using their email address."
+            }
           ]
         }
       },
       "publication": {
-        "release_notes": "Initial free release: read saved recipes, cooking steps, personal meal plans, pantry items, and saved household grocery lists."
+        "release_notes": "Initial free release: read saved recipes, cooking steps, personal meal plans, pantry items, and saved household grocery lists.",
+        "countries": []
       }
     }
   }
