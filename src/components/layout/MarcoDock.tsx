@@ -19,7 +19,7 @@ const TABS: { label: string; glyph: string; href: string; match: string[] }[] = 
 ];
 
 // Full-screen / modal flows where the dock should not show.
-const HIDE_ON = ["/i-cooked", "/create", "/auth", "/onboarding", "/login"];
+const HIDE_ON = ["/i-cooked", "/create", "/auth", "/connect", "/onboarding", "/login"];
 
 export default function MarcoDock() {
   const pathname = usePathname() || "";

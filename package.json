@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:plugin": "node --experimental-strip-types --test tests/plugin/*.test.ts",
     "cap:sync": "cap sync",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
@@ -28,16 +29,19 @@
     "@capgo/capacitor-social-login": "^8.5.2",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
+    "@modelcontextprotocol/sdk": "^1.31.0",
     "@revenuecat/purchases-capacitor": "^13.4.2",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.99.1",
     "cheerio": "^1.2.0",
+    "jose": "^6.2.12",
     "mammoth": "^1.12.0",
     "next": "16.1.6",
     "pdf-parse": "^2.4.5",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "swr": "^2.4.1"
+    "swr": "^2.4.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

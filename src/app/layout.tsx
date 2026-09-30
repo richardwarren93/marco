@@ -62,9 +62,9 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${fraunces.variable} font-sans antialiased bg-[#F5EEE2] text-[#1C1A17] h-full flex flex-col overscroll-none`}>
         {/* Prevent pinch-to-zoom and visual-viewport scroll on iOS PWA */}
         <Script id="prevent-zoom" strategy="afterInteractive">{`
-          document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
-          document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
-          document.addEventListener('touchmove', function(e) { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturestart', function(e) { if (!location.pathname.startsWith('/connect')) e.preventDefault(); }, { passive: false });
+          document.addEventListener('gesturechange', function(e) { if (!location.pathname.startsWith('/connect')) e.preventDefault(); }, { passive: false });
+          document.addEventListener('touchmove', function(e) { if (!location.pathname.startsWith('/connect') && e.touches.length > 1) e.preventDefault(); }, { passive: false });
           // When iOS keyboard opens it scrolls the visual viewport offset — lock it back to 0.
           // Only trigger when keyboard is actually open (viewport height < 75% of screen)
           // to avoid firing on normal navigation (which caused nav bar jump).
