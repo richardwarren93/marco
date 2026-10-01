@@ -1,8 +1,8 @@
 import { PROJECT_ID, bridgeKey, sign } from "../../src/lib/imessage/protocol.ts";
 
-export async function handleMessage(id: string, sender: string, text: string): Promise<string | null> {
+export async function handleMessage(id: string, sender: string, text: string, chat: { type: "dm" | "group"; id: string }): Promise<string | null> {
   const key = bridgeKey(process.env.SUPABASE_SERVICE_ROLE_KEY || "");
-  const body = JSON.stringify({ project: PROJECT_ID, id, sender, text });
+  const body = JSON.stringify({ project: PROJECT_ID, id, sender, text, chat });
   const timestamp = String(Date.now());
   const response = await fetch("https://marco-eta-lyart.vercel.app/api/imessage/message", {
     method: "POST", headers: { "Content-Type": "application/json", "x-marco-time": timestamp, "x-marco-signature": sign(key, timestamp, body) },

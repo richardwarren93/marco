@@ -25,7 +25,7 @@ export default function IMessageConnection() {
   return <main className="mx-auto max-w-lg px-6 py-12 space-y-6">
     <Link href="/kitchen" className="underline">‹ Kitchen</Link>
     <h1 className="text-4xl font-serif">Marco in iMessage</h1>
-    <p>Connect your account, then send Marco a public recipe link to save it to your Kitchen. Only links you send directly to Marco are processed.</p>
+    <p>Connect your account, then send Marco a public recipe link to save it to your Kitchen. Links shared directly or in a group with Marco are saved to your own Kitchen. Connect your account in a direct message first.</p>
     <p className="text-sm">Your messages pass through Photon. This connection can save recipes; it cannot buy groceries or change existing recipes. Reminders are not enabled yet.</p>
     {error && <p role="alert">{error}</p>}
     {account && !signIn && <p className="text-sm">Marco account: {account}</p>}

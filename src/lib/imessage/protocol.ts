@@ -17,7 +17,7 @@ export function verify(key: string, timestamp: string, body: string, signature: 
 export function senderKey(sender: string) { return hash(`${PROJECT_ID}:imessage:${sender}`); }
 export function recipeUrl(text: string): string | null {
   const match = text.trim().match(/^(?:save(?: this(?: recipe)?)?\s+)?(https:\/\/[^\s<>]+)$/i);
-  if (!match) return null;
+  if (!match?.[1]) return null;
   try {
     const url = new URL(match[1].replace(/[.,!?]+$/, ""));
     if (url.protocol !== "https:" || url.username || url.password || (url.port && url.port !== "443")) return null;

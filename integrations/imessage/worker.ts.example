@@ -16,13 +16,13 @@ const app = await Spectrum({
 // `app.messages` is an async iterable. Each tick yields a `space` (the
 // conversation) and an inbound `message`. Reply by awaiting `space.send(...)`.
 for await (const [space, message] of app.messages) {
-  if (message.direction !== "inbound" || !message.sender?.id || !("type" in space) || space.type !== "dm") continue;
+  if (message.direction !== "inbound" || !message.sender?.id || !("type" in space) || (space.type !== "dm" && space.type !== "group")) continue;
   const text = message.content.type === "text" ? message.content.text : message.content.type === "richlink" ? message.content.url : null;
   if (!text) continue;
   try {
-    const reply = await handleMessage(message.id, message.sender.id, text);
+    const reply = await handleMessage(message.id, message.sender.id, text, { type: space.type, id: space.id });
     if (reply) await space.send(reply);
-    console.info("[marco] Direct message processed");
+    console.info("[marco] Message processed");
   } catch {
     console.error("[marco] Message processing failed; no message contents logged");
     try { await space.send("Marco is temporarily unavailable. Please try again in a moment."); } catch { /* Keep receiving if delivery fails. */ }
