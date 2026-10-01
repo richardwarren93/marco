@@ -1,5 +1,30 @@
 # Marco in the public ChatGPT plugin directory
 
+## Recipe cards and saving (v0.2.0)
+
+The extension adds `preview_recipe` (read-only MCP App HTML card) and
+`save_recipe` (creates a recipe after explicit confirmation). Saving is free
+and separately opt-in at `/connect/recipe-saving?client_id=<registered-client>`.
+Existing grants remain read-only unless that account enables saving. The
+cookie-authenticated permissions API checks origin and the configured client;
+plugin credentials cannot change their own permission through that API.
+The existing `marco_access=read` token marker remains a transport boundary,
+not a write grant: the server checks `marco_plugin_permissions` on each save.
+
+Applied `supabase/migration-plugin-recipe-saving.sql` on September 30, 2026.
+It adds the private permission table and an owner-scoped unique content key for
+safe retries. Tools cannot modify/delete existing recipes or publish social
+activity. The card uses text-only rendering for recipe data and no external
+scripts or image fetches. Nine automated plugin tests, targeted ESLint,
+TypeScript, and the production build pass. Deployment/host verification is
+recorded in `plugin-review-results.md`; the historical v0.1.0 notes below do
+not establish verification of the new interactive UI.
+
+The v0.1.0 preparation ZIP is obsolete. Rebuild the submission copy for v0.2.0
+after host verification, and include the real demo before submission.
+
+## Historical v0.1.0 setup
+
 Status: implementation deployed in commit `93ae434` and connected in ChatGPT;
 not packaged for submission, submitted, or published. Publisher requested: **ACGC**. This release
 is **free**, with no Marco Plus entitlement check. User selected all supported countries and questions@windwalk.com for support.

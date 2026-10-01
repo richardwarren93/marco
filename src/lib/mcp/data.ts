@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
+import { recipeInput, type RecipeInput } from "./recipe-input.ts";
 
 const recipeSummary = "id,title,description,servings,prep_time_minutes,cook_time_minutes,tags";
 
@@ -6,9 +8,27 @@ export class PluginDataError extends Error {}
 
 // This adapter uses a server-only database client. Every access is constrained
 // by the verified subject; no tool accepts a user ID or household ID.
-export function createPluginData(db: SupabaseClient, userId: string, origin: string) {
+export function createPluginData(db: SupabaseClient, userId: string, origin: string, clientId?: string) {
   const recipeLink = (id: string) => `${origin}/recipes/${encodeURIComponent(id)}`;
   return {
+    async saveRecipe(input: RecipeInput) {
+      const recipe = recipeInput.parse(input);
+      if (!clientId) throw new PluginDataError("Recipe saving is not enabled for this connection.");
+      const permission = await db.from("marco_plugin_permissions").select("recipe_save_enabled").eq("user_id", userId).eq("client_id", clientId).maybeSingle();
+      if (permission.error) throw new PluginDataError("Recipe-saving permission could not be checked. Nothing was saved.");
+      if (!permission.data?.recipe_save_enabled) throw new PluginDataError(`Enable recipe saving for this connection at ${origin}/connect/recipe-saving?client_id=${encodeURIComponent(clientId)}, then retry. Nothing was saved.`);
+      const key = createHash("sha256").update(JSON.stringify(recipe)).digest("hex");
+      const existing = await db.from("recipes").select("id,title").eq("user_id", userId).eq("plugin_save_key", key).maybeSingle();
+      if (existing.error) throw new PluginDataError("Recipe could not be checked. Nothing was saved.");
+      if (existing.data) return { saved: true, already_saved: true, recipe: { ...existing.data, url: recipeLink(existing.data.id) } };
+      const inserted = await db.from("recipes").insert({ ...recipe, user_id: userId, plugin_save_key: key }).select("id,title").single();
+      if (inserted.error?.code === "23505") {
+        const retry = await db.from("recipes").select("id,title").eq("user_id", userId).eq("plugin_save_key", key).maybeSingle();
+        if (!retry.error && retry.data) return { saved: true, already_saved: true, recipe: { ...retry.data, url: recipeLink(retry.data.id) } };
+      }
+      if (inserted.error || !inserted.data) throw new PluginDataError("Recipe could not be saved. Retry the same recipe safely.");
+      return { saved: true, already_saved: false, recipe: { ...inserted.data, url: recipeLink(inserted.data.id) } };
+    },
     async searchRecipes(query: string, limit: number, offset: number) {
       const literal = query.replace(/[\\%_]/g, "\\$&");
       const { data, error } = await db.from("recipes").select(recipeSummary)

@@ -6,6 +6,8 @@
 - Publisher requested: ACGC; user confirmed intended legal identity. Portal identity verification remains pending.
 - User chose all supported countries and `questions@windwalk.com` support.
 - Free plugin; no Plus requirement or purchasing tools.
+- Published and inspected all four unauthenticated listing pages: `/connect/about`, `/support`, `/privacy`, `/terms`. All identify Marco/ACGC and the confirmed support address. Privacy describes the plugin's OpenAI data sharing; retention details still require the publisher's answer.
+- Draft archive: `.local-oauth-admin/marco-0.1.0-preparation.zip`. Inspected archive entries and parsed manifest/MCP contents: correct endpoint, 27-character subtitle, five positive and three negative cases, explicit unrestricted countries, four verified URLs, actual icon and skill. No secrets/app bindings. Demo field absent, so this archive is not submission-ready.
 - OAuth configuration: registered public PKCE client, exact ChatGPT callback, dynamic registration disabled, audience-bound token hook, five read-only tools.
 
 ## Live test results
@@ -49,9 +51,23 @@ Use the isolated fixture account, not the personal account. Do not show password
 
 - Confirm retention/deletion practices for records and logs; finish privacy review.
 - Record, inspect, and host the real walkthrough. No demo URL has been invented.
-- Publish and verify all four listing pages after final policy changes.
+- Recheck the privacy page after confirmed retention details are incorporated.
 - Verify publisher identity/domain in the intended OpenAI organization.
 - Enter reviewer credentials through secure portal fields and maintain fixture access.
 - Upload the final package, connect the saved submission, run individual cases, resolve portal checks, and have the authorized publisher complete attestations.
 
 No draft has been uploaded to the public submission portal, submitted for review, or published.
+
+## v0.2.0 recipe saving and HTML cards
+
+The historical read-only results above cover v0.1.0. The save-refusal case is
+replaced in v0.2.0 by unsupported deletion. New positive cases cover previewing
+without saving and explicitly saving after opt-in.
+
+- Nine automated plugin tests pass: discovery/annotations, input validation,
+  JWT/session boundary, owner scoping, shared grocery behavior, fail-closed
+  permissions, confirmation, preview resource, and idempotent/concurrent saves.
+- Targeted ESLint, TypeScript, and production build pass.
+- Additive saving migration applied; existing accounts remain opted out.
+- Live save and ChatGPT HTML rendering are pending verification.
+- The old v0.1.0 ZIP is obsolete; public submission remains incomplete.

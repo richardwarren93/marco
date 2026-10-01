@@ -37,6 +37,8 @@ export default function SupportPage() {
                 recipes, personal meal plan, pantry, and saved grocery lists. It does not
                 require Marco Plus. Connect your Marco account in ChatGPT and approve
                 access; disconnect from ChatGPT&apos;s plugin settings when needed.
+                To save a new recipe, enable recipe saving using the link in its recipe
+                card, then press Save to Marco or explicitly ask ChatGPT to save it.
                 <Link href="/connect/about" className="underline"> Learn about the plugin.</Link>
               </li>
               <li>

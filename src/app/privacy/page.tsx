@@ -35,14 +35,17 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="Marco in ChatGPT">
-            <p>Marco&apos;s free, read-only ChatGPT plugin is published by ACGC. When you
+            <p>Marco&apos;s free ChatGPT plugin is published by ACGC. When you
               connect it, Supabase authenticates your Marco account and asks you to approve
               access. Your account identity and email link the connection.</p>
             <p className="mt-2">At your request, the plugin sends saved recipe details,
               personal meal plans, recorded pantry items, and saved grocery lists to
               OpenAI for use in ChatGPT. Grocery results can include your shared household
               list. The plugin does not create purchases, send messages, or edit these
-              records. Its tools do not accept or store chat transcripts.</p>
+              existing records. If you separately enable recipe saving, an explicit save
+              request sends that recipe from ChatGPT to Marco to create a record in your
+              account. You can turn off recipe saving on the permission page linked from
+              the recipe card. Its tools do not accept or store full chat transcripts.</p>
             <p className="mt-2">Disconnect Marco in ChatGPT to remove its connection.
               Disconnecting does not delete the cooking records in your Marco account
               or information already returned to ChatGPT. Manage your ChatGPT data

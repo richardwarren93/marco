@@ -75,7 +75,7 @@ export default function Consent() {
         <li>Read your saved grocery lists, including your shared household list.</li>
         <li>Use your account identity and email to link the connection.</li>
       </ul>
-      <p>This free plugin cannot change your data, send messages, or buy groceries. Results requested in ChatGPT are shared with OpenAI.</p>
+      <p>This free connection starts with read access. Recipe saving requires a separate opt-in in Marco and your explicit save request. It cannot edit or delete existing recipes, send messages, or buy groceries. Results requested in ChatGPT are shared with OpenAI.</p>
       <p className="text-sm">Requested identity permissions: {details.scope || "Account access"}</p>
       <div className="flex flex-wrap gap-3">
         <button disabled={busy} className={`${button} bg-[#1C1A17] text-white`} onClick={() => decide("approve")}>Allow access</button>

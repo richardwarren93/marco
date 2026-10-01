@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-export const metadata = { title: "Marco for ChatGPT · ACGC", description: "Your saved recipes, meal plans, pantry, and grocery lists in ChatGPT. A free, read-only plugin by ACGC." };
+export const metadata = { title: "Marco for ChatGPT · ACGC", description: "Read your cooking data, preview recipe cards, and save recipes in ChatGPT. A free plugin by ACGC." };
 export const viewport = { width: "device-width", initialScale: 1, maximumScale: 5, userScalable: true };
 
 export default function MarcoPluginPage() {
@@ -13,11 +13,12 @@ export default function MarcoPluginPage() {
         <li>Find your saved recipes by title and read ingredients and cooking steps.</li>
         <li>Check your personal meal plan and recorded pantry.</li>
         <li>Read saved grocery lists, including your shared household list.</li>
+        <li>Preview recipe cards and save new recipes with your permission.</li>
       </ul>
       <section className="rounded-2xl border border-[#1C1A17]/20 bg-white/40 p-6 space-y-3">
         <h2 className="text-xl font-bold">Free, with your permission</h2>
         <p>A Marco account is required. Connect through ChatGPT and sign in to Marco to approve access. Marco Plus is not required for this plugin.</p>
-        <p>The plugin is read-only: it cannot edit recipes, change plans, send messages, or buy groceries. Requested results are shared with OpenAI. You can disconnect the plugin in ChatGPT.</p>
+        <p>Recipe saving requires a separate opt-in and an explicit save request. The plugin cannot edit or delete existing recipes, change plans, send messages, or buy groceries. Requested results are shared with OpenAI. You can disconnect the plugin in ChatGPT.</p>
         <p>Marco is currently being prepared for the public plugin directory. A public listing is not yet available.</p>
       </section>
       <section className="space-y-3">

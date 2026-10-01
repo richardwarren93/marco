@@ -38,8 +38,9 @@ export default function TermsPage() {
 
           <Section title="Marco in ChatGPT">
             The Marco plugin published by ACGC is part of the Service. It provides free,
-            read-only access to supported saved cooking data after you connect your Marco
-            account. Marco Plus is not required. It cannot edit records, send messages,
+            access to supported saved cooking data after you connect your Marco
+            account. Separately enabling recipe saving lets you create recipes through
+            explicit save requests. Marco Plus is not required. It cannot edit existing records, send messages,
             or purchase groceries. Use of ChatGPT is also subject to OpenAI&apos;s terms.
           </Section>
 

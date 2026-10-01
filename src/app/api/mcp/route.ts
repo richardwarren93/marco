@@ -23,8 +23,9 @@ export async function POST(request: Request) {
   const token = bearerToken(request);
   if (!token) return unauthorized();
   let userId;
+  let clientId;
   try {
-    ({ userId } = await verifyPluginToken(token, config));
+    ({ userId, clientId } = await verifyPluginToken(token, config));
     // Validate against the live Auth service as well as verifying the JWT.
     // Grant-revocation behavior must be exercised in the deployment smoke test.
     const auth = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
     const { data, error } = await auth.auth.getUser(token);
     if (error || data.user?.id !== userId) return unauthorized();
   } catch { return unauthorized(); }
-  return handleMcpRequest(request, createMarcoServer(createPluginData(createAdminClient(), userId, config.origin)));
+  return handleMcpRequest(request, createMarcoServer(createPluginData(createAdminClient(), userId, config.origin, clientId), `${config.origin}/connect/recipe-saving?client_id=${encodeURIComponent(clientId)}`));
 }
 
 // No persistent SSE sessions or DELETE operations in this stateless server.
