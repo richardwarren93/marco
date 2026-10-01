@@ -69,5 +69,21 @@ without saving and explicitly saving after opt-in.
   permissions, confirmation, preview resource, and idempotent/concurrent saves.
 - Targeted ESLint, TypeScript, and production build pass.
 - Additive saving migration applied; existing accounts remain opted out.
-- Live save and ChatGPT HTML rendering are pending verification.
-- The old v0.1.0 ZIP is obsolete; public submission remains incomplete.
+- Deployed commit `c8197b2`; Vercel deployment `Gk1LHsqVy7o9cLc9jhqGXVr94nN9` reached Ready.
+- Production isolated-account tests passed: seven tools, preview/resource,
+  denial before opt-in, concurrent saves returning one owned recipe, stored
+  content, duplicate retry, bearer self-enable rejection, foreign-origin
+  rejection, and denial after disabling. The fixture permission was turned off
+  and its test OAuth grant revoked afterward.
+- Refreshed the existing private ChatGPT app tools and updated its description.
+  `preview_recipe` rendered the synthetic Toast card in the real chat, with
+  ingredients, Save to Marco, the opt-in link, and working expandable steps.
+  Screenshot: `.local-oauth-admin/marco-recipe-card-chatgpt.png`.
+- The existing account's permission page correctly shows saving off. No personal
+  recipe was created. The card's save-button success path has not been tested
+  in ChatGPT; the server save path was tested with the isolated account above.
+- ChatGPT's existing custom-app CSP enforcement setting was off during this
+  preview test and was not changed. Enforced-CSP host validation remains before
+  public submission, even though the resource declares an empty network allowlist.
+- The old v0.1.0 ZIP is obsolete; the v0.2.0 preparation archive supersedes it.
+  It remains a draft without a recorded demo. Public submission is incomplete.
