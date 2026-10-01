@@ -31,6 +31,13 @@ export default function PushNotificationManager() {
   const registered = useRef(false);
 
   useEffect(() => {
+    // The native shell injects Capacitor. Browsers must exit before attempting
+    // native-only imports, whose bare module names cannot resolve on the web.
+    const native = (window as unknown as {
+      Capacitor?: { isNativePlatform?: () => boolean };
+    }).Capacitor;
+    if (!native?.isNativePlatform?.()) return;
+
     let cancelled = false;
     const pluginCleanup: Array<() => void> = [];
 

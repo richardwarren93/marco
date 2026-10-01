@@ -1,6 +1,6 @@
 # Marco app cleanup — 30 September 2026
 
-Status: implemented locally and verified; not committed, pushed, or deployed.
+Status: deployed to production from commit cb12d67; authenticated production API checks and live Kitchen/Table checks passed.
 
 ## Changes
 
@@ -30,4 +30,4 @@ Status: implemented locally and verified; not committed, pushed, or deployed.
 - Muse/Dot is an external service. Its exact product URL is needed before an integration can be designed. No in-app assistant or reminder scheduler was added.
 - Explore recommendation: make it a focused recipe and cooking-class discovery page. Remove simulated local trends, sample follower counts, and inactive Follow controls. Explore has not been changed in this pass.
 - Existing Instacart shopping-list endpoint remains unchanged; external-assistant grocery ordering is not implemented or tested.
-- Visual changes await user review; production is unchanged.
+- User approved deployment. Vercel deployment 4UTZ5fKYKBx1kqREc3ZzfFG8cVLp completed successfully. A follow-up browser platform guard prevents native push imports from running on the web; native-device notification behavior was not tested.
