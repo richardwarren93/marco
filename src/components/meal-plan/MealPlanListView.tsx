@@ -1276,7 +1276,7 @@ export default function MealPlanListView({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-2xl whitespace-nowrap" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
+            <span className="text-base whitespace-nowrap" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
             <button
               onClick={() => changeWeek(addDays(weekStart, 7))}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
@@ -1336,7 +1336,7 @@ export default function MealPlanListView({
 
           {/* Right: jump to the grocery list for this plan */}
           <button
-            onClick={() => router.push("/recipes?tab=grocery")}
+            onClick={() => router.push("/grocery")}
             className="flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full transition-all active:scale-95 flex-shrink-0"
             style={{ background: "var(--cream-warm, #EFE5D2)", color: "#1C1A17" }}
             aria-label="View grocery list"
@@ -1422,7 +1422,6 @@ export default function MealPlanListView({
         onClose={() => { setAddSheetOpen(false); setExtraRecipes([]); }}
         onAdd={handleAdd}
         onRemove={onRemove}
-        onPlanMultiple={(preSelectedId) => onPlanThisWeek?.(preSelectedId)}
       />
 
       {/* ── RecipePreviewSheet ───────────────────────────────────────────────── */}

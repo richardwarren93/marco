@@ -6,7 +6,7 @@
 
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { postCook, getPrimaryCrew, ensureCrew, type Crew, type RecipeSource } from "@/lib/social";
+import { postCook, getMyCrews, ensureCrew, type Crew, type RecipeSource } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
 
@@ -63,6 +63,8 @@ function ICookedInner() {
   const [look, setLook] = useState(0);
   const [file, setFile] = useState<File | null>(null); // real uploaded photo
   const [crew, setCrew] = useState<Crew | null>(null);
+  const [crews, setCrews] = useState<Crew[]>([]);
+  const [postError, setPostError] = useState("");
   const [posting, setPosting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -88,7 +90,8 @@ function ICookedInner() {
   }
   function clearRecipe() { setLink(""); setText(""); setRecipeFile(null); }
 
-  useEffect(() => { getPrimaryCrew().then(setCrew); }, []);
+  const requestedTable = searchParams?.get("table");
+  useEffect(() => { getMyCrews().then(rows => { setCrews(rows); setCrew(rows.find(c => c.id === requestedTable) ?? rows[0] ?? null); }); }, [requestedTable]);
 
   // Pre-bound recipe (from "I cooked this"): bind it as the cook's source so it
   // joins the lineage, and seed the title from the recipe name.
@@ -146,9 +149,12 @@ function ICookedInner() {
   async function share() {
     if (posting) return;
     setPosting(true);
+    try {
     const recipeId = recipePromise.current ? await recipePromise.current : null; // resolves the extraction started earlier
-    const target = await ensureCrew(); // always post into a group (auto-create if none)
-    await postCook({
+    setPostError("");
+    const target = crew ?? await ensureCrew();
+    if (!target) { setPosting(false); setPostError("Choose or create a table before sharing."); return; }
+    const posted = await postCook({
       crewId: target?.id ?? null,
       title,
       note,
@@ -158,12 +164,18 @@ function ICookedInner() {
       sourceRecipeId: recipeId,
     });
     setPosting(false);
+    if (!posted) { setPostError("Your cook could not be shared. Please try again."); return; }
     // Posting = you reviewed it. Confirm the label (kept OR corrected) so
     // visually-similar photos learn from it next time.
     if (memoryRef.current && title.trim()) {
       fetch("/api/recipes/learn", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ memoryId: memoryRef.current, dishName: title.trim() }) }).catch(() => { /* best-effort */ });
     }
     router.push("/friends-stack");
+    } catch {
+      setPostError("Your cook could not be shared. Please try again.");
+    } finally {
+      setPosting(false);
+    }
   }
 
   // "Generate": the actual work happens here — extract the recipe from the
@@ -296,6 +308,13 @@ function ICookedInner() {
             <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="a line about it (optional)" style={{ marginTop: 8, width: "100%", background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px", fontFamily: HAND, fontSize: 16, color: TOMATO }} />
           </div>
 
+          <label className="block mt-5 text-sm font-semibold">Share to table
+            <select value={crew?.id ?? ""} onChange={e => setCrew(crews.find(c => c.id === e.target.value) ?? null)} className="block w-full mt-2 rounded-xl border-2 border-[#171410] bg-[#FBF7EE] p-3">
+              {crews.length === 0 && <option value="">Your new table</option>}
+              {crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+          {postError && <p role="alert" className="mt-3 text-red-800">{postError}</p>}
           <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 22, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.32)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : `Share to ${crew?.name ?? "your table"} →`}</button>
         </div>
       )}
@@ -316,4 +335,3 @@ function AttachRow({ emoji, title, sub, c, onClick }: { emoji: string; title: st
     </button>
   );
 }
-

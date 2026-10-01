@@ -9,10 +9,9 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error, data } = await supabase.auth.exchangeCodeForSession(code);
     if (!error && data?.user) {
-      // Onboarding deferred — land everyone in the new social app.
-      const res = NextResponse.redirect(`${origin}/friends-stack`);
-      res.cookies.set("marco_onboarded", "1", { path: "/", maxAge: 31536000, sameSite: "lax" });
-      return res;
+      // The setup page checks the saved profile and immediately routes returning
+      // users to Table. Never claim setup completed before it was persisted.
+      return NextResponse.redirect(`${origin}/onboarding`);
     }
   }
 

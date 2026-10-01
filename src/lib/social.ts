@@ -71,7 +71,8 @@ export async function createCrew(name: string, emoji = "🍽️"): Promise<Crew 
   if (error || !crew) return null;
   // Plain insert (NOT upsert): an ON CONFLICT upsert needs an UPDATE policy on
   // crew_members that doesn't exist, so RLS rejects it. Name/avatar go in here.
-  await sb.from("crew_members").insert({ crew_id: crew.id, user_id: me.id, role: "owner", display_name: me.name, avatar: me.avatar });
+  const { error: memberError } = await sb.from("crew_members").insert({ crew_id: crew.id, user_id: me.id, role: "owner", display_name: me.name, avatar: me.avatar });
+  if (memberError && memberError.code !== "23505") return null;
   return crew as Crew;
 }
 

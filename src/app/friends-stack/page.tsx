@@ -4,9 +4,11 @@
 // table" seats visual up top shows who's here and pulls the rest in; the Marco
 // floor lives in Explore, not here. All in the "beautiful chaos" language.
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import useSWR from "swr";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { getTableCooks, getTables, getMe, getSavedCookIds, saveCook, unsaveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
+import { saveCook, unsaveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
 
@@ -35,12 +37,18 @@ function hashStr(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = 
 
 export default function FriendsFeed() {
   const router = useRouter();
-  const [cooks, setCooks] = useState<Cook[] | null>(null);
-  const [tables, setTables] = useState<{ crew: Crew; members: TableMember[] }[]>([]);
-  const [me, setMe] = useState<TableMember | null>(null);
-  const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [selectedTable, setSelectedTable] = useState("");
+  const { data, error, mutate, isLoading } = useSWR<{ cooks: Cook[]; tables: { crew: Crew; members: TableMember[] }[]; me: TableMember; savedIds: string[] }>(
+    `/api/table${selectedTable ? `?table=${encodeURIComponent(selectedTable)}` : ""}`,
+    async (url: string) => { const r = await fetch(url); const value = await r.json(); if (!r.ok) throw new Error(value.error || "Could not load your table."); return value; },
+    { revalidateOnFocus: true, focusThrottleInterval: 30000, dedupingInterval: 10000, keepPreviousData: true },
+  );
+  const cooks = isLoading ? null : data?.cooks ?? null;
+  const tables = data?.tables ?? [];
+  const me = data?.me ?? null;
+  const savedIds = new Set(data?.savedIds ?? []);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const load = useCallback(async () => {
+  useEffect(() => { async function finishInvite() {
     // Finish a pending invite join (from an invite link opened before sign-in).
     // Retry every load and only clear on success, so a not-yet-ready session
     // right after signup doesn't drop the invite.
@@ -48,31 +56,20 @@ export default function FriendsFeed() {
     try { pending = localStorage.getItem(PENDING_CREW_KEY); } catch { /* ignore */ }
     if (pending) {
       const joined = await joinCrewByCode(pending);
-      if (joined) { try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ } }
+      if (joined) { try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ } await mutate(); }
     }
-    const [cs, tbls, meData, saved] = await Promise.all([getTableCooks(), getTables(), getMe(), getSavedCookIds()]);
-    setCooks(cs);
-    setTables(tbls);
-    setSavedIds(new Set(saved));
-    if (meData) setMe({ id: meData.id, name: meData.name, avatar: meData.avatar, isYou: true });
+  } void finishInvite().catch(() => {}); }, [mutate]);
+  useEffect(() => {
+    let active = true;
+    const cs = data?.cooks ?? [];
     // Lineage counts for the "cooked N×" stamp — true totals via the admin route.
     const rids = Array.from(new Set(cs.map((c) => c.source_recipe_id).filter((x): x is string => !!x)));
     if (rids.length) {
-      try {
-        const r = await fetch("/api/recipes/lineage-counts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: rids }) });
-        if (r.ok) setCounts((await r.json()).counts ?? {});
-      } catch { /* best-effort — the stamp just won't show */ }
+      void fetch("/api/recipes/lineage-counts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: rids }) })
+        .then(r => r.ok ? r.json() : null).then(v => { if (active && v) setCounts(v.counts ?? {}); }).catch(() => {});
     }
-  }, []);
-
-  useEffect(() => {
-    load();
-    // Refetch (and retry a pending invite) when the app returns to the foreground.
-    const onVisible = () => { if (document.visibilityState === "visible") load(); };
-    window.addEventListener("focus", load);
-    document.addEventListener("visibilitychange", onVisible);
-    return () => { window.removeEventListener("focus", load); document.removeEventListener("visibilitychange", onVisible); };
-  }, [load]);
+    return () => { active = false; };
+  }, [data?.cooks]);
 
   const real = cooks ?? [];
 
@@ -87,14 +84,24 @@ export default function FriendsFeed() {
             <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, letterSpacing: "-0.02em", color: INK, lineHeight: 1 }}>Marco</div>
             <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-2deg)", marginTop: 5 }}>what are your people cooking?</div>
           </div>
-          <div className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, transform: "rotate(5deg)", border: `2px solid ${LIME}` }}>S</div>
+          <Link href="/profile" aria-label="Your profile" className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, transform: "rotate(5deg)", border: `2px solid ${LIME}` }}>{me?.avatar ?? "·"}</Link>
         </div>
 
         {/* your table — who's seated, and empty chairs to pull people in */}
-        <TableSeats tables={tables} you={me} onInvite={() => router.push("/crew")} onMember={(mid) => router.push(`/u/${mid}`)} />
+        <div className="flex items-center gap-2 mt-5">
+          <label className="sr-only" htmlFor="table-choice">Choose a table</label>
+          <select id="table-choice" value={selectedTable} onChange={e => setSelectedTable(e.target.value)} className="min-w-0 flex-1 rounded-xl border-2 border-[#171410] bg-[#FBF7EE] p-3 font-semibold">
+            <option value="">All your tables</option>
+            {tables.map(({ crew }) => <option key={crew.id} value={crew.id}>{crew.emoji} {crew.name}</option>)}
+          </select>
+          <Link href="/crew" className="rounded-xl border-2 border-[#171410] px-3 py-3 bg-[#C4EE45] font-semibold">+ Table</Link>
+        </div>
+        <TableSeats tables={selectedTable ? tables.filter(t => t.crew.id === selectedTable) : tables.slice(0, 1)} you={me} onInvite={() => router.push("/crew")} onMember={(mid) => router.push(`/u/${mid}`)} />
+        <Link href={`/potluck${selectedTable ? `?table=${encodeURIComponent(selectedTable)}` : ""}`} className="mt-4 flex items-center justify-between rounded-xl border-2 border-[#171410] bg-[#FFD84D] p-4 font-semibold"><span>🍲 Potluck</span><span>Cook together →</span></Link>
+        {error && <div role="alert" className="mt-4 rounded-xl bg-white p-4"><p>{error.message}</p><button className="underline mt-2" onClick={() => mutate()}>Try again</button></div>}
 
         {/* ===== loading ===== */}
-        {cooks === null && (
+        {cooks === null && !error && (
           <div style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.5, marginTop: 20, textAlign: "center" }}>loading your table…</div>
         )}
 

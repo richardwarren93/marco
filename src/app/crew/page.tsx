@@ -26,23 +26,27 @@ export default function CrewPage() {
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState("");
 
-  useEffect(() => { getMyCrews().then(setCrews); }, []);
+  useEffect(() => { getMyCrews().then(setCrews).catch(() => { setCrews([]); setErr("Your tables could not be loaded. Refresh to retry."); }); }, []);
 
   async function create() {
     if (!name.trim() || busy) return;
     setBusy(true); setErr("");
+    try {
     const c = await createCrew(name.trim());
-    setBusy(false);
     if (c) { setCrews((cs) => [...(cs ?? []), c]); setName(""); }
     else setErr("couldn't create — try again");
+    } catch { setErr("Your table could not be created. Try again."); }
+    finally { setBusy(false); }
   }
   async function join() {
     if (!code.trim() || busy) return;
     setBusy(true); setErr("");
+    try {
     const c = await joinCrewByCode(code.trim());
-    setBusy(false);
     if (c) { setCrews((cs) => [...(cs ?? []).filter((x) => x.id !== c.id), c]); setCode(""); }
     else setErr("no table with that code");
+    } catch { setErr("Your table could not be joined. Try again."); }
+    finally { setBusy(false); }
   }
   async function copyCode(c: Crew) {
     const origin = typeof window !== "undefined" ? window.location.origin : "https://marco-eta-lyart.vercel.app";
@@ -88,7 +92,7 @@ export default function CrewPage() {
         {/* create */}
         <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", color: INK, textTransform: "uppercase", marginTop: 28 }}>start a table</div>
         <div className="flex gap-2" style={{ marginTop: 10 }}>
-          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. the usual suspects" maxLength={30}
+          <input aria-label="New table name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. the usual suspects" maxLength={30}
             style={{ flex: 1, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 14px", fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK }} />
           <button onClick={create} disabled={busy} className="active:scale-95 transition-transform" style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 20px", borderRadius: 12, border: "none" }}>Create</button>
         </div>
@@ -96,7 +100,7 @@ export default function CrewPage() {
         {/* join */}
         <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", color: INK, textTransform: "uppercase", marginTop: 22 }}>join with a code</div>
         <div className="flex gap-2" style={{ marginTop: 10 }}>
-          <input value={code} onChange={(e) => setCode(e.target.value)} placeholder="8-char code" maxLength={8}
+          <input aria-label="Table invite code" value={code} onChange={(e) => setCode(e.target.value)} placeholder="8-char code" maxLength={8}
             style={{ flex: 1, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 14px", fontFamily: MONO, fontWeight: 700, fontSize: 16, letterSpacing: "0.2em", color: INK }} />
           <button onClick={join} disabled={busy} className="active:scale-95 transition-transform" style={{ background: COBALT, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 20px", borderRadius: 12, border: "none" }}>Join</button>
         </div>

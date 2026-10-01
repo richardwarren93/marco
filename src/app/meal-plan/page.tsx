@@ -288,7 +288,7 @@ function MealPlanInner() {
   // ─── Step 3: Schedule (default) ───────────────────────────────────────────────
   return (
     <>
-      <KitchenLayerHeader title="This week" sub="your plan · same as always, just prettier" emoji="🗓️" />
+      <KitchenLayerHeader title="Meal plan" sub="Plan your week" />
       {error && (
         <div className="bg-red-50 text-red-600 px-4 py-2 text-sm">{error}</div>
       )}

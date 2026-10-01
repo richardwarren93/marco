@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  const protectedPaths = ["/tonight", "/dashboard", "/recipes", "/pantry", "/meal-plan", "/collections", "/eats", "/friends", "/profile", "/grocery"];
+  const protectedPaths = ["/tonight", "/dashboard", "/recipes", "/pantry", "/meal-plan", "/collections", "/eats", "/friends", "/profile", "/grocery", "/kitchen", "/crew", "/potluck", "/i-cooked", "/create"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
   const isOnboarding = pathname.startsWith("/onboarding");
 
@@ -59,10 +59,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
-  // Onboarding is deferred while we build the new social app: don't gate on it.
-  // Logged-in users hitting an auth page just go to the Table (the new home).
-  if (user && pathname.startsWith("/auth/")) {
-    return NextResponse.redirect(new URL("/friends-stack", request.url));
+  // Let the setup page check the saved profile. Do not intercept OAuth
+  // callbacks or password-reset flows for an existing session.
+  if (user && ["/auth/login", "/auth/signup"].includes(pathname)) {
+    return NextResponse.redirect(new URL("/onboarding", request.url));
   }
 
   return response;
@@ -79,6 +79,12 @@ export const config = {
     "/collections/:path*",
     "/eats/:path*",
     "/friends/:path*",
+    "/friends-stack/:path*",
+    "/kitchen/:path*",
+    "/crew/:path*",
+    "/potluck/:path*",
+    "/i-cooked/:path*",
+    "/create/:path*",
     "/profile/:path*",
     "/grocery/:path*",
     "/add/:path*",

@@ -41,7 +41,7 @@ export default function SignupPage() {
       setGuestLoading(false);
       return;
     }
-    router.push("/friends-stack"); // land on the Table so a pending invite gets consumed
+    router.push("/onboarding"); // Setup preserves pending table invites.
     router.refresh();
   }
 
@@ -70,8 +70,8 @@ export default function SignupPage() {
       setError("This email already has an account. Please sign in instead.");
       setLoading(false);
     } else if (data.session) {
-      // Auto-confirmed → straight to the Table (consumes any pending invite).
-      router.push("/friends-stack");
+      // Auto-confirmed accounts can complete setup immediately.
+      router.push("/onboarding");
       router.refresh();
     } else {
       setSuccess(true);
@@ -109,7 +109,7 @@ export default function SignupPage() {
       setLoading(false);
       return;
     }
-    router.push("/friends-stack"); // land on the Table so a pending invite gets consumed
+    router.push("/onboarding"); // Setup preserves pending table invites.
     router.refresh();
   }
 

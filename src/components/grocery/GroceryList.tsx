@@ -568,7 +568,7 @@ export default function GroceryList() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-2xl whitespace-nowrap" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
+            <span className="text-base whitespace-nowrap" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
             <button
               onClick={() => navigateWeek(7)}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
@@ -779,7 +779,7 @@ export default function GroceryList() {
               })}
               {/* + Add meal card */}
               <button
-                onClick={() => router.push("/recipes?tab=meal-plan")}
+                onClick={() => router.push("/meal-plan")}
                 className="flex-shrink-0 snap-start rounded-2xl overflow-hidden flex flex-col items-center justify-center gap-2 transition-transform active:scale-[0.98]"
                 style={{ width: 152, minHeight: 152, background: "#FBF7EE", border: "2px dashed #171410" }}
               >

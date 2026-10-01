@@ -662,7 +662,7 @@ export default function RecipeDetailPage() {
       {/* ── 1. Hero Image ──────────────────────────────────────────────── */}
       <div className="relative max-w-3xl mx-auto">
         {recipe.image_url ? (
-          <div className="h-72 sm:h-96 bg-gray-100 relative">
+          <div className="h-56 sm:h-72 bg-gray-100 relative">
             <img
               src={recipe.image_url}
               alt={recipe.title}
@@ -672,7 +672,7 @@ export default function RecipeDetailPage() {
           </div>
         ) : (
           <div
-            className="h-60 sm:h-72 flex items-center justify-center relative"
+            className="h-32 sm:h-40 flex items-center justify-center relative"
             style={{
               background:
                 "radial-gradient(circle at 30% 60%, var(--tomato, #E5462E) 0%, transparent 45%), radial-gradient(circle at 80% 30%, var(--mustard, #E8A33D) 0%, transparent 30%), var(--cream-warm, #EFE5D2)",
@@ -681,22 +681,6 @@ export default function RecipeDetailPage() {
             <MealTypeIcon type={recipe.meal_type} className="text-white/85" size={64} strokeWidth={1.5} />
           </div>
         )}
-
-        {/* Time + servings pills */}
-        <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between z-10 pointer-events-none">
-          {totalTime > 0 ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold text-white" style={{ background: "rgba(20,12,5,0.6)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M12 7v5l3 2" /></svg>
-              {totalTime} min total
-            </span>
-          ) : <span />}
-          {recipe.servings ? (
-            <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-[12px] font-semibold text-white" style={{ background: "rgba(20,12,5,0.6)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 20v-1a4 4 0 00-4-4H7a4 4 0 00-4 4v1M10 11a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM21 20v-1a4 4 0 00-3-3.87M16 4.13A4 4 0 0116 11.6" /></svg>
-              {recipe.servings} servings
-            </span>
-          ) : <span />}
-        </div>
 
         {/* Hidden file input for camera photo upload */}
         <input
@@ -713,6 +697,7 @@ export default function RecipeDetailPage() {
           style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}
         >
           <button
+            aria-label="Back"
             onClick={() => {
               const from = searchParams?.get("from");
               if (from === "build") {
@@ -818,15 +803,9 @@ export default function RecipeDetailPage() {
             )}
             {recipe.prep_time_minutes && recipe.cook_time_minutes ? <span style={{ opacity: 0.4 }}>·</span> : null}
             {recipe.cook_time_minutes ? <span>{recipe.cook_time_minutes} min cook</span> : null}
-            {recipe.servings ? <span style={{ opacity: 0.4 }}>·</span> : null}
+            {recipe.servings && totalTime > 0 ? <span style={{ opacity: 0.4 }}>·</span> : null}
             {recipe.servings ? <span>{recipe.servings} servings</span> : null}
           </div>
-
-          {/* Cooked count — the lineage anchor, in the app's hand */}
-          <a href="#lineage" className="inline-flex items-center gap-1.5 no-underline" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 14, color: "#171410", background: "#FFD84D", border: "2px solid #171410", borderRadius: 99, padding: "5px 12px", transform: "rotate(-1.2deg)" }}>
-            <span aria-hidden>🍳</span>
-            {cookedCount > 0 ? `cooked ${cookedCount} time${cookedCount === 1 ? "" : "s"}` : "no one's cooked this yet"}
-          </a>
 
           {/* Icon tags */}
           {(recipe.tags || []).length > 0 && (
@@ -835,23 +814,6 @@ export default function RecipeDetailPage() {
             </div>
           )}
         </div>
-
-        {/* ── The lineage entry. If you've already cooked it, this is a state,
-              not an action (cooking your own again is silly); otherwise it's
-              the capture flow bound to this recipe. ─────────────────────── */}
-        {lineageCooks.some((c) => c.isMine) ? (
-          <div className="w-full flex items-center justify-center gap-2 mb-4" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 14, border: "2px dashed #171410", background: "#C4EE45" }}>
-            <span aria-hidden>✓</span> you cooked this
-          </div>
-        ) : (
-          <button
-            onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)}
-            className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mb-4"
-            style={{ background: "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: "0 10px 24px rgba(229,70,46,0.3)" }}
-          >
-            <span aria-hidden>🍳</span> I cooked this →
-          </button>
-        )}
 
         {/* ── 3. Actions (owner) ─────────────────────────────────────── */}
         {!isPublicView && (
@@ -874,34 +836,10 @@ export default function RecipeDetailPage() {
             >
               <svg className="w-6 h-6 flex-shrink-0" style={{ color: "#E5462E" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10M9 21v-3m6 3v-3M6 18h12a4 4 0 00.5-7.97 6 6 0 00-11.9-.5A3.5 3.5 0 006 18z" /></svg>
               <span className="min-w-0">
-                <span className="block text-[14px] font-bold leading-tight" style={{ color: "#1C1A17" }}>Start Guided Cooking</span>
-                <span className="block text-[11px] leading-tight mt-0.5" style={{ color: "#6B655C" }}>AI walks you through every step</span>
+                <span className="block text-[14px] font-bold leading-tight" style={{ color: "#1C1A17" }}>Start cooking</span>
+                <span className="block text-[11px] leading-tight mt-0.5" style={{ color: "#6B655C" }}>One step at a time</span>
               </span>
             </button>
-          </div>
-        )}
-
-        {/* ── Nutrition (per serving) ────────────────────────────────── */}
-        {hasMacros && (
-          <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
-            <h3 className="text-[16px] font-bold mb-3" style={{ color: "#1C1A17" }}>
-              Nutrition <span className="text-[13px] font-normal" style={{ color: "#6B655C" }}>per serving</span>
-            </h3>
-            <div className="grid grid-cols-4 divide-x" style={{ borderColor: "rgba(28,26,23,0.06)" }}>
-              {[
-                { v: recipe.calories, unit: "", label: "calories", icon: "M12 3c1.5 3 4 4 4 7a4 4 0 01-8 0c0-1.5 1-2.5 1.5-3.5C10 8 12 6 12 3z" },
-                { v: recipe.protein_g, unit: "g", label: "protein", icon: "M6.5 4.5l13 13M9 4l11 11M4 9l11 11M14 4l6 6M4 14l6 6" },
-                { v: recipe.carbs_g, unit: "g", label: "carbs", icon: "M12 3v6M9 6c-3 1-5 4-5 8a8 8 0 0016 0c0-4-2-7-5-8" },
-                { v: recipe.fat_g, unit: "g", label: "fat", icon: "M12 21a7 7 0 01-7-7c0-4 3-7 7-11 4 4 7 7 7 11a7 7 0 01-7 7z" },
-              ].map((m) => (
-                <div key={m.label} className="flex flex-col items-center gap-1 px-1">
-                  <svg className="w-5 h-5" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d={m.icon} /></svg>
-                  <span className="text-[18px] font-bold" style={{ color: "#1C1A17" }}>{m.v != null ? `${Math.round(m.v * ratio)}${m.unit}` : "—"}</span>
-                  <span className="text-[11px]" style={{ color: "#8a847a" }}>{m.label}</span>
-                </div>
-              ))}
-            </div>
-            <p className="mt-3 text-[11px]" style={{ color: "#a8a29a" }}>Percent Daily Values (DV) are based on a 2,000 calorie diet.</p>
           </div>
         )}
 
@@ -1004,8 +942,34 @@ export default function RecipeDetailPage() {
           </button>
         )}
 
+        {hasMacros && <details className="mb-4 rounded-2xl bg-white p-4"><summary className="font-semibold cursor-pointer">Nutrition</summary>
+        {/* ── Nutrition (per serving) ────────────────────────────────── */}
+        {hasMacros && (
+          <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+            <h3 className="text-[16px] font-bold mb-3" style={{ color: "#1C1A17" }}>
+              Nutrition <span className="text-[13px] font-normal" style={{ color: "#6B655C" }}>per serving</span>
+            </h3>
+            <div className="grid grid-cols-4 divide-x" style={{ borderColor: "rgba(28,26,23,0.06)" }}>
+              {[
+                { v: recipe.calories, unit: "", label: "calories", icon: "M12 3c1.5 3 4 4 4 7a4 4 0 01-8 0c0-1.5 1-2.5 1.5-3.5C10 8 12 6 12 3z" },
+                { v: recipe.protein_g, unit: "g", label: "protein", icon: "M6.5 4.5l13 13M9 4l11 11M4 9l11 11M14 4l6 6M4 14l6 6" },
+                { v: recipe.carbs_g, unit: "g", label: "carbs", icon: "M12 3v6M9 6c-3 1-5 4-5 8a8 8 0 0016 0c0-4-2-7-5-8" },
+                { v: recipe.fat_g, unit: "g", label: "fat", icon: "M12 21a7 7 0 01-7-7c0-4 3-7 7-11 4 4 7 7 7 11a7 7 0 01-7 7z" },
+              ].map((m) => (
+                <div key={m.label} className="flex flex-col items-center gap-1 px-1">
+                  <svg className="w-5 h-5" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d={m.icon} /></svg>
+                  <span className="text-[18px] font-bold" style={{ color: "#1C1A17" }}>{m.v != null ? `${Math.round(m.v * ratio)}${m.unit}` : "—"}</span>
+                  <span className="text-[11px]" style={{ color: "#8a847a" }}>{m.label}</span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-[11px]" style={{ color: "#a8a29a" }}>Percent Daily Values (DV) are based on a 2,000 calorie diet.</p>
+          </div>
+        )}
+
+        </details>}
         {/* ── The lineage — every cook of this recipe, same or tweaked ── */}
-        <div id="lineage" className="mb-4" style={{ scrollMarginTop: 80 }}>
+        <details id="lineage" className="mb-4 rounded-2xl bg-white p-4" style={{ scrollMarginTop: 80 }}><summary className="font-semibold cursor-pointer mb-3">Cooks &amp; photos ({cookedCount})</summary><button onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)} className="mb-4 rounded-xl bg-[#E5462E] text-white px-4 py-2 font-semibold">Post your cook</button>
           <div className="flex items-baseline gap-2 mb-3">
             <h3 style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 22, color: "#171410" }}>The lineage</h3>
             {cookedCount > 0 && <span style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 16, color: "#E5462E", transform: "rotate(-1.5deg)", display: "inline-block" }}>{cookedCount} {cookedCount === 1 ? "cook" : "cooks"}, same or tweaked</span>}
@@ -1039,10 +1003,10 @@ export default function RecipeDetailPage() {
           ) : (
             <div style={{ background: "#FBF7EE", border: "2px dashed #171410", borderRadius: 14, padding: "22px 18px", textAlign: "center" }}>
               <div style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 18, color: "#171410" }}>no one&apos;s cooked this yet.</div>
-              <div style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 15, color: "#E5462E", marginTop: 4 }}>be the first — tap &ldquo;I cooked this&rdquo; ↑</div>
+              <div style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 15, color: "#E5462E", marginTop: 4 }}>Be the first to post your cook.</div>
             </div>
           )}
-        </div>
+
 
         {/* ── I Made This — log the cook (owner only) ─────────────────── */}
         {!isPublicView && (
@@ -1059,7 +1023,8 @@ export default function RecipeDetailPage() {
           <CookPhotosGallery recipeId={recipe.id} refreshKey={photoRefreshKey} />
         )}
 
-        {/* ── Original Recipe Video ──────────────────────────────────── */}
+        </details>
+        {/* ── Original recipe ──────────────────────────────────── */}
         {recipe.source_url && (
           <button
             onClick={() => window.open(recipe.source_url!, "_blank")}
@@ -1074,7 +1039,7 @@ export default function RecipeDetailPage() {
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>Original Recipe Video</p>
+              <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>Original recipe</p>
               <p className="text-[12px] capitalize" style={{ color: "#6B655C" }}>
                 {recipe.source_platform && recipe.source_platform !== "other" ? recipe.source_platform : "View original"}
               </p>
@@ -1268,7 +1233,7 @@ export default function RecipeDetailPage() {
         />
       )}
 
-      {/* Instructions — plain numbered steps (the "Start Guided Cooking"
+      {/* Instructions — plain numbered steps (the "Start cooking"
           button opens the AI CookMode instead). */}
       {showStepsModal && (
         <>
@@ -1299,7 +1264,7 @@ export default function RecipeDetailPage() {
                   className="w-full mt-3 py-3.5 rounded-2xl font-semibold text-[14px] text-white active:scale-[0.98] transition-all"
                   style={{ background: "#E5462E" }}
                 >
-                  Start Guided Cooking
+                  Start cooking
                 </button>
               )}
             </div>

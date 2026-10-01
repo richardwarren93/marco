@@ -1,7 +1,7 @@
 "use client";
 
 // The Marco floating dock — the app's primary navigation (replaces the legacy
-// BottomTabBar). Friends · Potluck · + · Kitchen · Explore, as a tactile object
+// BottomTabBar). Table · + · Kitchen · Explore, as a tactile object
 // in Marco's visual world. Hidden on modal/creation flows and auth/onboarding.
 
 import { usePathname, useRouter } from "next/navigation";
@@ -12,9 +12,8 @@ const TOMATO = "#E5462E";
 const MONO = "ui-monospace, monospace";
 
 const TABS: { label: string; glyph: string; href: string; match: string[] }[] = [
-  { label: "Table", glyph: "🍽️", href: "/friends-stack", match: ["/friends-stack", "/friends"] },
-  { label: "Potluck", glyph: "🍲", href: "/potluck", match: ["/potluck"] },
-  { label: "Kitchen", glyph: "🏠", href: "/kitchen", match: ["/kitchen"] },
+  { label: "Table", glyph: "🍽️", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"] },
+  { label: "Kitchen", glyph: "🏠", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"] },
   { label: "Explore", glyph: "✦", href: "/explore", match: ["/explore"] },
 ];
 
@@ -32,10 +31,9 @@ export default function MarcoDock() {
     <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)", display: "flex", justifyContent: "center", zIndex: 50, pointerEvents: "none" }}>
       <div className="flex items-center" style={{ gap: 4, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 99, padding: "7px 9px", boxShadow: "0 12px 30px rgba(23,20,16,0.28)", pointerEvents: "auto" }}>
         <Tab t={TABS[0]} active={isActive(TABS[0])} onClick={() => router.push(TABS[0].href)} />
-        <Tab t={TABS[1]} active={isActive(TABS[1])} onClick={() => router.push(TABS[1].href)} />
         <button aria-label="Create" onClick={() => router.push("/create")} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 54, height: 54, borderRadius: 99, background: TOMATO, color: PAPER, border: `2.5px solid ${INK}`, fontSize: 28, fontWeight: 700, transform: "translateY(-12px) rotate(-4deg)", boxShadow: "0 8px 18px rgba(229,70,46,0.45)" }}>+</button>
+        <Tab t={TABS[1]} active={isActive(TABS[1])} onClick={() => router.push(TABS[1].href)} />
         <Tab t={TABS[2]} active={isActive(TABS[2])} onClick={() => router.push(TABS[2].href)} />
-        <Tab t={TABS[3]} active={isActive(TABS[3])} onClick={() => router.push(TABS[3].href)} />
       </div>
     </div>
   );
