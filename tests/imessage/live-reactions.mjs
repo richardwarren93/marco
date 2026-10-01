@@ -1,0 +1,67 @@
+import assert from 'node:assert/strict';
+import {createServerClient} from '@supabase/ssr';
+import {createClient} from '@supabase/supabase-js';
+import {PROJECT_ID,bridgeKey,sign,hash,senderKey} from '../../src/lib/imessage/protocol.ts';
+const env=process.env;
+const creds={email:env.IMESSAGE_TEST_EMAIL,password:env.IMESSAGE_TEST_PASSWORD};
+assert.ok(creds.email && creds.password, "Provide an isolated reviewer account; this test resets its iMessage connection.");
+let cookies=[];
+const sb=createServerClient(env.NEXT_PUBLIC_SUPABASE_URL,env.NEXT_PUBLIC_SUPABASE_ANON_KEY,{cookies:{getAll:()=>cookies,setAll:c=>{cookies=c}}});
+const auth=await sb.auth.signInWithPassword({email:creds.email,password:creds.password});assert.equal(auth.error,null);
+const admin=createClient(env.NEXT_PUBLIC_SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY);
+const cookie=cookies.map(c=>`${c.name}=${c.value}`).join('; ');
+const origin=process.env.TEST_ORIGIN || 'http://localhost:3101';
+const api=async(method,body)=>{let r=await fetch(origin+'/api/imessage/link',{method,headers:{cookie,origin,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,data:await r.json()}};
+const sender='fixture-'+Date.now();
+async function msg(text,id=crypto.randomUUID(),who=sender,chat,reaction){const body=JSON.stringify({project:PROJECT_ID,id,sender:who,text,...(chat?{chat}:{}),...(reaction?{reaction}:{})});const ts=String(Date.now());const r=await fetch(origin+'/api/imessage/message',{method:'POST',headers:{'x-marco-time':ts,'x-marco-signature':sign(bridgeKey(env.SUPABASE_SERVICE_ROLE_KEY),ts,body)},body});return {status:r.status,data:await r.json()};}
+assert.equal((await fetch(origin+'/api/imessage/link')).status,401);
+assert.equal((await fetch(origin+'/api/imessage/link',{method:'POST',headers:{cookie,origin:'https://bad.example'}})).status,403);
+assert.equal((await fetch(origin+'/api/imessage/message',{method:'POST',body:'{}'})).status,401);
+assert.equal((await api('DELETE')).status,200);
+let c=await api('POST');assert.equal(c.status,200);assert.match(c.data.code,/^[a-f0-9]{24}$/);
+assert.match((await msg('link '+c.data.code)).data.reply,/Connected to Marco/);
+assert.equal((await api('GET')).data.linked,true);
+assert.match((await msg('link '+c.data.code,crypto.randomUUID(),'other-fixture')).data.reply,/expired/);
+const group={type:'group',id:'test-group'};
+assert.equal((await msg('hello everyone',crypto.randomUUID(),sender,group)).data.reply,null);
+assert.match((await msg('STOP',crypto.randomUUID(),sender,group)).data.reply,/directly/);
+assert.equal((await api('GET')).data.linked,true);
+const freshUrl='https://www.bbcgoodfood.com/recipes/easy-pancakes?marco_group_test='+Date.now();
+const fresh=await msg(freshUrl,crypto.randomUUID(),sender,group);assert.match(fresh.data.reply,/Saved to your Kitchen/);
+const freshRows=await admin.from('recipes').select('id,user_id').eq('source_url',freshUrl);assert.equal(freshRows.data.length,1);assert.equal(freshRows.data[0].user_id,auth.data.user.id);
+await admin.from('recipes').delete().eq('id',freshRows.data[0].id).eq('user_id',auth.data.user.id);
+const sharedId=crypto.randomUUID();const url='https://www.bbcgoodfood.com/recipes/easy-pancakes';
+const dm=await msg(url,sharedId);assert.match(dm.data.reply,/recipes\//);
+const shared=await msg(url,sharedId,sender,group);assert.match(shared.data.reply,/Already in your Kitchen/);
+assert.equal((await msg(url,sharedId,sender,group)).data.reply,shared.data.reply);
+assert.match((await msg(url,crypto.randomUUID(),'unlinked-group-fixture',group)).data.reply,/direct message/);
+const reaction={emoji:'❤️',targetId:sharedId};
+assert.equal((await msg('',crypto.randomUUID(),sender,group,{...reaction,emoji:'👍'})).data.reply,null);
+assert.equal((await msg('',crypto.randomUUID(),sender,group,{...reaction,removed:true})).data.reply,null);
+assert.match((await msg('',crypto.randomUUID(),sender,{type:'group',id:'different-group'},reaction)).data.reply,/don't have/);
+assert.match((await msg('',crypto.randomUUID(),'unlinked-reactor',group,reaction)).data.reply,/direct message/);
+const second=await admin.auth.admin.createUser({email:'heart-test-'+crypto.randomUUID()+'@example.com',password:crypto.randomUUID(),email_confirm:true});assert.equal(second.error,null);
+const reactor='reactor-'+crypto.randomUUID();
+try {
+ const linked=await admin.from('imessage_links').insert({sender_hash:senderKey(reactor),user_id:second.data.user.id});assert.equal(linked.error,null);
+ const rid=crypto.randomUUID();const heart=await msg('',rid,reactor,group,reaction);assert.equal(heart.data.reply,'Saved to your Kitchen 👨‍🍳');
+ assert.equal((await msg('',rid,reactor,group,reaction)).data.reply,heart.data.reply);
+ assert.match((await msg('',crypto.randomUUID(),reactor,group,reaction)).data.reply,/Already in your Kitchen/);
+ const own=await admin.from('recipes').select('id,user_id').eq('user_id',second.data.user.id).eq('source_url',url);assert.equal(own.data.length,1);
+ console.log('PASS heart saves to reacting account, retry dedup, non-heart/removal ignored, cross-chat isolation, unlinked reactor');
+} finally { await admin.auth.admin.deleteUser(second.data.user.id); }
+let exposed=await api('POST');assert.match((await msg('link '+exposed.data.code,crypto.randomUUID(),sender,group)).data.reply,/fresh code/);
+assert.match((await msg('link '+exposed.data.code,crypto.randomUUID(),'unlinked-group-fixture')).data.reply,/expired/);
+console.log('PASS group chatter, DM-only disconnect, private reply isolation, group retry, sender ownership, exposed code invalidation');
+console.log('PASS authenticated pairing, cross-origin rejection, bridge authentication, single-use code');
+const id=crypto.randomUUID();const saved=await msg('https://www.bbcgoodfood.com/recipes/easy-pancakes',id);assert.equal(saved.status,200);assert.match(saved.data.reply,/Saved |Already saved:/,saved.data.reply);
+const duplicate=await msg('https://www.bbcgoodfood.com/recipes/easy-pancakes',id);assert.equal(duplicate.data.reply,saved.data.reply);
+const records=await admin.from('recipes').select('id,user_id').eq('user_id',auth.data.user.id).eq('source_url','https://www.bbcgoodfood.com/recipes/easy-pancakes');assert.equal(records.data.length,1);
+assert.match((await msg('https://127.0.0.1/')).data.reply,/couldn't save/);
+assert.match((await msg('STOP')).data.reply,/Disconnected/);assert.equal((await api('GET')).data.linked,false);
+assert.match((await msg('https://www.bbcgoodfood.com/recipes/easy-pancakes')).data.reply,/Connect your Marco/);
+c=await api('POST');await admin.from('imessage_codes').update({expires_at:'2000-01-01T00:00:00Z'}).eq('user_id',auth.data.user.id);assert.match((await msg('link '+c.data.code)).data.reply,/expired/);
+await api('DELETE');
+console.log('PASS actual recipe extraction/save, duplicate delivery, owner scope, private URL rejection, STOP, revoked saving, code expiry');
+
+

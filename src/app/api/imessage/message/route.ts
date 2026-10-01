@@ -8,7 +8,7 @@ import { extractPublicRecipe } from "@/lib/imessage/extract";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 const ORIGIN = "https://marco-eta-lyart.vercel.app";
-const schema = z.object({ project: z.literal(PROJECT_ID), id: z.string().min(1).max(512), sender: z.string().min(1).max(512), text: z.string().min(1).max(8000), chat: z.object({ type: z.enum(["dm", "group"]), id: z.string().min(1).max(512) }).strict().optional() }).strict();
+const schema = z.object({ project: z.literal(PROJECT_ID), id: z.string().min(1).max(512), sender: z.string().min(1).max(512), text: z.string().max(8000), reaction: z.object({ emoji: z.string().max(32), targetId: z.string().min(1).max(512), removed: z.boolean().optional() }).strict().optional(), chat: z.object({ type: z.enum(["dm", "group"]), id: z.string().min(1).max(512) }).strict().optional() }).strict();
 
 export async function POST(request: Request) {
   const raw = await request.text();
@@ -19,14 +19,24 @@ export async function POST(request: Request) {
   try { json = JSON.parse(raw); } catch { return NextResponse.json({ error: "Invalid JSON" }, { status: 400 }); }
   const parsed = schema.safeParse(json);
   if (!parsed.success) return NextResponse.json({ error: "Invalid message" }, { status: 400 });
-  const { sender, text, id, chat } = parsed.data;
+  const { sender, text, id, chat, reaction } = parsed.data;
   const group = chat?.type === "group";
-  const command = text.trim();
+  if (reaction && (!group || !["❤️", "❤"].includes(reaction.emoji) || reaction.removed)) return NextResponse.json({ reply: null });
+  const command = reaction ? "" : text.trim();
   const code = command.match(/^link\s+([a-f0-9]{24})$/i);
-  if (group && !recipeUrl(command) && !code && !/^(link|stop|disconnect)$/i.test(command)) return NextResponse.json({ reply: null });
+  if (group && !reaction && !recipeUrl(command) && !code && !/^(link|stop|disconnect)$/i.test(command)) return NextResponse.json({ reply: null });
   const who = senderKey(sender);
   const receipt = hash(group ? JSON.stringify([PROJECT_ID, "group", chat.id, sender, id]) : `${PROJECT_ID}:${id}`);
   const admin = createAdminClient();
+  const messageKey = (messageId: string) => hash(JSON.stringify([PROJECT_ID, chat?.id, messageId]));
+  let url = recipeUrl(command);
+  if (reaction) {
+    const shared = await admin.from("imessage_shared_recipes").select("source_url").eq("message_key", messageKey(reaction.targetId)).maybeSingle();
+    if (shared.error) return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+    if (!shared.data) return NextResponse.json({ reply: "I don't have that recipe link yet. Share the original URL again, then heart that message to save it." });
+    url = recipeUrl(shared.data.source_url);
+    if (!url) return NextResponse.json({ reply: null });
+  }
   const claimed = await admin.from("imessage_receipts").insert({ id: receipt, sender_hash: who });
   if (claimed.error) {
     if (claimed.error.code !== "23505") return NextResponse.json({ error: "Unavailable" }, { status: 503 });
@@ -60,12 +70,21 @@ export async function POST(request: Request) {
   if (link.error) return finish("Marco is temporarily unavailable. Please try again later.");
   if (!link.data && group) return finish(`To save your recipes, connect in a direct message with Marco first: ${ORIGIN}/connect/imessage\nThen share the recipe link again.`);
   if (!link.data) return finish(`Connect your Marco account here, then text back the connection code: ${ORIGIN}/connect/imessage\nAfter connecting, resend your recipe link.`);
-  const url = recipeUrl(command);
+
   if (!url) return finish("Send one public HTTPS recipe link to save it to your Kitchen. Text STOP to disconnect. Cooking reminders and grocery ordering aren't available here yet.");
   const userId = link.data.user_id;
   const existing = await admin.from("recipes").select("id,title").eq("user_id", userId).eq("source_url", url).limit(1).maybeSingle();
   if (existing.error) return finish("Could not check your Kitchen. Please try again later.");
-  if (existing.data) return finish(group ? "This recipe is already saved in your Marco Kitchen." : `Already saved: ${existing.data.title}\n${ORIGIN}/recipes/${existing.data.id}`);
+  async function rememberSharedRecipe() {
+    if (!group || reaction) return;
+    const stored = await admin.from("imessage_shared_recipes").upsert({ message_key: messageKey(id), source_url: url });
+    if (stored.error) throw new Error("Could not record shared recipe");
+  }
+  const groupSaved = reaction ? "Saved to your Kitchen 👨‍🍳" : "Saved to your Kitchen 👨‍🍳\nWant this recipe too? Heart the original link to save it.";
+  if (existing.data) {
+    try { await rememberSharedRecipe(); } catch { return finish("Your recipe is saved, but heart-to-save is temporarily unavailable. Please resend the link."); }
+    return finish(group ? (reaction ? "Already in your Kitchen 👨‍🍳" : "Already in your Kitchen 👨‍🍳\nWant this recipe too? Heart the original link to save it.") : `Already saved: ${existing.data.title}\n${ORIGIN}/recipes/${existing.data.id}`);
+  }
   try {
     const content = await fetchRecipePage(url);
     const recipe = await extractPublicRecipe(content);
@@ -75,7 +94,8 @@ export async function POST(request: Request) {
     if (current.error || current.data?.user_id !== userId) return finish("Your account was disconnected. This recipe was not saved.");
     const result = await admin.from("recipes").insert({ user_id: userId, title: recipe.title, description: recipe.description || null, ingredients: recipe.ingredients, steps: recipe.steps, servings: recipe.servings || null, prep_time_minutes: recipe.prep_time_minutes || null, cook_time_minutes: recipe.cook_time_minutes || null, tags: [], meal_type: "dinner", source_url: url, source_platform: "other" }).select("id").single();
     if (result.error) { console.warn("[imessage] Recipe insert failed", result.error.code); throw new Error("Save failed"); }
-    return finish(group ? "Saved to your Marco Kitchen." : `Saved ${recipe.title} to your Kitchen.\n${ORIGIN}/recipes/${result.data.id}`);
+    await rememberSharedRecipe();
+    return finish(group ? groupSaved : `Saved ${recipe.title} to your Kitchen 👨‍🍳\n${ORIGIN}/recipes/${result.data.id}`);
   } catch (error) {
     console.warn("[imessage] Save failed", error instanceof Error ? error.name : "Unknown error");
     if (error instanceof Error && error.message.includes("credit balance")) return finish("This page needs AI extraction, which is temporarily unavailable. Try a recipe page with a recipe card, or save it in Marco later.");

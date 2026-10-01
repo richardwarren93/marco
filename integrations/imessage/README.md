@@ -15,3 +15,7 @@ The worker processes one message at a time. Message IDs are deduplicated in Post
 Saving supports public HTTPS HTML recipe pages, including rich-link messages. A pinned public IPv4 address is used for every redirect; no credentials, images, or page subresources are fetched. Extraction must use explicit recipe content and schema validation. Social videos/private pages may require the app's importer instead. Daily limit: 30 inbound messages per sender; STOP remains available after the limit.
 
 Tests: `node --experimental-strip-types --test tests/imessage/*.test.ts` from the Marco root; `bun node_modules/typescript/bin/tsc --noEmit` from the scaffold.
+
+Heart-to-save: after a group recipe is successfully saved, its conversation/message hash maps to the public source URL. A heart on that original message imports the public recipe into the reacting sender's linked Kitchen. Other reactions and removals are ignored (Spectrum emits reactionAdded into app.messages). Existing private recipe edits are never copied. Older links need to be resent once. Apply migration-imessage-reactions.sql before updating the worker.
+
+Live integration test: set IMESSAGE_TEST_EMAIL and IMESSAGE_TEST_PASSWORD to an isolated reviewer account, load server environment, and run node --experimental-strip-types tests/imessage/live-reactions.mjs. TEST_ORIGIN defaults to localhost:3101. It resets the reviewer connection and creates/removes a temporary second account to verify reaction ownership.

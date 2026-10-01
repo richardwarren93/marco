@@ -16,13 +16,16 @@ const app = await Spectrum({
 // `app.messages` is an async iterable. Each tick yields a `space` (the
 // conversation) and an inbound `message`. Reply by awaiting `space.send(...)`.
 for await (const [space, message] of app.messages) {
+  console.info("[marco] Incoming event", { direction: message.direction, chatType: "type" in space ? space.type : "unknown", contentType: message.content.type, hasSender: Boolean(message.sender?.id) });
   if (message.direction !== "inbound" || !message.sender?.id || !("type" in space) || (space.type !== "dm" && space.type !== "group")) continue;
   const text = message.content.type === "text" ? message.content.text : message.content.type === "richlink" ? message.content.url : null;
-  if (!text) continue;
+  const reaction = message.content.type === "reaction" && ["❤️", "❤"].includes(message.content.emoji) && space.type === "group"
+    ? { emoji: message.content.emoji, targetId: message.content.target.id } : undefined;
+  if (!text && !reaction) continue;
   try {
-    const reply = await handleMessage(message.id, message.sender.id, text, { type: space.type, id: space.id });
+    const reply = await handleMessage(message.id, message.sender.id, text || "", { type: space.type, id: space.id }, reaction);
     if (reply) await space.send(reply);
-    console.info("[marco] Message processed");
+    console.info("[marco] Message processed", { replied: Boolean(reply) });
   } catch {
     console.error("[marco] Message processing failed; no message contents logged");
     try { await space.send("Marco is temporarily unavailable. Please try again in a moment."); } catch { /* Keep receiving if delivery fails. */ }
