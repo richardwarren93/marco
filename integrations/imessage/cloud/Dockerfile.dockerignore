@@ -1,0 +1,12 @@
+**
+!integrations/
+!integrations/imessage/
+!integrations/imessage/cloud/
+!integrations/imessage/cloud/package.json
+!integrations/imessage/cloud/package-lock.json
+!integrations/imessage/cloud/index.ts
+!integrations/imessage/bridge.ts
+!src/
+!src/lib/
+!src/lib/imessage/
+!src/lib/imessage/protocol.ts

@@ -1,0 +1,19 @@
+services:
+  - type: worker
+    name: marco-imessage
+    runtime: docker
+    plan: 0.5c-512mb
+    region: oregon
+    numInstances: 1
+    dockerfilePath: ./integrations/imessage/cloud/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: off
+    envVars:
+      - key: PROJECT_ID
+        value: c3b111c1-1414-477e-bcf1-d09eeab35e70
+      - key: PROJECT_SECRET
+        sync: false
+      - key: MARCO_IMESSAGE_BRIDGE_KEY
+        sync: false
+      - key: MARCO_WORKER_ENABLED
+        value: "false"

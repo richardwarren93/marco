@@ -1,0 +1,8 @@
+{
+  "name": "marco-imessage-worker",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=24 <25" },
+  "scripts": { "start": "node index.ts" },
+  "dependencies": { "spectrum-ts": "12.10.1" }
+}

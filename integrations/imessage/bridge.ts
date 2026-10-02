@@ -1,7 +1,8 @@
 import { PROJECT_ID, bridgeKey, sign } from "../../src/lib/imessage/protocol.ts";
 
 export async function handleMessage(id: string, sender: string, text: string, chat: { type: "dm" | "group"; id: string }, reaction?: { emoji: string; targetId: string }): Promise<string | null> {
-  const key = bridgeKey(process.env.SUPABASE_SERVICE_ROLE_KEY || "");
+  // Cloud workers receive only this scoped credential, never database admin access.
+  const key = process.env.MARCO_IMESSAGE_BRIDGE_KEY || bridgeKey(process.env.SUPABASE_SERVICE_ROLE_KEY || "");
   const body = JSON.stringify({ project: PROJECT_ID, id, sender, text, chat, ...(reaction ? { reaction } : {}) });
   const timestamp = String(Date.now());
   const response = await fetch("https://marco-eta-lyart.vercel.app/api/imessage/message", {
