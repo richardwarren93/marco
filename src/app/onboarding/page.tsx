@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MarcoPhone, { type MarcoScreen } from "@/components/onboarding/MarcoPhone";
+import { contactsPickerAvailable, pickContactNumber } from "@/lib/native/pickContact";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -71,6 +72,20 @@ export default function OnboardingPage() {
   const [allergies, setAllergies] = useState<string[]>([]);
   const [custom, setCustom] = useState("");
   const [household, setHousehold] = useState("");
+  const [memberPhone, setMemberPhone] = useState("");
+  const [memberName, setMemberName] = useState("");
+  const [marcoNumber, setMarcoNumber] = useState("");
+  const canPickContact = contactsPickerAvailable();
+
+  async function pickFromContacts() {
+    const picked = await pickContactNumber();
+    if (picked?.number) { setMemberPhone(picked.number); setMemberName(picked.name?.split(" ")[0] ?? ""); }
+  }
+
+  // Marco's number — needed to open a group iMessage (you + household + Marco).
+  useEffect(() => {
+    void fetch("/api/imessage/link", { cache: "no-store" }).then(r => r.ok ? r.json() : null).then(v => { if (v?.marcoNumber) setMarcoNumber(v.marcoNumber); }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -102,7 +117,16 @@ export default function OnboardingPage() {
       if (hh && hh.k !== "Just me") {
         await fetch("/api/household", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: `${name.trim()}'s Kitchen` }) }).catch(() => {});
       }
-      router.replace(toText ? "/connect/imessage" : "/friends-stack");
+      // Household + a number → open a group iMessage (you + them + Marco), where
+      // recipes dropped in the chat get saved. Otherwise hand off to the DM link.
+      const member = memberPhone.replace(/[^\d+]/g, "");
+      if (toText && marcoNumber && member.length >= 7) {
+        const body = `Welcome to our kitchen 🍅 Drop any recipe link here and Marco saves it for us.`;
+        try { window.location.href = `sms:${member},${marcoNumber}&body=${encodeURIComponent(body)}`; } catch { /* fall through to connect */ }
+        router.replace("/connect/imessage");
+      } else {
+        router.replace(toText ? "/connect/imessage" : "/friends-stack");
+      }
       router.refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save. Try again."); setBusy(false); }
   }
@@ -235,21 +259,36 @@ export default function OnboardingPage() {
         )}
 
         {/* ─── Ready → text hand-off ────────────────────────────────────── */}
-        {ready && stage === "ready" && (
-          <div className="flex flex-1 flex-col">
-            <button onClick={() => setStage("household")} className="self-start" style={backBtn}>←</button>
-            <div className="flex flex-1 flex-col justify-center text-center">
-              <div style={{ fontSize: 46 }}>🍅</div>
-              <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, lineHeight: 1.04, color: INK, marginTop: 10 }}>You&apos;re all set, {name.trim() || "chef"}!</h1>
-              <Squiggle center />
-              <p className="mx-auto" style={{ fontFamily: SANS, fontSize: 15.5, color: "#4A4742", marginTop: 12, lineHeight: 1.5, maxWidth: "20rem" }}>
-                The magic lives in your texts. Connect Marco and you can save recipes from any chat, plan by text, and pull in {household && household !== "Just me" ? "the rest of your household" : "your people"}.
-              </p>
+        {ready && stage === "ready" && (() => {
+          const partner = household === "My partner" ? "your partner" : household === "My family" ? "your family" : household === "Roommates" ? "your roommates" : "";
+          const groupReady = !!partner && memberPhone.replace(/[^\d+]/g, "").length >= 7;
+          return (
+            <div className="flex flex-1 flex-col">
+              <button onClick={() => setStage("household")} className="self-start" style={backBtn}>←</button>
+              <div className="flex flex-1 flex-col justify-center text-center">
+                <div style={{ fontSize: 46 }}>🍅</div>
+                <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, lineHeight: 1.04, color: INK, marginTop: 10 }}>You&apos;re all set, {name.trim() || "chef"}!</h1>
+                <Squiggle center />
+                <p className="mx-auto" style={{ fontFamily: SANS, fontSize: 15.5, color: "#4A4742", marginTop: 12, lineHeight: 1.5, maxWidth: "20rem" }}>
+                  {partner ? <>Start a kitchen group chat with {partner} &amp; Marco — drop any recipe in and it&apos;s saved for you both.</> : <>The magic lives in your texts. Connect Marco and save recipes from any chat, plan by text, and cook with your people.</>}
+                </p>
+                {partner && (
+                  <div className="mx-auto w-full" style={{ marginTop: 18, maxWidth: "20rem", textAlign: "left" }}>
+                    {canPickContact && (
+                      <button type="button" onClick={pickFromContacts} className="mb-2.5 flex w-full items-center justify-center gap-2 transition-transform active:scale-[0.98]" style={{ background: LIME, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "12px 0", fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK }}>
+                        <span aria-hidden>👤</span> {memberName ? `${memberName} selected · change` : "Pick from contacts"}
+                      </button>
+                    )}
+                    <input type="tel" inputMode="tel" autoComplete="tel" value={memberPhone} onChange={e => { setMemberPhone(e.target.value); setMemberName(""); }} placeholder={`${partner === "your partner" ? "partner" : partner === "your family" ? "a family member" : "a roommate"}'s number`} className="block w-full" style={{ background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "13px 16px", fontFamily: SANS, fontSize: 16, color: INK }} />
+                    <p style={{ fontFamily: HAND, fontSize: 13.5, color: TOMATO, marginTop: 8, transform: "rotate(-1deg)" }}>we&apos;ll open a group chat with you, them &amp; Marco</p>
+                  </div>
+                )}
+              </div>
+              <button onClick={() => finish(true)} disabled={busy} className="w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={primaryBtn}>{busy ? "Setting up…" : groupReady ? "Start our kitchen group chat →" : "Text Marco to start →"}</button>
+              <button onClick={() => finish(false)} disabled={busy} style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.6, background: "none", border: "none", marginTop: 14 }}>maybe later — take me in</button>
             </div>
-            <button onClick={() => finish(true)} disabled={busy} className="w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={primaryBtn}>{busy ? "Setting up…" : "Text Marco to start →"}</button>
-            <button onClick={() => finish(false)} disabled={busy} style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.6, background: "none", border: "none", marginTop: 14 }}>maybe later — take me in</button>
-          </div>
-        )}
+          );
+        })()}
       </div>
       <style>{`@keyframes ob-slide{0%{opacity:0;transform:translateX(20px)}100%{opacity:1;transform:translateX(0)}}@media (prefers-reduced-motion: reduce){[style*="ob-slide"]{animation:none !important}}`}</style>
     </div>
