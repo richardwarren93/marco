@@ -73,6 +73,26 @@ export async function POST(request: Request) {
   const link = await admin.from("imessage_links").select("user_id,claimed").eq("sender_hash", who).maybeSingle();
   if (link.error) return finish("Marco is temporarily unavailable. Please try again later.");
 
+  // Merge households with group chats: tie this group to a household as soon as
+  // a household member is in it, then route saves made here to the shared
+  // household kitchen (the creator's account) that every member already sees.
+  // Tolerant of the household_groups table not existing yet (pre-migration).
+  let householdOwner: string | null = null;
+  if (group && groupHash) {
+    try {
+      const linked = await admin.from("household_groups").select("household_id").eq("group_hash", groupHash).maybeSingle();
+      let householdId = linked.data?.household_id ?? null;
+      if (!householdId && link.data?.user_id) {
+        const hm = await admin.from("household_members").select("household_id").eq("user_id", link.data.user_id).maybeSingle();
+        if (hm.data?.household_id) { householdId = hm.data.household_id; await admin.from("household_groups").insert({ household_id: householdId, group_hash: groupHash }); }
+      }
+      if (householdId) {
+        const h = await admin.from("households").select("created_by").eq("id", householdId).maybeSingle();
+        householdOwner = h.data?.created_by ?? null;
+      }
+    } catch { householdOwner = null; }
+  }
+
   if (!url) {
     // Groups stay quiet (save + heart only); a brand-new DMer gets an intro.
     if (group || !link.data) return finish(link.data
@@ -86,20 +106,25 @@ export async function POST(request: Request) {
   const userId = link.data?.user_id ?? await ensureParticipant(admin, who);
   if (!userId) return finish("Marco is temporarily unavailable. Please try again later.");
   const isClaimed = link.data?.claimed ?? false;
+  // In a household group, a save belongs to the shared household kitchen (the
+  // creator's account) rather than the individual sender — so every member gets it.
+  const saveOwner = householdOwner ?? userId;
   // A placeholder (unclaimed) texter can't sign into the app yet, so nudge them
   // to link their number instead of handing them an app link they can't open.
   const dmTail = isClaimed ? "" : `\nSee & manage them in the app — link your number: ${ORIGIN}/connect/imessage`;
-  const existing = await admin.from("recipes").select("id,title").eq("user_id", userId).eq("source_url", url).limit(1).maybeSingle();
+  const existing = await admin.from("recipes").select("id,title").eq("user_id", saveOwner).eq("source_url", url).limit(1).maybeSingle();
   if (existing.error) return finish("Could not check your Kitchen. Please try again later.");
   async function rememberSharedRecipe() {
     if (!group || reaction) return;
     const stored = await admin.from("imessage_shared_recipes").upsert({ message_key: messageKey(id), source_url: url });
     if (stored.error) throw new Error("Could not record shared recipe");
   }
-  const groupSaved = reaction ? "Saved to your Kitchen 👨‍🍳" : "Saved to your Kitchen 👨‍🍳\nWant this recipe too? Heart the original link to save it.";
+  const groupSaved = householdOwner
+    ? "Saved to your household kitchen 👨‍🍳 Everyone in your household has it now."
+    : (reaction ? "Saved to your Kitchen 👨‍🍳" : "Saved to your Kitchen 👨‍🍳\nWant this recipe too? Heart the original link to save it.");
   if (existing.data) {
     try { await rememberSharedRecipe(); } catch { return finish("Your recipe is saved, but heart-to-save is temporarily unavailable. Please resend the link."); }
-    return finish(group ? (reaction ? "Already in your Kitchen 👨‍🍳" : "Already in your Kitchen 👨‍🍳\nWant this recipe too? Heart the original link to save it.") : (isClaimed ? `Already saved: ${existing.data.title}\n${ORIGIN}/recipes/${existing.data.id}` : `Already in your Kitchen: ${existing.data.title}${dmTail}`));
+    return finish(group ? (householdOwner ? "Already in your household kitchen 👨‍🍳" : (reaction ? "Already in your Kitchen 👨‍🍳" : "Already in your Kitchen 👨‍🍳\nWant this recipe too? Heart the original link to save it.")) : (isClaimed ? `Already saved: ${existing.data.title}\n${ORIGIN}/recipes/${existing.data.id}` : `Already in your Kitchen: ${existing.data.title}${dmTail}`));
   }
   try {
     const content = await fetchRecipePage(url);
@@ -108,7 +133,7 @@ export async function POST(request: Request) {
     // Disconnecting during extraction must prevent a new save.
     const current = await admin.from("imessage_links").select("user_id").eq("sender_hash", who).maybeSingle();
     if (current.error || current.data?.user_id !== userId) return finish("Your account was disconnected. This recipe was not saved.");
-    const result = await admin.from("recipes").insert({ user_id: userId, title: recipe.title, description: recipe.description || null, ingredients: recipe.ingredients, steps: recipe.steps, servings: recipe.servings || null, prep_time_minutes: recipe.prep_time_minutes || null, cook_time_minutes: recipe.cook_time_minutes || null, tags: [], meal_type: "dinner", source_url: url, source_platform: "other" }).select("id").single();
+    const result = await admin.from("recipes").insert({ user_id: saveOwner, title: recipe.title, description: recipe.description || null, ingredients: recipe.ingredients, steps: recipe.steps, servings: recipe.servings || null, prep_time_minutes: recipe.prep_time_minutes || null, cook_time_minutes: recipe.cook_time_minutes || null, tags: [], meal_type: "dinner", source_url: url, source_platform: "other" }).select("id").single();
     if (result.error) { console.warn("[imessage] Recipe insert failed", result.error.code); throw new Error("Save failed"); }
     await rememberSharedRecipe();
     return finish(group ? groupSaved : (isClaimed ? `Saved ${recipe.title} to your Kitchen 👨‍🍳\n${ORIGIN}/recipes/${result.data.id}` : `Saved ${recipe.title} to your Kitchen 👨‍🍳${dmTail}`));
