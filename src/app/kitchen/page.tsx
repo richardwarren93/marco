@@ -30,12 +30,12 @@ export default function KitchenHub() {
     <div className="min-h-[100dvh]" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK }}>
       <div className="mx-auto w-full max-w-lg px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 120 }}>
         {/* header */}
-        <div className="flex items-start justify-between px-1">
-          <div>
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, letterSpacing: "-0.02em", color: INK, lineHeight: 1 }}>{data ? `${data.name}'s kitchen` : "Your kitchen"}</div>
-            <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, transform: "rotate(-2deg)", marginTop: 5 }}>{data ? `${data.recipeCount} recipes · ${data.cookCount} cooks` : "make yourself at home"}</div>
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div className="min-w-0">
+            <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 23, letterSpacing: "-0.01em", color: INK, lineHeight: 1.05 }}>{data ? `${data.name}'s kitchen` : "Your kitchen"}</div>
+            <div style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-1deg)", marginTop: 2 }}>{data ? `${data.recipeCount} recipes · ${data.cookCount} cooks` : "make yourself at home"}</div>
           </div>
-          <Link href="/profile" aria-label="Your profile" className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, transform: "rotate(5deg)", border: `2px solid ${BUTTER}` }}>{data?.name.slice(0, 1).toUpperCase() ?? "·"}</Link>
+          <Link href="/profile" aria-label="Your profile" className="flex flex-shrink-0 items-center justify-center" style={{ width: 38, height: 38, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, transform: "rotate(5deg)", border: `2px solid ${BUTTER}` }}>{data?.name.slice(0, 1).toUpperCase() ?? "·"}</Link>
         </div>
 
         <HouseholdBanner hh={hh} />
@@ -100,21 +100,18 @@ function HouseholdBanner({ hh }: { hh: HouseholdData | undefined }) {
 
   if (shared) {
     return (
-      <div className="flex items-center gap-2" style={{ marginTop: 14, background: LIME, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", transform: "rotate(-0.4deg)", boxShadow: "0 6px 14px rgba(23,20,16,0.12)" }}>
-        <span style={{ fontSize: 18 }}>🍅</span>
-        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>This kitchen is shared with {names}</span>
+      <div className="flex items-center gap-2" style={{ marginTop: 10, background: LIME, border: `2px solid ${INK}`, borderRadius: 11, padding: "7px 11px" }}>
+        <span style={{ fontSize: 14, flexShrink: 0 }}>🍅</span>
+        <span className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>shared with {names}</span>
       </div>
     );
   }
   return (
-    <div style={{ marginTop: 14, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "12px 14px", transform: "rotate(-0.4deg)", boxShadow: "0 6px 14px rgba(23,20,16,0.12)" }}>
-      <div className="flex items-center gap-2">
-        <span style={{ fontSize: 17 }}>⏳</span>
-        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>Waiting for your household to join</span>
-      </div>
-      <p style={{ fontFamily: SANS, fontSize: 13, color: "#4A4742", marginTop: 5 }}>Share this code so they can hop in — then this kitchen is both of yours.</p>
-      <button onClick={() => { navigator.clipboard?.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }} className="mt-2 inline-flex items-center gap-2 active:scale-95 transition-transform" style={{ background: BUTTER, border: `2px solid ${INK}`, borderRadius: 10, padding: "7px 12px", fontFamily: "ui-monospace, monospace", fontWeight: 700, fontSize: 14, color: INK }}>
-        {code} <span style={{ fontFamily: HAND, fontSize: 12, color: TOMATO }}>{copied ? "copied!" : "tap to copy"}</span>
+    <div className="flex items-center gap-2" style={{ marginTop: 10, background: PAPER, border: `2px solid ${INK}`, borderRadius: 11, padding: "7px 8px 7px 11px" }}>
+      <span style={{ fontSize: 14, flexShrink: 0 }}>⏳</span>
+      <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>waiting for your household</span>
+      <button onClick={() => { navigator.clipboard?.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }} className="flex-shrink-0 active:scale-95 transition-transform" style={{ background: BUTTER, border: `1.5px solid ${INK}`, borderRadius: 8, padding: "4px 9px", fontFamily: "ui-monospace, monospace", fontWeight: 700, fontSize: 12, color: INK }}>
+        {copied ? "copied!" : code}
       </button>
     </div>
   );

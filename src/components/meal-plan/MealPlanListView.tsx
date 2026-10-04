@@ -27,11 +27,9 @@ import CoordinationView from "./CoordinationView";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { GroceryIcon } from "@/components/icons/HandDrawnIcons";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
-import TomatoMascot from "@/components/gamification/TomatoMascot";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const ACCENT = "#E5462E";          // Marco tomato — the app's primary
-const ACCENT_LIGHT = "rgba(229,70,46,0.12)";
 const BG = "transparent"; // the dotted cream shows through from ScheduleScreen
 const SURFACE = "#ffffff";
 const TEXT_1 = "#171410";          // ink
@@ -270,7 +268,6 @@ export default function MealPlanListView({
   weekPickIds = [],
   weekStart: weekStartProp,
   onWeekChange,
-  onPlanThisWeek,
 }: {
   mealPlans: MealPlan[];
   householdPlans?: MealPlan[];
@@ -1056,10 +1053,11 @@ export default function MealPlanListView({
     // Falls back to 3 (the goal table's default) until a goal is saved.
     const GOAL = weeklyGoal || 3;
     const planned = totalVisibleMeals;
-    const progressPct = Math.min(100, Math.round((planned / GOAL) * 100));
     const mealTime = (p: MealPlan) => (p.recipe?.prep_time_minutes ?? 0) + (p.recipe?.cook_time_minutes ?? 0);
     const dayHasMeals = (dk: string) => (byDate[dk]?.length ?? 0) > 0;
-    const isDayExpanded = (dk: string) => expandedOverride[dk] ?? dayHasMeals(dk);
+    // Today is always open by default (so you land on what's for dinner); other
+    // days open when they have meals. A manual tap still overrides either way.
+    const isDayExpanded = (dk: string) => expandedOverride[dk] ?? (dk === today || dayHasMeals(dk));
     const anyExpanded = sortedDates.some((dk) => isDayExpanded(dk));
     const toggleDay = (dk: string) =>
       setExpandedOverride((prev) => ({ ...prev, [dk]: !(prev[dk] ?? dayHasMeals(dk)) }));
@@ -1083,34 +1081,24 @@ export default function MealPlanListView({
       >
       <div className="space-y-2.5">
 
-        {/* ── Progress header ─────────────────────────────────────────── */}
+        {/* ── Week progress — zany meal pips, one per goal meal ───────── */}
         <div
-          className="flex items-center gap-3 rounded-2xl px-4 py-3"
-          style={{ background: SURFACE, boxShadow: CARD_SHADOW }}
+          className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
+          style={{ background: "#FBF7EE", boxShadow: CARD_SHADOW }}
         >
-          <span className="flex-shrink-0 -my-1" aria-hidden>
-            <TomatoMascot size={38} state={planned >= GOAL ? "thriving" : "content"} />
-          </span>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-semibold" style={{ color: TEXT_1 }}>
-              You&apos;ve planned {planned} of {GOAL} meals
-            </p>
-            <div className="mt-1.5 h-1.5 rounded-full overflow-hidden" style={{ background: "rgba(28,26,23,0.08)" }}>
-              <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progressPct}%`, background: planned >= GOAL ? "#16a34a" : ACCENT }} />
+          <div className="min-w-0">
+            <div style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "18px", color: "#171410", lineHeight: 1 }}>
+              {planned} of {GOAL} this week
+            </div>
+            <div style={{ fontFamily: '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive', fontSize: "13.5px", color: "#E5462E", marginTop: "3px", transform: "rotate(-1deg)" }}>
+              {planned >= GOAL ? "your week's full 🎉" : "your week's taking shape"}
             </div>
           </div>
-          {onPlanThisWeek && (
-            <button
-              onClick={() => onPlanThisWeek?.()}
-              className="flex items-center gap-1 pl-2 pr-2.5 py-2 rounded-full text-[12px] font-semibold transition-all active:scale-95 flex-shrink-0"
-              style={{ background: "var(--ink, #1C1A17)", color: "var(--cream, #F5EEE2)" }}
-            >
-              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5L13 3z" />
-              </svg>
-              Plan my week
-            </button>
-          )}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {Array.from({ length: GOAL }).map((_, i) => (
+              <span key={i} aria-hidden style={{ width: "15px", height: "15px", borderRadius: "99px", border: "2px solid #171410", background: i < planned ? (planned >= GOAL ? "#C4EE45" : "#E5462E") : "transparent", transform: `rotate(${i % 2 ? 5 : -5}deg)` }} />
+            ))}
+          </div>
         </div>
 
         {/* ── This Week + collapse-all ────────────────────────────────── */}
@@ -1161,11 +1149,11 @@ export default function MealPlanListView({
                 className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-black/[0.015]"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-[14px] font-semibold flex-shrink-0" style={{ color: isPast ? "var(--ink-soft, #4A4742)" : TEXT_1, opacity: isPast ? 0.6 : 1 }}>
+                  <span className="flex-shrink-0" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "16px", color: isPast ? "var(--ink-soft, #4A4742)" : TEXT_1, opacity: isPast ? 0.6 : 1 }}>
                     {weekday} {dayNum}
                   </span>
                   {isToday && (
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: ACCENT_LIGHT, color: ACCENT }}>Today</span>
+                    <span className="px-2 py-0.5 rounded-full flex-shrink-0" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "10px", background: "#E5462E", color: "#FBF7EE", border: "1.5px solid #171410" }}>Today</span>
                   )}
                   {dayHasDietaryConflict && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(232, 163, 61, 0.18)", color: "#8A6418" }} title="One of this day's recipes doesn't fit your dietary filters.">Needs swap</span>
