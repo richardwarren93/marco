@@ -9,7 +9,10 @@ export async function GET() {
   if (!user) return NextResponse.json({ error: "Sign in first." }, { status: 401 });
   const { data, error } = await createAdminClient().from("imessage_links").select("created_at").eq("user_id", user.id).maybeSingle();
   if (error) return NextResponse.json({ error: "Connection unavailable. Please retry." }, { status: 503 });
-  return NextResponse.json({ linked: !!data, account: user.email || "your signed-in Marco account" }, { headers: { "Cache-Control": "private, no-store" } });
+  // Marco's public iMessage number — served to the page (vs a NEXT_PUBLIC_ env)
+  // so there's no browser-exposed build-time var. It still reaches the client to
+  // build the tap-to-text link, which is fine: it's a public number.
+  return NextResponse.json({ linked: !!data, account: user.email || "your signed-in Marco account", marcoNumber: process.env.MARCO_IMESSAGE || null }, { headers: { "Cache-Control": "private, no-store" } });
 }
 export async function POST(request: Request) {
   if (request.headers.get("origin") !== new URL(request.url).origin) return NextResponse.json({ error: "Invalid origin." }, { status: 403 });

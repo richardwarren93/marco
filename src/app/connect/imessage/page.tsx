@@ -2,8 +2,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-const MARCO_NUMBER = process.env.NEXT_PUBLIC_MARCO_IMESSAGE;
-
 export default function IMessageConnection() {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [signIn, setSignIn] = useState(false);
@@ -11,6 +9,7 @@ export default function IMessageConnection() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [account, setAccount] = useState("");
+  const [marcoNumber, setMarcoNumber] = useState("");
   async function request(method = "GET") {
     setBusy(true); setError("");
     try {
@@ -19,6 +18,7 @@ export default function IMessageConnection() {
       if (!r.ok) throw new Error(v.error);
       if (typeof v.linked === "boolean") setLinked(v.linked);
       if (v.account) setAccount(v.account);
+      if (typeof v.marcoNumber === "string") setMarcoNumber(v.marcoNumber);
       setCode(v.code || "");
     } catch (e) { setError(e instanceof Error ? e.message : "Please retry."); }
     finally { setBusy(false); }
@@ -37,8 +37,8 @@ export default function IMessageConnection() {
     </>}
     {code && <div className="rounded-xl border p-5 space-y-3">
       <p>Send this to Marco in a direct message within 10 minutes to link your number. Keep it private.</p>
-      {MARCO_NUMBER && <a href={`sms:${MARCO_NUMBER}&body=${encodeURIComponent(`link ${code}`)}`} className="inline-block rounded-xl bg-black text-white px-5 py-3">Send to Marco ➜</a>}
-      <p className="text-sm">{MARCO_NUMBER ? "…or copy this and text it to Marco:" : "Copy this and text it to Marco:"}</p>
+      {marcoNumber && <a href={`sms:${marcoNumber}&body=${encodeURIComponent(`link ${code}`)}`} className="inline-block rounded-xl bg-black text-white px-5 py-3">Send to Marco ➜</a>}
+      <p className="text-sm">{marcoNumber ? "…or copy this and text it to Marco:" : "Copy this and text it to Marco:"}</p>
       <code className="block break-all select-all">link {code}</code>
       <button className="underline" onClick={() => request()}>I sent it — check connection</button>
     </div>}
