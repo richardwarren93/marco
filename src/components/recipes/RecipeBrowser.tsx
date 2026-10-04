@@ -134,6 +134,15 @@ function BrowserCard({
   );
 }
 
+function Chip({ label, color, active, onClick }: { label: string; color?: string; active: boolean; onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-transform" style={{ padding: "7px 13px", borderRadius: 99, border: `2px solid #171410`, background: active ? "#171410" : "#FBF7EE", color: active ? "#FBF7EE" : "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "13.5px", whiteSpace: "nowrap" }}>
+      {color && <span aria-hidden style={{ width: 8, height: 8, borderRadius: 99, background: color, flexShrink: 0 }} />}
+      {label}
+    </button>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function RecipeBrowser(props: RecipeBrowserProps) {
@@ -149,8 +158,30 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   // Pick mode: which card is mid-selection
   const [selectingId, setSelectingId] = useState<string | null>(null);
 
+  // Beli-style auto-collections — derived from recipe metadata (time, meal,
+  // tags), no manual sorting needed. A chip appears once a bucket has enough.
+  const [chip, setChip] = useState<string | null>(null);
+  const autoCollections = useMemo(() => {
+    const mins = (r: Recipe) => (r.prep_time_minutes ?? 0) + (r.cook_time_minutes ?? 0);
+    const COLORS = ["#E5462E", "#C4EE45", "#FFD84D", "#2540E8", "#FF4D9D", "#C9B8FF"];
+    let ci = 0; const col = () => COLORS[ci++ % COLORS.length];
+    const out: { key: string; label: string; color: string; test: (r: Recipe) => boolean }[] = [];
+    if (recipes.filter((r) => { const t = mins(r); return t > 0 && t <= 30; }).length >= 2)
+      out.push({ key: "quick", label: "Quick", color: col(), test: (r) => { const t = mins(r); return t > 0 && t <= 30; } });
+    (["dinner", "breakfast", "lunch", "snack"] as const).forEach((mt) => {
+      if (recipes.filter((r) => (r.meal_type ?? "dinner") === mt).length >= 3)
+        out.push({ key: `meal:${mt}`, label: mt[0].toUpperCase() + mt.slice(1), color: col(), test: (r) => (r.meal_type ?? "dinner") === mt });
+    });
+    const freq = new Map<string, number>();
+    recipes.forEach((r) => (r.tags ?? []).forEach((t) => { const k = t.trim().toLowerCase(); if (k && k.length <= 20) freq.set(k, (freq.get(k) ?? 0) + 1); }));
+    [...freq.entries()].filter(([, n]) => n >= 2).sort((a, b) => b[1] - a[1]).slice(0, 6).forEach(([tag]) => {
+      out.push({ key: `tag:${tag}`, label: tag.replace(/\b\w/g, (c) => c.toUpperCase()), color: col(), test: (r) => (r.tags ?? []).some((x) => x.trim().toLowerCase() === tag) });
+    });
+    return out.slice(0, 10);
+  }, [recipes]);
+
   const filterCount = recipeFilterCount(filters);
-  const hasFilters = !!(search.trim() || filters.mealTypes.length > 0 || filters.sort !== "newest");
+  const hasFilters = !!(search.trim() || filters.mealTypes.length > 0 || filters.sort !== "newest" || chip);
 
   // Filtered recipe list
   const filtered = useMemo(() => {
@@ -161,6 +192,10 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
     }
     if (filters.mealTypes.length > 0) {
       result = result.filter((r) => filters.mealTypes.includes(r.meal_type ?? "dinner"));
+    }
+    if (chip) {
+      const col = autoCollections.find((c) => c.key === chip);
+      if (col) result = result.filter(col.test);
     }
 
     if (filters.sort === "prep_time") {
@@ -174,7 +209,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
       });
     }
     return [...result].sort((a, b) => b.created_at.localeCompare(a.created_at));
-  }, [recipes, search, filters]);
+  }, [recipes, search, filters, chip, autoCollections]);
 
   const displayRecipes = filtered;
 
@@ -272,6 +307,16 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             </button>
           </div>
         </div>
+
+        {/* Auto-collections — zany Beli-style chips, filter the grid in place */}
+        {isLibrary && autoCollections.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto px-4 pb-2.5" style={{ scrollbarWidth: "none" }}>
+            <Chip label="All" active={!chip} onClick={() => setChip(null)} />
+            {autoCollections.map((c) => (
+              <Chip key={c.key} label={c.label} color={c.color} active={chip === c.key} onClick={() => setChip(chip === c.key ? null : c.key)} />
+            ))}
+          </div>
+        )}
         </div>{/* close max-w-5xl */}
       </div>
 
