@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import MarcoPhone, { type MarcoScreen } from "@/components/onboarding/MarcoPhone";
 import { contactsPickerAvailable, pickContactNumber } from "@/lib/native/pickContact";
+import { requestNotifications } from "@/lib/native/notifications";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -33,7 +34,7 @@ const HOUSEHOLDS: { k: string; e: string; size: number; c: string }[] = [
   { k: "Roommates", e: "🏠", size: 3, c: LAV },
 ];
 
-type Stage = "tour" | "name" | "goal" | "allergies" | "household" | "ready";
+type Stage = "tour" | "name" | "goal" | "allergies" | "household" | "notifications" | "ready";
 
 function PhoneRotator({ screens }: { screens: MarcoScreen[] }) {
   const [i, setI] = useState(0);
@@ -135,7 +136,7 @@ export default function OnboardingPage() {
   const addCustom = () => { const t = custom.trim(); if (t && !allergies.includes(t)) { setAllergies(p => [...p, t]); setCustom(""); } };
 
   // Progress across the setup sequence (after the tour)
-  const SETUP: Stage[] = ["name", "goal", "allergies", "household", "ready"];
+  const SETUP: Stage[] = ["name", "goal", "allergies", "household", "notifications", "ready"];
   const setupIdx = SETUP.indexOf(stage);
 
   return (
@@ -147,7 +148,7 @@ export default function OnboardingPage() {
           {stage === "tour" && <button onClick={() => setStage("name")} style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.55, background: "none", border: "none" }}>skip →</button>}
           {setupIdx > 0 && stage !== "ready" && (
             <div className="flex items-center gap-1.5">
-              {SETUP.slice(0, 4).map((s, i) => <span key={s} style={{ width: i === setupIdx ? 20 : 7, height: 7, borderRadius: 99, background: i <= setupIdx ? TOMATO : "rgba(23,20,16,0.2)", transition: "all .2s" }} />)}
+              {SETUP.slice(0, 5).map((s, i) => <span key={s} style={{ width: i === setupIdx ? 20 : 7, height: 7, borderRadius: 99, background: i <= setupIdx ? TOMATO : "rgba(23,20,16,0.2)", transition: "all .2s" }} />)}
             </div>
           )}
         </div>
@@ -254,7 +255,22 @@ export default function OnboardingPage() {
                 })}
               </div>
             </div>
-            <button onClick={() => setStage("ready")} disabled={!household} className="w-full transition-transform active:scale-[0.98] disabled:opacity-50" style={primaryBtn}>Next →</button>
+            <button onClick={() => setStage("notifications")} disabled={!household} className="w-full transition-transform active:scale-[0.98] disabled:opacity-50" style={primaryBtn}>Next →</button>
+          </div>
+        )}
+
+        {/* ─── Notifications ────────────────────────────────────────────── */}
+        {ready && stage === "notifications" && (
+          <div className="flex flex-1 flex-col">
+            <button onClick={() => setStage("household")} className="self-start" style={backBtn}>←</button>
+            <div className="flex flex-1 flex-col justify-center text-center">
+              <div style={{ fontSize: 46 }}>🔔</div>
+              <h1 style={{ ...stepH, marginTop: 10 }}>Stay in the loop</h1>
+              <Squiggle center />
+              <p className="mx-auto" style={{ ...stepSub, maxWidth: "20rem" }}>A nudge when your household adds a recipe, when it&apos;s time to cook, and what your friends are making.</p>
+            </div>
+            <button onClick={async () => { setBusy(true); await requestNotifications(); setBusy(false); setStage("ready"); }} disabled={busy} className="w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={primaryBtn}>{busy ? "…" : "Turn on notifications →"}</button>
+            <button onClick={() => setStage("ready")} disabled={busy} style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.6, background: "none", border: "none", marginTop: 12 }}>maybe later</button>
           </div>
         )}
 
@@ -264,7 +280,7 @@ export default function OnboardingPage() {
           const groupReady = !!partner && memberPhone.replace(/[^\d+]/g, "").length >= 7;
           return (
             <div className="flex flex-1 flex-col">
-              <button onClick={() => setStage("household")} className="self-start" style={backBtn}>←</button>
+              <button onClick={() => setStage("notifications")} className="self-start" style={backBtn}>←</button>
               <div className="flex flex-1 flex-col justify-center text-center">
                 <div style={{ fontSize: 46 }}>🍅</div>
                 <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, lineHeight: 1.04, color: INK, marginTop: 10 }}>You&apos;re all set, {name.trim() || "chef"}!</h1>
