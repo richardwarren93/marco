@@ -14,7 +14,15 @@ const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
 const SANS = "system-ui, -apple-system, sans-serif";
 
 type Dish = { id: string; title: string | null; image_url?: string | null; photo_url?: string | null; source_recipe_id?: string | null; author_name?: string | null };
-interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[] }
+type HouseholdRecipe = { id: string; title: string | null; image_url: string | null; author_name: string; created_at: string };
+interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[]; householdRecipes: HouseholdRecipe[] }
+
+function timeAgo(iso: string): string {
+  const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+  if (s < 3600) return `${Math.floor(s / 60)}m`;
+  if (s < 86400) return `${Math.floor(s / 3600)}h`;
+  return `${Math.floor(s / 86400)}d`;
+}
 type Member = { user_id: string; role: string; profile: { display_name?: string | null } | null };
 interface HouseholdData { household: { id: string; name: string; invite_code: string; members: Member[] } | null }
 
@@ -52,6 +60,19 @@ export default function KitchenHub() {
 
         {data && (
           <>
+            {/* FRESH — a living feed of what your household just added */}
+            {data.householdRecipes.length > 0 && (
+              <section style={{ marginTop: 18 }}>
+                <div className="flex items-baseline gap-2 px-1" style={{ marginBottom: 10 }}>
+                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>fresh in your kitchen</span>
+                  <span style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-3deg)", display: "inline-block" }}>just dropped 🔥</span>
+                </div>
+                <div className="space-y-3">
+                  {data.householdRecipes.slice(0, 3).map((r, i) => <ShareCard key={r.id} r={r} i={i} />)}
+                </div>
+              </section>
+            )}
+
             {/* RECIPES — the core of your kitchen */}
             <section style={{ marginTop: 20 }}>
               <div className="flex items-baseline justify-between px-1" style={{ marginBottom: 10 }}>
@@ -114,6 +135,24 @@ function HouseholdBanner({ hh }: { hh: HouseholdData | undefined }) {
         {copied ? "copied!" : code}
       </button>
     </div>
+  );
+}
+
+const SEAT_COLORS = [LIME, BUTTER, "#FF4D9D", "#C9B8FF"];
+function ShareCard({ r, i }: { r: HouseholdRecipe; i: number }) {
+  return (
+    <Link href={`/recipes/${r.id}`} className="block active:scale-[0.99] transition-transform" style={{ position: "relative", background: PAPER, borderRadius: 12, padding: "10px 10px 12px", border: `2px solid ${INK}`, transform: `rotate(${i % 2 ? 0.5 : -0.5}deg)`, boxShadow: "0 8px 18px rgba(23,20,16,0.14)" }}>
+      <div className="flex items-center gap-2" style={{ marginBottom: 8 }}>
+        <span className="flex flex-shrink-0 items-center justify-center" style={{ width: 24, height: 24, borderRadius: 99, background: SEAT_COLORS[i % SEAT_COLORS.length], color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 12, border: `1.5px solid ${INK}`, transform: "rotate(-4deg)" }}>{r.author_name.slice(0, 1).toUpperCase()}</span>
+        <span style={{ fontFamily: SANS, fontSize: 13, color: INK }}><b>{r.author_name}</b> added · {timeAgo(r.created_at)}</span>
+      </div>
+      {r.image_url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={r.image_url} alt="" loading="lazy" style={{ width: "100%", height: 150, objectFit: "cover", display: "block", borderRadius: 8, border: `2px solid ${INK}` }} />
+      ) : <div className="flex items-center justify-center" style={{ height: 150, background: "rgba(255,216,77,0.3)", fontSize: 40, borderRadius: 8, border: `2px solid ${INK}` }}>🍳</div>}
+      <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK, lineHeight: 1.05, marginTop: 9 }}>{r.title || "Recipe"}</div>
+      <svg width="150" height="10" viewBox="0 0 150 10" fill="none" aria-hidden style={{ marginTop: 3 }}><path d="M2 6 C 26 2, 50 9, 76 5 S 128 2, 148 5" stroke={TOMATO} strokeWidth="3" strokeLinecap="round" /></svg>
+    </Link>
   );
 }
 
