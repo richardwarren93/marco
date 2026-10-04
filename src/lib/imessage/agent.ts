@@ -113,6 +113,17 @@ async function mealplan(admin: SupabaseClient, userId: string, recipe: string | 
   return `Added "${match.title}" to your plan for ${day} (${mt}).`;
 }
 
+// Monday 00:00 UTC of the current week — the boundary the weekly cook goal counts from.
+function weekStartISO(): string {
+  const d = new Date();
+  const day = d.getUTCDay();
+  const diff = d.getUTCDate() - day + (day === 0 ? -6 : 1);
+  const m = new Date(d);
+  m.setUTCDate(diff);
+  m.setUTCHours(0, 0, 0, 0);
+  return m.toISOString();
+}
+
 async function logCook(admin: SupabaseClient, userId: string, recipe: string | null): Promise<string> {
   if (!recipe) return 'Nice! Which dish did you make? e.g. "I made the wings".';
   const match = await findRecipe(admin, userId, recipe);
@@ -120,7 +131,17 @@ async function logCook(admin: SupabaseClient, userId: string, recipe: string | n
   if (Array.isArray(match)) return `Which one did you cook?\n${match.map((r, i) => `${i + 1}. ${r.title}`).join("\n")}`;
   const ins = await admin.from("cooking_logs").insert({ user_id: userId, recipe_id: match.id });
   if (ins.error) return "Couldn't log that just now. Try again shortly.";
-  return `Logged — you made "${match.title}" 🍳 Nice one.`;
+  const base = `Logged — you made "${match.title}" 🍳`;
+  // Weekly goal progress — turn "I cooked" into a nudge toward the cook goal.
+  const [cooks, goal] = await Promise.all([
+    admin.from("cooking_logs").select("id", { head: true, count: "exact" }).eq("user_id", userId).gte("created_at", weekStartISO()),
+    admin.from("cooking_goals").select("weekly_target").eq("user_id", userId).maybeSingle(),
+  ]);
+  const done = cooks.count ?? 1;
+  const target = goal.data?.weekly_target ?? 0;
+  if (cooks.error || !target) return `${base} Nice one.`;
+  if (done >= target) return `${base} That's ${done} this week — you hit your goal! 🎉`;
+  return `${base} That's ${done} of ${target} this week — ${target - done} to go 💪`;
 }
 
 // Entry point from the DM path: returns a reply for any non-link, non-command

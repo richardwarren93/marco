@@ -14,7 +14,6 @@ const MONO = "ui-monospace, monospace";
 const TABS: { label: string; glyph: string; href: string; match: string[] }[] = [
   { label: "My Kitchen", glyph: "🏠", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"] },
   { label: "Table", glyph: "🍽️", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"] },
-  { label: "Explore", glyph: "✦", href: "/explore", match: ["/explore"] },
 ];
 
 // Full-screen / modal flows where the dock should not show.
@@ -33,7 +32,6 @@ export default function MarcoDock() {
         <Tab t={TABS[0]} active={isActive(TABS[0])} onClick={() => router.push(TABS[0].href)} />
         <button aria-label="Create" onClick={() => router.push("/create")} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 54, height: 54, borderRadius: 99, background: TOMATO, color: PAPER, border: `2.5px solid ${INK}`, fontSize: 28, fontWeight: 700, transform: "translateY(-12px) rotate(-4deg)", boxShadow: "0 8px 18px rgba(229,70,46,0.45)" }}>+</button>
         <Tab t={TABS[1]} active={isActive(TABS[1])} onClick={() => router.push(TABS[1].href)} />
-        <Tab t={TABS[2]} active={isActive(TABS[2])} onClick={() => router.push(TABS[2].href)} />
       </div>
     </div>
   );
