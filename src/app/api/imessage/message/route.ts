@@ -5,6 +5,7 @@ import { PROJECT_ID, bridgeKey, hash, recipeUrl, senderKey, verify } from "@/lib
 import { fetchRecipePage } from "@/lib/imessage/fetch-recipe";
 import { extractPublicRecipe } from "@/lib/imessage/extract";
 import { ensureParticipant } from "@/lib/imessage/identity";
+import { handleDmText } from "@/lib/imessage/agent";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -72,9 +73,15 @@ export async function POST(request: Request) {
   const link = await admin.from("imessage_links").select("user_id,claimed").eq("sender_hash", who).maybeSingle();
   if (link.error) return finish("Marco is temporarily unavailable. Please try again later.");
 
-  if (!url) return finish(link.data
-    ? "Send a public recipe link and I'll save it to your Kitchen. Text STOP to disconnect."
-    : "Hi, I'm Marco 👨‍🍳 Text me a public recipe link and I'll save it — or ❤️ a recipe link in a group chat to save that one. Try it now.");
+  if (!url) {
+    // Groups stay quiet (save + heart only); a brand-new DMer gets an intro.
+    if (group || !link.data) return finish(link.data
+      ? "Send a public recipe link and I'll save it to your Kitchen. Text STOP to disconnect."
+      : "Hi, I'm Marco 👨‍🍳 Text me a public recipe link and I'll save it — or ❤️ a recipe link in a group chat to save that one. Try it now.");
+    // DM from someone who's saved before → the smart layer (ask for saves,
+    // what to cook, schedule one, or log a cook — no verbs required).
+    return finish(await handleDmText(admin, link.data.user_id, command, link.data.claimed ?? true, ORIGIN));
+  }
   // First contact with a real link: give them an instant, no-signup identity.
   const userId = link.data?.user_id ?? await ensureParticipant(admin, who);
   if (!userId) return finish("Marco is temporarily unavailable. Please try again later.");
