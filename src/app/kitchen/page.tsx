@@ -112,7 +112,16 @@ export default function KitchenHub() {
 
 function HouseholdBanner({ hh }: { hh: HouseholdData | undefined }) {
   const [copied, setCopied] = useState(false);
-  if (!hh?.household) return null;
+  if (!hh) return null; // still loading — don't flash the empty state
+  if (!hh.household) {
+    return (
+      <Link href="/profile/household" className="flex items-center gap-2 active:scale-[0.99] transition-transform" style={{ marginTop: 10, background: PAPER, border: `2px dashed ${INK}`, borderRadius: 11, padding: "8px 11px" }}>
+        <span style={{ fontSize: 14, flexShrink: 0 }}>➕</span>
+        <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>add your household</span>
+        <span className="flex-shrink-0" style={{ fontFamily: HAND, fontSize: 12.5, color: TOMATO }}>cook together →</span>
+      </Link>
+    );
+  }
   const members = hh.household.members ?? [];
   const others = members.filter((m) => m.role !== "owner");
   const shared = members.length >= 2;
