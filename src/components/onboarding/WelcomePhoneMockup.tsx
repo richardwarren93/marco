@@ -1,5 +1,7 @@
 "use client";
 
+import TomatoMascot from "@/components/gamification/TomatoMascot";
+
 /* The welcome-screen phone. Shows one of three Marco screens — Save
    recipes, Create a meal plan, Generate a grocery list — driven by the `screen`
    prop so it stays in sync with the rotating headline. Each screen staggers in
@@ -41,8 +43,8 @@ const DISCOVER = [
   { title: "Smoked Brisket", img: "/onboarding/recipes/smoked-brisket.jpg", rating: "5.0" },
 ] as const;
 
-const STICKERS = ["Save Recipes", "Auto-planned", "Cash back", "In sync", "For you"] as const;
-const STICKER_DELAY = [1.35, 1.0, 1.05, 1.05, 1.05];
+const STICKERS = ["Save Recipes", "Auto-planned", "Cash back", "In sync", "For you", "By text"] as const;
+const STICKER_DELAY = [1.35, 1.0, 1.05, 1.05, 1.05, 1.0];
 
 const labelMono = {
   fontFamily: "var(--font-mono, monospace)",
@@ -51,7 +53,7 @@ const labelMono = {
 };
 
 export default function WelcomePhoneMockup({ screen = 0, showSticker = false }: { screen?: number; showSticker?: boolean }) {
-  const idx = ((screen % 5) + 5) % 5;
+  const idx = ((screen % 6) + 6) % 6;
 
   // Fills whatever box the caller gives it (see FeatureTour, which sets an
   // explicit width + height in the 186:380 phone ratio). Deriving the width
@@ -78,7 +80,7 @@ export default function WelcomePhoneMockup({ screen = 0, showSticker = false }: 
 
           {/* Active screen — remounts on change so it fades + staggers in */}
           <div key={idx} className="absolute inset-0" style={{ animation: "welcome-screen-in 0.45s ease both" }}>
-            {idx === 0 ? <RecipeScreen /> : idx === 1 ? <MealPlanScreen /> : idx === 2 ? <GroceryScreen /> : idx === 3 ? <HouseholdScreen /> : <DiscoverScreen />}
+            {idx === 0 ? <RecipeScreen /> : idx === 1 ? <MealPlanScreen /> : idx === 2 ? <GroceryScreen /> : idx === 3 ? <HouseholdScreen /> : idx === 4 ? <DiscoverScreen /> : <IMessageScreen />}
           </div>
         </div>
       </div>
@@ -277,6 +279,57 @@ function DiscoverScreen() {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Screen 6 — Do it all from a text, together (household group chat) ────── */
+const SANS = "system-ui, -apple-system, 'SF Pro Text', sans-serif";
+// A real household group thread: you + your partner (Sam) + Marco.
+const THREAD: { who: "you" | "sam" | "marco"; text: string }[] = [
+  { who: "sam", text: "found dinner 👀 instagram.com/reel/chili-crisp-pasta" },
+  { who: "marco", text: "Saved to your Kitchen 👨‍🍳" },
+  { who: "you", text: "what should we cook friday babe?" },
+  { who: "marco", text: "from your saves — green curry or fish tacos?" },
+  { who: "sam", text: "fish tacos! add it for fri 🌮" },
+];
+function IMessageScreen() {
+  const BLUE = "#007AFF";
+  return (
+    <div className="flex h-full w-full flex-col" style={{ background: "#FFFFFF", paddingTop: "26px" }}>
+      {/* Group header — overlapping avatars make it read as a shared chat */}
+      <div className="flex flex-col items-center px-3 pb-1.5" style={{ borderBottom: "1px solid rgba(28,26,23,0.08)" }}>
+        <div className="flex items-center" style={{ height: "32px" }}>
+          <span className="flex items-center justify-center" style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#6B5BD2", color: "#FFFDF7", fontFamily: SANS, fontSize: "12px", fontWeight: 600, border: "2px solid #FFFFFF", zIndex: 1 }}>S</span>
+          <span className="flex items-center justify-center overflow-hidden" style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--lime, #C4EE45)", border: "2px solid #FFFFFF", marginLeft: "-10px", zIndex: 2 }}>
+            <TomatoMascot state="thriving" size={25} />
+          </span>
+        </div>
+        <span style={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 600, color: "#1C1A17", marginTop: "2px" }}>Sam &amp; Marco ›</span>
+      </div>
+
+      {/* Thread — received bubbles carry a sender name, like a group chat */}
+      <div className="flex flex-1 flex-col justify-end overflow-hidden px-2.5 pb-1.5 pt-1.5" style={{ gap: "3px" }}>
+        {THREAD.map((r, i) => {
+          const me = r.who === "you";
+          return (
+            <div key={i} className="flex flex-col animate-stagger-in" style={{ alignItems: me ? "flex-end" : "flex-start", marginTop: i > 0 && THREAD[i - 1].who !== r.who ? "3px" : 0, animationDelay: `${0.18 + i * 0.14}s` }}>
+              {!me && <span style={{ fontFamily: SANS, fontSize: "7.5px", fontWeight: 600, color: r.who === "marco" ? "var(--tomato, #E5462E)" : "#6B5BD2", margin: "0 0 1px 9px", letterSpacing: "0.02em" }}>{r.who === "marco" ? "Marco" : "Sam"}</span>}
+              <span style={{ maxWidth: "80%", background: me ? BLUE : "#E9E9EB", color: me ? "#FFFFFF" : "#1C1A17", borderRadius: "15px", padding: "5px 9px", fontFamily: SANS, fontSize: "10.5px", lineHeight: 1.28, wordBreak: "break-word" }}>{r.text}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Input bar */}
+      <div className="flex items-center gap-1.5 px-2.5 pb-2.5 pt-1.5" style={{ borderTop: "1px solid rgba(28,26,23,0.08)" }}>
+        <div className="flex flex-1 items-center" style={{ height: "22px", borderRadius: "100px", border: "1px solid rgba(28,26,23,0.2)", padding: "0 9px" }}>
+          <span style={{ fontFamily: SANS, fontSize: "9.5px", color: "rgba(28,26,23,0.4)" }}>iMessage</span>
+        </div>
+        <span className="flex flex-shrink-0 items-center justify-center" style={{ width: "22px", height: "22px", borderRadius: "50%", background: BLUE }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+        </span>
       </div>
     </div>
   );
