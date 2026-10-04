@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { postCook, getMyCrews, ensureCrew, type Crew, type RecipeSource } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
+import CookRating from "@/components/social/CookRating";
 
 type ParsedRecipe = {
   title?: string;
@@ -56,7 +57,8 @@ function ICookedInner() {
   // "I cooked this" from a recipe pre-binds it: the cook joins that recipe's
   // lineage, the attach-a-recipe step is skipped, and the title is pre-filled.
   const preRecipeId = searchParams?.get("recipe") || null;
-  const [step, setStep] = useState<"capture" | "recipe" | "cooking" | "reveal">("capture");
+  const [step, setStep] = useState<"capture" | "recipe" | "cooking" | "reveal" | "rate">("capture");
+  const [ratedRecipeId, setRatedRecipeId] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null); // your photo — required
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -170,7 +172,10 @@ function ICookedInner() {
     if (memoryRef.current && title.trim()) {
       fetch("/api/recipes/learn", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ memoryId: memoryRef.current, dishName: title.trim() }) }).catch(() => { /* best-effort */ });
     }
-    router.push("/friends-stack");
+    // Beli-style: rate the cook you just posted before dropping into the feed.
+    // Only when it has a recipe to rank; otherwise straight to the table.
+    if (recipeId) { setRatedRecipeId(recipeId); setStep("rate"); }
+    else router.push("/friends-stack");
     } catch {
       setPostError("Your cook could not be shared. Please try again.");
     } finally {
@@ -317,6 +322,10 @@ function ICookedInner() {
           {postError && <p role="alert" className="mt-3 text-red-800">{postError}</p>}
           <button onClick={share} disabled={posting} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 22, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 19, padding: "16px 0", borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.32)", opacity: posting ? 0.6 : 1 }}>{posting ? "sharing…" : `Share to ${crew?.name ?? "your table"} →`}</button>
         </div>
+      )}
+
+      {step === "rate" && ratedRecipeId && (
+        <CookRating recipeId={ratedRecipeId} title={title} photo={photo} onDone={() => router.push("/friends-stack")} />
       )}
 
     </div>
