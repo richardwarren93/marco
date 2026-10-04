@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import WelcomePhoneMockup from "@/components/onboarding/WelcomePhoneMockup";
+import MarcoPhone, { type MarcoScreen } from "@/components/onboarding/MarcoPhone";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -11,17 +11,15 @@ const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
 const SANS = "system-ui, -apple-system, sans-serif";
 const DOTS = "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)";
 
-// Each panel drives one or more real app screens inside the phone mockup.
-// screen → WelcomePhoneMockup: 0 recipe · 1 meal plan · 2 grocery · 3 household · 4 discover · 5 iMessage
-const PANELS: { screens: number[]; title: string; sub: string }[] = [
-  { screens: [5], title: "Do it all from a text", sub: "Save a link, ask what to cook, plan the week — right from Messages, together with your household." },
-  { screens: [1, 2], title: "Plan the week, shop in a tap", sub: "Marco turns your saves into a weekly plan — then the grocery list writes itself, in sync with your whole household." },
-  { screens: [3], title: "Cook with your household", sub: "Recipes, plans and lists everyone shares — and save recipes right from the group chat." },
-  { screens: [4], title: "See what your people cook", sub: "Follow your family and close friends, each in their own table, and trade what you're actually making." },
+// Each panel shows one or more REAL Marco screens (beautiful-chaos) in the phone.
+const PANELS: { screens: MarcoScreen[]; title: string; sub: string }[] = [
+  { screens: ["text"], title: "The whole kitchen, by text", sub: "Save any recipe, ask what to cook, and plan the week — just by texting Marco, together with your household." },
+  { screens: ["plan", "grocery"], title: "Plan the week, shop in a tap", sub: "Your saves turn into a weekly plan — then the grocery list writes itself, in sync with your household." },
+  { screens: ["feed"], title: "See what your people cook", sub: "Family and friends each get a table — swap what you're actually cooking, not just what you saved." },
 ];
 
 // Auto-rotates through a panel's screens so planning + groceries read as one flow.
-function PhoneRotator({ screens }: { screens: number[] }) {
+function PhoneRotator({ screens }: { screens: MarcoScreen[] }) {
   const [i, setI] = useState(0);
   useEffect(() => {
     if (screens.length < 2) return;
@@ -31,7 +29,7 @@ function PhoneRotator({ screens }: { screens: number[] }) {
   const cur = i % screens.length;
   return (
     <div className="relative h-full w-full">
-      <WelcomePhoneMockup screen={screens[cur]} />
+      <MarcoPhone screen={screens[cur]} />
       {screens.length > 1 && (
         <div className="absolute inset-x-0 flex items-center justify-center gap-1" style={{ bottom: -14 }}>
           {screens.map((_, j) => <span key={j} style={{ width: 5, height: 5, borderRadius: 99, background: j === cur ? TOMATO : "rgba(23,20,16,0.22)", transition: "all .25s" }} />)}
