@@ -1,50 +1,154 @@
 "use client";
 import Link from "next/link";
+import { useState } from "react";
 import useSWR from "swr";
+import TasteInterstitial from "@/components/onboarding/TasteInterstitial";
+
+const INK = "#171410";
+const PAPER = "#FBF7EE";
+const TOMATO = "#E5462E";
+const LIME = "#C4EE45";
+const BUTTER = "#FFD84D";
+const DISP = '"Marker Felt", Georgia, serif';
+const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const SANS = "system-ui, -apple-system, sans-serif";
 
 type Dish = { id: string; title: string | null; image_url?: string | null; photo_url?: string | null; source_recipe_id?: string | null; author_name?: string | null };
 interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[] }
+type Member = { user_id: string; role: string; profile: { display_name?: string | null } | null };
+interface HouseholdData { household: { id: string; name: string; invite_code: string; members: Member[] } | null }
+
+const fetcher = async (url: string) => { const r = await fetch(url); const v = await r.json(); if (!r.ok) throw new Error(v.error || "Could not load."); return v; };
 
 export default function KitchenHub() {
-  const { data, error, mutate } = useSWR<KitchenData>("/api/kitchen", async url => {
-    const r = await fetch(url); const result = await r.json();
-    if (!r.ok) throw new Error(result.error || "Could not load your kitchen.");
-    return result;
-  }, { revalidateOnFocus: true, focusThrottleInterval: 30000 });
-  return <div className="min-h-full bg-[#E9E2D3] text-[#171410] px-4 pt-6 pb-28">
-    <div className="max-w-lg mx-auto space-y-6">
-      <header className="flex justify-between items-start gap-4">
-        <div><p className="text-sm text-[#A13924] mb-1">Make yourself at home</p><h1 className="text-3xl font-bold" style={{ fontFamily: '"Marker Felt", Georgia, serif' }}>{data ? `${data.name}’s kitchen` : "Your kitchen"}</h1>
-          {data && <p className="text-sm mt-2 text-[#5D554B]">{data.recipeCount} saved recipes · {data.cookCount} cooks</p>}</div>
-        <Link href="/profile" aria-label="Your profile and settings" className="rounded-full border-2 border-[#171410] bg-[#FFD84D] px-4 py-3 font-bold">{data?.name.slice(0, 1).toUpperCase() ?? "·"}</Link>
-      </header>
-      <nav aria-label="Kitchen tools" className="grid grid-cols-2 gap-3">
-        <KitchenLink href="/meal-plan" title="Meal plan" subtitle="What’s cooking this week" emoji="🗓️" />
-        <KitchenLink href="/grocery" title="Groceries" subtitle="Your shopping list" emoji="🛒" />
-      </nav>
-      <Link href="/recipes" className="block rounded-2xl border-2 border-[#171410] bg-[#FFD84D] p-4 font-bold text-lg">Your recipes <span className="float-right">→</span></Link>
-      {error && <div role="alert" className="rounded-xl bg-white p-4"><p>{error.message}</p><button className="underline mt-2" onClick={() => mutate()}>Try again</button></div>}
-      {!data && !error && <p role="status">Loading your kitchen…</p>}
-      {data && <>
-        <DishSection title="Recently saved" dishes={data.recipes} recipes empty="Save your first recipe to start your collection." href="/recipes/new" action="Save a recipe" />
-        <DishSection title="Want to cook" dishes={data.saved} empty="Recipes you save from your tables appear here." href="/friends-stack" action="Visit your tables" />
-        <DishSection title="You cooked" dishes={data.cooks} empty="Your own dishes appear here after you post a cook." href="/i-cooked" action="Post a cook" />
-      </>}
-      <Link href="/friends-stack" className="block rounded-xl border border-[#171410]/25 p-4">Potlucks live with your tables <span className="float-right">→</span></Link>
+  const { data, error, mutate } = useSWR<KitchenData>("/api/kitchen", fetcher, { revalidateOnFocus: true, focusThrottleInterval: 30000 });
+  const { data: hh } = useSWR<HouseholdData>("/api/household", fetcher, { revalidateOnFocus: false });
+  const [showTaste, setShowTaste] = useState(false);
+  useSWR("/api/user/taste", fetcher, { revalidateOnFocus: false, onSuccess: (v) => { if (v?.pending) setShowTaste(true); } });
+
+  return (
+    <div className="min-h-[100dvh]" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK }}>
+      <div className="mx-auto w-full max-w-lg px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 120 }}>
+        {/* header */}
+        <div className="flex items-start justify-between px-1">
+          <div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, letterSpacing: "-0.02em", color: INK, lineHeight: 1 }}>{data ? `${data.name}'s kitchen` : "Your kitchen"}</div>
+            <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, transform: "rotate(-2deg)", marginTop: 5 }}>{data ? `${data.recipeCount} recipes · ${data.cookCount} cooks` : "make yourself at home"}</div>
+          </div>
+          <Link href="/profile" aria-label="Your profile" className="flex items-center justify-center" style={{ width: 42, height: 42, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, transform: "rotate(5deg)", border: `2px solid ${BUTTER}` }}>{data?.name.slice(0, 1).toUpperCase() ?? "·"}</Link>
+        </div>
+
+        <HouseholdBanner hh={hh} />
+
+        {/* The three pieces of your kitchen — recipes here, plan & shop a tap away */}
+        <div className="flex" style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: 4, gap: 4, boxShadow: "0 5px 12px rgba(23,20,16,0.1)" }}>
+          <span className="flex-1 text-center" style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Recipes</span>
+          <Link href="/meal-plan" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Meal plan</Link>
+          <Link href="/grocery" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Groceries</Link>
+        </div>
+
+        {error && <div role="alert" className="mt-4 rounded-xl bg-white p-4" style={{ border: `2px solid ${INK}` }}><p>{error.message}</p><button className="mt-2 underline" onClick={() => mutate()}>Try again</button></div>}
+        {!data && !error && <p role="status" className="mt-6" style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.6 }}>loading your kitchen…</p>}
+
+        {data && (
+          <>
+            {/* RECIPES — the core of your kitchen */}
+            <section style={{ marginTop: 20 }}>
+              <div className="flex items-baseline justify-between px-1" style={{ marginBottom: 10 }}>
+                <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>your recipes</span>
+                <Link href="/recipes" style={{ fontFamily: HAND, fontSize: 15, color: TOMATO }}>all {data.recipeCount} →</Link>
+              </div>
+              {data.recipes.length ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {data.recipes.map((r) => (
+                    <Link key={r.id} href={`/recipes/${r.id}`} className="block overflow-hidden" style={{ borderRadius: 12, border: `2px solid ${INK}`, background: PAPER, boxShadow: "0 6px 14px rgba(23,20,16,0.12)" }}>
+                      {r.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={r.image_url} alt="" loading="lazy" style={{ width: "100%", height: 104, objectFit: "cover", display: "block", borderBottom: `2px solid ${INK}` }} />
+                      ) : <div className="flex items-center justify-center" style={{ height: 104, background: "rgba(255,216,77,0.3)", fontSize: 30, borderBottom: `2px solid ${INK}` }}>🍳</div>}
+                      <div style={{ padding: "8px 10px", fontFamily: DISP, fontWeight: 700, fontSize: 14, lineHeight: 1.1, color: INK }}>{r.title || "Recipe"}</div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center" style={{ border: `2px dashed ${INK}`, borderRadius: 14, padding: "22px 16px", background: PAPER }}>
+                  <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO }}>your collection starts here ✨</div>
+                  <Link href="/connect/imessage" className="mt-3 inline-block" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 20px", borderRadius: 12, border: `2.5px solid ${INK}` }}>Text Marco a recipe →</Link>
+                </div>
+              )}
+            </section>
+
+            <ShelfSection title="want to cook" dishes={data.saved} empty="recipes you save from your tables land here" href="/friends-stack" action="visit your tables →" />
+            <ShelfSection title="you cooked" dishes={data.cooks} empty="your own cooks show up here" href="/i-cooked" action="post a cook →" />
+          </>
+        )}
+      </div>
+
+      {showTaste && <TasteInterstitial onDone={() => setShowTaste(false)} />}
     </div>
-  </div>;
+  );
 }
-function KitchenLink({ href, title, subtitle, emoji }: { href: string; title: string; subtitle: string; emoji: string }) {
-  return <Link href={href} className="rounded-2xl border-2 border-[#171410] bg-[#FBF7EE] p-4"><span aria-hidden className="text-xl">{emoji}</span><h2 className="font-bold mt-2">{title}</h2><p className="text-xs text-[#5D554B] mt-1">{subtitle}</p></Link>;
+
+function HouseholdBanner({ hh }: { hh: HouseholdData | undefined }) {
+  const [copied, setCopied] = useState(false);
+  if (!hh?.household) return null;
+  const members = hh.household.members ?? [];
+  const others = members.filter((m) => m.role !== "owner");
+  const shared = members.length >= 2;
+  const names = others.map((m) => m.profile?.display_name || "your housemate").join(" & ");
+  const code = hh.household.invite_code;
+
+  if (shared) {
+    return (
+      <div className="flex items-center gap-2" style={{ marginTop: 14, background: LIME, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "11px 14px", transform: "rotate(-0.4deg)", boxShadow: "0 6px 14px rgba(23,20,16,0.12)" }}>
+        <span style={{ fontSize: 18 }}>🍅</span>
+        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>This kitchen is shared with {names}</span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ marginTop: 14, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "12px 14px", transform: "rotate(-0.4deg)", boxShadow: "0 6px 14px rgba(23,20,16,0.12)" }}>
+      <div className="flex items-center gap-2">
+        <span style={{ fontSize: 17 }}>⏳</span>
+        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>Waiting for your household to join</span>
+      </div>
+      <p style={{ fontFamily: SANS, fontSize: 13, color: "#4A4742", marginTop: 5 }}>Share this code so they can hop in — then this kitchen is both of yours.</p>
+      <button onClick={() => { navigator.clipboard?.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }} className="mt-2 inline-flex items-center gap-2 active:scale-95 transition-transform" style={{ background: BUTTER, border: `2px solid ${INK}`, borderRadius: 10, padding: "7px 12px", fontFamily: "ui-monospace, monospace", fontWeight: 700, fontSize: 14, color: INK }}>
+        {code} <span style={{ fontFamily: HAND, fontSize: 12, color: TOMATO }}>{copied ? "copied!" : "tap to copy"}</span>
+      </button>
+    </div>
+  );
 }
-function DishSection({ title, dishes, recipes = false, empty, href, action }: { title: string; dishes: Dish[]; recipes?: boolean; empty: string; href: string; action: string }) {
-  return <section><h2 className="text-xl font-bold mb-3" style={{ fontFamily: '"Marker Felt", Georgia, serif' }}>{title}</h2>
-    {dishes.length ? <div className="grid grid-cols-2 gap-3">{dishes.map(dish => {
-      const id = recipes ? dish.id : dish.source_recipe_id;
-      // eslint-disable-next-line @next/next/no-img-element
-      const content = <>{dish.image_url || dish.photo_url ? <img src={dish.image_url || dish.photo_url || ""} alt="" loading="lazy" className="w-full h-28 object-cover" /> : <div aria-hidden className="h-20 flex items-center justify-center bg-[#FFD84D]/30 text-3xl">🍳</div>}<div className="p-3"><p className="font-semibold leading-snug">{dish.title || "Your cook"}</p>{dish.author_name && <p className="text-xs text-[#5D554B] mt-1">From {dish.author_name}</p>}{!id && <p className="text-xs text-[#5D554B] mt-1">No recipe attached</p>}</div></>;
-      const style = "block overflow-hidden rounded-xl border-2 border-[#171410] bg-[#FBF7EE]";
-      return id ? <Link key={dish.id} href={`/recipes/${id}`} className={style}>{content}</Link> : <div key={dish.id} className={style}>{content}</div>;
-    })}</div> : <div className="rounded-xl border border-dashed border-[#171410]/40 bg-[#FBF7EE] p-4"><p className="text-sm text-[#5D554B]">{empty}</p><Link href={href} className="inline-block mt-3 text-sm font-semibold underline">{action}</Link></div>}
-  </section>;
+
+function ShelfSection({ title, dishes, empty, href, action }: { title: string; dishes: Dish[]; empty: string; href: string; action: string }) {
+  return (
+    <section style={{ marginTop: 22 }}>
+      <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginBottom: 10, marginLeft: 2 }}>{title}</div>
+      {dishes.length ? (
+        <div className="flex gap-3 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          {dishes.map((d) => {
+            const id = d.source_recipe_id;
+            const card = (
+              <div style={{ width: 128, flexShrink: 0, overflow: "hidden", borderRadius: 11, border: `2px solid ${INK}`, background: PAPER }}>
+                {d.photo_url || d.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={d.photo_url || d.image_url || ""} alt="" loading="lazy" style={{ width: "100%", height: 84, objectFit: "cover", display: "block" }} />
+                ) : <div className="flex items-center justify-center" style={{ height: 84, background: "rgba(255,216,77,0.3)", fontSize: 24 }}>🍳</div>}
+                <div style={{ padding: "7px 9px" }}>
+                  <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>{d.title || "Your cook"}</div>
+                  {d.author_name && <div style={{ fontFamily: SANS, fontSize: 10.5, color: "#8A857C", marginTop: 1 }}>from {d.author_name}</div>}
+                </div>
+              </div>
+            );
+            return id ? <Link key={d.id} href={`/recipes/${id}`}>{card}</Link> : <div key={d.id}>{card}</div>;
+          })}
+        </div>
+      ) : (
+        <div style={{ border: `2px dashed rgba(23,20,16,0.4)`, borderRadius: 12, padding: "14px", background: PAPER }}>
+          <p style={{ fontFamily: SANS, fontSize: 13, color: "#4A4742" }}>{empty}</p>
+          <Link href={href} style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, marginTop: 6, display: "inline-block" }}>{action}</Link>
+        </div>
+      )}
+    </section>
+  );
 }

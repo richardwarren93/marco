@@ -12,8 +12,8 @@ const TOMATO = "#E5462E";
 const MONO = "ui-monospace, monospace";
 
 const TABS: { label: string; glyph: string; href: string; match: string[] }[] = [
+  { label: "My Kitchen", glyph: "🏠", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"] },
   { label: "Table", glyph: "🍽️", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"] },
-  { label: "Kitchen", glyph: "🏠", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"] },
   { label: "Explore", glyph: "✦", href: "/explore", match: ["/explore"] },
 ];
 
@@ -43,7 +43,7 @@ function Tab({ t, active, onClick }: { t: { label: string; glyph: string }; acti
   return (
     <button onClick={onClick} className="flex flex-col items-center justify-center active:scale-95 transition-transform" style={{ width: 52, height: 44, borderRadius: 16, background: active ? INK : "transparent", border: "none" }}>
       <span style={{ fontSize: 17, filter: active ? "none" : "grayscale(0.45)" }} aria-hidden>{t.glyph}</span>
-      <span style={{ fontFamily: MONO, fontSize: 8.5, color: active ? PAPER : INK, marginTop: 1 }}>{t.label}</span>
+      <span style={{ fontFamily: MONO, fontSize: 8, color: active ? PAPER : INK, marginTop: 1, whiteSpace: "nowrap" }}>{t.label}</span>
     </button>
   );
 }

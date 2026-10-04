@@ -85,12 +85,12 @@ export default function TasteInterstitial({ onDone }: { onDone: () => void }) {
       <Shell>
         <Progress pct={100} label="last step 🎉" />
         <div className="mt-3 text-center" style={{ fontSize: 40 }}>🍽️</div>
-        <h2 className="text-center" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 25, lineHeight: 1.05, color: INK, marginTop: 4 }}>Start your table</h2>
+        <h2 className="text-center" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 25, lineHeight: 1.05, color: INK, marginTop: 4 }}>Start a table</h2>
         <p className="text-center" style={{ fontFamily: SANS, fontSize: 14.5, color: "#4A4742", marginTop: 8, lineHeight: 1.45 }}>
-          Add <b>Marco to a group chat</b> with friends. Drop recipes to share them, and see what everyone&apos;s cooking — all in one thread.
+          Add <b>Marco to a group chat</b> with your friends — or family. React to any recipe and he saves it for everyone.
         </p>
         <div className="mx-auto" style={{ marginTop: 14, maxWidth: 300 }}>
-          {["🔗 share recipes in one tap", "👀 see what friends actually cook", "🍅 Marco saves them for everyone"].map((b) => (
+          {["❤️ react to save — Marco grabs the recipe", "👀 see what your people actually cook", "🍽️ family, friends — a separate table each"].map((b) => (
             <div key={b} className="flex items-center gap-2" style={{ fontFamily: SANS, fontSize: 13.5, color: INK, padding: "4px 0" }}><span>{b}</span></div>
           ))}
         </div>

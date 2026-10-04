@@ -95,7 +95,7 @@ export default function OnboardingPage() {
       if (!r.ok) throw new Error("Your profile could not be loaded. Please retry.");
       const data = await r.json();
       if (!active) return;
-      if (data.profile?.onboarding_completed) { router.replace("/friends-stack"); return; }
+      if (data.profile?.onboarding_completed) { router.replace("/kitchen"); return; }
       setName(data.profile?.display_name || ""); setReady(true);
     }
     void load().catch(e => { if (active) setError(e.message); });
@@ -125,7 +125,7 @@ export default function OnboardingPage() {
         try { window.location.href = `sms:${member},${marcoNumber}&body=${encodeURIComponent(body)}`; } catch { /* fall through to connect */ }
         router.replace("/connect/imessage");
       } else {
-        router.replace(toText ? "/connect/imessage" : "/friends-stack");
+        router.replace(toText ? "/connect/imessage" : "/kitchen");
       }
       router.refresh();
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save. Try again."); setBusy(false); }

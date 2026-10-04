@@ -11,7 +11,6 @@ import { useRouter } from "next/navigation";
 import { saveCook, unsaveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
-import TasteInterstitial from "@/components/onboarding/TasteInterstitial";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
 
@@ -49,16 +48,6 @@ export default function FriendsFeed() {
   const me = data?.me ?? null;
   const savedIds = new Set(data?.savedIds ?? []);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  // Deferred taste profile — fires once on the first open after onboarding.
-  const [showTaste, setShowTaste] = useState(false);
-  useEffect(() => {
-    let active = true;
-    void fetch("/api/user/taste", { cache: "no-store" })
-      .then(r => r.ok ? r.json() : null)
-      .then(v => { if (active && v?.pending) setShowTaste(true); })
-      .catch(() => {});
-    return () => { active = false; };
-  }, []);
   useEffect(() => { async function finishInvite() {
     // Finish a pending invite join (from an invite link opened before sign-in).
     // Retry every load and only clear on success, so a not-yet-ready session
@@ -142,7 +131,6 @@ export default function FriendsFeed() {
         )}
       </div>
 
-      {showTaste && <TasteInterstitial onDone={() => setShowTaste(false)} />}
     </div>
   );
 }
