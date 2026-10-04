@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 const INK = "#171410";
 const PAPER = "#FBF7EE";
 const TOMATO = "#E5462E";
-const COBALT = "#2540E8";
 const LIME = "#C4EE45";
 const PINK = "#FF4D9D";
 const BUTTER = "#FFD84D";
@@ -43,19 +42,14 @@ export default function CreateTray() {
           </div>
         </button>
 
-        {/* Potluck + Host */}
-        <div className="flex gap-3" style={{ marginTop: 14 }}>
-          <button onClick={() => router.push("/potluck")} className="flex-1 active:scale-[0.97] transition-transform" style={{ background: LIME, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "14px 14px", textAlign: "left", transform: "rotate(1deg)" }}>
-            <span style={{ fontSize: 28 }} aria-hidden>🍲</span>
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginTop: 4, lineHeight: 1 }}>Start a Potluck</div>
+        {/* Potluck */}
+        <button onClick={() => router.push("/potluck")} className="w-full active:scale-[0.98] transition-transform flex items-center gap-3" style={{ marginTop: 14, background: LIME, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "14px 16px", textAlign: "left", transform: "rotate(-0.5deg)" }}>
+          <span style={{ fontSize: 28 }} aria-hidden>🍲</span>
+          <div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, lineHeight: 1 }}>Start a Potluck</div>
             <div style={{ fontFamily: SANS, fontSize: 12.5, color: "#3B5200", marginTop: 3 }}>a theme + a deadline for your table</div>
-          </button>
-          <button onClick={() => router.push("/host")} className="flex-1 active:scale-[0.97] transition-transform" style={{ background: COBALT, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "14px 14px", textAlign: "left", transform: "rotate(-1.5deg)" }}>
-            <span style={{ fontSize: 28 }} aria-hidden>🎥</span>
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: PAPER, marginTop: 4, lineHeight: 1 }}>Host a class</div>
-            <div style={{ fontFamily: SANS, fontSize: 12.5, color: "rgba(251,247,238,0.85)", marginTop: 3 }}>cook with people, live</div>
-          </button>
-        </div>
+          </div>
+        </button>
 
         {/* quiet — add a recipe (imports to your Kitchen, not the feed) */}
         <button onClick={() => router.push("/recipes/new?mode=url")} className="w-full active:scale-[0.98] transition-transform flex items-center gap-3" style={{ marginTop: 14, background: PAPER, border: `2px solid ${INK}`, borderRadius: 14, padding: "12px 16px", textAlign: "left" }}>
