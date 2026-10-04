@@ -13,9 +13,11 @@ const DOTS = "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)";
 
 // Each panel shows one or more REAL Marco screens (beautiful-chaos) in the phone.
 const PANELS: { screens: MarcoScreen[]; title: string; sub: string }[] = [
-  { screens: ["text"], title: "The whole kitchen, by text", sub: "Save any recipe, ask what to cook, and plan the week — just by texting Marco, together with your household." },
-  { screens: ["plan", "grocery"], title: "Plan the week, shop in a tap", sub: "Your saves turn into a weekly plan — then the grocery list writes itself, in sync with your household." },
-  { screens: ["feed"], title: "See what your people cook", sub: "Family and friends each get a table — swap what you're actually cooking, not just what you saved." },
+  { screens: ["save"], title: "Save from anywhere — even group chats", sub: "React to any recipe link or food photo in a group chat and Marco saves it to your Kitchen." },
+  { screens: ["planText", "plan", "grocery"], title: "Plan meals & groceries, by text", sub: "Tell Marco what you're thinking and your week fills in — the plan and the grocery list, in sync with your household." },
+  { screens: ["cookText", "goal"], title: "Actually cook — don't just save", sub: "Text Marco when you cook and watch your goal fill up. Recipes are for cooking, not hoarding." },
+  { screens: ["feed"], title: "Inspired by friends, not strangers", sub: "Your family and close friends each get a table — cook from what your people actually make." },
+  { screens: ["compare", "taste"], title: "The more you cook, the smarter it gets", sub: "Rank your cooks head-to-head and Marco sharpens your taste — so every suggestion fits you better." },
 ];
 
 // Auto-rotates through a panel's screens so planning + groceries read as one flow.
