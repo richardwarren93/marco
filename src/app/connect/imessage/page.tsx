@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+const MARCO_NUMBER = process.env.NEXT_PUBLIC_MARCO_IMESSAGE;
+
 export default function IMessageConnection() {
   const [linked, setLinked] = useState<boolean | null>(null);
   const [signIn, setSignIn] = useState(false);
@@ -25,15 +27,21 @@ export default function IMessageConnection() {
   return <main className="mx-auto max-w-lg px-6 py-12 space-y-6">
     <Link href="/kitchen" className="underline">‹ Kitchen</Link>
     <h1 className="text-4xl font-serif">Marco in iMessage</h1>
-    <p>Connect your account, then send Marco a public recipe link to save it to your Kitchen. Links shared directly or in a group with Marco are saved to your own Kitchen. Connect your account in a direct message first.</p>
+    <p>Marco saves any public recipe link you text him — no setup needed. Link your number here to see and manage everything in the app, and to keep your saves if you switch phones.</p>
     <p className="text-sm">Your messages pass through Photon. This connection can save recipes; it cannot buy groceries or change existing recipes. Reminders are not enabled yet.</p>
     {error && <p role="alert">{error}</p>}
     {account && !signIn && <p className="text-sm">Marco account: {account}</p>}
     {signIn ? <p><a href="/auth/login" target="_blank" rel="noreferrer" className="underline">Sign in to Marco</a>, then return here and <button className="underline" onClick={() => request()}>check sign-in</button>.</p> : linked !== null && <>
-      <p role="status">{linked ? "Your iMessage account is connected." : "Not connected yet."}</p>
-      <button disabled={busy} onClick={() => request(linked ? "DELETE" : "POST")} className="rounded-xl bg-black text-white px-5 py-3 disabled:opacity-50">{linked ? "Disconnect iMessage" : "Create connection code"}</button>
+      <p role="status">{linked ? "Your number is linked to this account." : "Your number isn't linked yet."}</p>
+      <button disabled={busy} onClick={() => request(linked ? "DELETE" : "POST")} className="rounded-xl bg-black text-white px-5 py-3 disabled:opacity-50">{linked ? "Unlink my number" : "Link my number"}</button>
     </>}
-    {code && <div className="rounded-xl border p-5 space-y-3"><p>Copy this entire message and send it directly to Marco in iMessage within 10 minutes. Keep it private.</p><code className="block break-all select-all">link {code}</code><button className="underline" onClick={() => request()}>I sent it — check connection</button></div>}
+    {code && <div className="rounded-xl border p-5 space-y-3">
+      <p>Send this to Marco in a direct message within 10 minutes to link your number. Keep it private.</p>
+      {MARCO_NUMBER && <a href={`sms:${MARCO_NUMBER}&body=${encodeURIComponent(`link ${code}`)}`} className="inline-block rounded-xl bg-black text-white px-5 py-3">Send to Marco ➜</a>}
+      <p className="text-sm">{MARCO_NUMBER ? "…or copy this and text it to Marco:" : "Copy this and text it to Marco:"}</p>
+      <code className="block break-all select-all">link {code}</code>
+      <button className="underline" onClick={() => request()}>I sent it — check connection</button>
+    </div>}
     {!signIn && !code && <button disabled={busy} className="block underline" onClick={() => request()}>Refresh connection</button>}
   </main>;
 }
