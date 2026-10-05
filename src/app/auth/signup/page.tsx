@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithApple } from "@/lib/appleAuth";
+import OnboardingTour from "@/components/onboarding/OnboardingTour";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -20,23 +21,15 @@ const tomatoBtn: React.CSSProperties = { background: TOMATO, color: PAPER, fontF
 const paperBtn: React.CSSProperties = { background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "14px 0", borderRadius: 14, border: `2px solid ${INK}` };
 
 export default function SignupPage() {
-  const [mode, setMode] = useState<"welcome" | "choose" | "email">("welcome");
+  const [mode, setMode] = useState<"welcome" | "tour" | "choose" | "email">("welcome");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const router = useRouter();
   const supabase = createClient();
-
-  async function handleGuestSignIn() {
-    setError(""); setGuestLoading(true);
-    const { error } = await supabase.auth.signInAnonymously();
-    if (error) { setError(error.message); setGuestLoading(false); return; }
-    router.push("/onboarding"); router.refresh();
-  }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
@@ -109,6 +102,11 @@ export default function SignupPage() {
     );
   }
 
+  // ── Value tour (real app screens, before we ask for a sign-in) ───────────────
+  if (mode === "tour") {
+    return <OnboardingTour onDone={() => { setError(""); setMode("choose"); }} />;
+  }
+
   // ── Auth picker ──────────────────────────────────────────────────────────────
   if (mode === "choose") {
     return (
@@ -126,14 +124,13 @@ export default function SignupPage() {
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill={INK}><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" /></svg>
             Continue with Apple
           </button>
-          <button onClick={handleGuestSignIn} disabled={guestLoading} className="w-full active:scale-[0.98] transition-transform disabled:opacity-50" style={paperBtn}>{guestLoading ? "Starting…" : "Continue as guest"}</button>
           <p className="text-center" style={{ fontFamily: SANS, fontSize: 14, color: "#675B4E", paddingTop: 2 }}>Already have an account? <Link href="/auth/login" style={{ fontWeight: 700, color: TOMATO }}>Sign in</Link></p>
         </div>
       </div>
     );
   }
 
-  // ── Welcome (the brand pitch; the full showcase runs after sign-up) ──────────
+  // ── Welcome (the brand pitch; the full showcase runs next, before sign-in) ───
   return (
     <div className="min-h-[100dvh] w-full flex flex-col" style={dotted}>
       <div className="flex justify-center" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 22px)" }}><Wordmark size={24} /></div>
@@ -145,7 +142,7 @@ export default function SignupPage() {
         <p style={{ fontFamily: HAND, fontSize: 19, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 12 }}>save it · plan it · cook it — with your people</p>
       </div>
       <div className="w-full mx-auto px-6" style={{ maxWidth: 400, paddingBottom: 34 }}>
-        <button onClick={() => { setError(""); setMode("choose"); }} className="w-full active:scale-[0.98] transition-transform" style={tomatoBtn}>Get started →</button>
+        <button onClick={() => { setError(""); setMode("tour"); }} className="w-full active:scale-[0.98] transition-transform" style={tomatoBtn}>Get started →</button>
         <Link href="/auth/login" className="block text-center" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, paddingTop: 18 }}>I already have an account</Link>
       </div>
     </div>

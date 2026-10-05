@@ -128,7 +128,7 @@ const PLAN = [
   { day: "TUE", title: "Mapo Tofu", meal: "DINNER", img: "/onboarding/recipes/mapo-tofu.jpg" },
   { day: "WED", title: "Chicken Shawarma", meal: "LUNCH", img: "/onboarding/recipes/Chicken-Shawarma-8.jpg" },
   { day: "THU", title: "Shrimp Scampi", meal: "DINNER", img: "/onboarding/recipes/shrimp scampi.jpg" },
-  { day: "FRI", title: "Fish Tacos", meal: "DINNER", img: "/onboarding/recipes/salmon terriyaki.jpg" },
+  { day: "FRI", title: "Salmon Teriyaki", meal: "DINNER", img: "/onboarding/recipes/salmon terriyaki.jpg" },
 ];
 function PlanScreen() {
   return (
@@ -205,7 +205,7 @@ function GoalScreen() {
       <div style={{ fontFamily: SANS, fontSize: 10, color: "#4A4742", marginTop: 10 }}>one more to hit your goal 💪</div>
       {/* the cook that just landed */}
       <div style={{ width: 120, marginTop: 12 }}>
-        <MiniPolaroid photo="/onboarding/recipes/shrimp scampi.jpg" title="Fish Tacos" note="logged by text ✓" h={54} rot={1.6} />
+        <MiniPolaroid photo="/onboarding/recipes/shrimp scampi.jpg" title="Shrimp Scampi" note="logged by text ✓" h={54} rot={1.6} />
       </div>
     </div>
   );
@@ -274,12 +274,12 @@ const THREADS: Record<"save" | "plan" | "cook", Msg[]> = {
   ],
   plan: [
     { who: "you", text: "what should we cook friday babe?" },
-    { who: "marco", text: "from your saves — green curry or fish tacos?" },
-    { who: "sam", text: "fish tacos! 🌮" },
+    { who: "marco", text: "from your saves — green curry or shrimp scampi?" },
+    { who: "sam", text: "shrimp scampi! 🍤" },
     { who: "marco", text: "Added to your plan for Fri." },
   ],
   cook: [
-    { who: "you", photo: "/onboarding/recipes/shrimp scampi.jpg", text: "made the tacos!! 🔥" },
+    { who: "you", photo: "/onboarding/recipes/shrimp scampi.jpg", text: "made the scampi!! 🔥" },
     { who: "marco", text: "🎉 logged — that's 3 cooks this week!" },
     { who: "marco", text: "one more and you hit your goal 💪" },
   ],
