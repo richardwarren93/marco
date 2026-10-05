@@ -1,0 +1,202 @@
+"use client";
+
+/* The ongoing in-app guide. After onboarding (tour + name), Marco walks you
+   through setup + the core loop AS YOU ACTUALLY DO IT — one step at a time,
+   popping up and nudging you to the right tab, until you're through. Completion
+   is data-driven (/api/quests), so it self-advances and stays quiet once done.
+   Allergies + taste are captured inline; the rest point you to the real action. */
+
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import useSWR from "swr";
+import TomatoMascot from "@/components/gamification/TomatoMascot";
+
+const INK = "#171410";
+const PAPER = "#FBF7EE";
+const TOMATO = "#E5462E";
+const LIME = "#C4EE45";
+const BUTTER = "#FFD84D";
+const DISP = '"Marker Felt", Georgia, serif';
+const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const SANS = "system-ui, -apple-system, sans-serif";
+const img = (p: string) => encodeURI(p);
+
+type Done = Record<string, boolean>;
+type Step = {
+  key: string;
+  kind: "allergies" | "taste" | "action";
+  emoji: string;
+  title: string;
+  body: string;
+  home?: string;        // tab the guide drifts to when this step is active
+  cta?: string;
+  ctaRoute?: string;
+  secondary?: { label: string; mark?: "household_skip"; route?: string };
+  spotlight?: string;   // selector to cut a spotlight around (e.g. the + button)
+};
+
+const STEPS: Step[] = [
+  { key: "allergies", kind: "allergies", emoji: "🚫", title: "Anything we should cook around?", body: "Marco keeps these out of every suggestion." },
+  { key: "recipe", kind: "action", emoji: "🔖", title: "Save your first recipe", body: "Paste a link or text it to Marco — it lands in your Kitchen.", home: "/kitchen", cta: "Add a recipe →", ctaRoute: "/create", spotlight: "[data-guide='create']" },
+  { key: "taste", kind: "taste", emoji: "😋", title: "What's your taste?", body: "Tap the dishes you'd actually cook. Marco learns from these." },
+  { key: "household", kind: "action", emoji: "👨‍👩‍👧", title: "Cook with your household", body: "Start a thread with Marco — together, or just you. Your number links here.", home: "/kitchen", cta: "Connect by text →", ctaRoute: "/connect/imessage", secondary: { label: "it's just me for now", mark: "household_skip" } },
+  { key: "cook", kind: "action", emoji: "📸", title: "Share your first cook", body: "Snap what you made — Marco makes it look good.", home: "/kitchen", cta: "I cooked something →", ctaRoute: "/i-cooked", spotlight: "[data-guide='create']" },
+  { key: "table", kind: "action", emoji: "🍽️", title: "Start a table", body: "A table for your family or friends — invite them by text.", home: "/friends-stack", cta: "Start a table →", ctaRoute: "/crew" },
+  { key: "potluck", kind: "action", emoji: "🍲", title: "Throw a potluck", body: "A theme + a deadline for your table. Cook together.", home: "/friends-stack", cta: "Start a potluck →", ctaRoute: "/potluck" },
+];
+
+const ALLERGY_OPTIONS = ["Peanuts", "Tree nuts", "Dairy", "Gluten", "Shellfish", "Eggs", "Soy", "Fish"];
+const DISHES = [
+  { t: "Mapo Tofu", img: "/onboarding/recipes/mapo-tofu.jpg" },
+  { t: "Shrimp Scampi", img: "/onboarding/recipes/shrimp scampi.jpg" },
+  { t: "Chicken Shawarma", img: "/onboarding/recipes/Chicken-Shawarma-8.jpg" },
+  { t: "Buffalo Wings", img: "/onboarding/recipes/buffalowings.jpg" },
+  { t: "Lamb Biryani", img: "/onboarding/recipes/lamb-biryani-83e5c3d.jpg" },
+  { t: "Salmon Teriyaki", img: "/onboarding/recipes/salmon terriyaki.jpg" },
+  { t: "Smoked Brisket", img: "/onboarding/recipes/smoked-brisket.jpg" },
+  { t: "Creamy Pork Stew", img: "/onboarding/recipes/245361-creamy-pork-stew-Beauty-4x3-a56080e9b5a4462a8dad0a7661f6d1f4.jpg" },
+  { t: "Fettuccine Alfredo", img: "/onboarding/recipes/fettuccine-alfredo.jpg" },
+];
+
+const HIDE_ON = ["/auth", "/onboarding", "/login", "/i-cooked", "/create", "/connect", "/crew", "/potluck"];
+const fetcher = async (u: string) => { const r = await fetch(u); if (!r.ok) throw new Error("x"); return r.json(); };
+
+export default function MarcoGuide() {
+  const pathname = usePathname() || "";
+  const router = useRouter();
+  const [off, setOff] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [picks, setPicks] = useState<string[]>([]);
+  const navedFor = useRef<string | null>(null);
+
+  useEffect(() => { try { setOff(localStorage.getItem("marco_guide_off") === "1"); } catch { /* ignore */ } }, []);
+
+  const hidden = HIDE_ON.some((p) => pathname.startsWith(p));
+  const { data, mutate } = useSWR<{ done: Done }>(hidden || off ? null : "/api/quests", fetcher, { revalidateOnFocus: true, revalidateOnMount: true });
+  const done = data?.done;
+  const active = done ? STEPS.find((s) => !done[s.key]) ?? null : null;
+
+  // Re-check progress whenever the route changes (you just did the thing).
+  useEffect(() => { if (!hidden && !off) void mutate(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Gently drift to the step's home tab when a NEW step becomes active.
+  useEffect(() => {
+    if (!active || hidden || off) return;
+    if (active.home && navedFor.current !== active.key && pathname !== active.home && (pathname === "/kitchen" || pathname === "/friends-stack")) {
+      navedFor.current = active.key;
+      router.push(active.home);
+    }
+    setPicks([]);
+  }, [active?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Spotlight rect (for action steps that highlight a target) ──────────────
+  const [rect, setRect] = useState<DOMRect | null>(null);
+  useEffect(() => {
+    const sel = active?.spotlight;
+    if (!sel || hidden || off) { setRect(null); return; }
+    let raf = 0;
+    const measure = () => { const el = document.querySelector(sel); setRect(el ? el.getBoundingClientRect() : null); };
+    measure();
+    const onMove = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); };
+    window.addEventListener("resize", onMove); window.addEventListener("scroll", onMove, true);
+    const id = setInterval(measure, 600);
+    return () => { window.removeEventListener("resize", onMove); window.removeEventListener("scroll", onMove, true); clearInterval(id); cancelAnimationFrame(raf); };
+  }, [active?.key, active?.spotlight, hidden, off]);
+
+  if (hidden || off || !active) return null;
+
+  function dismiss() { try { localStorage.setItem("marco_guide_off", "1"); } catch { /* ignore */ } setOff(true); }
+  const stepNum = STEPS.findIndex((s) => s.key === active.key) + 1;
+
+  async function saveAllergies(list: string[]) {
+    setBusy(true);
+    try {
+      await fetch("/api/user/allergies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ allergies: list }) });
+      await fetch("/api/quests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mark: "allergies" }) });
+    } catch { /* best-effort */ }
+    setBusy(false); setPicks([]); await mutate();
+  }
+  async function saveTaste(list: string[]) {
+    setBusy(true);
+    try { await fetch("/api/user/taste", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ liked: list }) }); } catch { /* best-effort */ }
+    setBusy(false); setPicks([]); await mutate();
+  }
+  async function skipSecondary() {
+    const sec = active?.secondary;
+    if (sec?.mark) { setBusy(true); try { await fetch("/api/quests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mark: sec.mark }) }); } catch { /* ignore */ } setBusy(false); await mutate(); }
+    else if (sec?.route) router.push(sec.route);
+  }
+  const toggle = (v: string) => setPicks((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
+
+  const Header = (
+    <div className="flex items-center gap-2.5">
+      <span className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 34, height: 34, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={27} /></span>
+      <div className="min-w-0 flex-1">
+        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 9, letterSpacing: "0.12em", color: TOMATO }}>MARCO · STEP {stepNum} OF {STEPS.length}</div>
+        <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16.5, color: INK, lineHeight: 1.05 }}>{active.title}</div>
+      </div>
+      <button onClick={dismiss} aria-label="Hide guide" style={{ fontSize: 16, color: INK, opacity: 0.4, background: "none", border: "none", flexShrink: 0 }}>✕</button>
+    </div>
+  );
+
+  // ── Inline captures (allergies / taste) — a centered premium card ──────────
+  if (active.kind === "allergies" || active.kind === "taste") {
+    return (
+      <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" style={{ background: "rgba(23,20,16,0.5)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", padding: 14, animation: "mg-fade .3s ease both" }}>
+        <div className="w-full" style={{ maxWidth: 420, background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", border: `2.5px solid ${INK}`, borderRadius: 20, padding: 18, boxShadow: "0 26px 60px rgba(23,20,16,0.4)", animation: "mg-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+          {Header}
+          <p style={{ fontFamily: SANS, fontSize: 13.5, color: "#4A4742", marginTop: 8, lineHeight: 1.4 }}>{active.body}</p>
+
+          {active.kind === "allergies" ? (
+            <>
+              <div className="flex flex-wrap gap-2" style={{ marginTop: 14 }}>
+                {ALLERGY_OPTIONS.map((a) => { const on = picks.includes(a); return (
+                  <button key={a} onClick={() => toggle(a)} className="transition-transform active:scale-95" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: on ? PAPER : INK, background: on ? TOMATO : PAPER, border: `2px solid ${INK}`, borderRadius: 99, padding: "7px 14px" }}>{a}</button>
+                ); })}
+              </div>
+              <button onClick={() => saveAllergies(picks)} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>{busy ? "Saving…" : picks.length ? "Save & continue →" : "None — continue →"}</button>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-3" style={{ gap: 8, marginTop: 14 }}>
+                {DISHES.map((d) => { const on = picks.includes(d.t); return (
+                  <button key={d.t} onClick={() => toggle(d.t)} className="relative overflow-hidden transition-transform active:scale-95" style={{ borderRadius: 11, border: `2.5px solid ${on ? TOMATO : INK}`, aspectRatio: "1/1", padding: 0, boxShadow: on ? "0 6px 14px rgba(229,70,46,0.3)" : "none" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={img(d.img)} alt={d.t} referrerPolicy="no-referrer" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+                    <span className="absolute inset-x-0 bottom-0 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 9, color: PAPER, padding: "8px 4px 3px", textAlign: "left", background: "linear-gradient(to top, rgba(23,20,16,0.82), transparent)" }}>{d.t}</span>
+                    {on && <span className="absolute flex items-center justify-center" style={{ top: 4, right: 4, width: 20, height: 20, borderRadius: 99, background: TOMATO, border: `2px solid ${PAPER}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>}
+                  </button>
+                ); })}
+              </div>
+              <button onClick={() => saveTaste(picks)} disabled={busy || picks.length < 3} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-50" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>{busy ? "Saving…" : picks.length >= 3 ? "Save my taste →" : `Pick ${3 - picks.length} more`}</button>
+            </>
+          )}
+        </div>
+        <style>{`@keyframes mg-fade{from{opacity:0}to{opacity:1}}@keyframes mg-pop{0%{opacity:0;transform:scale(0.95) translateY(12px)}100%{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+      </div>
+    );
+  }
+
+  // ── Action steps — spotlight the target (if any) + a bottom coach card ─────
+  const pad = 10;
+  return (
+    <div className="fixed inset-0 z-[70]" style={{ pointerEvents: "none" }}>
+      {/* spotlight cutout, or a soft full dim if there's no target */}
+      {rect ? (
+        <div style={{ position: "fixed", top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2, borderRadius: 999, boxShadow: "0 0 0 9999px rgba(23,20,16,0.55), 0 0 0 3px rgba(196,238,69,0.9)", transition: "all .25s ease" }} />
+      ) : (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(23,20,16,0.4)" }} />
+      )}
+
+      <div className="absolute inset-x-0" style={{ bottom: "calc(env(safe-area-inset-bottom,0px) + 96px)", padding: "0 16px", pointerEvents: "auto", animation: "mg-up .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+        <div className="mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: 15, boxShadow: "0 20px 46px rgba(23,20,16,0.4)", transform: "rotate(-0.4deg)" }}>
+          {Header}
+          <p style={{ fontFamily: SANS, fontSize: 13.5, color: "#4A4742", marginTop: 8, lineHeight: 1.4 }}>{active.body}</p>
+          <button onClick={() => active.ctaRoute && router.push(active.ctaRoute)} className="mt-3 w-full transition-transform active:scale-[0.98]" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}`, boxShadow: "0 7px 16px rgba(229,70,46,0.28)" }}>{active.cta}</button>
+          {active.secondary && <button onClick={skipSecondary} disabled={busy} className="mx-auto mt-2.5 block" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.6, background: "none", border: "none" }}>{active.secondary.label}</button>}
+        </div>
+      </div>
+      <style>{`@keyframes mg-up{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}`}</style>
+    </div>
+  );
+}

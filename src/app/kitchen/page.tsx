@@ -3,7 +3,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import TasteInterstitial from "@/components/onboarding/TasteInterstitial";
 import CookCard from "@/components/social/CookCard";
 import CardPeek from "@/components/social/CardPeek";
 
@@ -37,8 +36,6 @@ export default function KitchenHub() {
   const router = useRouter();
   const { data, error, mutate } = useSWR<KitchenData>("/api/kitchen", fetcher, { revalidateOnFocus: true, focusThrottleInterval: 30000 });
   const { data: hh } = useSWR<HouseholdData>("/api/household", fetcher, { revalidateOnFocus: false });
-  const [showTaste, setShowTaste] = useState(false);
-  useSWR("/api/user/taste", fetcher, { revalidateOnFocus: false, onSuccess: (v) => { if (v?.pending) setShowTaste(true); } });
 
   return (
     <div className="min-h-[100dvh]" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK }}>
@@ -172,7 +169,6 @@ export default function KitchenHub() {
         )}
       </div>
 
-      {showTaste && <TasteInterstitial onDone={() => setShowTaste(false)} />}
     </div>
   );
 }

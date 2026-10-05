@@ -39,7 +39,7 @@ export default function MarcoDock() {
     <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)", display: "flex", justifyContent: "center", zIndex: 50, pointerEvents: "none" }}>
       <div className="flex items-center" style={{ gap: 8, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 99, padding: "7px 10px", boxShadow: "0 12px 30px rgba(23,20,16,0.26)", pointerEvents: "auto" }}>
         <Tab t={TABS[0]} active={isActive(TABS[0])} onClick={() => router.push(TABS[0].href)} />
-        <button aria-label="Create" onClick={() => router.push("/create")} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 46, height: 46, borderRadius: 99, background: TOMATO, color: PAPER, border: `2.5px solid ${INK}`, fontSize: 25, fontWeight: 700, lineHeight: 1, boxShadow: "0 6px 14px rgba(229,70,46,0.4)" }}>+</button>
+        <button data-guide="create" aria-label="Create" onClick={() => router.push("/create")} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 46, height: 46, borderRadius: 99, background: TOMATO, color: PAPER, border: `2.5px solid ${INK}`, fontSize: 25, fontWeight: 700, lineHeight: 1, boxShadow: "0 6px 14px rgba(229,70,46,0.4)" }}>+</button>
         <Tab t={TABS[1]} active={isActive(TABS[1])} onClick={() => router.push(TABS[1].href)} />
       </div>
     </div>

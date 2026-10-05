@@ -28,15 +28,17 @@ export async function POST(request: Request) {
   const { data, error } = await admin.from("user_profiles").update({ display_name, onboarding_completed: true }).eq("user_id", user.id).select("user_id").single();
   if (error || !data) return NextResponse.json({ error: "Your setup could not be saved. Please retry." }, { status: 503 });
 
-  // Preferences + the deferred-taste flag. Merge onto any existing taste_profile.
-  const { data: prefRow } = await admin.from("user_preferences").select("taste_profile").eq("user_id", user.id).maybeSingle();
-  const taste_profile = { ...((prefRow?.taste_profile as Record<string, unknown> | null) ?? {}), onboarding_pending: true };
-  const prefs: Record<string, unknown> = { user_id: user.id, taste_profile, updated_at: new Date().toISOString() };
+  // Optional setup fields. The ongoing in-app guide captures allergies, taste,
+  // household etc. now — onboarding usually sends only the name — so we upsert
+  // prefs only if something was actually provided.
+  const prefs: Record<string, unknown> = { user_id: user.id, updated_at: new Date().toISOString() };
   if (allergies) prefs.allergies = allergies;
   if (household_type) prefs.household_type = household_type;
   if (household_size) prefs.household_size = household_size;
-  const { error: prefErr } = await admin.from("user_preferences").upsert(prefs, { onConflict: "user_id" });
-  if (prefErr) console.warn("[onboarding] prefs save failed", prefErr.code);
+  if (Object.keys(prefs).length > 2) {
+    const { error: prefErr } = await admin.from("user_preferences").upsert(prefs, { onConflict: "user_id" });
+    if (prefErr) console.warn("[onboarding] prefs save failed", prefErr.code);
+  }
 
   if (weekly_target) {
     const { error: goalErr } = await admin.from("cooking_goals").upsert({ user_id: user.id, weekly_target, updated_at: new Date().toISOString() }, { onConflict: "user_id" });

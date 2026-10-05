@@ -1,17 +1,26 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import WelcomeCollage from "@/components/onboarding/WelcomeCollage";
-import MarcoLockup from "@/components/layout/MarcoLockup";
-import BrandSplash from "@/components/onboarding/BrandSplash";
-import FeatureTour from "@/components/onboarding/FeatureTour";
 import { signInWithApple } from "@/lib/appleAuth";
 
+const INK = "#171410";
+const PAPER = "#FBF7EE";
+const TOMATO = "#E5462E";
+const LIME = "#C4EE45";
+const DISP = '"Marker Felt", Georgia, serif';
+const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const SANS = "system-ui, -apple-system, sans-serif";
+
+const dotted: React.CSSProperties = { background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" };
+const inkBtn: React.CSSProperties = { background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "15px 0", borderRadius: 14, border: `2.5px solid ${INK}` };
+const tomatoBtn: React.CSSProperties = { background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 17, padding: "16px 0", borderRadius: 14, border: `2.5px solid ${INK}`, boxShadow: "0 8px 18px rgba(229,70,46,0.3)" };
+const paperBtn: React.CSSProperties = { background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "14px 0", borderRadius: 14, border: `2px solid ${INK}` };
+
 export default function SignupPage() {
-  const [mode, setMode] = useState<"splash" | "welcome" | "tour" | "choose" | "email">("splash");
+  const [mode, setMode] = useState<"welcome" | "choose" | "email">("welcome");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,451 +31,122 @@ export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  // The brand splash plays once per app session. If we've already shown it,
-  // skip straight to the welcome screen (avoids replaying on back-navigation).
-  useEffect(() => {
-    if (sessionStorage.getItem("marco_splash_seen")) {
-      setMode("welcome");
-    } else {
-      sessionStorage.setItem("marco_splash_seen", "1");
-    }
-  }, []);
-
   async function handleGuestSignIn() {
-    setError("");
-    setGuestLoading(true);
+    setError(""); setGuestLoading(true);
     const { error } = await supabase.auth.signInAnonymously();
-    if (error) {
-      setError(error.message);
-      setGuestLoading(false);
-      return;
-    }
-    router.push("/onboarding"); // Setup preserves pending table invites.
-    router.refresh();
+    if (error) { setError(error.message); setGuestLoading(false); return; }
+    router.push("/onboarding"); router.refresh();
   }
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
-    if (!agreedToTerms) {
-      setError("Please agree to the Terms and Privacy Policy");
-      return;
-    }
-    setError("");
-    setLoading(true);
-
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-    } else if (data.user && data.user.identities?.length === 0) {
-      // Email already exists — Supabase returns empty identities
-      setError("This email already has an account. Please sign in instead.");
-      setLoading(false);
-    } else if (data.session) {
-      // Auto-confirmed accounts can complete setup immediately.
-      router.push("/onboarding");
-      router.refresh();
-    } else {
-      setSuccess(true);
-      setLoading(false);
-    }
+    if (!agreedToTerms) { setError("Please agree to the Terms and Privacy Policy"); return; }
+    setError(""); setLoading(true);
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+    if (error) { setError(error.message); setLoading(false); }
+    else if (data.user && data.user.identities?.length === 0) { setError("This email already has an account. Please sign in instead."); setLoading(false); }
+    else if (data.session) { router.push("/onboarding"); router.refresh(); }
+    else { setSuccess(true); setLoading(false); }
   }
 
-  // Apple Sign in is required by App Store guideline 4.8 whenever any
-  // third-party social sign-in is offered. We enable Apple here so the
-  // option is in place; the Supabase Auth provider config (Services ID,
-  // Team ID, Key ID, private key) must be filled in via the Supabase
-  // dashboard before the button can complete a real sign-in. Google
-  // stays disabled until we wire its provider config too.
-  const GOOGLE_ENABLED = false;
-  const APPLE_ENABLED = true;
-
-  async function handleOAuth(provider: "google" | "apple") {
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  }
-
-  // Native Sign in with Apple (iOS) with a web-OAuth fallback. Replaces the
-  // pure redirect flow, which breaks inside the Capacitor WebView.
+  // Native Sign in with Apple (iOS) with a web-OAuth fallback.
   async function handleAppleSignIn() {
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     const result = await signInWithApple(supabase);
-    if (result.usedWebFallback) return; // browser redirects away
-    if (!result.ok) {
-      if (result.error) setError(result.error); // empty = user cancelled
-      setLoading(false);
-      return;
-    }
-    router.push("/onboarding"); // Setup preserves pending table invites.
-    router.refresh();
+    if (result.usedWebFallback) return;
+    if (!result.ok) { if (result.error) setError(result.error); setLoading(false); return; }
+    router.push("/onboarding"); router.refresh();
   }
 
-  // Brand splash — the first screen on app open: the cute Marco tomato.
-  if (mode === "splash") {
-    return <BrandSplash onDone={() => setMode("welcome")} />;
-  }
+  const Wordmark = ({ size = 22 }: { size?: number }) => <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: size, color: INK, letterSpacing: "-0.02em" }}>Marco</span>;
+  const Back = ({ to }: { to: "welcome" | "choose" }) => (
+    <button onClick={() => { setMode(to); setError(""); }} aria-label="Back" style={{ fontFamily: HAND, fontSize: 16, color: INK, background: "none", border: "none" }}>‹ back</button>
+  );
 
-  // Feature tour — 5-screen walkthrough shown after Get started. Its final Next
-  // leads straight into account creation; the intro questions (goals / meals /
-  // graph / sources) now run after signup, inside the onboarding flow.
-  if (mode === "tour") {
-    return <FeatureTour onBack={() => setMode("welcome")} onComplete={() => setMode("choose")} />;
-  }
-
-  // Success confirmation
+  // ── Success ────────────────────────────────────────────────────────────────
   if (success) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
-        <div className="text-center space-y-4 max-w-sm">
-          <MarcoLockup wordmarkSize="4rem" tomatoSize={72} />
-          <h1
-            style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-              fontSize: "26px",
-              letterSpacing: "-0.015em",
-              color: "var(--ink, #1C1A17)",
-            }}
-          >
-            Check your email
-          </h1>
-          <p className="text-sm leading-relaxed" style={{ color: "var(--ink-soft, #4A4742)" }}>
-            We sent a confirmation link to <strong style={{ color: "var(--ink, #1C1A17)" }}>{email}</strong>
-          </p>
-          <Link
-            href="/auth/login"
-            className="inline-block mt-4 px-6 py-3 text-white rounded-2xl font-medium text-sm transition-colors shadow-sm hover:opacity-95"
-            style={{ background: "var(--tomato, #E5462E)" }}
-          >
-            Back to sign in
-          </Link>
+      <div className="min-h-[100dvh] w-full flex items-center justify-center px-6" style={dotted}>
+        <div className="text-center" style={{ maxWidth: 360 }}>
+          <div style={{ fontSize: 72 }} aria-hidden>🍅</div>
+          <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK, marginTop: 8 }}>Check your email</h1>
+          <p style={{ fontFamily: SANS, fontSize: 15, color: "#4A4742", marginTop: 10, lineHeight: 1.5 }}>We sent a confirmation link to <b style={{ color: INK }}>{email}</b></p>
+          <Link href="/auth/login" className="inline-block active:scale-[0.98] transition-transform" style={{ ...tomatoBtn, padding: "13px 22px", marginTop: 20 }}>Back to sign in</Link>
         </div>
       </div>
     );
   }
 
-  // Email + password form
+  // ── Email form ───────────────────────────────────────────────────────────────
   if (mode === "email") {
     return (
-      <div className="min-h-screen flex flex-col" style={{ background: "#F5EEE2" }}>
-        {/* Header — back arrow + small Marco signature, no orange hero band */}
-        <div className="relative flex items-center justify-between px-4" style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)", paddingBottom: "1rem" }}>
-          <button
-            onClick={() => { setMode("choose"); setError(""); }}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-            style={{ background: "rgba(0,0,0,0.05)" }}
-            aria-label="Back"
-          >
-            <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <MarcoLockup wordmarkSize="1.75rem" tomatoSize={34} />
-          <div className="w-9 h-9" aria-hidden="true" />
+      <div className="min-h-[100dvh] w-full flex flex-col" style={dotted}>
+        <div className="flex items-center justify-between px-5" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)" }}>
+          <Back to="choose" /><Wordmark size={20} /><span style={{ width: 40 }} />
         </div>
-
-        {/* Form */}
-        <div className="flex-1 px-6 pt-6 pb-10 max-w-sm mx-auto w-full">
-          <h2
-            className="mb-6"
-            style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-              fontSize: "26px",
-              letterSpacing: "-0.015em",
-              color: "var(--ink, #1C1A17)",
-            }}
-          >
-            Create your account
-          </h2>
-
-          <form onSubmit={handleSignup} className="space-y-4">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">{error}</div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoFocus
-                className="w-full px-4 py-3 rounded-2xl focus:ring-2 outline-none text-sm bg-white"
-                style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--tomato, #E5462E)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(28,26,23,0.12)")}
-                placeholder="you@example.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-                className="w-full px-4 py-3 rounded-2xl focus:ring-2 outline-none text-sm bg-white"
-                style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
-                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--tomato, #E5462E)")}
-                onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(28,26,23,0.12)")}
-                placeholder="At least 6 characters"
-              />
-            </div>
-
-            {/* Terms checkbox */}
+        <div className="flex-1 w-full mx-auto px-6" style={{ maxWidth: 400, paddingTop: 20 }}>
+          <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK }}>Create your account</h1>
+          <svg width="150" height="11" viewBox="0 0 150 11" fill="none" aria-hidden className="block" style={{ marginTop: 2 }}><path d="M2 7 C 26 2, 50 10, 76 6 S 128 2, 148 6" stroke={TOMATO} strokeWidth="3.5" strokeLinecap="round" /></svg>
+          <form onSubmit={handleSignup} className="space-y-4" style={{ marginTop: 24 }}>
+            {error && <div role="alert" style={{ background: "#fff", border: `2px solid ${INK}`, borderRadius: 12, padding: 12, color: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 14 }}>{error}</div>}
+            <label className="block" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>Email
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus placeholder="you@example.com" className="block w-full" style={{ marginTop: 6, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "13px 14px", fontFamily: SANS, fontSize: 16, color: INK }} />
+            </label>
+            <label className="block" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>Password
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} placeholder="at least 6 characters" className="block w-full" style={{ marginTop: 6, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "13px 14px", fontFamily: SANS, fontSize: 16, color: INK }} />
+            </label>
             <div className="flex items-start gap-3 pt-1">
-              <button
-                type="button"
-                onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }}
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 transition-colors ${
-                  agreedToTerms
-                    ? "bg-orange-500 border-orange-500"
-                    : "border-gray-300 bg-white"
-                }`}
-                aria-label="Agree to terms"
-              >
-                {agreedToTerms && (
-                  <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
+              <button type="button" onClick={() => { setAgreedToTerms(!agreedToTerms); setError(""); }} aria-label="Agree to terms" className="flex items-center justify-center flex-shrink-0" style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${INK}`, background: agreedToTerms ? LIME : PAPER, marginTop: 1 }}>
+                {agreedToTerms && <svg className="w-3 h-3" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
               </button>
-              <p className="text-xs text-gray-500 leading-relaxed">
-                I&apos;ve read and agree with the{" "}
-                <Link href="/terms" target="_blank" className="underline text-gray-700 font-medium">Terms</Link>
-                {" "}and{" "}
-                <Link href="/privacy" target="_blank" className="underline text-gray-700 font-medium">Privacy Policy</Link>
-              </p>
+              <p style={{ fontFamily: SANS, fontSize: 12.5, color: "#675B4E", lineHeight: 1.4 }}>I&apos;ve read and agree with the <Link href="/terms" target="_blank" style={{ fontWeight: 700, color: INK, textDecoration: "underline" }}>Terms</Link> and <Link href="/privacy" target="_blank" style={{ fontWeight: 700, color: INK, textDecoration: "underline" }}>Privacy Policy</Link></p>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 px-4 bg-[#1C1A17] text-white rounded-2xl hover:bg-[#2c2420] disabled:opacity-50 font-semibold text-sm shadow-sm transition-colors"
-            >
-              {loading ? "Creating account..." : "Create account"}
-            </button>
+            <button type="submit" disabled={loading} className="w-full active:scale-[0.98] transition-transform disabled:opacity-50" style={inkBtn}>{loading ? "Creating account…" : "Create account →"}</button>
           </form>
-
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Already have an account?{" "}
-            <Link href="/auth/login" className="text-orange-600 hover:underline font-semibold">
-              Sign in
-            </Link>
-          </p>
+          <p className="text-center" style={{ fontFamily: SANS, fontSize: 14, color: "#675B4E", marginTop: 20 }}>Already have an account? <Link href="/auth/login" style={{ fontWeight: 700, color: TOMATO }}>Sign in</Link></p>
         </div>
       </div>
     );
   }
 
-  // Welcome screen — a collage hero (floating recipe / mascot / streak cards)
-  // over a big "Reach your cooking goals" headline, then a single Get started
-  // CTA that opens the sign-in method picker.
-  if (mode === "welcome") {
+  // ── Auth picker ──────────────────────────────────────────────────────────────
+  if (mode === "choose") {
     return (
-      <div
-        className="flex flex-col"
-        style={{ background: "#F5EEE2", minHeight: "100dvh" }}
-      >
-        {/* Tiny wordmark up top */}
-        <div
-          className="flex justify-center flex-shrink-0 animate-stagger-in"
-          style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1.25rem)" }}
-        >
-          <MarcoLockup wordmarkSize="1.6rem" tomatoSize={32} />
+      <div className="min-h-[100dvh] w-full flex flex-col" style={dotted}>
+        <div className="flex items-center px-5" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)" }}><Back to="welcome" /></div>
+        <div className="flex-1 flex flex-col items-center justify-center px-6">
+          <div style={{ fontSize: 64 }} aria-hidden>🍅</div>
+          <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 34, color: INK, marginTop: 8 }}>Let&apos;s get cooking</h1>
+          <svg width="160" height="11" viewBox="0 0 160 11" fill="none" aria-hidden style={{ marginTop: 2 }}><path d="M2 7 C 28 2, 54 10, 82 6 S 140 2, 158 6" stroke={TOMATO} strokeWidth="3.5" strokeLinecap="round" /></svg>
         </div>
-
-        {/* Collage hero — floating recipe / mascot / streak cards */}
-        <div className="px-2 pt-2 animate-stagger-in" style={{ animationDelay: "0.12s" }}>
-          <WelcomeCollage />
-        </div>
-
-        {/* Big headline — one word per line */}
-        <h1
-          className="px-6 mt-2 text-center animate-stagger-in"
-          style={{
-            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-            fontVariationSettings: '"opsz" 144, "SOFT" 60, "wght" 860',
-            fontSize: "clamp(48px, 16vw, 72px)",
-            lineHeight: 0.94,
-            letterSpacing: "-0.035em",
-            color: "var(--ink, #1C1A17)",
-            animationDelay: "0.2s",
-          }}
-        >
-          <span style={{ display: "block" }}>Reach</span>
-          <span style={{ display: "block" }}>your</span>
-          <span style={{ display: "block", color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>cooking</span>
-          <span style={{ display: "block" }}>goals</span>
-        </h1>
-
-        {/* Bottom action — single Get started CTA + sign in link */}
-        <div className="px-6 pb-8 pt-6 mt-auto flex-shrink-0 max-w-sm w-full mx-auto">
-          <button
-            onClick={() => {
-              setError("");
-              setMode("tour");
-            }}
-            className="w-full py-4 px-4 text-white rounded-2xl font-semibold text-base shadow-sm transition-colors"
-            style={{ background: "var(--tomato, #E5462E)" }}
-            onMouseDown={(e) =>
-              (e.currentTarget.style.background = "var(--tomato-dark, #B8331E)")
-            }
-            onMouseUp={(e) =>
-              (e.currentTarget.style.background = "var(--tomato, #E5462E)")
-            }
-          >
-            Get started
-          </button>
-
-          <Link
-            href="/auth/login"
-            className="block text-center font-semibold pt-5 text-[15px]"
-            style={{ color: "var(--ink, #1C1A17)" }}
-          >
-            Already Have an Account
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Sign-in method picker — reached via Get started
-  return (
-    <div className="flex flex-col sm:justify-center" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
-      {/* Back to the feature tour (its predecessor in the funnel) */}
-      <div
-        className="flex items-center px-4 flex-shrink-0"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 1rem)" }}
-      >
-        <button
-          onClick={() => { setMode("tour"); setError(""); }}
-          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-          style={{ background: "rgba(0,0,0,0.05)" }}
-          aria-label="Back"
-        >
-          <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-      </div>
-      {/* Hero — Marco signature wordmark + italic tagline. No emoji,
-          no chef glyph circle, no orange hero band. The cream body is
-          the canvas; the wordmark is the brand.
-          On mobile the hero grows (flex-1) so buttons pin to the bottom
-          for thumb reachability. On desktop we drop the growth so the
-          buttons sit right under the tagline. */}
-      <div className="relative flex-1 sm:flex-none flex flex-col items-center justify-center overflow-hidden px-6 pt-6 pb-6">
-        <div className="relative z-10 text-center">
-          <MarcoLockup wordmarkSize="clamp(3rem, 11vw, 4rem)" tomatoSize={64} />
-
-          <p
-            className="mt-6 max-w-xs mx-auto"
-            style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontVariationSettings: '"opsz" 40, "SOFT" 100, "wght" 500',
-              fontSize: "20px",
-              lineHeight: 1.25,
-              letterSpacing: "-0.01em",
-              color: "var(--ink, #1C1A17)",
-            }}
-          >
-            Let&apos;s get you <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>cooking</em>
-          </p>
-        </div>
-      </div>
-
-      {/* Bottom action area */}
-      <div className="px-6 pb-8 pt-4 space-y-3 flex-shrink-0 max-w-sm mx-auto w-full">
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm text-center">{error}</div>
-        )}
-
-        {/* Continue with Email */}
-        <button
-          onClick={() => {
-            setError("");
-            setMode("email");
-          }}
-          className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-gray-900 text-white rounded-2xl font-semibold text-sm shadow-sm hover:bg-gray-800 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-          </svg>
-          Continue with Email
-        </button>
-
-        {/* Continue with Google */}
-        {GOOGLE_ENABLED && (
-          <button
-            onClick={() => handleOAuth("google")}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border border-gray-200 rounded-2xl font-semibold text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-            </svg>
-            Continue with Google
-          </button>
-        )}
-
-        {/* Continue with Apple */}
-        {APPLE_ENABLED && (
-          <button
-            onClick={handleAppleSignIn}
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border border-gray-200 rounded-2xl font-semibold text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
-            </svg>
+        <div className="w-full mx-auto px-6 space-y-3" style={{ maxWidth: 400, paddingBottom: 32 }}>
+          {error && <div role="alert" style={{ background: "#fff", border: `2px solid ${INK}`, borderRadius: 12, padding: 12, color: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 14, textAlign: "center" }}>{error}</div>}
+          <button onClick={() => { setError(""); setMode("email"); }} className="w-full active:scale-[0.98] transition-transform" style={inkBtn}>Continue with Email</button>
+          <button onClick={handleAppleSignIn} disabled={loading} className="w-full flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50" style={paperBtn}>
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill={INK}><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" /></svg>
             Continue with Apple
           </button>
-        )}
+          <button onClick={handleGuestSignIn} disabled={guestLoading} className="w-full active:scale-[0.98] transition-transform disabled:opacity-50" style={paperBtn}>{guestLoading ? "Starting…" : "Continue as guest"}</button>
+          <p className="text-center" style={{ fontFamily: SANS, fontSize: 14, color: "#675B4E", paddingTop: 2 }}>Already have an account? <Link href="/auth/login" style={{ fontWeight: 700, color: TOMATO }}>Sign in</Link></p>
+        </div>
+      </div>
+    );
+  }
 
-        {/* Continue as guest */}
-        <button
-          onClick={handleGuestSignIn}
-          disabled={guestLoading}
-          className="w-full flex items-center justify-center gap-3 py-3.5 px-4 bg-white border border-gray-200 rounded-2xl font-semibold text-sm text-gray-700 shadow-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-        >
-          <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-          </svg>
-          {guestLoading ? "Signing in..." : "Continue as guest"}
-        </button>
-
-        {/* Sign in link */}
-        <p className="text-center text-sm text-gray-500 pt-1">
-          Already have an account?{" "}
-          <Link href="/auth/login" className="text-orange-600 hover:underline font-semibold">
-            Sign in
-          </Link>
-        </p>
+  // ── Welcome (the brand pitch; the full showcase runs after sign-up) ──────────
+  return (
+    <div className="min-h-[100dvh] w-full flex flex-col" style={dotted}>
+      <div className="flex justify-center" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 22px)" }}><Wordmark size={24} /></div>
+      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+        <div className="flex items-center justify-center" style={{ width: 168, height: 168, borderRadius: 40, background: LIME, border: `2.5px solid ${INK}`, boxShadow: "0 18px 40px rgba(23,20,16,0.2)", transform: "rotate(-3deg)" }}>
+          <div style={{ fontSize: 92, transform: "rotate(-4deg)" }} aria-hidden>🍅</div>
+        </div>
+        <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 40, lineHeight: 1.03, letterSpacing: "-0.01em", color: INK, marginTop: 28 }}>The recipe app that actually cooks</h1>
+        <p style={{ fontFamily: HAND, fontSize: 19, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 12 }}>save it · plan it · cook it — with your people</p>
+      </div>
+      <div className="w-full mx-auto px-6" style={{ maxWidth: 400, paddingBottom: 34 }}>
+        <button onClick={() => { setError(""); setMode("choose"); }} className="w-full active:scale-[0.98] transition-transform" style={tomatoBtn}>Get started →</button>
+        <Link href="/auth/login" className="block text-center" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, paddingTop: 18 }}>I already have an account</Link>
       </div>
     </div>
   );

@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "@/components/layout/Navbar";
 import AppMain from "@/components/layout/AppMain";
 import MarcoDock from "@/components/layout/MarcoDock";
+import MarcoGuide from "@/components/guide/MarcoGuide";
 import Providers from "@/components/ui/Providers";
 
 const geistSans = Geist({
@@ -86,6 +87,7 @@ export default function RootLayout({
 <Navbar />
         <AppMain>{children}</AppMain>
         <MarcoDock />
+        <MarcoGuide />
 </Providers>
       </body>
     </html>
