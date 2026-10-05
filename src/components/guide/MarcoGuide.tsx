@@ -36,6 +36,7 @@ type Step = {
   ctaChat?: "household" | "table"; // …or open the Marco group chat instead
   secondary?: { label: string; mark?: "household_skip"; route?: string };
   spotlight?: string;   // selector to cut a spotlight around (e.g. the + button)
+  surprise?: boolean;   // show the "Surprise me 🎰" slot-machine option
 };
 
 // One coherent journey. Phase 1 is the core loop (+ taste + notifications);
@@ -43,8 +44,8 @@ type Step = {
 const KITCHEN = "let's set up your kitchen";
 const STEPS: Step[] = [
   { key: "allergies", kind: "allergies", title: "Anything we should cook around?", body: "Marco keeps these out of every suggestion." },
-  { key: "recipe", kind: "action", title: "Save a recipe", body: "Tap the + below, then “Add a recipe” — paste a link or snap a photo.", cta: "Add a recipe →", ctaRoute: "/recipes?import=1", spotlight: "[data-guide='create']" },
-  { key: "cook", kind: "action", title: "Cook a recipe", body: "Tap the + and pick “I cooked something” — snap what you made.", cta: "I cooked something →", ctaRoute: "/i-cooked", spotlight: "[data-guide='create']" },
+  { key: "recipe", kind: "action", title: "Save a recipe", body: "Tap the + below, then “Add a recipe” — paste a link or snap a photo. Or let Marco pick one.", cta: "Add a recipe →", ctaRoute: "/recipes?import=1", spotlight: "[data-guide='create']", surprise: true },
+  { key: "cook", kind: "action", title: "Cook a recipe", body: "Tap the + and pick “I cooked something” — snap what you made. Or let Marco pick what to cook.", cta: "I cooked something →", ctaRoute: "/i-cooked", spotlight: "[data-guide='create']", surprise: true },
   { key: "taste", kind: "taste", title: "Your taste profile", body: "Tap the dishes you'd actually cook. Marco learns from these." },
   { key: "notifications", kind: "notifications", title: "Stay on track", body: "A nudge before dinner keeps your streak alive — and the right recipe in front of you at the right time." },
   { key: "household", kind: "action", phase: KITCHEN, title: "Cook with your household", body: "Start a group chat with Marco and add whoever you cook with — everything you text in saves to your shared kitchen.", cta: "Start the group chat →", ctaChat: "household", secondary: { label: "it's just me for now", mark: "household_skip" } },
@@ -65,6 +66,17 @@ const DISHES = [
   { t: "Fettuccine Alfredo", img: "/onboarding/recipes/fettuccine-alfredo.jpg" },
 ];
 
+// The "Surprise me 🎰" reel — slugs match the server's curated starters
+// (/api/recipes/seed). Only the current frame is ever shown (slot-machine style).
+const SURPRISES = [
+  { slug: "mapo-tofu", title: "Mapo Tofu", img: "/onboarding/recipes/mapo-tofu.jpg" },
+  { slug: "shrimp-scampi", title: "Shrimp Scampi", img: "/onboarding/recipes/shrimp scampi.jpg" },
+  { slug: "chicken-shawarma", title: "Chicken Shawarma", img: "/onboarding/recipes/Chicken-Shawarma-8.jpg" },
+  { slug: "fettuccine-alfredo", title: "Fettuccine Alfredo", img: "/onboarding/recipes/fettuccine-alfredo.jpg" },
+  { slug: "salmon-teriyaki", title: "Salmon Teriyaki", img: "/onboarding/recipes/salmon terriyaki.jpg" },
+  { slug: "creamy-pork-stew", title: "Creamy Pork Stew", img: "/onboarding/recipes/245361-creamy-pork-stew-Beauty-4x3-a56080e9b5a4462a8dad0a7661f6d1f4.jpg" },
+];
+
 const HIDE_ON = ["/auth", "/onboarding", "/login", "/i-cooked", "/create", "/connect", "/crew", "/potluck", "/recipes"];
 const fetcher = async (u: string) => { const r = await fetch(u); if (!r.ok) throw new Error("x"); return r.json(); };
 
@@ -75,8 +87,8 @@ export default function MarcoGuide() {
   const [busy, setBusy] = useState(false);
   const [picks, setPicks] = useState<string[]>([]);
   const [marcoNumber, setMarcoNumber] = useState("");
+  const [spin, setSpin] = useState<{ for: "recipe" | "cook"; idx: number; landed: boolean; recipeId?: string } | null>(null);
   const navedFor = useRef<string | null>(null);
-  const seededRef = useRef(false);
 
   // You can skip the current step to move on — there's no way to dismiss the
   // guide itself. Skipped steps are remembered so it advances, never loops.
@@ -102,13 +114,6 @@ export default function MarcoGuide() {
     setPicks([]);
   }, [active?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reaching "cook a recipe" with an empty kitchen? Drop in a starter so there's
-  // something real to cook. (seedRecipe is hoisted + idempotent server-side.)
-  useEffect(() => {
-    if (hidden || !active) return;
-    if (active.key === "cook" && done && done.recipe === false) void seedRecipe();
-  }, [active?.key, done?.recipe, hidden]); // eslint-disable-line react-hooks/exhaustive-deps
-
   // ── Spotlight rect (for action steps that highlight a target) ──────────────
   const [rect, setRect] = useState<DOMRect | null>(null);
   useEffect(() => {
@@ -130,14 +135,30 @@ export default function MarcoGuide() {
 
   if (hidden || !active) return null;
 
-  // Drop a curated starter recipe into an empty kitchen so "save a recipe" /
-  // "cook a recipe" always have real content. Idempotent server-side (no-op
-  // once any recipe exists), so firing it more than once is harmless.
-  async function seedRecipe() {
-    if (seededRef.current) return;
-    seededRef.current = true;
-    try { await fetch("/api/recipes/seed", { method: "POST" }); } catch { /* best-effort */ }
-    await mutate();
+  // "Surprise me 🎰" — a slot-machine spin that lands on a curated starter and
+  // seeds it. On "save a recipe" it drops into your kitchen and advances; on
+  // "cook a recipe" it takes you straight into cooking that dish.
+  function surpriseMe(forStep: "recipe" | "cook") {
+    const target = Math.floor(Math.random() * SURPRISES.length);
+    setSpin({ for: forStep, idx: Math.floor(Math.random() * SURPRISES.length), landed: false });
+    let tick = 0;
+    const total = 22;
+    const step = () => {
+      tick++;
+      setSpin((s) => (s && !s.landed ? { ...s, idx: (s.idx + 1) % SURPRISES.length } : s));
+      if (tick >= total) { setSpin((s) => (s ? { ...s, idx: target } : s)); void landOn(target, forStep); return; }
+      setTimeout(step, 55 + Math.pow(tick / total, 3) * 280); // steady → decelerating
+    };
+    setTimeout(step, 55);
+  }
+  async function landOn(idx: number, forStep: "recipe" | "cook") {
+    let recipeId: string | undefined;
+    try {
+      const r = await fetch("/api/recipes/seed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: SURPRISES[idx].slug }) });
+      if (r.ok) recipeId = (await r.json()).recipe?.id;
+    } catch { /* best-effort */ }
+    setSpin((s) => (s ? { ...s, idx, landed: true, recipeId } : s));
+    if (forStep === "recipe") { await mutate(); setTimeout(() => setSpin(null), 1500); }
   }
 
   // Skip the current step → it's remembered and the next step becomes active.
@@ -145,7 +166,6 @@ export default function MarcoGuide() {
   function skipStep() {
     if (!active) return;
     const key = active.key;
-    if (key === "recipe") void seedRecipe(); // skipping "save a recipe" still leaves you one
     setSkipped((prev) => { const next = prev.includes(key) ? prev : [...prev, key]; try { localStorage.setItem("marco_guide_skipped", JSON.stringify(next)); } catch { /* ignore */ } return next; });
     setPicks([]);
   }
@@ -203,6 +223,33 @@ export default function MarcoGuide() {
       </div>
     </>
   );
+
+  // ── Surprise me — the slot-machine overlay (only the current frame shows) ──
+  if (spin) {
+    const cur = SURPRISES[spin.idx];
+    return (
+      <div className="fixed inset-0 z-[80] flex items-center justify-center" style={{ background: "rgba(23,20,16,0.6)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", padding: 20, animation: "mg-fade .25s ease both" }}>
+        <div className="w-full text-center" style={{ maxWidth: 340, background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", border: `2.5px solid ${INK}`, borderRadius: 22, padding: 20, boxShadow: "0 26px 60px rgba(23,20,16,0.4)", animation: "mg-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+          <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, transform: "rotate(-2deg)" }}>🎰 {spin.landed ? "tonight's pick!" : "surprise me…"}</div>
+          <div className="relative mx-auto overflow-hidden" style={{ marginTop: 12, width: 230, height: 230, border: `3px solid ${INK}`, borderRadius: 16, background: "#fff", boxShadow: spin.landed ? `0 0 0 4px ${LIME}` : "inset 0 0 0 2px rgba(23,20,16,0.06)", transition: "box-shadow .2s" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img key={spin.idx} src={img(cur.img)} alt={cur.title} referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover", filter: spin.landed ? "none" : "blur(1px)", animation: spin.landed ? "mg-pop .35s cubic-bezier(0.34,1.56,0.64,1) both" : "none" }} />
+            <div className="absolute inset-x-0 bottom-0 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: PAPER, padding: "20px 10px 8px", background: "linear-gradient(to top, rgba(23,20,16,0.82), transparent)" }}>{cur.title}</div>
+          </div>
+          {spin.landed ? (
+            spin.for === "cook" ? (
+              <button onClick={() => { const id = spin.recipeId; setSpin(null); router.push(id ? `/i-cooked?recipe=${id}` : "/i-cooked"); }} className="mt-4 w-full transition-transform active:scale-[0.98]" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>Cook it →</button>
+            ) : (
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, marginTop: 14 }}>added to your kitchen ✓</div>
+            )
+          ) : (
+            <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.55, marginTop: 14 }}>spinning…</div>
+          )}
+        </div>
+        <style>{`@keyframes mg-fade{from{opacity:0}to{opacity:1}}@keyframes mg-pop{0%{opacity:0;transform:scale(0.95) translateY(12px)}100%{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+      </div>
+    );
+  }
 
   // ── Inline captures (allergies / taste / notifications) — centered card ────
   if (active.kind !== "action") {
@@ -264,6 +311,7 @@ export default function MarcoGuide() {
           {Header}
           <p style={{ fontFamily: SANS, fontSize: 13.5, color: "#4A4742", marginTop: 8, lineHeight: 1.4 }}>{active.body}</p>
           <button onClick={() => active.ctaChat ? startGroupChat(active.ctaChat) : active.ctaRoute && router.push(active.ctaRoute)} className="mt-3 w-full transition-transform active:scale-[0.98]" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}`, boxShadow: "0 7px 16px rgba(229,70,46,0.28)" }}>{active.cta}</button>
+          {active.surprise && <button onClick={() => surpriseMe(active.key as "recipe" | "cook")} className="mt-2.5 w-full transition-transform active:scale-[0.98]" style={{ color: INK, background: BUTTER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>🎰 Surprise me</button>}
           {active.secondary && <button onClick={skipSecondary} disabled={busy} className="mx-auto mt-2.5 block" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.6, background: "none", border: "none" }}>{active.secondary.label}</button>}
         </div>
       </div>
