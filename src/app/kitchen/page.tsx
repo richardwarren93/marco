@@ -56,7 +56,7 @@ export default function KitchenHub() {
         {/* The three pieces of your kitchen — recipes here, plan & shop a tap away */}
         <div className="flex" style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: 4, gap: 4, boxShadow: "0 5px 12px rgba(23,20,16,0.1)" }}>
           <span className="flex-1 text-center" style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Recipes</span>
-          <Link href="/meal-plan" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Meal plan</Link>
+          <Link href="/meal-plan" data-guide="tab-mealplan" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Meal plan</Link>
           <Link href="/grocery" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Groceries</Link>
         </div>
 
@@ -87,8 +87,8 @@ export default function KitchenHub() {
               </div>
               {data.recipes.length ? (
                 <div className="grid grid-cols-2 gap-3">
-                  {data.recipes.map((r) => (
-                    <Link key={r.id} href={`/recipes/${r.id}`} className="block overflow-hidden" style={{ borderRadius: 12, border: `2px solid ${INK}`, background: PAPER, boxShadow: "0 6px 14px rgba(23,20,16,0.12)" }}>
+                  {data.recipes.map((r, i) => (
+                    <Link key={r.id} href={`/recipes/${r.id}`} data-guide={i === 0 ? "saved-recipe" : undefined} className="block overflow-hidden" style={{ borderRadius: 12, border: `2px solid ${INK}`, background: PAPER, boxShadow: "0 6px 14px rgba(23,20,16,0.12)" }}>
                       {r.image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={r.image_url} alt="" loading="lazy" style={{ width: "100%", height: 104, objectFit: "cover", display: "block", borderBottom: `2px solid ${INK}` }} />

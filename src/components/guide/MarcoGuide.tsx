@@ -8,9 +8,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 import { requestNotifications } from "@/lib/native/notifications";
+import { ensureCrew, postCook } from "@/lib/social";
 import { guideStore } from "./guideStore";
 
 const INK = "#171410";
@@ -88,6 +89,10 @@ export default function MarcoGuide() {
   const [picks, setPicks] = useState<string[]>([]);
   const [marcoNumber, setMarcoNumber] = useState("");
   const [spin, setSpin] = useState<{ for: "recipe" | "cook"; idx: number; landed: boolean; recipeId?: string } | null>(null);
+  type Reveal = { selector: string; note: string; next?: { selector: string; note: string } };
+  const [reveal, setReveal] = useState<Reveal | null>(null);
+  const [revealRect, setRevealRect] = useState<DOMRect | null>(null);
+  const { mutate: globalMutate } = useSWRConfig();
   const navedFor = useRef<string | null>(null);
 
   // You can skip the current step to move on — there's no way to dismiss the
@@ -128,6 +133,16 @@ export default function MarcoGuide() {
     return () => { window.removeEventListener("resize", onMove); window.removeEventListener("scroll", onMove, true); clearInterval(id); cancelAnimationFrame(raf); };
   }, [active?.key, active?.spotlight, hidden]);
 
+  // Measure the "here's your saved recipe" spotlight target (after a surprise save).
+  useEffect(() => {
+    if (!reveal) { setRevealRect(null); return; }
+    let done = false;
+    const measure = () => { const el = document.querySelector(reveal.selector); if (el) { setRevealRect(el.getBoundingClientRect()); if (!done) { done = true; el.scrollIntoView({ block: "center", behavior: "smooth" }); } } };
+    const t = setTimeout(measure, 350);
+    const id = setInterval(measure, 500);
+    return () => { clearTimeout(t); clearInterval(id); };
+  }, [reveal]);
+
   // Tell the rest of the app the guide is driving, so surfaces hide their own
   // redundant nudges and the spotlight stays the one clear thing.
   useEffect(() => { guideStore.set(!hidden && !!active); }, [hidden, active]);
@@ -152,13 +167,24 @@ export default function MarcoGuide() {
     setTimeout(step, 55);
   }
   async function landOn(idx: number, forStep: "recipe" | "cook") {
+    const opt = SURPRISES[idx];
     let recipeId: string | undefined;
     try {
-      const r = await fetch("/api/recipes/seed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: SURPRISES[idx].slug }) });
+      const r = await fetch("/api/recipes/seed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: opt.slug }) });
       if (r.ok) recipeId = (await r.json()).recipe?.id;
     } catch { /* best-effort */ }
+    // Cook: log it straight away using the dish's own photo — no upload needed.
+    if (forStep === "cook") {
+      try { const crew = await ensureCrew(); await postCook({ crewId: crew?.id ?? null, title: opt.title, note: "", treatment: "polaroid", photoUrl: opt.img, sourceRecipeId: recipeId ?? null }); } catch { /* best-effort */ }
+    }
     setSpin((s) => (s ? { ...s, idx, landed: true, recipeId } : s));
-    if (forStep === "recipe") { await mutate(); setTimeout(() => setSpin(null), 1500); }
+    await mutate();
+    if (forStep === "recipe") {
+      try { await globalMutate((k) => typeof k === "string" && k.startsWith("/api/")); } catch { /* ignore */ }
+      setTimeout(() => { setSpin(null); router.push("/kitchen"); setReveal({ selector: "[data-guide='saved-recipe']", note: "saved! your recipes live right here — tap it anytime 🍅", next: { selector: "[data-guide='tab-mealplan']", note: "and you can drop any recipe onto your week here — we'll leave that for later." } }); }, 1300);
+    } else {
+      setTimeout(() => setSpin(null), 1600);
+    }
   }
 
   // Skip the current step → it's remembered and the next step becomes active.
@@ -224,6 +250,34 @@ export default function MarcoGuide() {
     </>
   );
 
+  // ── "Here's your saved recipe" — spotlight it in the kitchen, then continue ─
+  if (reveal) {
+    const r = revealRect;
+    const pad = 8;
+    return (
+      <div className="fixed inset-0 z-[70]" style={{ pointerEvents: "none" }}>
+        {r ? (
+          <div style={{ position: "fixed", top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2, borderRadius: 16, boxShadow: "0 0 0 9999px rgba(23,20,16,0.55), 0 0 0 3px rgba(196,238,69,0.9)", transition: "all .25s ease" }} />
+        ) : (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(23,20,16,0.5)" }} />
+        )}
+        <div className="absolute inset-x-0" style={{ bottom: "calc(env(safe-area-inset-bottom,0px) + 96px)", padding: "0 16px", pointerEvents: "auto", animation: "mg-up .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+          <div className="mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: 15, boxShadow: "0 20px 46px rgba(23,20,16,0.4)", transform: "rotate(-0.4deg)" }}>
+            <div className="flex items-center gap-2.5">
+              <span className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 34, height: 34, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={27} /></span>
+              <div className="min-w-0 flex-1">
+                <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
+                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, lineHeight: 1.12 }}>{reveal.note}</div>
+              </div>
+            </div>
+            <button onClick={() => setReveal((rv) => (rv?.next ? { selector: rv.next.selector, note: rv.next.note } : null))} className="mt-3 w-full transition-transform active:scale-[0.98]" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>{reveal.next ? "Next →" : "Got it →"}</button>
+          </div>
+        </div>
+        <style>{`@keyframes mg-up{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}`}</style>
+      </div>
+    );
+  }
+
   // ── Surprise me — the slot-machine overlay (only the current frame shows) ──
   if (spin) {
     const cur = SURPRISES[spin.idx];
@@ -237,11 +291,7 @@ export default function MarcoGuide() {
             <div className="absolute inset-x-0 bottom-0 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: PAPER, padding: "20px 10px 8px", background: "linear-gradient(to top, rgba(23,20,16,0.82), transparent)" }}>{cur.title}</div>
           </div>
           {spin.landed ? (
-            spin.for === "cook" ? (
-              <button onClick={() => { const id = spin.recipeId; setSpin(null); router.push(id ? `/i-cooked?recipe=${id}` : "/i-cooked"); }} className="mt-4 w-full transition-transform active:scale-[0.98]" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>Cook it →</button>
-            ) : (
-              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, marginTop: 14 }}>added to your kitchen ✓</div>
-            )
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, marginTop: 14 }}>{spin.for === "cook" ? "cooked it ✓" : "added to your kitchen ✓"}</div>
           ) : (
             <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.55, marginTop: 14 }}>spinning…</div>
           )}
