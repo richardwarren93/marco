@@ -31,6 +31,8 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
   const [error, setError] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
   const [pastedText, setPastedText] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlValue, setUrlValue] = useState("");
   const [batchPhotos, setBatchPhotos] = useState<BatchPhoto[]>([]);
   const [batchMode, setBatchMode] = useState(false);
   const [batchComplete, setBatchComplete] = useState(false);
@@ -39,8 +41,29 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
   if (!isOpen) return null;
 
   function handleUrl() {
-    onClose();
-    router.push("/recipes/new?mode=url");
+    setShowTextInput(false);
+    setShowUrlInput((v) => !v);
+  }
+
+  async function handleUrlExtract() {
+    if (!urlValue.trim()) return;
+    setExtracting(true);
+    setError("");
+    try {
+      const res = await fetch("/api/recipes/extract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: urlValue.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to extract recipe");
+      try { sessionStorage.setItem("importedRecipe", JSON.stringify(data.recipe)); } catch {}
+      onClose();
+      router.push("/recipes/new?mode=extracted");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to extract recipe. Please try again.");
+      setExtracting(false);
+    }
   }
 
   async function handleTextExtract() {
@@ -463,9 +486,32 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
               </div>
             </button>
 
+            {/* Inline URL input */}
+            {showUrlInput && (
+              <div className="px-1 pt-1 pb-2">
+                <input
+                  autoFocus
+                  type="url"
+                  inputMode="url"
+                  value={urlValue}
+                  onChange={(e) => setUrlValue(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleUrlExtract(); }}
+                  placeholder="Paste recipe URL…"
+                  className="w-full text-sm text-gray-900 placeholder-gray-300 border border-gray-200 rounded-2xl px-4 py-3 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200"
+                />
+                <button
+                  onClick={handleUrlExtract}
+                  disabled={!urlValue.trim()}
+                  className="mt-2 w-full py-3 rounded-2xl text-sm font-semibold text-white bg-orange-500 hover:bg-orange-600 active:scale-[0.98] transition-all disabled:opacity-40"
+                >
+                  Extract Recipe
+                </button>
+              </div>
+            )}
+
             {/* Camera */}
             <button
-              onClick={() => { setShowTextInput(false); photoInputRef.current?.click(); }}
+              onClick={() => { setShowTextInput(false); setShowUrlInput(false); photoInputRef.current?.click(); }}
               className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
             >
               <span className="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
@@ -482,7 +528,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
 
             {/* Paste from text */}
             <button
-              onClick={() => setShowTextInput((v) => !v)}
+              onClick={() => { setShowUrlInput(false); setShowTextInput((v) => !v); }}
               className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
             >
               <span className="w-11 h-11 rounded-xl bg-green-50 flex items-center justify-center text-green-600 shrink-0">
@@ -498,7 +544,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
 
             {/* Upload document */}
             <button
-              onClick={() => { setShowTextInput(false); docInputRef.current?.click(); }}
+              onClick={() => { setShowTextInput(false); setShowUrlInput(false); docInputRef.current?.click(); }}
               className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-gray-50 active:bg-gray-100 transition-colors text-left"
             >
               <span className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center text-violet-500 shrink-0">
