@@ -15,7 +15,9 @@ const SANS = "system-ui, -apple-system, sans-serif";
 
 type Dish = { id: string; title: string | null; image_url?: string | null; photo_url?: string | null; source_recipe_id?: string | null; author_name?: string | null };
 type HouseholdRecipe = { id: string; title: string | null; image_url: string | null; author_name: string; created_at: string };
-interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[]; householdRecipes: HouseholdRecipe[] }
+type TopCook = { recipe_id: string; title: string | null; image_url: string | null; score: number; sentiment: string };
+interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[]; householdRecipes: HouseholdRecipe[]; topCooks: TopCook[] }
+const SENTIMENT_EMOJI: Record<string, string> = { loved: "😍", fine: "🙂", nope: "😬" };
 
 function timeAgo(iso: string): string {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
@@ -96,6 +98,32 @@ export default function KitchenHub() {
                   <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO }}>your collection starts here ✨</div>
                   <Link href="/connect/imessage" className="mt-3 inline-block" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 20px", borderRadius: 12, border: `2.5px solid ${INK}` }}>Text Marco a recipe →</Link>
                 </div>
+              )}
+            </section>
+
+            {/* YOUR TOP COOKS — the Beli-style ranked list */}
+            <section style={{ marginTop: 22 }}>
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginBottom: 10, marginLeft: 2 }}>your top cooks 🏆</div>
+              {data.topCooks.length ? (
+                <div className="space-y-2">
+                  {data.topCooks.map((c, i) => (
+                    <Link key={c.recipe_id} href={`/recipes/${c.recipe_id}`} className="flex items-center gap-3 active:scale-[0.99] transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, borderRadius: 11, padding: "7px 10px", transform: `rotate(${i % 2 ? 0.3 : -0.3}deg)`, boxShadow: "0 4px 10px rgba(23,20,16,0.1)" }}>
+                      <span className="flex-shrink-0" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: TOMATO, width: 26, textAlign: "center" }}>#{i + 1}</span>
+                      {c.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.image_url} alt="" loading="lazy" style={{ width: 42, height: 42, borderRadius: 8, objectFit: "cover", border: `1.5px solid ${INK}`, flexShrink: 0 }} />
+                      ) : <div className="flex flex-shrink-0 items-center justify-center" style={{ width: 42, height: 42, borderRadius: 8, background: "rgba(255,216,77,0.3)", fontSize: 20, border: `1.5px solid ${INK}` }}>🍳</div>}
+                      <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>{c.title || "A dish"}</span>
+                      <span className="flex-shrink-0" style={{ fontSize: 17 }}>{SENTIMENT_EMOJI[c.sentiment] ?? "🍅"}</span>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <Link href="/create" className="block text-center active:scale-[0.99] transition-transform" style={{ border: `2px dashed ${INK}`, borderRadius: 14, padding: "16px", background: PAPER }}>
+                  <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, transform: "rotate(-1deg)" }}>rank your cooks 🏆</div>
+                  <div style={{ fontFamily: SANS, fontSize: 13, color: "#4A4742", marginTop: 5 }}>every time you cook, rate it — your best climb to the top</div>
+                  <div className="mt-3 inline-block" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "9px 18px", borderRadius: 11, border: `2px solid ${INK}` }}>cook something →</div>
+                </Link>
               )}
             </section>
 

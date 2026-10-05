@@ -34,11 +34,23 @@ export async function GET() {
     }
   } catch { householdRecipes = []; }
 
+  // Your top cooks — the Beli-style ranked list, highest score first.
+  let topCooks: { recipe_id: string; title: string | null; image_url: string | null; score: number; sentiment: string }[] = [];
+  try {
+    const admin = createAdminClient();
+    const { data } = await admin.from("cook_ratings").select("recipe_id,score,sentiment,recipes(title,image_url)").eq("user_id", user.id).order("score", { ascending: false }).limit(5);
+    type Rec = { title: string | null; image_url: string | null };
+    topCooks = ((data ?? []) as unknown as { recipe_id: string; score: number; sentiment: string; recipes: Rec | Rec[] | null }[]).map((r) => {
+      const rec = Array.isArray(r.recipes) ? r.recipes[0] : r.recipes;
+      return { recipe_id: r.recipe_id, title: rec?.title ?? "A dish", image_url: rec?.image_url ?? null, score: r.score, sentiment: r.sentiment };
+    });
+  } catch { topCooks = []; }
+
   return NextResponse.json({
     name: profile.data?.display_name || user.email?.split("@")[0] || "You",
     recipes: recipes.data ?? [], recipeCount: recipes.count ?? 0,
     cooks: cooks.data ?? [], cookCount: cooks.count ?? 0,
     saved: (saved.data ?? []).map(s => s.cook).filter(Boolean),
-    householdRecipes,
+    householdRecipes, topCooks,
   }, { headers: { "Cache-Control": "private, no-store" } });
 }
