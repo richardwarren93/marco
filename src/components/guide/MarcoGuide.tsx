@@ -65,26 +65,26 @@ const fetcher = async (u: string) => { const r = await fetch(u); if (!r.ok) thro
 export default function MarcoGuide() {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const [off, setOff] = useState(false);
+  const [skipped, setSkipped] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [picks, setPicks] = useState<string[]>([]);
   const navedFor = useRef<string | null>(null);
 
-  // Snooze is session-only — you can set the guide aside "for now", but it comes
-  // back next launch. There is no permanent way to kill onboarding.
-  useEffect(() => { try { setOff(sessionStorage.getItem("marco_guide_snoozed") === "1"); } catch { /* ignore */ } }, []);
+  // You can skip the current step to move on — there's no way to dismiss the
+  // guide itself. Skipped steps are remembered so it advances, never loops.
+  useEffect(() => { try { const raw = localStorage.getItem("marco_guide_skipped"); if (raw) setSkipped(JSON.parse(raw)); } catch { /* ignore */ } }, []);
 
   const hidden = HIDE_ON.some((p) => pathname.startsWith(p));
-  const { data, mutate } = useSWR<{ done: Done }>(hidden || off ? null : "/api/quests", fetcher, { revalidateOnFocus: true, revalidateOnMount: true });
+  const { data, mutate } = useSWR<{ done: Done }>(hidden ? null : "/api/quests", fetcher, { revalidateOnFocus: true, revalidateOnMount: true });
   const done = data?.done;
-  const active = done ? STEPS.find((s) => !done[s.key]) ?? null : null;
+  const active = done ? STEPS.find((s) => !done[s.key] && !skipped.includes(s.key)) ?? null : null;
 
   // Re-check progress whenever the route changes (you just did the thing).
-  useEffect(() => { if (!hidden && !off) void mutate(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (!hidden) void mutate(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Gently drift to the step's home tab when a NEW step becomes active.
   useEffect(() => {
-    if (!active || hidden || off) return;
+    if (!active || hidden) return;
     if (active.home && navedFor.current !== active.key && pathname !== active.home && (pathname === "/kitchen" || pathname === "/friends-stack")) {
       navedFor.current = active.key;
       router.push(active.home);
@@ -96,7 +96,7 @@ export default function MarcoGuide() {
   const [rect, setRect] = useState<DOMRect | null>(null);
   useEffect(() => {
     const sel = active?.spotlight;
-    if (!sel || hidden || off) { setRect(null); return; }
+    if (!sel || hidden) { setRect(null); return; }
     let raf = 0;
     const measure = () => { const el = document.querySelector(sel); setRect(el ? el.getBoundingClientRect() : null); };
     measure();
@@ -104,16 +104,23 @@ export default function MarcoGuide() {
     window.addEventListener("resize", onMove); window.addEventListener("scroll", onMove, true);
     const id = setInterval(measure, 600);
     return () => { window.removeEventListener("resize", onMove); window.removeEventListener("scroll", onMove, true); clearInterval(id); cancelAnimationFrame(raf); };
-  }, [active?.key, active?.spotlight, hidden, off]);
+  }, [active?.key, active?.spotlight, hidden]);
 
   // Tell the rest of the app the guide is driving, so surfaces hide their own
   // redundant nudges and the spotlight stays the one clear thing.
-  useEffect(() => { guideStore.set(!hidden && !off && !!active); }, [hidden, off, active]);
+  useEffect(() => { guideStore.set(!hidden && !!active); }, [hidden, active]);
   useEffect(() => () => guideStore.set(false), []);
 
-  if (hidden || off || !active) return null;
+  if (hidden || !active) return null;
 
-  function snooze() { try { sessionStorage.setItem("marco_guide_snoozed", "1"); } catch { /* ignore */ } setOff(true); }
+  // Skip the current step → it's remembered and the next step becomes active.
+  // There is no way to dismiss the guide as a whole.
+  function skipStep() {
+    if (!active) return;
+    const key = active.key;
+    setSkipped((prev) => { const next = prev.includes(key) ? prev : [...prev, key]; try { localStorage.setItem("marco_guide_skipped", JSON.stringify(next)); } catch { /* ignore */ } return next; });
+    setPicks([]);
+  }
 
   async function saveAllergies(list: string[]) {
     setBusy(true);
@@ -147,7 +154,7 @@ export default function MarcoGuide() {
           <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
           <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK, lineHeight: 1.08 }}>{active.title}</div>
         </div>
-        <button onClick={snooze} aria-label="Skip the guide for now" style={{ fontFamily: HAND, fontSize: 12.5, color: INK, opacity: 0.5, background: "none", border: "none", flexShrink: 0, whiteSpace: "nowrap" }}>skip for now</button>
+        <button onClick={skipStep} aria-label="Skip this step" style={{ fontFamily: HAND, fontSize: 13, color: INK, opacity: 0.5, background: "none", border: "none", flexShrink: 0, whiteSpace: "nowrap" }}>skip →</button>
       </div>
     </>
   );
