@@ -25,8 +25,10 @@ const TABS: TabDef[] = [
   { label: "Table", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"], icon: TableIcon },
 ];
 
-// Full-screen / modal flows where the dock should not show.
-const HIDE_ON = ["/i-cooked", "/create", "/auth", "/connect", "/onboarding", "/login"];
+// Full-screen / modal flows where the dock should not show. "/recipes/new" is a
+// focused commit flow (importing / editing a recipe) — no tabbing away from a
+// freshly-extracted recipe before it's saved.
+const HIDE_ON = ["/i-cooked", "/create", "/auth", "/connect", "/onboarding", "/login", "/recipes/new"];
 
 export default function MarcoDock() {
   const pathname = usePathname() || "";

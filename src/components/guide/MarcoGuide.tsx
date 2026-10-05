@@ -70,7 +70,9 @@ export default function MarcoGuide() {
   const [picks, setPicks] = useState<string[]>([]);
   const navedFor = useRef<string | null>(null);
 
-  useEffect(() => { try { setOff(localStorage.getItem("marco_guide_off") === "1"); } catch { /* ignore */ } }, []);
+  // Snooze is session-only — you can set the guide aside "for now", but it comes
+  // back next launch. There is no permanent way to kill onboarding.
+  useEffect(() => { try { setOff(sessionStorage.getItem("marco_guide_snoozed") === "1"); } catch { /* ignore */ } }, []);
 
   const hidden = HIDE_ON.some((p) => pathname.startsWith(p));
   const { data, mutate } = useSWR<{ done: Done }>(hidden || off ? null : "/api/quests", fetcher, { revalidateOnFocus: true, revalidateOnMount: true });
@@ -111,7 +113,7 @@ export default function MarcoGuide() {
 
   if (hidden || off || !active) return null;
 
-  function dismiss() { try { localStorage.setItem("marco_guide_off", "1"); } catch { /* ignore */ } setOff(true); }
+  function snooze() { try { sessionStorage.setItem("marco_guide_snoozed", "1"); } catch { /* ignore */ } setOff(true); }
 
   async function saveAllergies(list: string[]) {
     setBusy(true);
@@ -145,7 +147,7 @@ export default function MarcoGuide() {
           <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
           <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK, lineHeight: 1.08 }}>{active.title}</div>
         </div>
-        <button onClick={dismiss} aria-label="Hide guide" style={{ fontSize: 16, color: INK, opacity: 0.4, background: "none", border: "none", flexShrink: 0 }}>✕</button>
+        <button onClick={snooze} aria-label="Skip the guide for now" style={{ fontFamily: HAND, fontSize: 12.5, color: INK, opacity: 0.5, background: "none", border: "none", flexShrink: 0, whiteSpace: "nowrap" }}>skip for now</button>
       </div>
     </>
   );

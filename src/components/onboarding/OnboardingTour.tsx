@@ -44,6 +44,26 @@ function PhoneRotator({ screens }: { screens: MarcoScreen[] }) {
 
 const primaryBtn: React.CSSProperties = { color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 17, padding: "15px 0", borderRadius: 14, border: `2.5px solid ${INK}`, boxShadow: "0 8px 18px rgba(229,70,46,0.28)" };
 
+// A single playful accent per panel — a tape strip or a sparkle, colour-cycled —
+// so the beautiful-chaos tone carries through the tour without competing with
+// the phone (which is already the colourful hero).
+const ACCENTS = ["#FFD84D", "#C4EE45", "#C9B8FF", "#FF4D9D", "#2540E8"]; // butter · lime · lav · pink · cobalt
+function PanelAccent({ step }: { step: number }) {
+  const c = ACCENTS[step % ACCENTS.length];
+  const tape = step % 2 === 0;
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0" style={{ zIndex: 0 }}>
+      {tape ? (
+        <div style={{ position: "absolute", top: "7%", left: "2%", width: 94, height: 22, background: c, opacity: 0.75, transform: "rotate(-11deg)", boxShadow: "inset 0 0 0 1px rgba(23,20,16,0.08)" }} />
+      ) : (
+        <svg width="30" height="30" viewBox="0 0 24 24" fill={c} stroke={INK} strokeWidth={1.3} style={{ position: "absolute", top: "8%", right: "4%" }}>
+          <path d="M12 1 Q13.5 9 23 12 Q13.5 15 12 23 Q10.5 15 1 12 Q10.5 9 12 1 Z" />
+        </svg>
+      )}
+    </div>
+  );
+}
+
 export default function OnboardingTour({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
 
@@ -56,8 +76,9 @@ export default function OnboardingTour({ onDone }: { onDone: () => void }) {
         </div>
 
         <div className="flex flex-1 flex-col">
-          <div className="flex flex-1 items-center justify-center overflow-hidden pt-3" style={{ minHeight: 0 }}>
-            <div key={`phone-${step}`} style={{ height: "min(400px, 46vh)", width: "calc(min(400px, 46vh) * 186 / 380)", animation: "ob-slide 0.4s ease both" }}>
+          <div className="relative flex flex-1 items-center justify-center overflow-hidden pt-3" style={{ minHeight: 0 }}>
+            <PanelAccent step={step} />
+            <div key={`phone-${step}`} className="relative" style={{ zIndex: 1, height: "min(400px, 46vh)", width: "calc(min(400px, 46vh) * 186 / 380)", animation: "ob-slide 0.4s ease both" }}>
               <PhoneRotator key={step} screens={PANELS[step].screens} />
             </div>
           </div>
