@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, Suspense } from "react";
+import { useState, useCallback, useMemo, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import dynamic from "next/dynamic";
@@ -70,6 +70,8 @@ function RecipesInner() {
   // Add to collection modal state
   const [collectionRecipeId, setCollectionRecipeId] = useState<string | null>(null);
   const [showImport, setShowImport] = useState(false);
+  // The guide (and any ?import=1 link) opens the import sheet directly.
+  useEffect(() => { if (searchParams.get("import")) setShowImport(true); }, [searchParams]);
 
   const supabase = createClient();
   const { showToast } = useToast();

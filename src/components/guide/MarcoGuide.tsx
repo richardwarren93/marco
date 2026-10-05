@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
+import { guideStore } from "./guideStore";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -37,7 +38,7 @@ type Step = {
 
 const STEPS: Step[] = [
   { key: "allergies", kind: "allergies", emoji: "🚫", title: "Anything we should cook around?", body: "Marco keeps these out of every suggestion." },
-  { key: "recipe", kind: "action", emoji: "🔖", title: "Save your first recipe", body: "Paste a link or text it to Marco — it lands in your Kitchen.", home: "/kitchen", cta: "Add a recipe →", ctaRoute: "/create", spotlight: "[data-guide='create']" },
+  { key: "recipe", kind: "action", emoji: "🔖", title: "Save your first recipe", body: "Paste a link, snap a photo of one, or text it to Marco — it lands in your Kitchen.", home: "/kitchen", cta: "Add a recipe →", ctaRoute: "/recipes?import=1" },
   { key: "taste", kind: "taste", emoji: "😋", title: "What's your taste?", body: "Tap the dishes you'd actually cook. Marco learns from these." },
   { key: "household", kind: "action", emoji: "👨‍👩‍👧", title: "Cook with your household", body: "Start a thread with Marco — together, or just you. Your number links here.", home: "/kitchen", cta: "Connect by text →", ctaRoute: "/connect/imessage", secondary: { label: "it's just me for now", mark: "household_skip" } },
   { key: "cook", kind: "action", emoji: "📸", title: "Share your first cook", body: "Snap what you made — Marco makes it look good.", home: "/kitchen", cta: "I cooked something →", ctaRoute: "/i-cooked", spotlight: "[data-guide='create']" },
@@ -58,7 +59,7 @@ const DISHES = [
   { t: "Fettuccine Alfredo", img: "/onboarding/recipes/fettuccine-alfredo.jpg" },
 ];
 
-const HIDE_ON = ["/auth", "/onboarding", "/login", "/i-cooked", "/create", "/connect", "/crew", "/potluck"];
+const HIDE_ON = ["/auth", "/onboarding", "/login", "/i-cooked", "/create", "/connect", "/crew", "/potluck", "/recipes"];
 const fetcher = async (u: string) => { const r = await fetch(u); if (!r.ok) throw new Error("x"); return r.json(); };
 
 export default function MarcoGuide() {
@@ -103,10 +104,14 @@ export default function MarcoGuide() {
     return () => { window.removeEventListener("resize", onMove); window.removeEventListener("scroll", onMove, true); clearInterval(id); cancelAnimationFrame(raf); };
   }, [active?.key, active?.spotlight, hidden, off]);
 
+  // Tell the rest of the app the guide is driving, so surfaces hide their own
+  // redundant nudges and the spotlight stays the one clear thing.
+  useEffect(() => { guideStore.set(!hidden && !off && !!active); }, [hidden, off, active]);
+  useEffect(() => () => guideStore.set(false), []);
+
   if (hidden || off || !active) return null;
 
   function dismiss() { try { localStorage.setItem("marco_guide_off", "1"); } catch { /* ignore */ } setOff(true); }
-  const stepNum = STEPS.findIndex((s) => s.key === active.key) + 1;
 
   async function saveAllergies(list: string[]) {
     setBusy(true);
@@ -132,8 +137,8 @@ export default function MarcoGuide() {
     <div className="flex items-center gap-2.5">
       <span className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 34, height: 34, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={27} /></span>
       <div className="min-w-0 flex-1">
-        <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 9, letterSpacing: "0.12em", color: TOMATO }}>MARCO · STEP {stepNum} OF {STEPS.length}</div>
-        <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16.5, color: INK, lineHeight: 1.05 }}>{active.title}</div>
+        <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
+        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK, lineHeight: 1.08 }}>{active.title}</div>
       </div>
       <button onClick={dismiss} aria-label="Hide guide" style={{ fontSize: 16, color: INK, opacity: 0.4, background: "none", border: "none", flexShrink: 0 }}>✕</button>
     </div>

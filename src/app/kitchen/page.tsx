@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import CookCard from "@/components/social/CookCard";
 import CardPeek from "@/components/social/CardPeek";
+import { useGuideActive } from "@/components/guide/guideStore";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -34,6 +35,7 @@ const fetcher = async (url: string) => { const r = await fetch(url); const v = a
 
 export default function KitchenHub() {
   const router = useRouter();
+  const guideActive = useGuideActive();
   const { data, error, mutate } = useSWR<KitchenData>("/api/kitchen", fetcher, { revalidateOnFocus: true, focusThrottleInterval: 30000 });
   const { data: hh } = useSWR<HouseholdData>("/api/household", fetcher, { revalidateOnFocus: false });
 
@@ -49,7 +51,7 @@ export default function KitchenHub() {
           <Link href="/profile" aria-label="Your profile" className="flex flex-shrink-0 items-center justify-center" style={{ width: 38, height: 38, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, transform: "rotate(5deg)", border: `2px solid ${BUTTER}` }}>{data?.name.slice(0, 1).toUpperCase() ?? "·"}</Link>
         </div>
 
-        <HouseholdBanner hh={hh} />
+        <HouseholdBanner hh={hh} guideActive={guideActive} />
 
         {/* The three pieces of your kitchen — recipes here, plan & shop a tap away */}
         <div className="flex" style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: 4, gap: 4, boxShadow: "0 5px 12px rgba(23,20,16,0.1)" }}>
@@ -76,7 +78,8 @@ export default function KitchenHub() {
               </section>
             )}
 
-            {/* RECIPES — the core of your kitchen */}
+            {/* RECIPES — the core of your kitchen (its empty-state nudge steps aside for the guide) */}
+            {(data.recipes.length > 0 || !guideActive) && (
             <section style={{ marginTop: 20 }}>
               <div className="flex items-baseline justify-between px-1" style={{ marginBottom: 10 }}>
                 <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>your recipes</span>
@@ -101,8 +104,10 @@ export default function KitchenHub() {
                 </div>
               )}
             </section>
+            )}
 
             {/* YOUR TOP COOKS — the Beli-style ranked list */}
+            {(data.topCooks.length > 0 || !guideActive) && (
             <section style={{ marginTop: 22 }}>
               <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginBottom: 10, marginLeft: 2 }}>your top cooks 🏆</div>
               {data.topCooks.length ? (
@@ -127,9 +132,11 @@ export default function KitchenHub() {
                 </Link>
               )}
             </section>
+            )}
 
-            <ShelfSection title="want to cook" dishes={data.saved} empty="recipes you save from your tables land here" href="/friends-stack" action="visit your tables →" />
+            {(data.saved.length > 0 || !guideActive) && <ShelfSection title="want to cook" dishes={data.saved} empty="recipes you save from your tables land here" href="/friends-stack" action="visit your tables →" />}
             {/* YOU COOKED — full feed cards (like the Table), or a camera prompt */}
+            {(data.cooks.length > 0 || !guideActive) && (
             <section style={{ marginTop: 22 }}>
               <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginBottom: 12, marginLeft: 2 }}>you cooked</div>
               {data.cooks.length ? (
@@ -165,6 +172,7 @@ export default function KitchenHub() {
                 </div>
               )}
             </section>
+            )}
           </>
         )}
       </div>
@@ -173,10 +181,11 @@ export default function KitchenHub() {
   );
 }
 
-function HouseholdBanner({ hh }: { hh: HouseholdData | undefined }) {
+function HouseholdBanner({ hh, guideActive }: { hh: HouseholdData | undefined; guideActive?: boolean }) {
   const [copied, setCopied] = useState(false);
   if (!hh) return null; // still loading — don't flash the empty state
   if (!hh.household) {
+    if (guideActive) return null; // the guide drives "connect your household"
     return (
       <Link href="/profile/household" className="flex items-center gap-2 active:scale-[0.99] transition-transform" style={{ marginTop: 10, background: PAPER, border: `2px dashed ${INK}`, borderRadius: 11, padding: "8px 11px" }}>
         <span style={{ fontSize: 14, flexShrink: 0 }}>➕</span>
