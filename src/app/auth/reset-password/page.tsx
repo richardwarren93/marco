@@ -3,7 +3,11 @@
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import Link from "next/link";
-import MarcoLockup from "@/components/layout/MarcoLockup";
+import {
+  INK, TOMATO, BUTTER, DISP, SANS,
+  AuthShell, Wordmark, Squiggle, MascotCard,
+  inkBtn, tomatoBtn, inputStyle,
+} from "@/components/auth/AuthChrome";
 
 export default function ResetPasswordRequestPage() {
   const [email, setEmail] = useState("");
@@ -32,103 +36,43 @@ export default function ResetPasswordRequestPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-6" style={{ background: "#F5EEE2" }}>
-        <div className="text-center space-y-4 max-w-sm">
-          <MarcoLockup wordmarkSize="4rem" tomatoSize={72} />
-          <h1
-            style={{
-              fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-              fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-              fontSize: "26px",
-              letterSpacing: "-0.015em",
-              color: "var(--ink, #1C1A17)",
-            }}
-          >
-            Check your email
-          </h1>
-          <p className="text-sm leading-relaxed" style={{ color: "var(--ink-soft, #4A4742)" }}>
-            We sent a reset link to <strong style={{ color: "var(--ink, #1C1A17)" }}>{email}</strong>.
-            Tap it on this device to set a new password.
+      <AuthShell>
+        <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
+          <MascotCard size={118} bg={BUTTER} />
+          <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 32, color: INK, marginTop: 22 }}>Check your email!</h1>
+          <Squiggle w={170} />
+          <p style={{ fontFamily: SANS, fontSize: 15, color: "#4A4742", marginTop: 14, lineHeight: 1.5, maxWidth: 320 }}>
+            We sent a reset link to <b style={{ color: INK }}>{email}</b>. Tap it on this device to set a new password.
           </p>
-          <Link
-            href="/auth/login"
-            className="inline-block mt-4 px-6 py-3 text-white rounded-2xl font-medium text-sm transition-colors shadow-sm hover:opacity-95"
-            style={{ background: "var(--tomato, #E5462E)" }}
-          >
-            Back to sign in
-          </Link>
+          <Link href="/auth/login" className="inline-block active:scale-[0.98] transition-transform" style={{ ...tomatoBtn, padding: "14px 26px", marginTop: 24 }}>Back to sign in</Link>
         </div>
-      </div>
+      </AuthShell>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#F5EEE2" }}>
-      <div
-        className="relative flex items-center justify-center px-4"
-        style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 2rem)", paddingBottom: "1.5rem" }}
-      >
-        <MarcoLockup wordmarkSize="3rem" tomatoSize={56} />
-      </div>
+    <AuthShell>
+      <div className="flex justify-center" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 22px)" }}><Wordmark size={24} /></div>
 
-      <div className="flex-1 px-6 pt-4 pb-10 max-w-sm mx-auto w-full">
-        <h2
-          className="mb-2"
-          style={{
-            fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
-            fontStyle: "italic",
-            fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
-            fontSize: "20px",
-            color: "var(--ink-soft, #4A4742)",
-          }}
-        >
-          Forgot your password?
-        </h2>
-        <p className="text-sm mb-6" style={{ color: "var(--ink-soft, #4A4742)" }}>
-          Drop in your email and we&apos;ll send you a link to set a new one.
-        </p>
+      <div className="flex-1 w-full mx-auto px-6" style={{ maxWidth: 400, paddingTop: 28 }}>
+        <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1.04 }}>Forgot your password?</h1>
+        <Squiggle w={150} />
+        <p style={{ fontFamily: SANS, fontSize: 14.5, color: "#4A4742", marginTop: 12, lineHeight: 1.5 }}>Drop in your email and we&apos;ll send you a link to set a new one.</p>
 
-        <form onSubmit={handleRequest} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">{error}</div>
-          )}
+        <form onSubmit={handleRequest} className="space-y-4" style={{ marginTop: 22 }}>
+          {error && <div role="alert" style={{ background: "#fff", border: `2.5px solid ${INK}`, borderRadius: 12, padding: 12, color: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 14, boxShadow: `3px 3px 0 ${INK}`, transform: "rotate(-0.4deg)" }}>{error}</div>}
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1.5" style={{ color: "var(--ink, #1C1A17)" }}>
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              autoFocus
-              className="w-full px-4 py-3 rounded-2xl focus:ring-2 outline-none text-sm bg-white"
-              style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
-              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--tomato, #E5462E)")}
-              onBlur={(e) => (e.currentTarget.style.borderColor = "rgba(28,26,23,0.12)")}
-              placeholder="you@example.com"
-            />
-          </div>
+          <label className="block" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>Email
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus placeholder="you@example.com" className="block w-full" style={inputStyle} />
+          </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 px-4 text-white rounded-2xl disabled:opacity-50 font-medium text-sm shadow-sm transition-colors hover:opacity-95"
-            style={{ background: "var(--ink, #1C1A17)" }}
-          >
-            {loading ? "Sending..." : "Send reset link"}
-          </button>
+          <button type="submit" disabled={loading} className="w-full active:scale-[0.98] transition-transform disabled:opacity-50" style={inkBtn}>{loading ? "Sending…" : "Send reset link →"}</button>
         </form>
 
-        <p className="text-center text-sm mt-6" style={{ color: "var(--ink-soft, #4A4742)" }}>
-          Remembered it?{" "}
-          <Link href="/auth/login" className="font-semibold hover:underline" style={{ color: "var(--tomato, #E5462E)" }}>
-            Back to sign in
-          </Link>
+        <p className="text-center" style={{ fontFamily: SANS, fontSize: 14, color: "#675B4E", marginTop: 22 }}>
+          Remembered it? <Link href="/auth/login" style={{ fontWeight: 700, color: TOMATO }}>Back to sign in</Link>
         </p>
       </div>
-    </div>
+    </AuthShell>
   );
 }
