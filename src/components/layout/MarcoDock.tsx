@@ -16,13 +16,13 @@ type TabDef = { label: string; href: string; match: string[]; icon: (c: string) 
 const HouseIcon = (c: string) => (
   <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3.5 10.5 12 3.5l8.5 7" /><path d="M5.5 9.3V20.3h13V9.3" /></svg>
 );
-const PeopleIcon = (c: string) => (
-  <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><circle cx="9" cy="8.5" r="3" /><path d="M3.5 19.2c0-3 2.5-4.9 5.5-4.9s5.5 1.9 5.5 4.9" /><path d="M16.2 6.1a2.7 2.7 0 0 1 0 5.4" /><path d="M17.4 14.5c2.3.3 3.9 1.9 3.9 4.7" /></svg>
+const TableIcon = (c: string) => (
+  <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3.5 10.5h17" /><path d="M6 10.5v8" /><path d="M18 10.5v8" /><path d="M9.2 10.5c0-1.5 1.2-2.6 2.8-2.6s2.8 1.1 2.8 2.6" /></svg>
 );
 
 const TABS: TabDef[] = [
   { label: "My Kitchen", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"], icon: HouseIcon },
-  { label: "Table", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"], icon: PeopleIcon },
+  { label: "Table", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"], icon: TableIcon },
 ];
 
 // Full-screen / modal flows where the dock should not show.

@@ -1,8 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import TasteInterstitial from "@/components/onboarding/TasteInterstitial";
+import CookCard from "@/components/social/CookCard";
+import CardPeek from "@/components/social/CardPeek";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -13,7 +16,7 @@ const DISP = '"Marker Felt", Georgia, serif';
 const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
 const SANS = "system-ui, -apple-system, sans-serif";
 
-type Dish = { id: string; title: string | null; image_url?: string | null; photo_url?: string | null; source_recipe_id?: string | null; author_name?: string | null };
+type Dish = { id: string; title: string | null; note?: string | null; image_url?: string | null; photo_url?: string | null; card_treatment?: string | null; source_recipe_id?: string | null; author_name?: string | null; created_at?: string | null };
 type HouseholdRecipe = { id: string; title: string | null; image_url: string | null; author_name: string; created_at: string };
 type TopCook = { recipe_id: string; title: string | null; image_url: string | null; score: number; sentiment: string };
 interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[]; householdRecipes: HouseholdRecipe[]; topCooks: TopCook[] }
@@ -31,6 +34,7 @@ interface HouseholdData { household: { id: string; name: string; invite_code: st
 const fetcher = async (url: string) => { const r = await fetch(url); const v = await r.json(); if (!r.ok) throw new Error(v.error || "Could not load."); return v; };
 
 export default function KitchenHub() {
+  const router = useRouter();
   const { data, error, mutate } = useSWR<KitchenData>("/api/kitchen", fetcher, { revalidateOnFocus: true, focusThrottleInterval: 30000 });
   const { data: hh } = useSWR<HouseholdData>("/api/household", fetcher, { revalidateOnFocus: false });
   const [showTaste, setShowTaste] = useState(false);
@@ -128,7 +132,42 @@ export default function KitchenHub() {
             </section>
 
             <ShelfSection title="want to cook" dishes={data.saved} empty="recipes you save from your tables land here" href="/friends-stack" action="visit your tables →" />
-            <ShelfSection title="you cooked" dishes={data.cooks} empty="your own cooks show up here" href="/i-cooked" action="post a cook →" />
+            {/* YOU COOKED — full feed cards (like the Table), or a camera prompt */}
+            <section style={{ marginTop: 22 }}>
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, marginBottom: 12, marginLeft: 2 }}>you cooked</div>
+              {data.cooks.length ? (
+                <div className="space-y-5">
+                  {data.cooks.slice(0, 3).map((c) => {
+                    const rid = c.source_recipe_id;
+                    return (
+                      <CookCard
+                        key={c.id}
+                        treatment={c.card_treatment || "polaroid"}
+                        photo={c.photo_url || c.image_url || ""}
+                        title={c.title || ""}
+                        note={c.note || ""}
+                        authorName="you"
+                        authorAvatar="Y"
+                        timeLabel={c.created_at ? timeAgo(c.created_at) : "recently"}
+                        h={180}
+                        onOpen={rid ? () => router.push(`/recipes/${rid}`) : undefined}
+                        onPlan={rid ? () => router.push(`/recipes/${rid}?openMealSheet=true`) : undefined}
+                        saved
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center">
+                  <button onClick={() => router.push("/i-cooked")} className="block w-full active:scale-[0.99] transition-transform" style={{ background: "none", border: "none", padding: 0 }}>
+                    <div className="mx-auto" style={{ maxWidth: 260 }}><CardPeek /></div>
+                    <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: INK, marginTop: 16 }}>drop your first cook 📸</div>
+                    <div style={{ fontFamily: HAND, fontSize: 15.5, color: TOMATO, marginTop: 3, transform: "rotate(-1deg)" }}>snap what you made — Marco makes it look good</div>
+                    <div className="mt-4 inline-block" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 24px", borderRadius: 14, border: `2.5px solid ${INK}`, boxShadow: "0 10px 24px rgba(229,70,46,0.3)" }}>I cooked something →</div>
+                  </button>
+                </div>
+              )}
+            </section>
           </>
         )}
       </div>

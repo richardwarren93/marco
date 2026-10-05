@@ -9,7 +9,7 @@ export async function GET() {
   const [profile, recipes, cooks, saved] = await Promise.all([
     sb.from("user_profiles").select("display_name").eq("user_id", user.id).maybeSingle(),
     sb.from("recipes").select("id,title,image_url", { count: "exact" }).eq("user_id", user.id).order("created_at", { ascending: false }).limit(6),
-    sb.from("cooks").select("id,title,photo_url,source_recipe_id", { count: "exact" }).eq("user_id", user.id).order("created_at", { ascending: false }).limit(6),
+    sb.from("cooks").select("id,title,note,photo_url,card_treatment,source_recipe_id,created_at", { count: "exact" }).eq("user_id", user.id).order("created_at", { ascending: false }).limit(6),
     sb.from("saves").select("cook:cooks(id,title,photo_url,source_recipe_id,author_name)").eq("user_id", user.id).order("created_at", { ascending: false }).limit(6),
   ]);
   if ([profile, recipes, cooks, saved].some(r => r.error)) return NextResponse.json({ error: "Your kitchen could not be loaded. Please retry." }, { status: 503 });
