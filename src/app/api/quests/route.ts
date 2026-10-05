@@ -36,9 +36,10 @@ export async function GET() {
   const done: Record<string, boolean> = {
     allergies: g.allergies === true,
     recipe: recipes > 0,
-    taste: tastePicks > 0,
-    household: members > 0 || linked || g.household_skip === true,
     cook: cooks > 0,
+    taste: tastePicks > 0,
+    notifications: g.notifications === true,
+    household: members > 0 || linked || g.household_skip === true,
     table: crews > 0,
     potluck: potCreated || potSubmitted,
   };
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = await request.json().catch(() => ({}));
   const mark = body.mark;
-  if (mark !== "allergies" && mark !== "household_skip") return NextResponse.json({ error: "bad mark" }, { status: 400 });
+  if (mark !== "allergies" && mark !== "household_skip" && mark !== "notifications") return NextResponse.json({ error: "bad mark" }, { status: 400 });
   const admin = createAdminClient();
   const { data } = await admin.from("user_preferences").select("taste_profile").eq("user_id", user.id).maybeSingle();
   const tp = { ...((data?.taste_profile as Record<string, unknown> | null) ?? {}) };

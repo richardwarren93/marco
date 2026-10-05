@@ -25,8 +25,17 @@ export default function CrewPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [copied, setCopied] = useState("");
+  const [marcoNumber, setMarcoNumber] = useState("");
 
   useEffect(() => { getMyCrews().then(setCrews).catch(() => { setCrews([]); setErr("Your tables could not be loaded. Refresh to retry."); }); }, []);
+  // Marco's number — so you can start your table as a group chat with him.
+  useEffect(() => { void fetch("/api/imessage/link", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((v) => { if (v?.marcoNumber) setMarcoNumber(v.marcoNumber); }).catch(() => {}); }, []);
+
+  function startGroupChat() {
+    const seed = "hey Marco — starting our table 🍅 (add your people!)";
+    if (marcoNumber) { try { window.location.href = `sms:${marcoNumber}&body=${encodeURIComponent(seed)}`; return; } catch { /* ignore */ } }
+    router.push("/connect/imessage");
+  }
 
   async function create() {
     if (!name.trim() || busy) return;
@@ -96,6 +105,7 @@ export default function CrewPage() {
             style={{ flex: 1, background: PAPER, border: `2px solid ${INK}`, borderRadius: 12, padding: "12px 14px", fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK }} />
           <button onClick={create} disabled={busy} className="active:scale-95 transition-transform" style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 20px", borderRadius: 12, border: "none" }}>Create</button>
         </div>
+        <button onClick={startGroupChat} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "12px 0", borderRadius: 12, border: `2.5px solid ${INK}` }}>💬 …or start it as a group chat with Marco →</button>
 
         {/* join */}
         <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: "0.14em", color: INK, textTransform: "uppercase", marginTop: 22 }}>join with a code</div>
