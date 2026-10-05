@@ -76,6 +76,7 @@ export default function MarcoGuide() {
   const [picks, setPicks] = useState<string[]>([]);
   const [marcoNumber, setMarcoNumber] = useState("");
   const navedFor = useRef<string | null>(null);
+  const seededRef = useRef(false);
 
   // You can skip the current step to move on — there's no way to dismiss the
   // guide itself. Skipped steps are remembered so it advances, never loops.
@@ -101,6 +102,13 @@ export default function MarcoGuide() {
     setPicks([]);
   }, [active?.key]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Reaching "cook a recipe" with an empty kitchen? Drop in a starter so there's
+  // something real to cook. (seedRecipe is hoisted + idempotent server-side.)
+  useEffect(() => {
+    if (hidden || !active) return;
+    if (active.key === "cook" && done && done.recipe === false) void seedRecipe();
+  }, [active?.key, done?.recipe, hidden]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // ── Spotlight rect (for action steps that highlight a target) ──────────────
   const [rect, setRect] = useState<DOMRect | null>(null);
   useEffect(() => {
@@ -122,11 +130,22 @@ export default function MarcoGuide() {
 
   if (hidden || !active) return null;
 
+  // Drop a curated starter recipe into an empty kitchen so "save a recipe" /
+  // "cook a recipe" always have real content. Idempotent server-side (no-op
+  // once any recipe exists), so firing it more than once is harmless.
+  async function seedRecipe() {
+    if (seededRef.current) return;
+    seededRef.current = true;
+    try { await fetch("/api/recipes/seed", { method: "POST" }); } catch { /* best-effort */ }
+    await mutate();
+  }
+
   // Skip the current step → it's remembered and the next step becomes active.
   // There is no way to dismiss the guide as a whole.
   function skipStep() {
     if (!active) return;
     const key = active.key;
+    if (key === "recipe") void seedRecipe(); // skipping "save a recipe" still leaves you one
     setSkipped((prev) => { const next = prev.includes(key) ? prev : [...prev, key]; try { localStorage.setItem("marco_guide_skipped", JSON.stringify(next)); } catch { /* ignore */ } return next; });
     setPicks([]);
   }
