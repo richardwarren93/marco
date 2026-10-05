@@ -38,12 +38,12 @@ type Step = {
 
 const STEPS: Step[] = [
   { key: "allergies", kind: "allergies", emoji: "🚫", title: "Anything we should cook around?", body: "Marco keeps these out of every suggestion." },
-  { key: "recipe", kind: "action", emoji: "🔖", title: "Save your first recipe", body: "Paste a link, snap a photo of one, or text it to Marco — it lands in your Kitchen.", home: "/kitchen", cta: "Add a recipe →", ctaRoute: "/recipes?import=1" },
+  { key: "recipe", kind: "action", emoji: "🔖", title: "Save your first recipe", body: "Tap the + below, then “Add a recipe” — paste a link or snap a photo.", cta: "Add a recipe →", ctaRoute: "/recipes?import=1", spotlight: "[data-guide='create']" },
   { key: "taste", kind: "taste", emoji: "😋", title: "What's your taste?", body: "Tap the dishes you'd actually cook. Marco learns from these." },
-  { key: "household", kind: "action", emoji: "👨‍👩‍👧", title: "Cook with your household", body: "Start a thread with Marco — together, or just you. Your number links here.", home: "/kitchen", cta: "Connect by text →", ctaRoute: "/connect/imessage", secondary: { label: "it's just me for now", mark: "household_skip" } },
-  { key: "cook", kind: "action", emoji: "📸", title: "Share your first cook", body: "Snap what you made — Marco makes it look good.", home: "/kitchen", cta: "I cooked something →", ctaRoute: "/i-cooked", spotlight: "[data-guide='create']" },
-  { key: "table", kind: "action", emoji: "🍽️", title: "Start a table", body: "A table for your family or friends — invite them by text.", home: "/friends-stack", cta: "Start a table →", ctaRoute: "/crew" },
-  { key: "potluck", kind: "action", emoji: "🍲", title: "Throw a potluck", body: "A theme + a deadline for your table. Cook together.", home: "/friends-stack", cta: "Start a potluck →", ctaRoute: "/potluck" },
+  { key: "household", kind: "action", emoji: "👨‍👩‍👧", title: "Cook with your household", body: "Text Marco — together, or just you. Your number links to your kitchen here.", cta: "Connect by text →", ctaRoute: "/connect/imessage", secondary: { label: "it's just me for now", mark: "household_skip" } },
+  { key: "cook", kind: "action", emoji: "📸", title: "Share your first cook", body: "Tap the + and pick “I cooked something” — snap what you made.", cta: "I cooked something →", ctaRoute: "/i-cooked", spotlight: "[data-guide='create']" },
+  { key: "table", kind: "action", emoji: "🍽️", title: "Start a table", body: "Head to your Table tab and start one — invite your people by text.", cta: "Start a table →", ctaRoute: "/crew", spotlight: "[data-guide='tab-table']" },
+  { key: "potluck", kind: "action", emoji: "🍲", title: "Throw a potluck", body: "Tap the + and pick “Start a Potluck” — a theme + a deadline.", cta: "Start a potluck →", ctaRoute: "/potluck", spotlight: "[data-guide='create']" },
 ];
 
 const ALLERGY_OPTIONS = ["Peanuts", "Tree nuts", "Dairy", "Gluten", "Shellfish", "Eggs", "Soy", "Fish"];

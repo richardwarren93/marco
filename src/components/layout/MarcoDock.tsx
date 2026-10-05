@@ -47,8 +47,9 @@ export default function MarcoDock() {
 }
 
 function Tab({ t, active, onClick }: { t: TabDef; active: boolean; onClick: () => void }) {
+  const guide = t.href === "/kitchen" ? "tab-kitchen" : t.href === "/friends-stack" ? "tab-table" : undefined;
   return (
-    <button onClick={onClick} aria-label={t.label} aria-current={active ? "page" : undefined} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 50, height: 42, borderRadius: 14, background: active ? INK : "transparent", border: "none" }}>
+    <button onClick={onClick} data-guide={guide} aria-label={t.label} aria-current={active ? "page" : undefined} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 50, height: 42, borderRadius: 14, background: active ? INK : "transparent", border: "none" }}>
       {t.icon(active ? PAPER : INK)}
     </button>
   );
