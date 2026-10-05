@@ -133,22 +133,28 @@ export default function MarcoGuide() {
   }
   const toggle = (v: string) => setPicks((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
 
+  const idx = STEPS.findIndex((s) => s.key === active.key);
   const Header = (
-    <div className="flex items-center gap-2.5">
-      <span className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 34, height: 34, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={27} /></span>
-      <div className="min-w-0 flex-1">
-        <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
-        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK, lineHeight: 1.08 }}>{active.title}</div>
+    <>
+      <div className="flex items-center justify-center gap-1.5" style={{ marginBottom: 12 }}>
+        {STEPS.map((_, i) => <span key={i} aria-hidden style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 99, background: i <= idx ? TOMATO : "rgba(23,20,16,0.2)", transition: "all .3s" }} />)}
       </div>
-      <button onClick={dismiss} aria-label="Hide guide" style={{ fontSize: 16, color: INK, opacity: 0.4, background: "none", border: "none", flexShrink: 0 }}>✕</button>
-    </div>
+      <div className="flex items-center gap-2.5">
+        <span className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 34, height: 34, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={27} /></span>
+        <div className="min-w-0 flex-1">
+          <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK, lineHeight: 1.08 }}>{active.title}</div>
+        </div>
+        <button onClick={dismiss} aria-label="Hide guide" style={{ fontSize: 16, color: INK, opacity: 0.4, background: "none", border: "none", flexShrink: 0 }}>✕</button>
+      </div>
+    </>
   );
 
   // ── Inline captures (allergies / taste) — a centered premium card ──────────
   if (active.kind === "allergies" || active.kind === "taste") {
     return (
       <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" style={{ background: "rgba(23,20,16,0.5)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", padding: 14, animation: "mg-fade .3s ease both" }}>
-        <div className="w-full" style={{ maxWidth: 420, background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", border: `2.5px solid ${INK}`, borderRadius: 20, padding: 18, boxShadow: "0 26px 60px rgba(23,20,16,0.4)", animation: "mg-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+        <div key={active.key} className="w-full" style={{ maxWidth: 420, background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", border: `2.5px solid ${INK}`, borderRadius: 20, padding: 18, boxShadow: "0 26px 60px rgba(23,20,16,0.4)", animation: "mg-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
           {Header}
           <p style={{ fontFamily: SANS, fontSize: 13.5, color: "#4A4742", marginTop: 8, lineHeight: 1.4 }}>{active.body}</p>
 
@@ -193,7 +199,7 @@ export default function MarcoGuide() {
         <div style={{ position: "fixed", inset: 0, background: "rgba(23,20,16,0.4)" }} />
       )}
 
-      <div className="absolute inset-x-0" style={{ bottom: "calc(env(safe-area-inset-bottom,0px) + 96px)", padding: "0 16px", pointerEvents: "auto", animation: "mg-up .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+      <div key={active.key} className="absolute inset-x-0" style={{ bottom: "calc(env(safe-area-inset-bottom,0px) + 96px)", padding: "0 16px", pointerEvents: "auto", animation: "mg-up .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
         <div className="mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: 15, boxShadow: "0 20px 46px rgba(23,20,16,0.4)", transform: "rotate(-0.4deg)" }}>
           {Header}
           <p style={{ fontFamily: SANS, fontSize: 13.5, color: "#4A4742", marginTop: 8, lineHeight: 1.4 }}>{active.body}</p>
