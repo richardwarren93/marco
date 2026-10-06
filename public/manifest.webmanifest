@@ -2,7 +2,7 @@
   "name": "Marco",
   "short_name": "Marco",
   "description": "Save recipes from anywhere. Plan meals in seconds. Shop and earn back.",
-  "start_url": "/recipes",
+  "start_url": "/kitchen",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

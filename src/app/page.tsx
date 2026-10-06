@@ -6,7 +6,7 @@ export default async function HomePage() {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/friends-stack"); // the new social app is home now
+    redirect("/kitchen"); // Kitchen is home — onboarding, the guide and Tonight live there
   } else {
     redirect("/auth/signup");
   }

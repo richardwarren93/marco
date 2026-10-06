@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isEligible, tagsSafe, type FoodTag } from "@/lib/cook/cookAround";
 
 // Curated starter recipes the guide's "Surprise me 🎰" lottery can land on, so
 // a new cook always has something real to save or cook. POST { slug } seeds that
@@ -9,6 +10,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 type Starter = {
   slug: string;
+  allergens: FoodTag[]; // authoritative safety tags — keyword checks are only a backstop
   title: string;
   image_url: string;
   description: string;
@@ -23,6 +25,7 @@ type Starter = {
 const STARTERS: Starter[] = [
   {
     slug: "mapo-tofu",
+    allergens: ["meat", "pork", "soy", "gluten"],
     title: "Mapo Tofu",
     image_url: "/onboarding/recipes/mapo-tofu.jpg",
     description: "Silken tofu in a numbing, chili-bean sauce — fast, cheap, and deeply savory.",
@@ -51,6 +54,7 @@ const STARTERS: Starter[] = [
   },
   {
     slug: "shrimp-scampi",
+    allergens: ["shellfish", "dairy", "gluten"],
     title: "Shrimp Scampi",
     image_url: "/onboarding/recipes/shrimp scampi.jpg",
     description: "Garlicky, lemony shrimp and linguine in a glossy butter-wine sauce. On the table in 20.",
@@ -77,6 +81,7 @@ const STARTERS: Starter[] = [
   },
   {
     slug: "chicken-shawarma",
+    allergens: ["meat", "dairy", "gluten"],
     title: "Chicken Shawarma",
     image_url: "/onboarding/recipes/Chicken-Shawarma-8.jpg",
     description: "Warm-spiced, yogurt-marinated thighs charred in a skillet and tucked into pita.",
@@ -103,6 +108,7 @@ const STARTERS: Starter[] = [
   },
   {
     slug: "fettuccine-alfredo",
+    allergens: ["dairy", "gluten", "eggs"],
     title: "Fettuccine Alfredo",
     image_url: "/onboarding/recipes/fettuccine-alfredo.jpg",
     description: "Silky parmesan cream clinging to fresh fettuccine — comfort in fifteen minutes.",
@@ -125,6 +131,7 @@ const STARTERS: Starter[] = [
   },
   {
     slug: "salmon-teriyaki",
+    allergens: ["fish", "soy", "gluten", "sesame"],
     title: "Salmon Teriyaki",
     image_url: "/onboarding/recipes/salmon terriyaki.jpg",
     description: "Crisp-skinned salmon glazed in a quick homemade teriyaki. Weeknight hero.",
@@ -149,6 +156,7 @@ const STARTERS: Starter[] = [
   },
   {
     slug: "creamy-pork-stew",
+    allergens: ["meat", "pork", "dairy", "gluten"],
     title: "Creamy Pork Stew",
     image_url: "/onboarding/recipes/245361-creamy-pork-stew-Beauty-4x3-a56080e9b5a4462a8dad0a7661f6d1f4.jpg",
     description: "Low-and-slow pork and carrots in a mustardy cream — the pot you come home to.",
@@ -174,22 +182,59 @@ const STARTERS: Starter[] = [
   },
 ];
 
+// The starters this cook can safely be dealt, given their diets + allergies.
+// Fails CLOSED: if we can't read their preferences, we deal nothing.
+async function eligibleStarters(admin: ReturnType<typeof createAdminClient>, userId: string): Promise<Starter[]> {
+  const [prof, prefs] = await Promise.all([
+    admin.from("user_profiles").select("dietary_filters").eq("user_id", userId).maybeSingle(),
+    admin.from("user_preferences").select("allergies").eq("user_id", userId).maybeSingle(),
+  ]);
+  if (prof.error || prefs.error) throw new Error("preferences unavailable");
+  const diets = ((prof.data as { dietary_filters?: string[] } | null)?.dietary_filters) ?? [];
+  const allergies = ((prefs.data as { allergies?: string[] } | null)?.allergies) ?? [];
+  return STARTERS.filter((s) => tagsSafe(s.allergens, diets, allergies) && isEligible(s.ingredients.map((i) => i.name), diets, allergies));
+}
+
+// GET → which starters the Surprise reel may show this cook.
+export async function GET() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    const eligible = await eligibleStarters(createAdminClient(), user.id);
+    return NextResponse.json({ slugs: eligible.map((s) => s.slug) }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch {
+    return NextResponse.json({ error: "Couldn't check what fits how you cook." }, { status: 503 });
+  }
+}
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json().catch(() => ({} as { slug?: string }));
-  const chosen = (typeof body.slug === "string" && STARTERS.find((s) => s.slug === body.slug))
-    || STARTERS[Math.floor(Math.random() * STARTERS.length)];
-
   const admin = createAdminClient();
+  let eligible: Starter[];
+  try { eligible = await eligibleStarters(admin, user.id); }
+  catch { return NextResponse.json({ error: "Couldn't check what fits how you cook." }, { status: 503 }); }
+  if (!eligible.length) return NextResponse.json({ error: "No starter fits how you cook yet." }, { status: 409 });
+  // Asked for a specific dish? Only that dish, and only if it's safe — never
+  // silently swap in something else. No slug → a random safe one.
+  let chosen: Starter;
+  if (typeof body.slug === "string") {
+    const hit = eligible.find((s) => s.slug === body.slug);
+    if (!hit) return NextResponse.json({ error: "That one doesn't fit how you cook." }, { status: 409 });
+    chosen = hit;
+  } else {
+    chosen = eligible[Math.floor(Math.random() * eligible.length)];
+  }
 
   // Deduped by title so repeat spins reuse the same row instead of piling up.
   const { data: existing } = await admin.from("recipes").select("id, title").eq("user_id", user.id).eq("title", chosen.title).maybeSingle();
   if (existing) return NextResponse.json({ seeded: false, recipe: existing });
 
-  const { slug: _slug, ...fields } = chosen; void _slug;
+  const { slug: _slug, allergens: _allergens, ...fields } = chosen; void _slug; void _allergens;
   const { data, error } = await admin.from("recipes").insert({
     user_id: user.id,
     ...fields,

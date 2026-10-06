@@ -1,17 +1,21 @@
 "use client";
 
-/* The ongoing in-app guide. After onboarding (tour + name), Marco walks you
-   through setup + the core loop AS YOU ACTUALLY DO IT — one step at a time,
-   popping up and nudging you to the right tab, until you're through. Completion
-   is data-driven (/api/quests), so it self-advances and stays quiet once done.
-   Allergies + taste are captured inline; the rest point you to the real action. */
+/* The first-run guide, in two chapters.
+   Chapter 1 — "your kitchen": cook around (diets + allergies) → this or that
+   (taste) → save a recipe (or Surprise me) → when are you cooking it? (plans it,
+   fills groceries, asks for notifications in context) → graduation.
+   Chapter 2 — "your people": one step — start a chat with Marco and add your
+   household or your table. If you don't, Home keeps a persistent button for it.
+   Completion is data-driven (/api/quests). It can't be dismissed, only skipped
+   step by step, and it only appears on Kitchen and Table so it never blocks
+   Grocery, Plan or Profile. */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 import { requestNotifications } from "@/lib/native/notifications";
-import { ensureCrew, postCook } from "@/lib/social";
+import { DIET_OPTIONS, ALLERGY_OPTIONS, tagsSafe, type FoodTag } from "@/lib/cook/cookAround";
 import { guideStore } from "./guideStore";
 
 const INK = "#171410";
@@ -19,56 +23,55 @@ const PAPER = "#FBF7EE";
 const TOMATO = "#E5462E";
 const LIME = "#C4EE45";
 const BUTTER = "#FFD84D";
+const COBALT = "#2540E8";
 const DISP = '"Marker Felt", Georgia, serif';
 const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
 const SANS = "system-ui, -apple-system, sans-serif";
 const img = (p: string) => encodeURI(p);
+const SHEET_SHADOW = `5px 6px 0 ${INK}`;
 
 type Done = Record<string, boolean>;
+type Kind = "around" | "duel" | "action" | "plan" | "graduate";
 type Step = {
   key: string;
-  kind: "allergies" | "taste" | "notifications" | "action";
+  kind: Kind;
+  chapter: 1 | 2;
   title: string;
   body: string;
-  phase?: string;       // kicker shown above the card when a new phase begins
-  home?: string;        // tab the guide drifts to when this step is active
   cta?: string;
-  ctaRoute?: string;    // route to push on CTA…
-  ctaChat?: "household" | "table"; // …or open the Marco group chat instead
-  secondary?: { label: string; mark?: "household_skip"; route?: string };
-  spotlight?: string;   // selector to cut a spotlight around (e.g. the + button)
-  surprise?: boolean;   // show the "Surprise me 🎰" slot-machine option
+  ctaRoute?: string;
+  ctaChat?: boolean;
+  secondary?: { label: string; mark: "people_skip" };
+  spotlight?: string;
+  surprise?: boolean;
 };
 
-// One coherent journey. Phase 1 is the core loop (+ taste + notifications);
-// phase 2 — "let's set up your kitchen" — brings in your people.
-const KITCHEN = "let's set up your kitchen";
 const STEPS: Step[] = [
-  { key: "allergies", kind: "allergies", title: "Anything we should cook around?", body: "Marco keeps these out of every suggestion." },
-  { key: "recipe", kind: "action", title: "Save a recipe", body: "Tap the + below, then “Add a recipe” — paste a link or snap a photo. Or let Marco pick one.", cta: "Add a recipe →", ctaRoute: "/recipes?import=1", spotlight: "[data-guide='create']", surprise: true },
-  { key: "cook", kind: "action", title: "Cook a recipe", body: "Tap the + and pick “I cooked something” — snap what you made. Or let Marco pick what to cook.", cta: "I cooked something →", ctaRoute: "/i-cooked", spotlight: "[data-guide='create']", surprise: true },
-  { key: "taste", kind: "taste", title: "Your taste profile", body: "Tap the dishes you'd actually cook. Marco learns from these." },
-  { key: "notifications", kind: "notifications", title: "Stay on track", body: "A nudge before dinner keeps your streak alive — and the right recipe in front of you at the right time." },
-  { key: "household", kind: "action", phase: KITCHEN, title: "Cook with your household", body: "Start a group chat with Marco and add whoever you cook with — everything you text in saves to your shared kitchen.", cta: "Start the group chat →", ctaChat: "household", secondary: { label: "it's just me for now", mark: "household_skip" } },
-  { key: "table", kind: "action", phase: KITCHEN, title: "Start a table", body: "Your people, in one place. Start a table and bring them in by text.", cta: "Start a table →", ctaRoute: "/crew", spotlight: "[data-guide='tab-table']" },
-  { key: "potluck", kind: "action", phase: KITCHEN, title: "Throw a potluck", body: "Tap the + and pick “Start a Potluck” — a theme + a deadline.", cta: "Start a potluck →", ctaRoute: "/potluck", spotlight: "[data-guide='create']" },
+  { key: "allergies", kind: "around", chapter: 1, title: "Anything I should cook around?", body: "I'll keep these out of everything I suggest." },
+  { key: "taste", kind: "duel", chapter: 1, title: "This or that?", body: "Tap the one you'd rather cook." },
+  { key: "recipe", kind: "action", chapter: 1, title: "Save your first recipe", body: "Tap + below, then Add a recipe — paste a link or snap a photo. Or let me pick one.", cta: "Add a recipe", ctaRoute: "/recipes?import=1", spotlight: "[data-guide='create']", surprise: true },
+  { key: "plan", kind: "plan", chapter: 1, title: "When are you cooking it?", body: "I'll put it on your plan and build your grocery list." },
+  { key: "graduate", kind: "graduate", chapter: 1, title: "Your kitchen is open", body: "" },
+  { key: "people", kind: "action", chapter: 2, title: "Cook with your people", body: "Start a group chat with me, then add your household or your table. Any recipe dropped in the chat lands in your shared kitchen.", cta: "Start a chat with Marco", ctaChat: true, secondary: { label: "Just me for now", mark: "people_skip" } },
+];
+const CHAPTER1 = STEPS.filter((s) => s.chapter === 1 && s.kind !== "graduate");
+
+// The this-or-that duel. Explicit allergen/diet tags (shared with the server's
+// starter checks) so we never show a dish someone can't eat.
+const DUEL: { t: string; img: string; tags: FoodTag[] }[] = [
+  { t: "Mapo Tofu", img: "/onboarding/recipes/mapo-tofu.jpg", tags: ["meat", "pork", "soy", "gluten"] },
+  { t: "Shrimp Scampi", img: "/onboarding/recipes/shrimp scampi.jpg", tags: ["shellfish", "dairy", "gluten"] },
+  { t: "Chicken Shawarma", img: "/onboarding/recipes/Chicken-Shawarma-8.jpg", tags: ["meat", "dairy", "gluten"] },
+  { t: "Tabbouleh", img: "/onboarding/recipes/tabbouleh.jpg", tags: ["gluten"] },
+  { t: "Salmon Teriyaki", img: "/onboarding/recipes/salmon terriyaki.jpg", tags: ["fish", "soy", "gluten", "sesame"] },
+  { t: "Buffalo Wings", img: "/onboarding/recipes/buffalowings.jpg", tags: ["meat", "dairy"] },
+  { t: "Ceviche", img: "/onboarding/recipes/ceviche.jpg", tags: ["fish"] },
+  { t: "Lamb Biryani", img: "/onboarding/recipes/lamb-biryani-83e5c3d.jpg", tags: ["meat", "dairy", "treenuts"] },
+  { t: "Fettuccine Alfredo", img: "/onboarding/recipes/fettuccine-alfredo.jpg", tags: ["dairy", "gluten", "eggs"] },
+  { t: "Smoked Brisket", img: "/onboarding/recipes/smoked-brisket.jpg", tags: ["meat"] },
 ];
 
-const ALLERGY_OPTIONS = ["Peanuts", "Tree nuts", "Dairy", "Gluten", "Shellfish", "Eggs", "Soy", "Fish"];
-const DISHES = [
-  { t: "Mapo Tofu", img: "/onboarding/recipes/mapo-tofu.jpg" },
-  { t: "Shrimp Scampi", img: "/onboarding/recipes/shrimp scampi.jpg" },
-  { t: "Chicken Shawarma", img: "/onboarding/recipes/Chicken-Shawarma-8.jpg" },
-  { t: "Buffalo Wings", img: "/onboarding/recipes/buffalowings.jpg" },
-  { t: "Lamb Biryani", img: "/onboarding/recipes/lamb-biryani-83e5c3d.jpg" },
-  { t: "Salmon Teriyaki", img: "/onboarding/recipes/salmon terriyaki.jpg" },
-  { t: "Smoked Brisket", img: "/onboarding/recipes/smoked-brisket.jpg" },
-  { t: "Creamy Pork Stew", img: "/onboarding/recipes/245361-creamy-pork-stew-Beauty-4x3-a56080e9b5a4462a8dad0a7661f6d1f4.jpg" },
-  { t: "Fettuccine Alfredo", img: "/onboarding/recipes/fettuccine-alfredo.jpg" },
-];
-
-// The "Surprise me 🎰" reel — slugs match the server's curated starters
-// (/api/recipes/seed). Only the current frame is ever shown (slot-machine style).
+// The Surprise reel — slugs match the server's curated starters (/api/recipes/seed).
 const SURPRISES = [
   { slug: "mapo-tofu", title: "Mapo Tofu", img: "/onboarding/recipes/mapo-tofu.jpg" },
   { slug: "shrimp-scampi", title: "Shrimp Scampi", img: "/onboarding/recipes/shrimp scampi.jpg" },
@@ -77,295 +80,523 @@ const SURPRISES = [
   { slug: "salmon-teriyaki", title: "Salmon Teriyaki", img: "/onboarding/recipes/salmon terriyaki.jpg" },
   { slug: "creamy-pork-stew", title: "Creamy Pork Stew", img: "/onboarding/recipes/245361-creamy-pork-stew-Beauty-4x3-a56080e9b5a4462a8dad0a7661f6d1f4.jpg" },
 ];
+type Reel = typeof SURPRISES;
 
-const HIDE_ON = ["/auth", "/onboarding", "/login", "/i-cooked", "/create", "/connect", "/crew", "/potluck", "/recipes"];
+// The guide only lives on the two homes — it never blocks Grocery, Plan or Profile.
+const SHOW_ON = ["/kitchen", "/friends-stack"];
 const fetcher = async (u: string) => { const r = await fetch(u); if (!r.ok) throw new Error("x"); return r.json(); };
+const post = (u: string, body: unknown) => fetch(u, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+const reducedMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+// Local (not UTC) calendar dates, so "tonight" is tonight wherever you are.
+const localISO = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const daysFromNow = (n: number) => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
+function weekendDate(): Date { const day = new Date().getDay(); return day === 6 || day === 0 ? new Date() : daysFromNow(6 - day); }
 
 export default function MarcoGuide() {
   const pathname = usePathname() || "";
   const router = useRouter();
-  const [skipped, setSkipped] = useState<string[]>([]);
-  const [busy, setBusy] = useState(false);
-  const [picks, setPicks] = useState<string[]>([]);
-  const [marcoNumber, setMarcoNumber] = useState("");
-  const [spin, setSpin] = useState<{ for: "recipe" | "cook"; idx: number; landed: boolean; recipeId?: string } | null>(null);
-  type Reveal = { selector: string; note: string; next?: { selector: string; note: string } };
-  const [reveal, setReveal] = useState<Reveal | null>(null);
-  const [revealRect, setRevealRect] = useState<DOMRect | null>(null);
   const { mutate: globalMutate } = useSWRConfig();
-  const navedFor = useRef<string | null>(null);
+  const [skipped, setSkipped] = useState<string[]>([]);
+  const [skipsLoaded, setSkipsLoaded] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [diets, setDiets] = useState<string[]>([]);
+  const [allergies, setAllergies] = useState<string[]>([]);
+  const [aroundLoaded, setAroundLoaded] = useState(false);
+  const [aroundErr, setAroundErr] = useState("");
+  const touched = useRef(false);
+  const [round, setRound] = useState(0);
+  const [winners, setWinners] = useState<string[]>([]);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const [marcoNumber, setMarcoNumber] = useState("");
+  // The reel snapshots its dishes at spin start, so it never empties mid-reveal.
+  const [spin, setSpin] = useState<{ idx: number; landed: boolean; failed?: boolean; items: Reel } | null>(null);
+  const [reveal, setReveal] = useState<{ selector: string; note: string } | null>(null);
+  const [revealRect, setRevealRect] = useState<DOMRect | null>(null);
+  const [planned, setPlanned] = useState<{ label: string; title: string; image_url: string | null; ingredientCount: number } | null>(null);
+  const [planErr, setPlanErr] = useState("");
+  const [pickDay, setPickDay] = useState(false);
+  const spinning = useRef(false);
 
-  // You can skip the current step to move on — there's no way to dismiss the
-  // guide itself. Skipped steps are remembered so it advances, never loops.
-  useEffect(() => { try { const raw = localStorage.getItem("marco_guide_skipped"); if (raw) setSkipped(JSON.parse(raw)); } catch { /* ignore */ } }, []);
-  // Marco's number — so the household/table steps can open a group chat with him.
-  useEffect(() => { void fetch("/api/imessage/link", { cache: "no-store" }).then((r) => r.ok ? r.json() : null).then((v) => { if (v?.marcoNumber) setMarcoNumber(v.marcoNumber); }).catch(() => {}); }, []);
-
-  const hidden = HIDE_ON.some((p) => pathname.startsWith(p));
-  const { data, mutate } = useSWR<{ done: Done }>(hidden ? null : "/api/quests", fetcher, { revalidateOnFocus: true, revalidateOnMount: true });
+  const shown = SHOW_ON.includes(pathname);
+  const { data, mutate } = useSWR<{ done: Done; uid?: string }>(shown ? "/api/quests" : null, fetcher, { revalidateOnFocus: true, revalidateOnMount: true });
   const done = data?.done;
-  const active = done ? STEPS.find((s) => !done[s.key] && !skipped.includes(s.key)) ?? null : null;
+  const uid = data?.uid;
 
-  // Re-check progress whenever the route changes (you just did the thing).
-  useEffect(() => { if (!hidden) void mutate(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Gently drift to the step's home tab when a NEW step becomes active.
+  // Skips are remembered per ACCOUNT (not per device), once we know who you are.
+  const skipKey = uid ? `marco_guide_skipped:${uid}` : null;
   useEffect(() => {
-    if (!active || hidden) return;
-    if (active.home && navedFor.current !== active.key && pathname !== active.home && (pathname === "/kitchen" || pathname === "/friends-stack")) {
-      navedFor.current = active.key;
-      router.push(active.home);
-    }
-    setPicks([]);
-  }, [active?.key]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!skipKey) return;
+    try { const raw = localStorage.getItem(skipKey); setSkipped(raw ? JSON.parse(raw) : []); } catch { setSkipped([]); }
+    setSkipsLoaded(true);
+  }, [skipKey]);
+  function addSkip(key: string, persist = true) {
+    setSkipped((prev) => {
+      if (prev.includes(key)) return prev;
+      const next = [...prev, key];
+      if (persist && skipKey) { try { localStorage.setItem(skipKey, JSON.stringify(next)); } catch { /* ignore */ } }
+      return next;
+    });
+  }
 
-  // ── Spotlight rect (for action steps that highlight a target) ──────────────
+  // Plan only makes sense once there's a recipe to plan.
+  const applicable = (s: Step) => !(s.key === "plan" && !done?.recipe);
+  const active = done && skipsLoaded ? STEPS.find((s) => applicable(s) && !done[s.key] && !skipped.includes(s.key)) ?? null : null;
+  const holding = !!(planned || reveal || spin); // finish the current beat before advancing
+
+  useEffect(() => { if (shown) void mutate(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Diets + allergies (saved earlier, or from this session) — the duel and the
+  // reel respect them. A late load never overwrites chips you already tapped.
+  useEffect(() => {
+    if (!shown) return;
+    void Promise.all([fetch("/api/user/dietary").then((r) => (r.ok ? r.json() : null)), fetch("/api/user/allergies").then((r) => (r.ok ? r.json() : null))])
+      .then(([d, a]) => { if (touched.current) return; if (Array.isArray(d?.filters)) setDiets(d.filters); if (Array.isArray(a?.allergies)) setAllergies(a.allergies); })
+      .catch(() => {})
+      .finally(() => setAroundLoaded(true));
+  }, [shown]);
+  const { data: elig } = useSWR<{ slugs: string[] }>(shown && active?.key === "recipe" ? "/api/recipes/seed" : null, fetcher);
+  const reel = useMemo(() => SURPRISES.filter((s) => elig?.slugs?.includes(s.slug)), [elig]);
+  const { data: planRecipe } = useSWR<{ recipe: { id: string; title: string; image_url: string | null } | null }>(shown && (active?.key === "plan" || active?.key === "graduate") ? "/api/guide/plan" : null, fetcher);
+
+  const duel = useMemo(() => DUEL.filter((d) => tagsSafe(d.tags, diets, allergies)), [diets, allergies]);
+  const rounds = Math.min(3, Math.floor(duel.length / 2));
+
+  // Spotlight rect for action steps (+ button) and for reveals.
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const target = reveal?.selector ?? (active?.kind === "action" ? active.spotlight : undefined);
   useEffect(() => {
-    const sel = active?.spotlight;
-    if (!sel || hidden) { setRect(null); return; }
-    let raf = 0;
-    const measure = () => { const el = document.querySelector(sel); setRect(el ? el.getBoundingClientRect() : null); };
-    measure();
-    const onMove = () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(measure); };
-    window.addEventListener("resize", onMove); window.addEventListener("scroll", onMove, true);
-    const id = setInterval(measure, 600);
-    return () => { window.removeEventListener("resize", onMove); window.removeEventListener("scroll", onMove, true); clearInterval(id); cancelAnimationFrame(raf); };
-  }, [active?.key, active?.spotlight, hidden]);
-
-  // Measure the "here's your saved recipe" spotlight target (after a surprise save).
-  useEffect(() => {
-    if (!reveal) { setRevealRect(null); return; }
-    let done = false;
-    const measure = () => { const el = document.querySelector(reveal.selector); if (el) { setRevealRect(el.getBoundingClientRect()); if (!done) { done = true; el.scrollIntoView({ block: "center", behavior: "smooth" }); } } };
-    const t = setTimeout(measure, 350);
-    const id = setInterval(measure, 500);
-    return () => { clearTimeout(t); clearInterval(id); };
-  }, [reveal]);
-
-  // Tell the rest of the app the guide is driving, so surfaces hide their own
-  // redundant nudges and the spotlight stays the one clear thing.
-  useEffect(() => { guideStore.set(!hidden && !!active); }, [hidden, active]);
-  useEffect(() => () => guideStore.set(false), []);
-
-  if (hidden || !active) return null;
-
-  // "Surprise me 🎰" — a slot-machine spin that lands on a curated starter and
-  // seeds it. On "save a recipe" it drops into your kitchen and advances; on
-  // "cook a recipe" it takes you straight into cooking that dish.
-  function surpriseMe(forStep: "recipe" | "cook") {
-    const target = Math.floor(Math.random() * SURPRISES.length);
-    setSpin({ for: forStep, idx: Math.floor(Math.random() * SURPRISES.length), landed: false });
-    let tick = 0;
-    const total = 22;
-    const step = () => {
-      tick++;
-      setSpin((s) => (s && !s.landed ? { ...s, idx: (s.idx + 1) % SURPRISES.length } : s));
-      if (tick >= total) { setSpin((s) => (s ? { ...s, idx: target } : s)); void landOn(target, forStep); return; }
-      setTimeout(step, 55 + Math.pow(tick / total, 3) * 280); // steady → decelerating
+    if (!target || !shown) { setRect(null); setRevealRect(null); return; }
+    let first = true;
+    const measure = () => {
+      const el = document.querySelector(target);
+      // Bring a reveal target into view INSTANTLY before measuring, so its coach
+      // card is placed once, on the right side, instead of hopping after a scroll.
+      if (el && first && reveal) { first = false; el.scrollIntoView({ block: "center", behavior: "auto" }); }
+      const r = el ? el.getBoundingClientRect() : null;
+      if (reveal) setRevealRect(r); else setRect(r);
     };
-    setTimeout(step, 55);
-  }
-  async function landOn(idx: number, forStep: "recipe" | "cook") {
-    const opt = SURPRISES[idx];
-    let recipeId: string | undefined;
-    try {
-      const r = await fetch("/api/recipes/seed", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ slug: opt.slug }) });
-      if (r.ok) recipeId = (await r.json()).recipe?.id;
-    } catch { /* best-effort */ }
-    // Cook: log it straight away using the dish's own photo — no upload needed.
-    if (forStep === "cook") {
-      try { const crew = await ensureCrew(); await postCook({ crewId: crew?.id ?? null, title: opt.title, note: "", treatment: "polaroid", photoUrl: opt.img, sourceRecipeId: recipeId ?? null }); } catch { /* best-effort */ }
-    }
-    setSpin((s) => (s ? { ...s, idx, landed: true, recipeId } : s));
-    await mutate();
-    if (forStep === "recipe") {
-      try { await globalMutate((k) => typeof k === "string" && k.startsWith("/api/")); } catch { /* ignore */ }
-      setTimeout(() => { setSpin(null); router.push("/kitchen"); setReveal({ selector: "[data-guide='saved-recipe']", note: "saved! your recipes live right here — tap it anytime 🍅", next: { selector: "[data-guide='tab-mealplan']", note: "and you can drop any recipe onto your week here — we'll leave that for later." } }); }, 1300);
-    } else {
-      setTimeout(() => setSpin(null), 1600);
-    }
-  }
+    const t = setTimeout(measure, reveal ? 350 : 0);
+    const id = setInterval(measure, 500);
+    window.addEventListener("resize", measure);
+    return () => { clearTimeout(t); clearInterval(id); window.removeEventListener("resize", measure); };
+  }, [target, shown, reveal]);
 
-  // Skip the current step → it's remembered and the next step becomes active.
-  // There is no way to dismiss the guide as a whole.
-  function skipStep() {
-    if (!active) return;
-    const key = active.key;
-    setSkipped((prev) => { const next = prev.includes(key) ? prev : [...prev, key]; try { localStorage.setItem("marco_guide_skipped", JSON.stringify(next)); } catch { /* ignore */ } return next; });
-    setPicks([]);
-  }
+  useEffect(() => { guideStore.set(shown && (!!active || holding)); }, [shown, active, holding]);
+  useEffect(() => () => guideStore.set(false), []);
+  useEffect(() => { setRound(0); setWinners([]); setChosen(null); setPickDay(false); setPlanErr(""); setAroundErr(""); }, [active?.key]);
+  // Graduation: move focus to the headline without scrolling past it.
+  useEffect(() => {
+    if (active?.key !== "graduate") return;
+    const t = setTimeout(() => document.getElementById("mg-grad-title")?.focus({ preventScroll: true }), 60);
+    return () => clearTimeout(t);
+  }, [active?.key]);
 
-  async function saveAllergies(list: string[]) {
-    setBusy(true);
+  // A diet can leave fewer than two dishes to duel (e.g. vegan). Never stall:
+  // save what fits, or step past it (this session only).
+  useEffect(() => {
+    if (!shown || !aroundLoaded || active?.key !== "taste" || rounds >= 1) return;
+    if (duel.length === 1) {
+      void post("/api/user/taste", { liked: [duel[0].t] }).then((r) => (r.ok ? mutate() : Promise.reject())).catch(() => addSkip("taste", false));
+      return;
+    }
+    addSkip("taste", false);
+  }, [shown, aroundLoaded, active?.key, rounds, duel]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!shown || (!active && !holding)) return null;
+
+  // Put a coach card on whichever side of its target has more room, so it
+  // never covers the thing it points at.
+  const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+  const cardPos = (r: DOMRect | null): React.CSSProperties => {
+    if (!r) return { bottom: "calc(env(safe-area-inset-bottom,0px) + 14px)" };
+    return r.top > vh - r.bottom ? { bottom: vh - r.top + 22 } : { top: r.bottom + 22 };
+  };
+
+  const mark = (m: string) => post("/api/quests", { mark: m });
+  function skipStep() { if (active) addSkip(active.key); }
+
+  // ── beat handlers ───────────────────────────────────────────────────────────
+  async function saveAround() {
+    if (busy) return;
+    setBusy(true); setAroundErr("");
     try {
-      await fetch("/api/user/allergies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ allergies: list }) });
-      await fetch("/api/quests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mark: "allergies" }) });
-    } catch { /* best-effort */ }
-    setBusy(false); setPicks([]); await mutate();
-  }
-  async function saveTaste(list: string[]) {
-    setBusy(true);
-    try { await fetch("/api/user/taste", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ liked: list }) }); } catch { /* best-effort */ }
-    setBusy(false); setPicks([]); await mutate();
-  }
-  async function enableNotifications() {
-    setBusy(true);
-    try { await requestNotifications(); } catch { /* ignore */ }
-    try { await fetch("/api/quests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mark: "notifications" }) }); } catch { /* ignore */ }
+      const [d, a] = await Promise.all([post("/api/user/dietary", { filters: diets }), post("/api/user/allergies", { allergies })]);
+      if (!d.ok || !a.ok) throw new Error();
+      const m = await mark("allergies");
+      if (!m.ok) throw new Error();
+    } catch {
+      // Never mark this done unless the list really saved — the reel depends on it.
+      setAroundErr("That didn't save. Try again.");
+      setBusy(false);
+      return;
+    }
     setBusy(false); await mutate();
   }
-  // Open Messages pre-addressed to Marco with a seed — the user adds whoever
-  // they cook with to make it a group chat. Falls back to the link page when
-  // Marco's number isn't configured.
-  function startGroupChat(which: "household" | "table") {
-    const seed = which === "household"
-      ? "hey Marco — this is our kitchen 🍅 (add whoever you cook with, then text me recipes!)"
-      : "hey Marco — starting our table 🍅 (add your people!)";
-    if (marcoNumber) { try { window.location.href = `sms:${marcoNumber}&body=${encodeURIComponent(seed)}`; return; } catch { /* ignore */ } }
+  function pickDuel(t: string) {
+    if (chosen || busy) return;
+    setChosen(t);
+    const next = [...winners, t];
+    setTimeout(async () => {
+      if (next.length >= rounds) {
+        setBusy(true);
+        const r = await post("/api/user/taste", { liked: next }).catch(() => null);
+        setBusy(false); setChosen(null); setWinners([]);
+        if (r?.ok) await mutate(); else addSkip("taste", false);
+      } else { setChosen(null); setWinners(next); setRound((x) => x + 1); }
+    }, 420);
+  }
+  function surpriseMe() {
+    if (spinning.current || !reel.length) return;
+    spinning.current = true;
+    const items = reel.slice();
+    const targetIdx = Math.floor(Math.random() * items.length);
+    if (reducedMotion()) { setSpin({ idx: targetIdx, landed: false, items }); void landOn(targetIdx, items); return; }
+    setSpin({ idx: 0, landed: false, items });
+    let tick = 0;
+    const total = 12 + items.length;
+    const step = () => {
+      tick++;
+      setSpin((s) => (s && !s.landed ? { ...s, idx: (s.idx + 1) % items.length } : s));
+      if (tick >= total) { void landOn(targetIdx, items); return; }
+      setTimeout(step, 110 + Math.pow(tick / total, 3) * 300); // steady → decelerating, never strobing
+    };
+    setTimeout(step, 110);
+  }
+  async function landOn(idx: number, items: Reel) {
+    let ok = false;
+    try { const r = await post("/api/recipes/seed", { slug: items[idx].slug }); ok = r.ok; } catch { ok = false; }
+    // Never show a check mark for a save that didn't happen.
+    setSpin({ idx, landed: ok, failed: !ok, items });
+    if (!ok) { spinning.current = false; void globalMutate("/api/recipes/seed"); return; }
+    await mutate();
+    try { await globalMutate((k) => typeof k === "string" && k.startsWith("/api/")); } catch { /* ignore */ }
+    setTimeout(() => {
+      setSpin(null); spinning.current = false;
+      if (pathname !== "/kitchen") router.push("/kitchen");
+      setReveal({ selector: "[data-guide='saved-recipe']", note: "Saved. Your recipes live right here." });
+    }, 1300);
+  }
+  async function planFor(date: Date, label: string) {
+    if (busy) return;
+    setBusy(true); setPlanErr("");
+    try {
+      const r = await post("/api/guide/plan", { date: localISO(date), recipeId: planRecipe?.recipe?.id });
+      const v = await r.json();
+      if (!r.ok) throw new Error(v.error || "That didn't make it onto your plan. Try again.");
+      setPlanned({ label, title: v.title, image_url: v.image_url, ingredientCount: v.ingredientCount });
+      try { sessionStorage.setItem("marco_plan_label", label); } catch { /* ignore */ }
+    } catch (e) { setPlanErr(e instanceof Error ? e.message : "That didn't make it onto your plan. Try again."); }
+    setBusy(false);
+  }
+  async function finishPlan(wantsNotifications: boolean) {
+    if (busy) return;
+    setBusy(true);
+    if (wantsNotifications) {
+      let granted = false;
+      try { granted = await requestNotifications(); } catch { granted = false; }
+      if (granted) await mark("notifications").catch(() => {});
+    }
+    await mutate();
+    if (pathname !== "/kitchen") router.push("/kitchen");
+    // Set the next beat BEFORE clearing this one, so the plan sheet never flashes back.
+    setReveal({ selector: "[data-guide='tab-groceries']", note: "Your grocery list builds itself from your plan. It's right here." });
+    setPlanned(null);
+    setBusy(false);
+  }
+  async function graduate() {
+    if (busy) return;
+    setBusy(true);
+    await mark("graduated").catch(() => {});
+    addSkip("graduate"); // never trapped on this screen, even if the mark failed
+    setBusy(false); await mutate();
+  }
+  async function startChat() {
+    if (busy) return;
+    let n = marcoNumber;
+    if (!n) {
+      setBusy(true);
+      const v = await fetch("/api/imessage/link", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      setBusy(false);
+      n = v?.marcoNumber || "";
+      if (n) setMarcoNumber(n);
+    }
+    if (n) {
+      void mark("people_started").then(() => mutate()).catch(() => {});
+      window.location.href = `sms:${n}&body=${encodeURIComponent("hey Marco 🍅 this is our kitchen chat")}`;
+      return;
+    }
+    // No number to hand off to: send them to the connect page, and don't
+    // pretend the step happened — linking or a real person completes it.
     router.push("/connect/imessage");
   }
-  async function skipSecondary() {
-    const sec = active?.secondary;
-    if (sec?.mark) { setBusy(true); try { await fetch("/api/quests", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mark: sec.mark }) }); } catch { /* ignore */ } setBusy(false); await mutate(); }
-    else if (sec?.route) router.push(sec.route);
+  async function justMe() {
+    if (busy) return;
+    setBusy(true); await mark("people_skip").catch(() => {}); addSkip("people"); setBusy(false); await mutate();
   }
-  const toggle = (v: string) => setPicks((p) => p.includes(v) ? p.filter((x) => x !== v) : [...p, v]);
+  const toggle = (list: string[], set: (v: string[]) => void, v: string) => { touched.current = true; set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]); };
 
-  const idx = STEPS.findIndex((s) => s.key === active.key);
-  const Header = (
+  // ── shared pieces ──────────────────────────────────────────────────────────
+  const idx = active ? CHAPTER1.findIndex((s) => s.key === active.key) : -1;
+  const header = (title: string, chapter2?: boolean) => (
     <>
-      {active.phase && <div style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, textAlign: "center", marginBottom: 7, transform: "rotate(-1deg)" }}>{active.phase} ↓</div>}
-      <div className="flex items-center justify-center gap-1.5" style={{ marginBottom: 12 }}>
-        {STEPS.map((_, i) => <span key={i} aria-hidden style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 99, background: i <= idx ? TOMATO : "rgba(23,20,16,0.2)", transition: "all .3s" }} />)}
-      </div>
-      <div className="flex items-center gap-2.5">
-        <span className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 34, height: 34, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={27} /></span>
-        <div className="min-w-0 flex-1">
-          <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
-          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK, lineHeight: 1.08 }}>{active.title}</div>
+      {chapter2 ? (
+        <div style={{ fontFamily: HAND, fontSize: 15, color: COBALT, marginBottom: 8, transform: "rotate(-1deg)" }}>now, your people</div>
+      ) : idx >= 0 ? (
+        <div role="img" className="flex items-center gap-1.5" style={{ marginBottom: 12 }} aria-label={`Step ${idx + 1} of ${CHAPTER1.length}`}>
+          {CHAPTER1.map((_, i) => <span key={i} aria-hidden style={{ width: i === idx ? 20 : 7, height: 7, borderRadius: 99, background: i <= idx ? TOMATO : "rgba(23,20,16,0.18)", border: i === idx ? `1.5px solid ${INK}` : "none", transition: "all .3s" }} />)}
         </div>
-        <button onClick={skipStep} aria-label="Skip this step" style={{ fontFamily: HAND, fontSize: 13, color: INK, opacity: 0.5, background: "none", border: "none", flexShrink: 0, whiteSpace: "nowrap" }}>skip →</button>
+      ) : null}
+      <div className="flex items-start gap-2.5">
+        <span aria-hidden className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 36, height: 36, borderRadius: 99, background: chapter2 ? BUTTER : LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={29} greeting /></span>
+        <div className="min-w-0 flex-1">
+          <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 2 }}>Marco</div>
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: INK, lineHeight: 1.08 }}>{title}</div>
+        </div>
+        <button onClick={skipStep} aria-label="Skip this step" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.6, background: "none", border: "none", flexShrink: 0, padding: "6px 6px", minHeight: 44, minWidth: 44 }}>skip</button>
       </div>
     </>
   );
+  const primary = { color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 17, padding: "14px 0", borderRadius: 14, border: `2.5px solid ${INK}`, boxShadow: `3px 4px 0 ${INK}`, minHeight: 48 } as const;
+  const chip = (on: boolean, onColor: string) => ({ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, background: on ? onColor : PAPER, border: `2px solid ${INK}`, borderRadius: 99, padding: "8px 14px", minHeight: 44, boxShadow: on ? `2px 2px 0 ${INK}` : "none", transform: on ? "translate(-1px,-1px)" : "none", transition: "all .12s" }) as const;
 
-  // ── "Here's your saved recipe" — spotlight it in the kitchen, then continue ─
+  // ── reveal: spotlight a real control, one sentence, then move on ───────────
   if (reveal) {
     const r = revealRect;
     const pad = 8;
     return (
       <div className="fixed inset-0 z-[70]" style={{ pointerEvents: "none" }}>
         {r ? (
-          <div style={{ position: "fixed", top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2, borderRadius: 16, boxShadow: "0 0 0 9999px rgba(23,20,16,0.55), 0 0 0 3px rgba(196,238,69,0.9)", transition: "all .25s ease" }} />
-        ) : (
-          <div style={{ position: "fixed", inset: 0, background: "rgba(23,20,16,0.5)" }} />
-        )}
-        <div className="absolute inset-x-0" style={{ bottom: "calc(env(safe-area-inset-bottom,0px) + 96px)", padding: "0 16px", pointerEvents: "auto", animation: "mg-up .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-          <div className="mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: 15, boxShadow: "0 20px 46px rgba(23,20,16,0.4)", transform: "rotate(-0.4deg)" }}>
+          <div style={{ position: "fixed", top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2, borderRadius: 16, boxShadow: `0 0 0 3px ${LIME}, 0 0 0 5.5px ${INK}, 0 0 0 9999px rgba(23,20,16,0.5)`, transition: "all .25s ease" }} />
+        ) : <div style={{ position: "fixed", inset: 0, background: "rgba(23,20,16,0.45)" }} />}
+        <div role="dialog" aria-label={reveal.note} className="absolute inset-x-0" style={{ ...cardPos(r), padding: "0 14px", pointerEvents: "auto", animation: "mg-up .38s cubic-bezier(0.34,1.4,0.64,1) both" }}>
+          <div className="mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: 15, boxShadow: SHEET_SHADOW }}>
             <div className="flex items-center gap-2.5">
-              <span className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 34, height: 34, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={27} /></span>
-              <div className="min-w-0 flex-1">
-                <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 1 }}>Marco</div>
-                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, lineHeight: 1.12 }}>{reveal.note}</div>
-              </div>
+              <span aria-hidden className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 36, height: 36, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={29} greeting /></span>
+              <div aria-live="polite" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: INK, lineHeight: 1.15 }}>{reveal.note}</div>
             </div>
-            <button onClick={() => setReveal((rv) => (rv?.next ? { selector: rv.next.selector, note: rv.next.note } : null))} className="mt-3 w-full transition-transform active:scale-[0.98]" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "12px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>{reveal.next ? "Next →" : "Got it →"}</button>
+            <button autoFocus onClick={() => setReveal(null)} className="mt-3 w-full transition-transform active:scale-[0.98]" style={primary}>Got it</button>
           </div>
         </div>
-        <style>{`@keyframes mg-up{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}`}</style>
+        <Keyframes />
       </div>
     );
   }
 
-  // ── Surprise me — the slot-machine overlay (only the current frame shows) ──
+  // ── Surprise me — single-frame slot reel ───────────────────────────────────
   if (spin) {
-    const cur = SURPRISES[spin.idx];
+    const cur = spin.items[spin.idx] ?? spin.items[0];
+    const status = spin.failed ? "the reel jammed" : spin.landed ? "tonight's pick!" : "spinning…";
     return (
-      <div className="fixed inset-0 z-[80] flex items-center justify-center" style={{ background: "rgba(23,20,16,0.6)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", padding: 20, animation: "mg-fade .25s ease both" }}>
-        <div className="w-full text-center" style={{ maxWidth: 340, background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", border: `2.5px solid ${INK}`, borderRadius: 22, padding: 20, boxShadow: "0 26px 60px rgba(23,20,16,0.4)", animation: "mg-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-          <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, transform: "rotate(-2deg)" }}>🎰 {spin.landed ? "tonight's pick!" : "surprise me…"}</div>
-          <div className="relative mx-auto overflow-hidden" style={{ marginTop: 12, width: 230, height: 230, border: `3px solid ${INK}`, borderRadius: 16, background: "#fff", boxShadow: spin.landed ? `0 0 0 4px ${LIME}` : "inset 0 0 0 2px rgba(23,20,16,0.06)", transition: "box-shadow .2s" }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img key={spin.idx} src={img(cur.img)} alt={cur.title} referrerPolicy="no-referrer" style={{ width: "100%", height: "100%", objectFit: "cover", filter: spin.landed ? "none" : "blur(1px)", animation: spin.landed ? "mg-pop .35s cubic-bezier(0.34,1.56,0.64,1) both" : "none" }} />
-            <div className="absolute inset-x-0 bottom-0 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 17, color: PAPER, padding: "20px 10px 8px", background: "linear-gradient(to top, rgba(23,20,16,0.82), transparent)" }}>{cur.title}</div>
+      <div role="dialog" aria-modal="true" aria-label="Surprise me" className="fixed inset-0 z-[80] flex items-center justify-center" style={{ background: "rgba(23,20,16,0.55)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", padding: 20, animation: "mg-fade .2s ease both" }}>
+        <div className="w-full text-center" style={{ maxWidth: 330, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 22, padding: 20, boxShadow: SHEET_SHADOW, animation: "mg-up .35s cubic-bezier(0.34,1.4,0.64,1) both" }}>
+          <div style={{ fontFamily: HAND, fontSize: 18, color: TOMATO, transform: "rotate(-2deg)" }}>{status}</div>
+          {cur && (
+            <div aria-hidden={!spin.landed} className="relative mx-auto overflow-hidden" style={{ marginTop: 12, width: 226, height: 226, border: `3px solid ${INK}`, borderRadius: 16, background: "#fff", boxShadow: spin.landed ? `0 0 0 4px ${LIME}` : "none" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img key={spin.idx} src={img(cur.img)} alt={cur.title} style={{ width: "100%", height: "100%", objectFit: "cover", filter: spin.landed ? "none" : "blur(1.5px)", animation: spin.landed ? "mg-pop .35s cubic-bezier(0.34,1.56,0.64,1) both" : "none" }} />
+              <div className="absolute inset-x-0 bottom-0 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: PAPER, padding: "22px 10px 9px", background: "linear-gradient(to top, rgba(23,20,16,0.85), transparent)" }}>{cur.title}</div>
+            </div>
+          )}
+          <div role="status" aria-live="polite">
+            {spin.failed ? (
+              <>
+                <Body text="That one didn't save. Spin again?" />
+                <div className="mt-3 flex gap-2">
+                  <button onClick={() => setSpin(null)} className="flex-1" style={{ ...primary, background: PAPER, color: INK, fontSize: 15 }}>Close</button>
+                  <button onClick={() => { setSpin(null); setTimeout(surpriseMe, 50); }} className="flex-1" style={{ ...primary, fontSize: 15 }}>Spin again</button>
+                </div>
+              </>
+            ) : spin.landed ? (
+              <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, marginTop: 14 }}>{cur?.title} added to your kitchen ✓</div>
+            ) : <div style={{ height: 22, marginTop: 14 }} />}
           </div>
-          {spin.landed ? (
-            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, marginTop: 14 }}>{spin.for === "cook" ? "cooked it ✓" : "added to your kitchen ✓"}</div>
-          ) : (
-            <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.55, marginTop: 14 }}>spinning…</div>
-          )}
         </div>
-        <style>{`@keyframes mg-fade{from{opacity:0}to{opacity:1}}@keyframes mg-pop{0%{opacity:0;transform:scale(0.95) translateY(12px)}100%{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+        <Keyframes />
       </div>
     );
   }
 
-  // ── Inline captures (allergies / taste / notifications) — centered card ────
-  if (active.kind !== "action") {
+  // ── When are you cooking it? — the stamped result + an in-context ask ──────
+  if (planned) {
     return (
-      <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" style={{ background: "rgba(23,20,16,0.5)", backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)", padding: 14, animation: "mg-fade .3s ease both" }}>
-        <div key={active.key} className="w-full" style={{ maxWidth: 420, background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", border: `2.5px solid ${INK}`, borderRadius: 20, padding: 18, boxShadow: "0 26px 60px rgba(23,20,16,0.4)", animation: "mg-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-          {Header}
-          <p style={{ fontFamily: SANS, fontSize: 13.5, color: "#4A4742", marginTop: 8, lineHeight: 1.4 }}>{active.body}</p>
-
-          {active.kind === "allergies" ? (
-            <>
-              <div className="flex flex-wrap gap-2" style={{ marginTop: 14 }}>
-                {ALLERGY_OPTIONS.map((a) => { const on = picks.includes(a); return (
-                  <button key={a} onClick={() => toggle(a)} className="transition-transform active:scale-95" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: on ? PAPER : INK, background: on ? TOMATO : PAPER, border: `2px solid ${INK}`, borderRadius: 99, padding: "7px 14px" }}>{a}</button>
-                ); })}
-              </div>
-              <button onClick={() => saveAllergies(picks)} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>{busy ? "Saving…" : picks.length ? "Save & continue →" : "None — continue →"}</button>
-            </>
-          ) : active.kind === "taste" ? (
-            <>
-              <div className="grid grid-cols-3" style={{ gap: 8, marginTop: 14 }}>
-                {DISHES.map((d) => { const on = picks.includes(d.t); return (
-                  <button key={d.t} onClick={() => toggle(d.t)} className="relative overflow-hidden transition-transform active:scale-95" style={{ borderRadius: 11, border: `2.5px solid ${on ? TOMATO : INK}`, aspectRatio: "1/1", padding: 0, boxShadow: on ? "0 6px 14px rgba(229,70,46,0.3)" : "none" }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={img(d.img)} alt={d.t} referrerPolicy="no-referrer" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
-                    <span className="absolute inset-x-0 bottom-0 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 9, color: PAPER, padding: "8px 4px 3px", textAlign: "left", background: "linear-gradient(to top, rgba(23,20,16,0.82), transparent)" }}>{d.t}</span>
-                    {on && <span className="absolute flex items-center justify-center" style={{ top: 4, right: 4, width: 20, height: 20, borderRadius: 99, background: TOMATO, border: `2px solid ${PAPER}` }}><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg></span>}
-                  </button>
-                ); })}
-              </div>
-              <button onClick={() => saveTaste(picks)} disabled={busy || picks.length < 3} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-50" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>{busy ? "Saving…" : picks.length >= 3 ? "Save my taste →" : `Pick ${3 - picks.length} more`}</button>
-            </>
-          ) : (
-            <>
-              <button onClick={enableNotifications} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>{busy ? "…" : "Turn on notifications →"}</button>
-              <p style={{ fontFamily: HAND, fontSize: 13, color: INK, opacity: 0.6, textAlign: "center", marginTop: 9 }}>turn them off anytime</p>
-              <button onClick={skipStep} className="mx-auto mt-1.5 block" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.6, background: "none", border: "none" }}>maybe later</button>
-            </>
-          )}
+      <Sheet sheetKey="planned" label="On the menu">
+        <div className="flex items-center gap-3">
+          <div style={{ width: 84, flexShrink: 0, background: "#fff", border: `2px solid ${INK}`, padding: 5, paddingBottom: 4, transform: "rotate(-4deg)", boxShadow: `3px 4px 0 ${INK}` }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            {planned.image_url ? <img src={img(planned.image_url)} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} /> : <div style={{ aspectRatio: "1/1", background: BUTTER }} />}
+          </div>
+          <div className="min-w-0">
+            <div style={{ display: "inline-block", fontFamily: DISP, fontWeight: 700, fontSize: 13, color: PAPER, background: TOMATO, border: `2px solid ${INK}`, padding: "3px 9px", transform: "rotate(-3deg)", whiteSpace: "nowrap" }}>On the menu: {planned.label.toLowerCase()}</div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: INK, marginTop: 7, lineHeight: 1.1 }}>{planned.title}</div>
+            {planned.ingredientCount > 0 && <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.75, marginTop: 3 }}>its {planned.ingredientCount} ingredients are on your grocery list for that week</div>}
+          </div>
         </div>
-        <style>{`@keyframes mg-fade{from{opacity:0}to{opacity:1}}@keyframes mg-pop{0%{opacity:0;transform:scale(0.95) translateY(12px)}100%{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+        <div style={{ height: 2, background: "rgba(23,20,16,0.1)", margin: "18px 0 14px" }} />
+        <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Can I ping you?</div>
+        <Body text="Turn on notifications so I can reach you about your kitchen. You can turn them off anytime." />
+        <div className="mt-3 flex gap-2">
+          <button onClick={() => finishPlan(false)} disabled={busy} className="flex-1 disabled:opacity-60" style={{ ...primary, background: PAPER, color: INK, fontSize: 15 }}>Not now</button>
+          <button onClick={() => finishPlan(true)} disabled={busy} className="flex-[1.4] disabled:opacity-60" style={{ ...primary, fontSize: 15 }}>Turn on</button>
+        </div>
+      </Sheet>
+    );
+  }
+
+  if (!active) return null;
+
+  // ── Cook around — diets + allergies, one sheet ─────────────────────────────
+  if (active.kind === "around") {
+    return (
+      <Sheet sheetKey={active.key} label={active.title}>
+        {header(active.title)}
+        <Body text={active.body} />
+        <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.75, marginTop: 14 }}>I eat…</div>
+        <div className="flex flex-wrap gap-2" style={{ marginTop: 6 }}>
+          {DIET_OPTIONS.map((d) => <button key={d.id} aria-pressed={diets.includes(d.id)} onClick={() => toggle(diets, setDiets, d.id)} className="active:scale-95" style={chip(diets.includes(d.id), LIME)}>{d.label}</button>)}
+        </div>
+        <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.75, marginTop: 14 }}>I&apos;m allergic to…</div>
+        <div className="flex flex-wrap gap-2" style={{ marginTop: 6 }}>
+          {ALLERGY_OPTIONS.map((a) => <button key={a} aria-pressed={allergies.includes(a)} onClick={() => toggle(allergies, setAllergies, a)} className="active:scale-95" style={chip(allergies.includes(a), BUTTER)}>{a}</button>)}
+        </div>
+        <button onClick={saveAround} disabled={busy} className="mt-5 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={primary}>{busy ? "Saving…" : diets.length || allergies.length ? "Save" : "I eat everything"}</button>
+        {aroundErr && <p role="alert" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: TOMATO, marginTop: 10 }}>{aroundErr}</p>}
+      </Sheet>
+    );
+  }
+
+  // ── This or that — a few quick head-to-heads ───────────────────────────────
+  if (active.kind === "duel") {
+    if (!aroundLoaded || rounds < 1) return null;
+    const pair = duel.slice(round * 2, round * 2 + 2);
+    return (
+      <Sheet sheetKey={`${active.key}-${round}`} label={active.title}>
+        {header(active.title)}
+        <Body text={`${active.body} ${rounds > 1 ? `Round ${round + 1} of ${rounds}.` : ""}`} />
+        <div className="relative flex items-start justify-center gap-3" style={{ marginTop: 18, paddingBottom: 6 }}>
+          {pair.map((d, i) => {
+            const picked = chosen === d.t;
+            const faded = !!chosen && !picked;
+            return (
+              <button key={d.t} onClick={() => pickDuel(d.t)} disabled={!!chosen || busy} aria-label={`I'd rather cook ${d.t}`} className="relative flex-1" style={{ background: "#fff", border: `2.5px solid ${INK}`, padding: 6, paddingBottom: 4, borderRadius: 4, transform: `rotate(${i ? 3 : -3}deg) ${picked ? "scale(1.06)" : ""}`, boxShadow: picked ? `0 0 0 4px ${LIME}, 4px 5px 0 ${INK}` : `3px 4px 0 ${INK}`, opacity: faded ? 0.35 : 1, transition: "all .2s" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={img(d.img)} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
+                <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, padding: "6px 2px 2px", lineHeight: 1.1 }}>{d.t}</div>
+                {picked && <span aria-hidden className="absolute" style={{ top: 10, right: -8, fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, background: LIME, border: `2px solid ${INK}`, padding: "3px 9px", transform: "rotate(10deg)", boxShadow: `2px 2px 0 ${INK}`, animation: "mg-pop .25s cubic-bezier(0.34,1.56,0.64,1) both" }}>this one!</span>}
+              </button>
+            );
+          })}
+          <span aria-hidden className="absolute flex items-center justify-center" style={{ top: "38%", left: "50%", marginLeft: -21, width: 42, height: 42, borderRadius: 99, background: INK, color: BUTTER, fontFamily: HAND, fontWeight: 700, fontSize: 17, border: `2.5px solid ${PAPER}`, transform: "rotate(-8deg)" }}>or</span>
+        </div>
+      </Sheet>
+    );
+  }
+
+  // ── When are you cooking it? ───────────────────────────────────────────────
+  if (active.kind === "plan") {
+    const rec = planRecipe?.recipe;
+    const options: [string, Date][] = [["Tonight", new Date()], ["Tomorrow", daysFromNow(1)], ["This weekend", weekendDate()]];
+    return (
+      <Sheet sheetKey={active.key} label={active.title}>
+        {header(active.title)}
+        {rec && (
+          <div className="flex items-center gap-3" style={{ marginTop: 12 }}>
+            <div style={{ width: 58, flexShrink: 0, background: "#fff", border: `2px solid ${INK}`, padding: 4, transform: "rotate(-4deg)" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {rec.image_url ? <img src={img(rec.image_url)} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} /> : <div style={{ aspectRatio: "1/1", background: BUTTER }} />}
+            </div>
+            <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, lineHeight: 1.1 }}>{rec.title}</div>
+          </div>
+        )}
+        <Body text={active.body} />
+        <div className="grid grid-cols-2 gap-2" style={{ marginTop: 12 }}>
+          {options.map(([label, date], i) => (
+            <button key={label} onClick={() => planFor(date, label)} disabled={busy} className="active:scale-95 disabled:opacity-60" style={{ ...chip(false, LIME), borderRadius: 14, padding: "13px 0", fontSize: 16, gridColumn: i === 0 ? "span 2" : undefined, background: i === 0 ? LIME : PAPER, boxShadow: `2px 3px 0 ${INK}` }}>{label}</button>
+          ))}
+          <button onClick={() => setPickDay(true)} disabled={busy} className="active:scale-95" style={{ ...chip(false, LIME), borderRadius: 14, padding: "13px 0", fontSize: 16, gridColumn: "span 2", boxShadow: `2px 3px 0 ${INK}` }}>Pick a day</button>
+        </div>
+        {pickDay && (
+          <input type="date" min={localISO(new Date())} aria-label="Pick a day to cook it" onChange={(e) => { if (!e.target.value) return; const [y, m, d] = e.target.value.split("-").map(Number); const dt = new Date(y, m - 1, d); void planFor(dt, dt.toLocaleDateString(undefined, { weekday: "long" })); }} className="mt-3 w-full" style={{ background: "#fff", border: `2.5px solid ${INK}`, borderRadius: 12, padding: "12px 14px", fontFamily: SANS, fontSize: 16, color: INK }} />
+        )}
+        {planErr && <p role="alert" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: TOMATO, marginTop: 10 }}>{planErr}</p>}
+      </Sheet>
+    );
+  }
+
+  // ── Graduation — the one bold moment: your real things, taped in ───────────
+  if (active.kind === "graduate") {
+    const rec = planRecipe?.recipe;
+    let planLabel: string | null = null;
+    try { planLabel = sessionStorage.getItem("marco_plan_label"); } catch { /* ignore */ }
+    const around = [...diets.map((d) => DIET_OPTIONS.find((o) => o.id === d)?.label).filter(Boolean), ...allergies.map((a) => `no ${a.toLowerCase()}`)].slice(0, 4).join(", ");
+    return (
+      <div role="dialog" aria-modal="true" aria-labelledby="mg-grad-title" className="fixed inset-0 z-[85] flex flex-col overflow-y-auto overflow-x-hidden" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.06) 1px, transparent 1px)", backgroundSize: "13px 13px", padding: "calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)", animation: "mg-fade .3s ease both" }}>
+        <span aria-hidden style={{ position: "absolute", top: 38, left: -36, width: 170, height: 26, background: BUTTER, opacity: 0.85, transform: "rotate(-12deg)" }} />
+        <span aria-hidden style={{ position: "absolute", bottom: 66, right: -40, width: 170, height: 26, background: "#FF4D9D", opacity: 0.55, transform: "rotate(-9deg)" }} />
+        <div className="flex w-full flex-col items-center" style={{ margin: "auto 0", flexShrink: 0 }}>
+          <div aria-hidden style={{ animation: "mg-pop .5s cubic-bezier(0.34,1.56,0.64,1) both", flexShrink: 0 }}><TomatoMascot state="thriving" size={104} greeting /></div>
+          <h2 id="mg-grad-title" tabIndex={-1} style={{ outline: "none", fontFamily: DISP, fontWeight: 700, fontSize: 40, lineHeight: 1.02, color: INK, textAlign: "center", marginTop: 6 }}>Your kitchen is open.</h2>
+          <div className="relative" style={{ marginTop: 26, width: 260, height: 262, flexShrink: 0 }}>
+            {rec && (
+              <div style={{ position: "absolute", left: 22, top: 0, width: 168, background: "#fff", border: `2.5px solid ${INK}`, padding: 8, paddingBottom: 6, transform: "rotate(-5deg)", boxShadow: `5px 6px 0 ${INK}`, animation: "mg-drop .55s .15s cubic-bezier(0.34,1.4,0.64,1) both" }}>
+                <span aria-hidden style={{ position: "absolute", top: -10, left: 50, width: 64, height: 18, background: LIME, opacity: 0.9, transform: "rotate(4deg)" }} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {rec.image_url ? <img src={img(rec.image_url)} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} /> : <div style={{ aspectRatio: "1/1", background: BUTTER }} />}
+                <div style={{ fontFamily: HAND, fontSize: 15, color: INK, textAlign: "center", marginTop: 4 }}>{rec.title}</div>
+              </div>
+            )}
+            {done?.plan && <div style={{ position: "absolute", right: 0, top: 118, fontFamily: DISP, fontWeight: 700, fontSize: 14, color: PAPER, background: TOMATO, border: `2.5px solid ${INK}`, padding: "6px 11px", transform: "rotate(7deg)", boxShadow: `3px 3px 0 ${INK}`, whiteSpace: "nowrap", animation: "mg-drop .5s .45s cubic-bezier(0.34,1.4,0.64,1) both" }}>on the menu: {(planLabel || "soon").toLowerCase()}</div>}
+            {around && <div style={{ position: "absolute", left: 0, bottom: 0, maxWidth: 240, fontFamily: HAND, fontWeight: 700, fontSize: 14, color: INK, background: LIME, border: `2px solid ${INK}`, padding: "5px 10px", transform: "rotate(-3deg)", animation: "mg-drop .5s .7s cubic-bezier(0.34,1.4,0.64,1) both" }}>cooking around: {around}</div>}
+          </div>
+          <button onClick={graduate} disabled={busy} className="w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ ...primary, maxWidth: 360, marginTop: 30, fontSize: 19, padding: "16px 0", boxShadow: `5px 6px 0 ${INK}`, flexShrink: 0 }}>Let&apos;s eat</button>
+        </div>
+        <Keyframes />
       </div>
     );
   }
 
-  // ── Action steps — spotlight the target (if any) + a bottom coach card ─────
+  // ── Action steps — spotlight the real control + a coach sheet ──────────────
   const pad = 10;
+  const isPeople = active.chapter === 2;
   return (
     <div className="fixed inset-0 z-[70]" style={{ pointerEvents: "none" }}>
-      {/* spotlight cutout, or a soft full dim if there's no target */}
       {rect ? (
-        <div style={{ position: "fixed", top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2, borderRadius: 999, boxShadow: "0 0 0 9999px rgba(23,20,16,0.55), 0 0 0 3px rgba(196,238,69,0.9)", transition: "all .25s ease" }} />
-      ) : (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(23,20,16,0.4)" }} />
-      )}
-
-      <div key={active.key} className="absolute inset-x-0" style={{ bottom: "calc(env(safe-area-inset-bottom,0px) + 96px)", padding: "0 16px", pointerEvents: "auto", animation: "mg-up .4s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-        <div className="mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: 15, boxShadow: "0 20px 46px rgba(23,20,16,0.4)", transform: "rotate(-0.4deg)" }}>
-          {Header}
-          <p style={{ fontFamily: SANS, fontSize: 13.5, color: "#4A4742", marginTop: 8, lineHeight: 1.4 }}>{active.body}</p>
-          <button onClick={() => active.ctaChat ? startGroupChat(active.ctaChat) : active.ctaRoute && router.push(active.ctaRoute)} className="mt-3 w-full transition-transform active:scale-[0.98]" style={{ color: PAPER, background: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 13, border: `2.5px solid ${INK}`, boxShadow: "0 7px 16px rgba(229,70,46,0.28)" }}>{active.cta}</button>
-          {active.surprise && <button onClick={() => surpriseMe(active.key as "recipe" | "cook")} className="mt-2.5 w-full transition-transform active:scale-[0.98]" style={{ color: INK, background: BUTTER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 0", borderRadius: 13, border: `2.5px solid ${INK}` }}>🎰 Surprise me</button>}
-          {active.secondary && <button onClick={skipSecondary} disabled={busy} className="mx-auto mt-2.5 block" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.6, background: "none", border: "none" }}>{active.secondary.label}</button>}
+        <div style={{ position: "fixed", top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2, borderRadius: 999, boxShadow: `0 0 0 3px ${LIME}, 0 0 0 5.5px ${INK}, 0 0 0 9999px rgba(23,20,16,0.5)`, transition: "all .25s ease" }} />
+      ) : <div style={{ position: "fixed", inset: 0, background: "rgba(233,226,211,0.55)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)" }} />}
+      <div key={active.key} role="dialog" aria-label={active.title} className="absolute inset-x-0" style={{ ...cardPos(rect), padding: "0 12px", pointerEvents: "auto", animation: "mg-up .38s cubic-bezier(0.34,1.4,0.64,1) both" }}>
+        <div className="relative mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 20, padding: "18px 16px 16px", boxShadow: SHEET_SHADOW }}>
+          {header(active.title, isPeople)}
+          <Body text={active.body} />
+          <button onClick={() => (active.ctaChat ? startChat() : active.ctaRoute && router.push(active.ctaRoute))} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={isPeople ? { ...primary, background: COBALT } : primary}>{active.cta}</button>
+          {active.surprise && reel.length > 0 && <button onClick={surpriseMe} className="mt-2.5 w-full transition-transform active:scale-[0.98]" style={{ ...primary, background: BUTTER, color: INK, fontSize: 16, padding: "12px 0" }}>🎰 Surprise me</button>}
+          {active.secondary && <button onClick={justMe} disabled={busy} className="mx-auto mt-2 block" style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.7, background: "none", border: "none", minHeight: 44, padding: "0 16px" }}>{active.secondary.label}</button>}
         </div>
       </div>
-      <style>{`@keyframes mg-up{0%{opacity:0;transform:translateY(16px)}100%{opacity:1;transform:translateY(0)}}`}</style>
+      <Keyframes />
     </div>
   );
+}
+
+// A calm paper sheet. Chaos (tape, tilt) is reserved for the artifacts inside it.
+// Module-level so React keeps it mounted across re-renders (no replayed entrance,
+// no lost focus in inputs). It moves focus to itself when its content changes.
+function Sheet({ children, sheetKey, label }: { children: React.ReactNode; sheetKey: string; label: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, [sheetKey]);
+  return (
+    <div role="dialog" aria-modal="true" aria-label={label} className="fixed inset-0 z-[70] flex items-end justify-center" style={{ background: "rgba(233,226,211,0.55)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)", padding: "14px 12px calc(env(safe-area-inset-bottom,0px) + 14px)", animation: "mg-fade .25s ease both" }}>
+      <div ref={ref} tabIndex={-1} key={sheetKey} className="relative w-full" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 22, padding: "20px 18px 18px", boxShadow: SHEET_SHADOW, animation: "mg-up .38s cubic-bezier(0.34,1.4,0.64,1) both", maxHeight: "86dvh", overflowY: "auto", outline: "none" }}>
+        <span aria-hidden style={{ position: "absolute", top: -11, left: "50%", width: 78, height: 20, marginLeft: -39, background: BUTTER, opacity: 0.85, transform: "rotate(-3deg)", border: "1px solid rgba(23,20,16,0.15)" }} />
+        {children}
+      </div>
+      <Keyframes />
+    </div>
+  );
+}
+function Body({ text }: { text: string }) {
+  return <p style={{ fontFamily: SANS, fontSize: 14, color: "#4A4742", marginTop: 8, lineHeight: 1.45 }}>{text}</p>;
+}
+
+function Keyframes() {
+  return <style>{`@keyframes mg-fade{from{opacity:0}to{opacity:1}}@keyframes mg-up{0%{opacity:0;transform:translateY(18px)}100%{opacity:1;transform:translateY(0)}}@keyframes mg-pop{0%{opacity:0;transform:scale(0.9)}100%{opacity:1;transform:scale(1)}}@keyframes mg-drop{0%{opacity:0;transform:translateY(-18px) scale(1.08)}100%{opacity:1}}@media (prefers-reduced-motion: reduce){*{animation-duration:.01ms!important}}`}</style>;
 }

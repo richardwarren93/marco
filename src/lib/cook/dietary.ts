@@ -90,6 +90,8 @@ const GLUTEN = [
   "pasta", "spaghetti", "penne", "linguine", "fettuccine", "macaroni",
   "noodle", "noodles",
   "soy sauce",
+  "pita", "naan", "tortilla", "tortillas", "wrap", "wraps", "bun", "buns",
+  "bulgur", "seitan", "udon", "ramen", "dumpling", "dumplings", "croutons",
 ];
 
 const ALCOHOL = [

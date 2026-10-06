@@ -1,8 +1,9 @@
 "use client";
 
-// The Marco dock — the app's primary navigation: My Kitchen · + · Table.
-// Clean line icons on an ink-bordered paper pill (no emoji/labels — the
-// colour + personality lives in the surfaces, not the chrome). Hidden on
+// The Marco dock — the app's primary navigation: Kitchen · Add · Table.
+// Every destination is labelled; the active tab wears a lime sticker (the
+// brand's "you are here"), and Add is a raised tomato button. Ink borders and
+// a hard offset shadow, like everything else that's paper in Marco. Hidden on
 // modal/creation flows and auth/onboarding.
 
 import { usePathname, useRouter } from "next/navigation";
@@ -10,19 +11,27 @@ import { usePathname, useRouter } from "next/navigation";
 const INK = "#171410";
 const PAPER = "#FBF7EE";
 const TOMATO = "#E5462E";
+const LIME = "#C4EE45";
+const DISP = '"Marker Felt", Georgia, serif';
 
-type TabDef = { label: string; href: string; match: string[]; icon: (c: string) => React.ReactNode };
+type TabDef = { label: string; href: string; match: string[]; guide: string; icon: (c: string) => React.ReactNode };
 
 const HouseIcon = (c: string) => (
-  <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3.5 10.5 12 3.5l8.5 7" /><path d="M5.5 9.3V20.3h13V9.3" /></svg>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="M3.5 11 12 4l8.5 7" /><path d="M6 9.6V20h12V9.6" /><path d="M10 20v-5.2h4V20" />
+  </svg>
 );
+// Two people at a table — reads as "your people", not furniture.
 const TableIcon = (c: string) => (
-  <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M3.5 10.5h17" /><path d="M6 10.5v8" /><path d="M18 10.5v8" /><path d="M9.2 10.5c0-1.5 1.2-2.6 2.8-2.6s2.8 1.1 2.8 2.6" /></svg>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <circle cx="7.5" cy="6.6" r="2.4" /><circle cx="16.5" cy="6.6" r="2.4" />
+    <path d="M3 13h18" /><path d="M6 13v7" /><path d="M18 13v7" /><path d="M4.6 12.9c.4-1.9 1.6-3 2.9-3s2.5 1.1 2.9 3" /><path d="M13.6 12.9c.4-1.9 1.6-3 2.9-3s2.5 1.1 2.9 3" />
+  </svg>
 );
 
 const TABS: TabDef[] = [
-  { label: "My Kitchen", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"], icon: HouseIcon },
-  { label: "Table", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"], icon: TableIcon },
+  { label: "Kitchen", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"], guide: "tab-kitchen", icon: HouseIcon },
+  { label: "Table", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"], guide: "tab-table", icon: TableIcon },
 ];
 
 // Full-screen / modal flows where the dock should not show. "/recipes/new" is a
@@ -38,21 +47,23 @@ export default function MarcoDock() {
   const isActive = (t: TabDef) => t.match.some((m) => pathname === m || pathname.startsWith(m + "/"));
 
   return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 14px)", display: "flex", justifyContent: "center", zIndex: 50, pointerEvents: "none" }}>
-      <div className="flex items-center" style={{ gap: 8, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 99, padding: "7px 10px", boxShadow: "0 12px 30px rgba(23,20,16,0.26)", pointerEvents: "auto" }}>
+    <nav aria-label="Main" style={{ position: "fixed", left: 0, right: 0, bottom: 0, paddingBottom: "calc(env(safe-area-inset-bottom,0px) + 12px)", display: "flex", justifyContent: "center", zIndex: 50, pointerEvents: "none" }}>
+      <div className="grid items-end" style={{ gridTemplateColumns: "1fr 1fr 1fr", width: "min(340px, calc(100vw - 32px))", background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 22, padding: "6px 8px 7px", boxShadow: `4px 5px 0 ${INK}`, pointerEvents: "auto" }}>
         <Tab t={TABS[0]} active={isActive(TABS[0])} onClick={() => router.push(TABS[0].href)} />
-        <button data-guide="create" aria-label="Create" onClick={() => router.push("/create")} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 46, height: 46, borderRadius: 99, background: TOMATO, color: PAPER, border: `2.5px solid ${INK}`, fontSize: 25, fontWeight: 700, lineHeight: 1, boxShadow: "0 6px 14px rgba(229,70,46,0.4)" }}>+</button>
+        <button data-guide="create" aria-label="Add" onClick={() => router.push("/create")} className="flex flex-col items-center transition-transform active:scale-95" style={{ background: "none", border: "none", padding: 0, marginTop: -22, marginBottom: 6, justifySelf: "center", alignSelf: "center" }}>
+          <span className="flex items-center justify-center" style={{ width: 54, height: 54, borderRadius: 99, background: TOMATO, color: PAPER, border: `2.5px solid ${INK}`, boxShadow: `3px 4px 0 ${INK}`, fontFamily: DISP, fontWeight: 700, fontSize: 30, lineHeight: 1 }} aria-hidden>+</span>
+        </button>
         <Tab t={TABS[1]} active={isActive(TABS[1])} onClick={() => router.push(TABS[1].href)} />
       </div>
-    </div>
+    </nav>
   );
 }
 
 function Tab({ t, active, onClick }: { t: TabDef; active: boolean; onClick: () => void }) {
-  const guide = t.href === "/kitchen" ? "tab-kitchen" : t.href === "/friends-stack" ? "tab-table" : undefined;
   return (
-    <button onClick={onClick} data-guide={guide} aria-label={t.label} aria-current={active ? "page" : undefined} className="flex items-center justify-center active:scale-95 transition-transform" style={{ width: 50, height: 42, borderRadius: 14, background: active ? INK : "transparent", border: "none" }}>
-      {t.icon(active ? PAPER : INK)}
+    <button onClick={onClick} data-guide={t.guide} aria-label={t.label} aria-current={active ? "page" : undefined} className="flex flex-col items-center justify-center transition-transform active:scale-95" style={{ justifySelf: "center", minWidth: 76, minHeight: 50, padding: "5px 10px 4px", borderRadius: 14, background: active ? LIME : "transparent", border: `2px solid ${active ? INK : "transparent"}`, boxShadow: active ? `2px 2px 0 ${INK}` : "none", transform: active ? "rotate(-2deg)" : "none", transition: "background .15s, transform .15s" }}>
+      {t.icon(INK)}
+      <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 12, color: INK, marginTop: 1, opacity: active ? 1 : 0.7 }}>{t.label}</span>
     </button>
   );
 }

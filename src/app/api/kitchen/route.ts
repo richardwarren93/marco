@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { NextResponse } from "next/server";
+import { peopleCount } from "@/lib/people";
 
 export async function GET() {
   const sb = await createClient();
@@ -46,11 +47,16 @@ export async function GET() {
     });
   } catch { topCooks = []; }
 
+  // Anyone else in your household or at your tables? Drives Home's persistent
+  // "cook with your people" button.
+  let people = 0;
+  try { people = await peopleCount(createAdminClient(), user.id); } catch { people = 0; }
+
   return NextResponse.json({
     name: profile.data?.display_name || user.email?.split("@")[0] || "You",
     recipes: recipes.data ?? [], recipeCount: recipes.count ?? 0,
     cooks: cooks.data ?? [], cookCount: cooks.count ?? 0,
     saved: (saved.data ?? []).map(s => s.cook).filter(Boolean),
-    householdRecipes, topCooks,
+    householdRecipes, topCooks, peopleCount: people,
   }, { headers: { "Cache-Control": "private, no-store" } });
 }

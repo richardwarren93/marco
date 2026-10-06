@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/ui/Toast";
 import { AchievementModal } from "./celebrations";
 import type { BadgeProgress } from "@/lib/badges";
+import { guideStore } from "@/components/guide/guideStore";
 
 const SEEN_KEY = "marco_seen_badges";
 // Full celebration modals for up to this many new badges at once; anything
@@ -28,6 +29,9 @@ export default function BadgeChecker() {
     // Don't check badges on landing/onboarding pages (user may not be logged in)
     const path = window.location.pathname;
     if (path === "/" || path.startsWith("/onboarding") || path.startsWith("/auth")) return;
+    // Never interrupt the first-run guide (or its graduation) — badges can
+    // celebrate on the next visit.
+    if (guideStore.snapshot()) return;
 
     checking.current = true;
 

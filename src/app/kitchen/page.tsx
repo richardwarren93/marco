@@ -19,7 +19,7 @@ const SANS = "system-ui, -apple-system, sans-serif";
 type Dish = { id: string; title: string | null; note?: string | null; image_url?: string | null; photo_url?: string | null; card_treatment?: string | null; source_recipe_id?: string | null; author_name?: string | null; created_at?: string | null };
 type HouseholdRecipe = { id: string; title: string | null; image_url: string | null; author_name: string; created_at: string };
 type TopCook = { recipe_id: string; title: string | null; image_url: string | null; score: number; sentiment: string };
-interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[]; householdRecipes: HouseholdRecipe[]; topCooks: TopCook[] }
+interface KitchenData { name: string; recipeCount: number; cookCount: number; recipes: Dish[]; cooks: Dish[]; saved: Dish[]; householdRecipes: HouseholdRecipe[]; topCooks: TopCook[]; peopleCount?: number }
 const SENTIMENT_EMOJI: Record<string, string> = { loved: "😍", fine: "🙂", nope: "😬" };
 
 function timeAgo(iso: string): string {
@@ -46,18 +46,18 @@ export default function KitchenHub() {
         <div className="flex items-center justify-between gap-3 px-1">
           <div className="min-w-0">
             <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 23, letterSpacing: "-0.01em", color: INK, lineHeight: 1.05 }}>{data ? `${data.name}'s kitchen` : "Your kitchen"}</div>
-            <div style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-1deg)", marginTop: 2 }}>{data ? `${data.recipeCount} recipes · ${data.cookCount} cooks` : "make yourself at home"}</div>
+            <div style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-1deg)", marginTop: 2 }}>{data ? `${data.recipeCount} ${data.recipeCount === 1 ? "recipe" : "recipes"} · ${data.cookCount} ${data.cookCount === 1 ? "cook" : "cooks"}` : "make yourself at home"}</div>
           </div>
           <Link href="/profile" aria-label="Your profile" className="flex flex-shrink-0 items-center justify-center" style={{ width: 38, height: 38, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, transform: "rotate(5deg)", border: `2px solid ${BUTTER}` }}>{data?.name.slice(0, 1).toUpperCase() ?? "·"}</Link>
         </div>
 
-        <HouseholdBanner hh={hh} guideActive={guideActive} />
+        <PeopleBanner hh={hh} peopleCount={data?.peopleCount} guideActive={guideActive} />
 
         {/* The three pieces of your kitchen — recipes here, plan & shop a tap away */}
         <div className="flex" style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: 4, gap: 4, boxShadow: "0 5px 12px rgba(23,20,16,0.1)" }}>
           <span className="flex-1 text-center" style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Recipes</span>
           <Link href="/meal-plan" data-guide="tab-mealplan" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Meal plan</Link>
-          <Link href="/grocery" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Groceries</Link>
+          <Link href="/grocery" data-guide="tab-groceries" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Groceries</Link>
         </div>
 
         {error && <div role="alert" className="mt-4 rounded-xl bg-white p-4" style={{ border: `2px solid ${INK}` }}><p>{error.message}</p><button className="mt-2 underline" onClick={() => mutate()}>Try again</button></div>}
@@ -181,40 +181,48 @@ export default function KitchenHub() {
   );
 }
 
-function HouseholdBanner({ hh, guideActive }: { hh: HouseholdData | undefined; guideActive?: boolean }) {
+// Your people. Shared → a lime "shared with" tag. Nobody yet → a persistent,
+// clear "Cook with your people" button that starts a chat with Marco (you add
+// your household or your table). Hidden while the guide is driving.
+function PeopleBanner({ hh, peopleCount, guideActive }: { hh: HouseholdData | undefined; peopleCount: number | undefined; guideActive?: boolean }) {
+  const { data: link } = useSWR<{ marcoNumber?: string | null }>("/api/imessage/link", fetcher, { revalidateOnFocus: false });
+  const router = useRouter();
   const [copied, setCopied] = useState(false);
-  if (!hh) return null; // still loading — don't flash the empty state
-  if (!hh.household) {
-    if (guideActive) return null; // the guide drives "connect your household"
-    return (
-      <Link href="/profile/household" className="flex items-center gap-2 active:scale-[0.99] transition-transform" style={{ marginTop: 10, background: PAPER, border: `2px dashed ${INK}`, borderRadius: 11, padding: "8px 11px" }}>
-        <span style={{ fontSize: 14, flexShrink: 0 }}>➕</span>
-        <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>add your household</span>
-        <span className="flex-shrink-0" style={{ fontFamily: HAND, fontSize: 12.5, color: TOMATO }}>cook together →</span>
-      </Link>
-    );
-  }
-  const members = hh.household.members ?? [];
+  if (!hh || peopleCount === undefined) return null; // still loading — don't flash
+  const members = hh.household?.members ?? [];
   const others = members.filter((m) => m.role !== "owner");
-  const shared = members.length >= 2;
-  const names = others.map((m) => m.profile?.display_name || "your housemate").join(" & ");
-  const code = hh.household.invite_code;
-
-  if (shared) {
+  if (members.length >= 2) {
+    const names = others.map((m) => m.profile?.display_name || "your housemate").join(" & ");
     return (
-      <div className="flex items-center gap-2" style={{ marginTop: 10, background: LIME, border: `2px solid ${INK}`, borderRadius: 11, padding: "7px 11px" }}>
-        <span style={{ fontSize: 14, flexShrink: 0 }}>🍅</span>
-        <span className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>shared with {names}</span>
+      <div className="flex items-center gap-2" style={{ marginTop: 12, background: LIME, border: `2px solid ${INK}`, borderRadius: 12, padding: "8px 12px" }}>
+        <span style={{ fontSize: 14, flexShrink: 0 }} aria-hidden>🍅</span>
+        <span className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>shared with {names}</span>
       </div>
     );
   }
+  if (peopleCount > 0 || guideActive) return null;
+  function startChat() {
+    const num = link?.marcoNumber;
+    if (num) { try { window.location.href = `sms:${num}&body=${encodeURIComponent("hey Marco 🍅 this is our kitchen chat")}`; return; } catch { /* ignore */ } }
+    router.push("/connect/imessage");
+  }
+  // Started a household but nobody has joined yet? Keep its code handy.
+  const waitingCode = hh.household && members.length < 2 ? hh.household.invite_code : null;
   return (
-    <div className="flex items-center gap-2" style={{ marginTop: 10, background: PAPER, border: `2px solid ${INK}`, borderRadius: 11, padding: "7px 8px 7px 11px" }}>
-      <span style={{ fontSize: 14, flexShrink: 0 }}>⏳</span>
-      <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK }}>waiting for your household</span>
-      <button onClick={() => { navigator.clipboard?.writeText(code).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }} className="flex-shrink-0 active:scale-95 transition-transform" style={{ background: BUTTER, border: `1.5px solid ${INK}`, borderRadius: 8, padding: "4px 9px", fontFamily: "ui-monospace, monospace", fontWeight: 700, fontSize: 12, color: INK }}>
-        {copied ? "copied!" : code}
-      </button>
+    <div style={{ marginTop: 12 }}>
+    <button onClick={startChat} className="flex w-full items-center gap-3 text-left transition-transform active:scale-[0.99]" style={{ background: BUTTER, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "12px 14px", boxShadow: `3px 4px 0 ${INK}` }}>
+      <span className="flex flex-shrink-0 items-center justify-center" style={{ width: 40, height: 40, borderRadius: 12, background: PAPER, border: `2px solid ${INK}`, fontSize: 20 }} aria-hidden>💬</span>
+      <span className="min-w-0 flex-1">
+        <span className="block" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK, lineHeight: 1.1 }}>Cook with your people</span>
+        <span className="block" style={{ fontFamily: SANS, fontSize: 13, color: INK, opacity: 0.75, marginTop: 2, lineHeight: 1.3 }}>Start a chat with Marco, then add your household or your table.</span>
+      </span>
+    </button>
+    {waitingCode && (
+      <div className="flex items-center gap-2" style={{ marginTop: 8, padding: "0 4px" }}>
+        <span className="min-w-0 flex-1" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.8 }}>waiting for your household — share your code</span>
+        <button onClick={() => { navigator.clipboard?.writeText(waitingCode).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }} aria-label={`Copy household code ${waitingCode}`} className="flex-shrink-0 active:scale-95 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, borderRadius: 9, padding: "6px 10px", minHeight: 36, fontFamily: "ui-monospace, monospace", fontWeight: 700, fontSize: 13, color: INK }}>{copied ? "copied!" : waitingCode}</button>
+      </div>
+    )}
     </div>
   );
 }

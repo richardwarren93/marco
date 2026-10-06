@@ -52,6 +52,13 @@ export async function GET() {
         return NextResponse.json({ profile: created });
       }
 
+      // A concurrent request (login + onboarding both load the profile on a
+      // brand-new account) created it first — that's success, return theirs.
+      if (error?.code === "23505" && !error.message.includes("friend_code")) {
+        const { data: winner } = await admin.from("user_profiles").select("*").eq("user_id", user.id).maybeSingle();
+        if (winner) return NextResponse.json({ profile: winner });
+      }
+
       // If unique constraint violation on friend_code, retry
       if (error?.code === "23505" && error.message.includes("friend_code")) {
         attempts++;

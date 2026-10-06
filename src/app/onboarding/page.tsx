@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -31,7 +32,12 @@ export default function OnboardingPage() {
       const data = await r.json();
       if (!active) return;
       if (data.profile?.onboarding_completed) { router.replace("/kitchen"); return; }
-      setName(data.profile?.display_name || ""); setReady(true);
+      // Don't greet people by their email handle — only keep a real name.
+      const dn: string = data.profile?.display_name || "";
+      const { data: auth } = await createClient().auth.getUser();
+      const handle = (auth.user?.email || "").split("@")[0];
+      if (!active) return;
+      setName(dn && dn !== handle && !/[@+]|\d{4,}/.test(dn) ? dn : ""); setReady(true);
     }
     void load().catch(e => { if (active) setError(e.message); });
     return () => { active = false; };
