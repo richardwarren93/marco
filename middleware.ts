@@ -10,7 +10,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Everyone signs in again after an onboarding reset: a session whose sign-in
 // predates this moment is cleared and sent to the welcome tour. (Signing in
 // again sets a newer last_sign_in_at, so it only happens once per person.)
-const FORCE_SIGNIN_AFTER = Date.parse(process.env.MARCO_FORCE_SIGNIN_AFTER || "2026-10-06T03:21:06Z");
+const FORCE_SIGNIN_AFTER = Date.parse(process.env.MARCO_FORCE_SIGNIN_AFTER || "2026-10-06T03:33:39Z");
 
 const STATIC_ASSET =
   /\.(?:jpg|jpeg|png|gif|webp|avif|svg|ico|bmp|mp4|webm|mp3|wav|woff|woff2|ttf|otf|eot|txt|xml|json|webmanifest|map)$/i;
