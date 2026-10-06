@@ -27,6 +27,11 @@ export async function POST(request: Request) {
 
   const { data, error } = await admin.from("user_profiles").update({ display_name, onboarding_completed: true }).eq("user_id", user.id).select("user_id").single();
   if (error || !data) return NextResponse.json({ error: "Your setup could not be saved. Please retry." }, { status: 503 });
+  // Any table seat taken before the name was set (an invite tapped at sign-up)
+  // still shows the email handle — give it the real name.
+  const initial = (Array.from(display_name.trim())[0] ?? "").toUpperCase() || null;
+  const seats = await admin.from("crew_members").update({ display_name, avatar: initial }).eq("user_id", user.id);
+  if (seats.error) console.warn("[onboarding] seat names not updated", seats.error.code);
 
   // Optional setup fields. The ongoing in-app guide captures allergies, taste,
   // household etc. now — onboarding usually sends only the name — so we upsert

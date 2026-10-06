@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import type { GroceryItem } from "@/types";
+import MotionSheet from "@/components/ui/MotionSheet";
 
 export const CATEGORY_OPTIONS = [
   { value: "produce",  label: "Produce" },
@@ -104,24 +105,8 @@ export default function AddItemSheet({
     onClose();
   }
 
-  if (!isOpen) return null;
-
   return (
-    <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-[60] bg-black/40"
-        onClick={handleClose}
-      />
-
-      {/* Sheet */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl flex flex-col sm:max-w-lg sm:mx-auto sm:rounded-2xl sm:bottom-4"
-        style={{
-          maxHeight: "85dvh",
-          paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",
-        }}
-      >
+    <MotionSheet open={isOpen} onClose={handleClose} label="Add an item" z={60} scrim="rgba(0,0,0,0.4)" showHandle={false} className="w-full bg-white rounded-t-2xl shadow-2xl flex flex-col sm:max-w-lg sm:rounded-2xl" style={{ maxHeight: "85dvh", paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}>
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
@@ -224,7 +209,6 @@ export default function AddItemSheet({
             </button>
           </div>
         </form>
-      </div>
-    </>
+    </MotionSheet>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { SWRConfig, mutate } from "swr";
+import { MotionConfig } from "motion/react";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -8,6 +9,7 @@ import { ToastProvider } from "./Toast";
 import BadgeChecker from "@/components/gamification/BadgeChecker";
 import PushNotificationManager from "@/components/push/PushNotificationManager";
 import PurchasesManager from "@/components/purchases/PurchasesManager";
+import PendingInvites from "@/components/people/PendingInvites";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   const identity = useRef<string | null>(null);
@@ -27,12 +29,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         fetcher: (url: string) => fetch(url).then((r) => r.json()),
       }}
     >
-      <ToastProvider>
-        <BadgeChecker />
-        <PushNotificationManager />
-        <PurchasesManager />
-        {children}
-      </ToastProvider>
+      {/* Every Motion animation honours the phone's Reduce Motion setting. */}
+      <MotionConfig reducedMotion="user">
+        <ToastProvider>
+          <BadgeChecker />
+          <PendingInvites />
+          <PushNotificationManager />
+          <PurchasesManager />
+          {children}
+        </ToastProvider>
+      </MotionConfig>
     </SWRConfig>
   );
 }

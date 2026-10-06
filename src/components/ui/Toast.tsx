@@ -1,6 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { SPRING_STICKER } from "@/lib/motion";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type ToastVariant = "success" | "badge" | "info";
@@ -44,7 +46,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     setToasts((prev) => prev.map((t) => (t.id === id ? { ...t, exiting: true } : t)));
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 400);
+    }, 300);
   }, []);
 
   const showToast = useCallback(
@@ -85,39 +87,38 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
 
-      {/* Toast container — fixed bottom center, above tab bar */}
-      {toasts.length > 0 && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[100] flex flex-col-reverse items-center gap-2.5 pointer-events-none w-[calc(100%-2rem)] max-w-sm">
-          {toasts.map((toast) => (
-            <div
+      {/* Toasts — stickers that slap on above the dock, then peel away */}
+      <div className="fixed left-1/2 -translate-x-1/2 z-[100] flex flex-col-reverse items-center gap-2.5 pointer-events-none w-[calc(100%-2rem)] max-w-sm" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 104px)" }} aria-live="polite">
+        <AnimatePresence initial={false}>
+          {toasts.filter((t) => !t.exiting).map((toast, i) => (
+            <motion.div
               key={toast.id}
+              layout
+              initial={{ opacity: 0, y: 24, scale: 0.9, rotate: 0 }}
+              animate={{ opacity: 1, y: 0, scale: 1, rotate: i % 2 ? 1 : -1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.94, transition: { duration: 0.16 } }}
+              transition={SPRING_STICKER}
               onClick={toast.action ? undefined : () => removeToast(toast.id)}
-              className={`pointer-events-auto w-full px-4 py-3.5 rounded-2xl flex items-center gap-3 transition-all duration-400 ${
-                toast.exiting
-                  ? "opacity-0 translate-y-3 scale-95"
-                  : "opacity-100 translate-y-0 scale-100 animate-toast-in"
-              } ${variantClass(toast.variant)}`}
-              style={variantStyle(toast.variant)}
+              className="pointer-events-auto w-full flex items-center gap-3"
+              style={{ background: toast.variant === "badge" ? BUTTER : PAPER, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "11px 14px", boxShadow: `3px 4px 0 ${INK}`, color: INK }}
             >
-              {toast.icon && (
-                <span className="text-base flex-shrink-0">{toast.icon}</span>
-              )}
-              <span className="flex-1 text-[13px] font-medium leading-snug line-clamp-2">
+              <span className="text-base flex-shrink-0" aria-hidden>{toast.icon ?? <DefaultIcon variant={toast.variant} />}</span>
+              <span className="flex-1 leading-snug line-clamp-2" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14.5 }}>
                 {toast.message}
               </span>
               {toast.action && (
                 <button
                   onClick={() => { toast.action!.onClick(); removeToast(toast.id); }}
-                  className="text-orange-600 font-bold text-sm whitespace-nowrap ml-2 px-3 py-2 -my-1 rounded-xl active:bg-orange-50 transition-colors touch-manipulation"
-                  style={{ minHeight: 44, minWidth: 44, display: "flex", alignItems: "center", justifyContent: "center" }}
+                  className="whitespace-nowrap ml-1 active:scale-95 transition-transform touch-manipulation"
+                  style={{ minHeight: 44, minWidth: 44, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DISP, fontWeight: 700, fontSize: 14, color: PAPER, background: TOMATO, border: `2px solid ${INK}`, borderRadius: 11, padding: "0 12px" }}
                 >
                   {toast.action.label}
                 </button>
               )}
-            </div>
+            </motion.div>
           ))}
-        </div>
-      )}
+        </AnimatePresence>
+      </div>
     </ToastContext.Provider>
   );
 }
@@ -132,51 +133,22 @@ export function useToast(): ToastContextValue {
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
-
-function variantClass(variant: ToastVariant): string {
-  switch (variant) {
-    case "success":
-      return "bg-white/95 backdrop-blur-xl border border-gray-100/80";
-    case "badge":
-      return "bg-gradient-to-r from-amber-50/95 to-orange-50/95 backdrop-blur-xl border border-amber-200/60";
-    case "info":
-      return "bg-white/95 backdrop-blur-xl border border-gray-100/80";
-  }
-}
-
-function variantStyle(variant: ToastVariant): React.CSSProperties {
-  const base: React.CSSProperties = {
-    boxShadow: "0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)",
-  };
-  if (variant === "badge") {
-    base.boxShadow = "0 8px 32px rgba(234,88,12,0.10), 0 2px 8px rgba(0,0,0,0.04)";
-  }
-  return base;
-}
+const INK = "#171410";
+const PAPER = "#FBF7EE";
+const TOMATO = "#E5462E";
+const LIME = "#C4EE45";
+const BUTTER = "#FFD84D";
+const DISP = '"Marker Felt", Georgia, serif';
 
 function DefaultIcon({ variant }: { variant: ToastVariant }) {
-  switch (variant) {
-    case "success":
-      return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center flex-shrink-0"
-          style={{ boxShadow: "0 2px 8px rgba(232,83,10,0.3)" }}
-        >
-          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </span>
-      );
-    case "badge":
-      return <span className="text-lg flex-shrink-0">🏆</span>;
-    case "info":
-      return (
-        <span className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center flex-shrink-0"
-          style={{ boxShadow: "0 2px 8px rgba(234,88,12,0.25)" }}
-        >
-          <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />
-          </svg>
-        </span>
-      );
-  }
+  if (variant === "badge") return <span className="text-lg">🏆</span>;
+  return (
+    <span className="flex items-center justify-center" style={{ width: 26, height: 26, borderRadius: 99, background: variant === "success" ? LIME : BUTTER, border: `2px solid ${INK}` }}>
+      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={INK} strokeWidth={3}>
+        {variant === "success"
+          ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          : <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />}
+      </svg>
+    </span>
+  );
 }

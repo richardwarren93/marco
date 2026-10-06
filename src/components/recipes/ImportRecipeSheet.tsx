@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import MotionSheet from "@/components/ui/MotionSheet";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -65,8 +66,6 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
   const [batchMode, setBatchMode] = useState(false);
   const [batchComplete, setBatchComplete] = useState(false);
   const [docResult, setDocResult] = useState<DocumentResult>({ status: "idle", recipes: [], totalExtracted: 0 });
-
-  if (!isOpen) return null;
 
   function handleUrl() { setShowTextInput(false); setShowUrlInput((v) => !v); }
 
@@ -176,9 +175,8 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
   const busy = extracting || docResult.status === "uploading";
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" style={{ background: "rgba(23,20,16,0.5)", animation: "irs-fade .25s ease both" }} onClick={busy ? undefined : onClose}>
-      <div className="w-full sm:max-w-lg" style={{ background: "#EDE7DA", borderTop: `2.5px solid ${INK}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, boxShadow: "0 -20px 50px rgba(23,20,16,0.35)", paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))", animation: "irs-up .35s cubic-bezier(0.34,1.56,0.64,1) both" }} onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-center pt-3 pb-1"><div style={{ width: 44, height: 5, borderRadius: 99, background: "rgba(23,20,16,0.22)" }} /></div>
+    <MotionSheet open={isOpen} onClose={onClose} dismissable={!busy} label="Add a recipe" z={70} style={{ background: "#EDE7DA", borderTop: `2.5px solid ${INK}`, borderTopLeftRadius: 24, borderTopRightRadius: 24, boxShadow: "0 -20px 50px rgba(23,20,16,0.35)", paddingBottom: "max(20px, env(safe-area-inset-bottom, 20px))" }}>
+        <div style={{ height: 20 }} />
 
         {/* Header */}
         <div className="flex items-start justify-between px-5 pt-1 pb-3">
@@ -279,9 +277,8 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
 
         <input ref={photoInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFileSelected} />
         <input ref={docInputRef} type="file" accept=".pdf,.docx,.doc,.txt" className="hidden" onChange={handleDocSelected} />
-      </div>
-      <style>{`@keyframes irs-fade{from{opacity:0}to{opacity:1}}@keyframes irs-up{0%{opacity:0;transform:translateY(24px)}100%{opacity:1;transform:translateY(0)}}@keyframes irs-spin{to{transform:rotate(360deg)}}`}</style>
-    </div>
+        <style>{`@keyframes irs-spin{to{transform:rotate(360deg)}}`}</style>
+    </MotionSheet>
   );
 }
 

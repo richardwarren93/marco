@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCrewByCode, joinCrewByCode, type Crew } from "@/lib/social";
+import { stashInvite } from "@/components/people/PendingInvites";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -43,7 +44,7 @@ export default function JoinCrew() {
         try { localStorage.removeItem(PENDING_CREW_KEY); } catch { /* ignore */ }
         router.replace(joined ? "/friends-stack" : "/crew");
       } else {
-        try { localStorage.setItem(PENDING_CREW_KEY, code); } catch { /* ignore */ }
+        stashInvite(PENDING_CREW_KEY, code);
         setState("need-auth");
       }
     })();

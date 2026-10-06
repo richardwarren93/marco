@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import type { Recipe } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import MotionSheet from "@/components/ui/MotionSheet";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
@@ -107,8 +108,6 @@ export default function QuickAddSheet({
     }
   }
 
-  if (!isOpen) return null;
-
   const dayLabel = (() => {
     try {
       return new Date(date + "T12:00:00").toLocaleDateString("en-US", {
@@ -124,12 +123,7 @@ export default function QuickAddSheet({
   const showEmpty = !search.trim();
 
   return (
-    // Backdrop — click to close
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
-      <div
-        className="bg-white w-full rounded-t-3xl max-h-[85vh] flex flex-col shadow-xl sm:max-w-lg sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <MotionSheet open={isOpen} onClose={onClose} label="Add a meal" z={50} scrim="rgba(0,0,0,0.4)" showHandle={false} className="bg-white w-full rounded-t-3xl max-h-[85vh] flex flex-col shadow-xl sm:max-w-lg sm:rounded-2xl">
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
@@ -199,7 +193,7 @@ export default function QuickAddSheet({
               {pickRecipes.length > 0 && (
                 <section>
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
-                    This week's picks
+                    This week&apos;s picks
                   </p>
                   <div className="space-y-0.5">
                     {pickRecipes.map((r) => (
@@ -264,8 +258,7 @@ export default function QuickAddSheet({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </MotionSheet>
   );
 }
 

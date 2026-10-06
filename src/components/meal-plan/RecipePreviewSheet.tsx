@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import MotionSheet, { useLastDefined } from "@/components/ui/MotionSheet";
 import type { MealPlan } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
 
 export default function RecipePreviewSheet({
   isOpen,
-  plan,
+  plan: planProp,
   onClose,
   onReplace,
   onEdit,
@@ -21,8 +22,8 @@ export default function RecipePreviewSheet({
   onDelete?: () => void;
 }) {
   const router = useRouter();
-
-  if (!isOpen || !plan) return null;
+  const plan = useLastDefined(planProp); // stays put while the sheet drops away
+  if (!plan) return null;
 
   const recipe = plan.recipe;
 
@@ -37,14 +38,7 @@ export default function RecipePreviewSheet({
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 z-[60] flex items-end sm:items-center sm:justify-center sm:p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white w-full rounded-t-3xl shadow-2xl sm:max-w-lg sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <MotionSheet open={isOpen && !!planProp} onClose={onClose} label={recipe?.title || "Meal"} z={60} scrim="rgba(0,0,0,0.5)" showHandle={false} className="bg-white w-full rounded-t-3xl shadow-2xl sm:max-w-lg sm:rounded-2xl">
         {/* Handle + delete */}
         <div className="relative flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
@@ -139,7 +133,6 @@ export default function RecipePreviewSheet({
             </button>
           )}
         </div>
-      </div>
-    </div>
+    </MotionSheet>
   );
 }

@@ -1,4 +1,5 @@
 "use client";
+import MotionSheet from "@/components/ui/MotionSheet";
 
 export default function MealActionSheet({
   isOpen,
@@ -17,14 +18,8 @@ export default function MealActionSheet({
   onEditMeal: () => void;
   onDeleteMeal: () => void;
 }) {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
-      <div
-        className="bg-white w-full rounded-t-3xl shadow-xl pb-8 sm:max-w-lg sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <MotionSheet open={isOpen} onClose={onClose} label={mealTitle || "Meal"} z={50} scrim="rgba(0,0,0,0.4)" showHandle={false} className="bg-white w-full rounded-t-3xl shadow-xl pb-8 sm:max-w-lg sm:rounded-2xl">
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-3">
           <div className="w-10 h-1 bg-gray-200 rounded-full" />
@@ -76,7 +71,6 @@ export default function MealActionSheet({
             <span className="text-sm font-semibold text-red-600">Remove from plan</span>
           </button>
         </div>
-      </div>
-    </div>
+    </MotionSheet>
   );
 }

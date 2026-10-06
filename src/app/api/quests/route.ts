@@ -22,6 +22,42 @@ async function count(admin: ReturnType<typeof createAdminClient>, table: string,
   catch { return 0; }
 }
 
+// Is Marco actually in each group chat RIGHT NOW? Read from the live bindings
+// (made only when Marco receives a chat's invite in a group), so a housemate —
+// or a cousin seated at the family table — sees the chat their people started,
+// and a chat that's been unbound or left stops showing ✓.
+type Groups = { household: boolean; family: boolean; friends: boolean };
+async function chatGroups(admin: ReturnType<typeof createAdminClient>, uid: string, g: Record<string, unknown>): Promise<Groups> {
+  const out: Groups = { household: false, family: false, friends: false };
+  try {
+    {
+      const hm = await admin.from("household_members").select("household_id").eq("user_id", uid).maybeSingle();
+      if (hm.data?.household_id) {
+        // Only invite-made bindings count (bound_by set); legacy auto-binds don't.
+        const r = await admin.from("household_groups").select("group_hash", { head: true, count: "exact" }).eq("household_id", hm.data.household_id).not("bound_by", "is", null);
+        out.household = !r.error && (r.count ?? 0) > 0;
+      }
+    }
+    {
+      const seats = await admin.from("crew_members").select("crew_id").eq("user_id", uid);
+      const ids = (seats.data ?? []).map((s) => s.crew_id as string);
+      if (ids.length) {
+        const [crews, chats] = await Promise.all([
+          admin.from("crews").select("id,name").in("id", ids),
+          admin.from("crew_groups").select("crew_id").in("crew_id", ids),
+        ]);
+        const withChat = new Set(chats.error ? [] : (chats.data ?? []).map((c) => c.crew_id as string));
+        for (const c of (crews.data ?? []) as { id: string; name: string }[]) {
+          if (!withChat.has(c.id)) continue;
+          if (c.id === g.table_family || c.name === "Family table") out.family = true;
+          if (c.id === g.table_friends || c.name === "Friends table") out.friends = true;
+        }
+      }
+    }
+  } catch { /* the flags alone still stand */ }
+  return out;
+}
+
 export async function GET() {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,7 +75,7 @@ export async function GET() {
 
   const veteran = Date.parse(user.created_at) < ONBOARDING_V2_AT;
   const tp = (prefs.data?.taste_profile as Record<string, unknown> | null) ?? {};
-  const g = (tp.guide as Record<string, boolean> | undefined) ?? {};
+  const g = (tp.guide as Record<string, unknown> | undefined) ?? {};
   const tastePicks = Array.isArray(tp.taste_picks) ? (tp.taste_picks as unknown[]).length : 0;
 
   const done: Record<string, boolean> = {
@@ -49,18 +85,21 @@ export async function GET() {
     recipe: recipes > 0,
     plan: plans > 0 || cooks > 0 || veteran || g.graduated === true,
     graduate: g.graduated === true || cooks > 0 || veteran,
-    // chapter 2 — your people (a linked number or old "just me" count too)
-    people: people > 0 || linked || g.people_started === true || g.people_skip === true || g.household_skip === true,
+    // chapter 2 — your people. Starting a group chat ticks that group (below);
+    // the step itself finishes on "Done for now", "Just me", or real people.
+    people: people > 0 || g.people_done === true || g.people_solo === true || g.people_skip === true || g.household_skip === true || (veteran && (linked || g.people_started === true)),
     // informational
     cook: cooks > 0,
     linked,
     notifications: g.notifications === true,
   };
-  return NextResponse.json({ done, peopleCount: people, uid }, { headers: { "Cache-Control": "private, no-store" } });
+  // Which group chats Marco is in — the checkmarks persist.
+  const groups = await chatGroups(admin, uid, g);
+  return NextResponse.json({ done, groups, peopleCount: people, uid }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 // Mark the "you answered" steps that have no natural data signal.
-const MARKS = new Set(["allergies", "household_skip", "notifications", "graduated", "people_started", "people_skip"]);
+const MARKS = new Set(["allergies", "household_skip", "notifications", "graduated", "people_started", "people_skip", "people_solo", "people_done"]);
 export async function POST(request: Request) {
   const { data: { user } } = await (await createClient()).auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -68,7 +107,8 @@ export async function POST(request: Request) {
   const mark = body.mark;
   if (typeof mark !== "string" || !MARKS.has(mark)) return NextResponse.json({ error: "bad mark" }, { status: 400 });
   const admin = createAdminClient();
-  const { data } = await admin.from("user_preferences").select("taste_profile").eq("user_id", user.id).maybeSingle();
+  const { data, error: readError } = await admin.from("user_preferences").select("taste_profile").eq("user_id", user.id).maybeSingle();
+  if (readError) return NextResponse.json({ error: "Could not save." }, { status: 503 }); // never overwrite on a failed read
   const tp = { ...((data?.taste_profile as Record<string, unknown> | null) ?? {}) };
   tp.guide = { ...((tp.guide as Record<string, boolean> | undefined) ?? {}), [mark]: true };
   const { error } = await admin.from("user_preferences").upsert({ user_id: user.id, taste_profile: tp, updated_at: new Date().toISOString() }, { onConflict: "user_id" });

@@ -25,3 +25,41 @@ export function recipeUrl(text: string): string | null {
     return url.href;
   } catch { return null; }
 }
+
+// ── Group-chat binding ───────────────────────────────────────────────────────
+// Starting a Household / Family / Friends chat in the app mints a signed,
+// expiring token that rides inside the invite URL of the seed message. When
+// that message shows up in a GROUP chat, the server binds the group: a
+// household chat becomes a shared kitchen, a family/friends chat becomes a
+// Table. Stateless (HMAC, no token table). Seeing the token proves the chat was
+// started from the app by user `u` — never infer a binding from who's present.
+export type BindGroup = "household" | "family" | "friends" | "table";
+export type BindClaim = { k: "household" | "table"; id: string; u: string; g: BindGroup; e: number };
+const BIND_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+function bindKey(serviceKey: string) {
+  if (!serviceKey) throw new Error("Missing server configuration");
+  return createHmac("sha256", serviceKey).update(`marco:imessage:bind:v1:${PROJECT_ID}`).digest();
+}
+export function signBind(serviceKey: string, claim: Omit<BindClaim, "e">, now = Date.now()): string {
+  const payload = Buffer.from(JSON.stringify({ ...claim, e: now + BIND_TTL_MS }), "utf8").toString("base64url");
+  const sig = createHmac("sha256", bindKey(serviceKey)).update(payload).digest("base64url").slice(0, 32);
+  return `${payload}.${sig}`;
+}
+export function verifyBind(serviceKey: string, token: string, now = Date.now()): BindClaim | null {
+  const [payload, sig] = token.split(".");
+  if (!payload || !sig || sig.length !== 32) return null;
+  const want = createHmac("sha256", bindKey(serviceKey)).update(payload).digest("base64url").slice(0, 32);
+  if (!timingSafeEqual(Buffer.from(want), Buffer.from(sig))) return null;
+  try {
+    const c = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as BindClaim;
+    if ((c.k !== "household" && c.k !== "table") || typeof c.id !== "string" || typeof c.u !== "string" || typeof c.e !== "number" || c.e < now) return null;
+    if (!["household", "family", "friends", "table"].includes(c.g)) return null;
+    return c;
+  } catch { return null; }
+}
+// Finds a bind token anywhere in a message (seed text + URL, or a bare URL
+// forwarded from a rich link). The token is the `m` query parameter.
+export function findBindToken(text: string): string | null {
+  const m = text.match(/[?&]m=([A-Za-z0-9_-]{20,800}\.[A-Za-z0-9_-]{32})(?![A-Za-z0-9_-])/);
+  return m?.[1] ?? null;
+}

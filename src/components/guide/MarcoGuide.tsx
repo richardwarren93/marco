@@ -10,13 +10,16 @@
    step by step, and it only appears on Kitchen and Table so it never blocks
    Grocery, Plan or Profile. */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 import { requestNotifications } from "@/lib/native/notifications";
 import { DIET_OPTIONS, ALLERGY_OPTIONS, tagsSafe, type FoodTag } from "@/lib/cook/cookAround";
 import { guideStore } from "./guideStore";
+import { AnimatePresence, motion } from "motion/react";
+import { SPRING_SHEET, SPRING_STICKER } from "@/lib/motion";
+import GroupChats, { pendingGroups, peoplePollInterval, type Groups } from "@/components/people/GroupChats";
 
 const INK = "#171410";
 const PAPER = "#FBF7EE";
@@ -31,7 +34,7 @@ const img = (p: string) => encodeURI(p);
 const SHEET_SHADOW = `5px 6px 0 ${INK}`;
 
 type Done = Record<string, boolean>;
-type Kind = "around" | "duel" | "action" | "plan" | "graduate";
+type Kind = "around" | "duel" | "action" | "plan" | "graduate" | "people";
 type Step = {
   key: string;
   kind: Kind;
@@ -40,8 +43,6 @@ type Step = {
   body: string;
   cta?: string;
   ctaRoute?: string;
-  ctaChat?: boolean;
-  secondary?: { label: string; mark: "people_skip" };
   spotlight?: string;
   surprise?: boolean;
 };
@@ -52,7 +53,7 @@ const STEPS: Step[] = [
   { key: "recipe", kind: "action", chapter: 1, title: "Save your first recipe", body: "Tap + below, then Add a recipe — paste a link or snap a photo. Or let me pick one.", cta: "Add a recipe", ctaRoute: "/recipes?import=1", spotlight: "[data-guide='create']", surprise: true },
   { key: "plan", kind: "plan", chapter: 1, title: "When are you cooking it?", body: "I'll put it on your plan and build your grocery list." },
   { key: "graduate", kind: "graduate", chapter: 1, title: "Your kitchen is open", body: "" },
-  { key: "people", kind: "action", chapter: 2, title: "Cook with your people", body: "Start a group chat with me, then add your household or your table. Any recipe dropped in the chat lands in your shared kitchen.", cta: "Start a chat with Marco", ctaChat: true, secondary: { label: "Just me for now", mark: "people_skip" } },
+  { key: "people", kind: "people", chapter: 2, title: "Cook with your people", body: "Bring me into your chats. Your household shares one kitchen — recipes anyone drops in land for everyone. Family and friends get a table, where you share what you cooked. Do one now, the rest whenever." },
 ];
 const CHAPTER1 = STEPS.filter((s) => s.chapter === 1 && s.kind !== "graduate");
 
@@ -108,7 +109,6 @@ export default function MarcoGuide() {
   const [round, setRound] = useState(0);
   const [winners, setWinners] = useState<string[]>([]);
   const [chosen, setChosen] = useState<string | null>(null);
-  const [marcoNumber, setMarcoNumber] = useState("");
   // The reel snapshots its dishes at spin start, so it never empties mid-reveal.
   const [spin, setSpin] = useState<{ idx: number; landed: boolean; failed?: boolean; items: Reel } | null>(null);
   const [reveal, setReveal] = useState<{ selector: string; note: string } | null>(null);
@@ -119,9 +119,13 @@ export default function MarcoGuide() {
   const spinning = useRef(false);
 
   const shown = SHOW_ON.includes(pathname);
-  const { data, mutate } = useSWR<{ done: Done; uid?: string }>(shown ? "/api/quests" : null, fetcher, { revalidateOnFocus: true, revalidateOnMount: true });
+  // A fresh refreshInterval identity after each chat send re-arms SWR's poll.
+  const [sentTick, setSentTick] = useState(0);
+  const pollInterval = useMemo(() => (d: { groups?: Groups; uid?: string } | undefined) => peoplePollInterval(d), [sentTick]); // eslint-disable-line react-hooks/exhaustive-deps
+  const { data, mutate } = useSWR<{ done: Done; uid?: string; groups?: Groups }>(shown ? "/api/quests" : null, fetcher, { revalidateOnFocus: true, revalidateOnMount: true, refreshInterval: pollInterval });
   const done = data?.done;
   const uid = data?.uid;
+  const groups: Groups = data?.groups ?? { household: false, family: false, friends: false };
 
   // Skips are remembered per ACCOUNT (not per device), once we know who you are.
   const skipKey = uid ? `marco_guide_skipped:${uid}` : null;
@@ -311,28 +315,21 @@ export default function MarcoGuide() {
     addSkip("graduate"); // never trapped on this screen, even if the mark failed
     setBusy(false); await mutate();
   }
-  async function startChat() {
+  async function donePeople() {
     if (busy) return;
-    let n = marcoNumber;
-    if (!n) {
-      setBusy(true);
-      const v = await fetch("/api/imessage/link", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      setBusy(false);
-      n = v?.marcoNumber || "";
-      if (n) setMarcoNumber(n);
-    }
-    if (n) {
-      void mark("people_started").then(() => mutate()).catch(() => {});
-      window.location.href = `sms:${n}&body=${encodeURIComponent("hey Marco 🍅 this is our kitchen chat")}`;
-      return;
-    }
-    // No number to hand off to: send them to the connect page, and don't
-    // pretend the step happened — linking or a real person completes it.
-    router.push("/connect/imessage");
+    setBusy(true);
+    const r = await mark("people_done").catch(() => null);
+    if (!r?.ok) addSkip("people"); // never stuck here, even if the save failed
+    setBusy(false); await mutate();
   }
-  async function justMe() {
-    if (busy) return;
-    setBusy(true); await mark("people_skip").catch(() => {}); addSkip("people"); setBusy(false); await mutate();
+  // Solo still means a chat: a 1:1 thread with Marco, where you text him recipes.
+  // Messages opens FIRST, inside the tap (mobile Safari drops an sms: link set
+  // after an await) — the number and body were prefetched when the step
+  // mounted. Then we record it in the background.
+  function justMe(n: string, body: string) {
+    window.location.href = `sms:${n}&body=${encodeURIComponent(body)}`;
+    void mark("people_solo").catch(() => {}).finally(() => { void mutate(); });
+    addSkip("people");
   }
   const toggle = (list: string[], set: (v: string[]) => void, v: string) => { touched.current = true; set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]); };
 
@@ -369,7 +366,7 @@ export default function MarcoGuide() {
         {r ? (
           <div style={{ position: "fixed", top: r.top - pad, left: r.left - pad, width: r.width + pad * 2, height: r.height + pad * 2, borderRadius: 16, boxShadow: `0 0 0 3px ${LIME}, 0 0 0 5.5px ${INK}, 0 0 0 9999px rgba(23,20,16,0.5)`, transition: "all .25s ease" }} />
         ) : <div style={{ position: "fixed", inset: 0, background: "rgba(23,20,16,0.45)" }} />}
-        <div role="dialog" aria-label={reveal.note} className="absolute inset-x-0" style={{ ...cardPos(r), padding: "0 14px", pointerEvents: "auto", animation: "mg-up .38s cubic-bezier(0.34,1.4,0.64,1) both" }}>
+        <motion.div role="dialog" aria-label={reveal.note} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_SHEET} className="absolute inset-x-0" style={{ ...cardPos(r), padding: "0 14px", pointerEvents: "auto" }}>
           <div className="mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: 15, boxShadow: SHEET_SHADOW }}>
             <div className="flex items-center gap-2.5">
               <span aria-hidden className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 36, height: 36, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={29} greeting /></span>
@@ -377,7 +374,7 @@ export default function MarcoGuide() {
             </div>
             <button autoFocus onClick={() => setReveal(null)} className="mt-3 w-full transition-transform active:scale-[0.98]" style={primary}>Got it</button>
           </div>
-        </div>
+        </motion.div>
         <Keyframes />
       </div>
     );
@@ -482,7 +479,7 @@ export default function MarcoGuide() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img(d.img)} alt="" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", display: "block" }} />
                 <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, padding: "6px 2px 2px", lineHeight: 1.1 }}>{d.t}</div>
-                {picked && <span aria-hidden className="absolute" style={{ top: 10, right: -8, fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, background: LIME, border: `2px solid ${INK}`, padding: "3px 9px", transform: "rotate(10deg)", boxShadow: `2px 2px 0 ${INK}`, animation: "mg-pop .25s cubic-bezier(0.34,1.56,0.64,1) both" }}>this one!</span>}
+                {picked && <motion.span aria-hidden initial={{ scale: 1.6, opacity: 0, rotate: 24 }} animate={{ scale: 1, opacity: 1, rotate: 10 }} transition={SPRING_STICKER} className="absolute" style={{ top: 10, right: -8, fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK, background: LIME, border: `2px solid ${INK}`, padding: "3px 9px", boxShadow: `2px 2px 0 ${INK}` }}>this one!</motion.span>}
               </button>
             );
           })}
@@ -555,25 +552,99 @@ export default function MarcoGuide() {
     );
   }
 
+  // ── Your people — bring Marco into Household / Family / Friends chats ──────
+  if (active.kind === "people") {
+    return (
+      <Sheet sheetKey={active.key} label={active.title}>
+        {header(active.title, true)}
+        <Body text={active.body} />
+        <PeopleStep groups={groups} uid={uid} busy={busy} primary={primary} onChange={() => { setSentTick((t) => t + 1); void mutate(); }} onDone={donePeople} onSolo={justMe} />
+      </Sheet>
+    );
+  }
+
   // ── Action steps — spotlight the real control + a coach sheet ──────────────
   const pad = 10;
-  const isPeople = active.chapter === 2;
   return (
     <div className="fixed inset-0 z-[70]" style={{ pointerEvents: "none" }}>
       {rect ? (
         <div style={{ position: "fixed", top: rect.top - pad, left: rect.left - pad, width: rect.width + pad * 2, height: rect.height + pad * 2, borderRadius: 999, boxShadow: `0 0 0 3px ${LIME}, 0 0 0 5.5px ${INK}, 0 0 0 9999px rgba(23,20,16,0.5)`, transition: "all .25s ease" }} />
       ) : <div style={{ position: "fixed", inset: 0, background: "rgba(233,226,211,0.55)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)" }} />}
-      <div key={active.key} role="dialog" aria-label={active.title} className="absolute inset-x-0" style={{ ...cardPos(rect), padding: "0 12px", pointerEvents: "auto", animation: "mg-up .38s cubic-bezier(0.34,1.4,0.64,1) both" }}>
+      <motion.div key={active.key} role="dialog" aria-label={active.title} initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={SPRING_SHEET} className="absolute inset-x-0" style={{ ...cardPos(rect), padding: "0 12px", pointerEvents: "auto" }}>
         <div className="relative mx-auto" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 20, padding: "18px 16px 16px", boxShadow: SHEET_SHADOW }}>
-          {header(active.title, isPeople)}
+          {header(active.title)}
           <Body text={active.body} />
-          <button onClick={() => (active.ctaChat ? startChat() : active.ctaRoute && router.push(active.ctaRoute))} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={isPeople ? { ...primary, background: COBALT } : primary}>{active.cta}</button>
+          <button onClick={() => active.ctaRoute && router.push(active.ctaRoute)} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={primary}>{active.cta}</button>
           {active.surprise && reel.length > 0 && <button onClick={surpriseMe} className="mt-2.5 w-full transition-transform active:scale-[0.98]" style={{ ...primary, background: BUTTER, color: INK, fontSize: 16, padding: "12px 0" }}>🎰 Surprise me</button>}
-          {active.secondary && <button onClick={justMe} disabled={busy} className="mx-auto mt-2 block" style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.7, background: "none", border: "none", minHeight: 44, padding: "0 16px" }}>{active.secondary.label}</button>}
         </div>
-      </div>
+      </motion.div>
       <Keyframes />
     </div>
+  );
+}
+
+// Chapter 2's one beat. Its own component so it can prefetch what "Just me"
+// needs the moment the step mounts (it has to open Messages synchronously), and
+// re-read this device's "waiting for Marco" marks after a sheet closes.
+// If your number isn't linked yet, the 1:1 opens with a one-time "link <code>"
+// so your very first text connects Marco to this account.
+const SOLO_HELLO = "hey Marco 🍅 it's just me — I'll send you recipes here";
+function PeopleStep({ groups, uid, busy, primary, onChange, onDone, onSolo }: { groups: Groups; uid?: string; busy: boolean; primary: React.CSSProperties; onChange: () => void; onDone: () => void; onSolo: (marcoNumber: string, body: string) => void }) {
+  const [solo, setSolo] = useState<{ number: string | null; body: string; at: number } | null>(null);
+  const [soloErr, setSoloErr] = useState("");
+  const [, setSent] = useState(0);
+  const load = useCallback(async () => {
+    const v = await fetch("/api/imessage/link", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const number = (v?.marcoNumber as string | undefined) || null;
+    let body = SOLO_HELLO;
+    if (v && v.linked === false) {
+      const c = await fetch("/api/imessage/link", { method: "POST" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (typeof c?.code === "string") body = `link ${c.code}`;
+    }
+    setSolo({ number, body, at: Date.now() });
+  }, []);
+  // Link codes last 10 minutes — keep a fresh one while the step is up (the
+  // iOS web view reports coming back via visibilitychange, not always focus).
+  const at = useRef(0);
+  useEffect(() => { at.current = solo?.at ?? 0; }, [solo]);
+  useEffect(() => {
+    const t = setTimeout(() => { void load(); }, 0);
+    const refresh = () => { if (document.visibilityState === "visible" && Date.now() - at.current > 8 * 60_000) void load(); };
+    const every = setInterval(() => { void load(); }, 8 * 60_000);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => { clearTimeout(t); clearInterval(every); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
+  }, [load]);
+  // Done or sent-and-waiting both count — the checkmark itself only lands once
+  // Marco hears the first message in the group.
+  const anyStarted = groups.household || groups.family || groups.friends || pendingGroups(groups, uid).length > 0;
+  function tapSolo() {
+    if (!solo?.number) {
+      setSoloErr("Marco's number isn't available right now — try again in a moment.");
+      void load(); // ready for the next tap
+      return;
+    }
+    // Never send a link code that may have expired (Messages must open inside
+    // this tap, so we can't fetch a new one first).
+    if (solo.body.startsWith("link ") && Date.now() - solo.at > 9 * 60_000) {
+      setSoloErr("One sec — getting a fresh code. Tap again.");
+      void load();
+      return;
+    }
+    setSoloErr("");
+    onSolo(solo.number, solo.body);
+  }
+  return (
+    <>
+      <GroupChats groups={groups} uid={uid} onChange={() => { setSent((x) => x + 1); onChange(); }} variant="full" />
+      {anyStarted && <button onClick={onDone} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ ...primary, background: COBALT }}>Done for now</button>}
+      {!anyStarted && (
+        <button onClick={tapSolo} disabled={busy} className="mt-3 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, background: "#fff", border: `2px solid ${INK}`, borderRadius: 14, padding: "11px 0", minHeight: 48 }}>
+          Just me — text Marco 1:1
+        </button>
+      )}
+      {soloErr && !anyStarted && <p role="alert" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: TOMATO, marginTop: 10 }}>{soloErr}</p>}
+    </>
   );
 }
 
@@ -581,14 +652,18 @@ export default function MarcoGuide() {
 // Module-level so React keeps it mounted across re-renders (no replayed entrance,
 // no lost focus in inputs). It moves focus to itself when its content changes.
 function Sheet({ children, sheetKey, label }: { children: React.ReactNode; sheetKey: string; label: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { ref.current?.focus({ preventScroll: true }); }, [sheetKey]);
+  // Focus each new card as IT mounts — with mode="wait" an effect on sheetKey
+  // would fire while the outgoing card is still on screen. Stable callback, so
+  // it runs once per card, not on every render.
+  const ref = useCallback((el: HTMLDivElement | null) => { el?.focus({ preventScroll: true }); }, []);
   return (
     <div role="dialog" aria-modal="true" aria-label={label} className="fixed inset-0 z-[70] flex items-end justify-center" style={{ background: "rgba(233,226,211,0.55)", backdropFilter: "blur(7px)", WebkitBackdropFilter: "blur(7px)", padding: "14px 12px calc(env(safe-area-inset-bottom,0px) + 14px)", animation: "mg-fade .25s ease both" }}>
-      <div ref={ref} tabIndex={-1} key={sheetKey} className="relative w-full" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 22, padding: "20px 18px 18px", boxShadow: SHEET_SHADOW, animation: "mg-up .38s cubic-bezier(0.34,1.4,0.64,1) both", maxHeight: "86dvh", overflowY: "auto", outline: "none" }}>
+      <AnimatePresence mode="wait">
+      <motion.div ref={ref} tabIndex={-1} key={sheetKey} initial={{ opacity: 0, y: 26 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 12, transition: { duration: 0.14 } }} transition={SPRING_SHEET} className="relative w-full" style={{ maxWidth: 440, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 22, padding: "20px 18px 18px", boxShadow: SHEET_SHADOW, maxHeight: "86dvh", overflowY: "auto", outline: "none" }}>
         <span aria-hidden style={{ position: "absolute", top: -11, left: "50%", width: 78, height: 20, marginLeft: -39, background: BUTTER, opacity: 0.85, transform: "rotate(-3deg)", border: "1px solid rgba(23,20,16,0.15)" }} />
         {children}
-      </div>
+      </motion.div>
+      </AnimatePresence>
       <Keyframes />
     </div>
   );

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import type { GroceryItem } from "@/types";
 import { CATEGORY_OPTIONS, UNIT_OPTIONS } from "./AddItemSheet";
+import MotionSheet, { useLastDefined } from "@/components/ui/MotionSheet";
 
 interface EditItemSheetProps {
   item: GroceryItem | null;
@@ -11,7 +12,8 @@ interface EditItemSheetProps {
   onDelete: (id: string) => void;
 }
 
-export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditItemSheetProps) {
+export default function EditItemSheet({ item: itemProp, onClose, onSave, onDelete }: EditItemSheetProps) {
+  const item = useLastDefined(itemProp); // stays put while the sheet drops away
   const displayName = item?.name_override ?? item?.name ?? "";
   const displayAmount = item?.amount_override ?? item?.amount ?? "";
   const displayUnit = item?.unit_override ?? item?.unit ?? "";
@@ -24,21 +26,23 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  // Keyed on the PROP: it goes null on close, so every reopen starts fresh
+  // (the retained `item` would keep stale edits and an armed Delete).
   useEffect(() => {
-    if (item) {
-      setName(item.name_override ?? item.name);
-      setAmount(item.amount_override ?? item.amount ?? "");
-      setUnit(item.unit_override ?? item.unit ?? "");
-      setCategory(item.category_override ?? item.category ?? "other");
+    if (itemProp) {
+      setName(itemProp.name_override ?? itemProp.name);
+      setAmount(itemProp.amount_override ?? itemProp.amount ?? "");
+      setUnit(itemProp.unit_override ?? itemProp.unit ?? "");
+      setCategory(itemProp.category_override ?? itemProp.category ?? "other");
       setConfirmDelete(false);
     }
-  }, [item?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [itemProp?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Lock main scroll while sheet is open; reset scroll position on close
   useEffect(() => {
     const main = document.querySelector("main") as HTMLElement | null;
     if (!main) return;
-    if (item) {
+    if (itemProp) {
       main.style.overflow = "hidden";
     } else {
       main.style.overflow = "";
@@ -46,7 +50,7 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
       window.scrollTo(0, 0);
     }
     return () => { main.style.overflow = ""; };
-  }, [!!item]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [!!itemProp]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!item) return null;
 
@@ -77,18 +81,7 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
   const isGenerated = !item.is_custom;
 
   return (
-    <>
-      {/* Backdrop */}
-      <div className="fixed inset-0 z-[60] bg-black/40" onClick={onClose} />
-
-      {/* Sheet */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-[60] bg-white rounded-t-2xl shadow-2xl flex flex-col sm:max-w-lg sm:mx-auto sm:rounded-2xl sm:bottom-4"
-        style={{
-          maxHeight: "85dvh",
-          paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))",
-        }}
-      >
+    <MotionSheet open={!!itemProp} onClose={onClose} label="Edit item" z={60} scrim="rgba(0,0,0,0.4)" showHandle={false} className="w-full bg-white rounded-t-2xl shadow-2xl flex flex-col sm:max-w-lg sm:rounded-2xl" style={{ maxHeight: "85dvh", paddingBottom: "max(16px, env(safe-area-inset-bottom, 16px))" }}>
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-200" />
@@ -197,7 +190,6 @@ export default function EditItemSheet({ item, onClose, onSave, onDelete }: EditI
             </button>
           </div>
         </form>
-      </div>
-    </>
+    </MotionSheet>
   );
 }

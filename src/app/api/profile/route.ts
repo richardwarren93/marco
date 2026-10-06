@@ -115,6 +115,11 @@ export async function POST(request: Request) {
       .single();
 
     if (error) throw error;
+    // Table seats carry a copy of the name (crew_members.display_name).
+    if (typeof updates.display_name === "string" && updates.display_name.trim()) {
+      const initial = (Array.from(updates.display_name.trim())[0] ?? "").toUpperCase() || null;
+      await admin.from("crew_members").update({ display_name: updates.display_name.trim(), avatar: initial }).eq("user_id", user.id);
+    }
     return NextResponse.json({ profile: data });
   } catch (error) {
     console.error("Profile update error:", error);
