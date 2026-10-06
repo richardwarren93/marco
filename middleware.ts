@@ -7,6 +7,11 @@ import { NextResponse, type NextRequest } from "next/server";
 // hands it an HTML document, i.e. a broken image for every signed-out user in
 // the onboarding flow. Bail before any auth work (this also skips a Supabase
 // session lookup per asset request).
+// Everyone signs in again after an onboarding reset: a session whose sign-in
+// predates this moment is cleared and sent to the welcome tour. (Signing in
+// again sets a newer last_sign_in_at, so it only happens once per person.)
+const FORCE_SIGNIN_AFTER = Date.parse(process.env.MARCO_FORCE_SIGNIN_AFTER || "2026-10-06T03:21:06Z");
+
 const STATIC_ASSET =
   /\.(?:jpg|jpeg|png|gif|webp|avif|svg|ico|bmp|mp4|webm|mp3|wav|woff|woff2|ttf|otf|eot|txt|xml|json|webmanifest|map)$/i;
 
@@ -44,6 +49,12 @@ export async function middleware(request: NextRequest) {
   const user = session?.user ?? null;
 
   const pathname = request.nextUrl.pathname;
+
+  if (user && (Date.parse(user.last_sign_in_at ?? "") || 0) < FORCE_SIGNIN_AFTER && !pathname.startsWith("/auth/callback")) {
+    const out = NextResponse.redirect(new URL("/auth/signup", request.url));
+    for (const c of request.cookies.getAll()) if (c.name.startsWith("sb-")) out.cookies.delete(c.name);
+    return out;
+  }
 
   const protectedPaths = ["/tonight", "/dashboard", "/recipes", "/pantry", "/meal-plan", "/collections", "/eats", "/friends", "/profile", "/grocery", "/kitchen", "/crew", "/potluck", "/i-cooked", "/create"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));

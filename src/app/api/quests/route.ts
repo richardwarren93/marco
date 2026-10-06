@@ -17,8 +17,15 @@ import { peopleCount } from "@/lib/people";
 // they never get pulled back into first-day beats (plan, graduation).
 const ONBOARDING_V2_AT = Date.parse("2026-10-06T01:35:00Z"); // this deploy
 
-async function count(admin: ReturnType<typeof createAdminClient>, table: string, uid: string): Promise<number> {
-  try { const r = await admin.from(table).select("id", { head: true, count: "exact" }).eq("user_id", uid); return r.error ? 0 : (r.count ?? 0); }
+// `since` = the account's guide restart point (guide.reset_at): after an
+// onboarding reset, only what you do from then on counts toward the steps.
+async function count(admin: ReturnType<typeof createAdminClient>, table: string, uid: string, since: string | null): Promise<number> {
+  try {
+    let q = admin.from(table).select("id", { head: true, count: "exact" }).eq("user_id", uid);
+    if (since) q = q.gte("created_at", since);
+    const r = await q;
+    return r.error ? 0 : (r.count ?? 0);
+  }
   catch { return 0; }
 }
 
@@ -64,18 +71,22 @@ export async function GET() {
   const admin = createAdminClient();
   const uid = user.id;
 
-  const [prefs, recipes, cooks, plans, people, linked] = await Promise.all([
-    admin.from("user_preferences").select("taste_profile").eq("user_id", uid).maybeSingle(),
-    count(admin, "recipes", uid),
-    count(admin, "cooks", uid),
-    count(admin, "meal_plans", uid),
+  const prefs = await admin.from("user_preferences").select("taste_profile").eq("user_id", uid).maybeSingle();
+  const tp = (prefs.data?.taste_profile as Record<string, unknown> | null) ?? {};
+  const g = (tp.guide as Record<string, unknown> | undefined) ?? {};
+  // An onboarding reset (guide.reset_at) replays the whole guide: nobody's a
+  // veteran, and only recipes/plans/cooks/people from after it count.
+  const resetAt = typeof g.reset_at === "string" && !Number.isNaN(Date.parse(g.reset_at)) ? g.reset_at : null;
+
+  const [recipes, cooks, plans, people, linked] = await Promise.all([
+    count(admin, "recipes", uid, resetAt),
+    count(admin, "cooks", uid, resetAt),
+    count(admin, "meal_plans", uid, resetAt),
     peopleCount(admin, uid),
     (async () => { try { const r = await admin.from("imessage_links").select("user_id", { head: true, count: "exact" }).eq("user_id", uid); return (r.count ?? 0) > 0; } catch { return false; } })(),
   ]);
 
-  const veteran = Date.parse(user.created_at) < ONBOARDING_V2_AT;
-  const tp = (prefs.data?.taste_profile as Record<string, unknown> | null) ?? {};
-  const g = (tp.guide as Record<string, unknown> | undefined) ?? {};
+  const veteran = !resetAt && Date.parse(user.created_at) < ONBOARDING_V2_AT;
   const tastePicks = Array.isArray(tp.taste_picks) ? (tp.taste_picks as unknown[]).length : 0;
 
   const done: Record<string, boolean> = {
@@ -87,7 +98,7 @@ export async function GET() {
     graduate: g.graduated === true || cooks > 0 || veteran,
     // chapter 2 — your people. Starting a group chat ticks that group (below);
     // the step itself finishes on "Done for now", "Just me", or real people.
-    people: people > 0 || g.people_done === true || g.people_solo === true || g.people_skip === true || g.household_skip === true || (veteran && (linked || g.people_started === true)),
+    people: (!resetAt && people > 0) || g.people_done === true || g.people_solo === true || g.people_skip === true || g.household_skip === true || (veteran && (linked || g.people_started === true)),
     // informational
     cook: cooks > 0,
     linked,
@@ -95,7 +106,9 @@ export async function GET() {
   };
   // Which group chats Marco is in — the checkmarks persist.
   const groups = await chatGroups(admin, uid, g);
-  return NextResponse.json({ done, groups, peopleCount: people, uid }, { headers: { "Cache-Control": "private, no-store" } });
+  // epoch: the client scopes its per-device step skips to it, so a reset also
+  // forgets skips made before it.
+  return NextResponse.json({ done, groups, peopleCount: people, uid, epoch: resetAt }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
 // Mark the "you answered" steps that have no natural data signal.

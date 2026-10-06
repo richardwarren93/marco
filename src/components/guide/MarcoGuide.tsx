@@ -122,13 +122,16 @@ export default function MarcoGuide() {
   // A fresh refreshInterval identity after each chat send re-arms SWR's poll.
   const [sentTick, setSentTick] = useState(0);
   const pollInterval = useMemo(() => (d: { groups?: Groups; uid?: string } | undefined) => peoplePollInterval(d), [sentTick]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { data, mutate } = useSWR<{ done: Done; uid?: string; groups?: Groups }>(shown ? "/api/quests" : null, fetcher, { revalidateOnFocus: true, revalidateOnMount: true, refreshInterval: pollInterval });
+  const { data, mutate } = useSWR<{ done: Done; uid?: string; groups?: Groups; epoch?: string | null }>(shown ? "/api/quests" : null, fetcher, { revalidateOnFocus: true, revalidateOnMount: true, refreshInterval: pollInterval });
   const done = data?.done;
   const uid = data?.uid;
   const groups: Groups = data?.groups ?? { household: false, family: false, friends: false };
 
   // Skips are remembered per ACCOUNT (not per device), once we know who you are.
-  const skipKey = uid ? `marco_guide_skipped:${uid}` : null;
+  // Scoped to the guide's restart point too: after an onboarding reset, steps
+  // skipped on this device before it come back.
+  const epoch = data?.epoch ?? null;
+  const skipKey = uid ? `marco_guide_skipped:${uid}${epoch ? `:${epoch}` : ""}` : null;
   useEffect(() => {
     if (!skipKey) return;
     try { const raw = localStorage.getItem(skipKey); setSkipped(raw ? JSON.parse(raw) : []); } catch { setSkipped([]); }
