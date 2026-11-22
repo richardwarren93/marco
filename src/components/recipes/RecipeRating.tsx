@@ -4,6 +4,7 @@ import { useState } from "react";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import { useToast } from "@/components/ui/Toast";
+import { INK, MUSTARD } from "@/lib/theme";
 
 interface RatingData {
   average: number;
@@ -11,7 +12,7 @@ interface RatingData {
   userRating: number | null;
 }
 
-const GOLD = "#E8A33D";
+const GOLD = MUSTARD;
 const INK_SOFT = "#6B655C";
 
 function Star({ filled, dim = false }: { filled: boolean; dim?: boolean }) {
@@ -85,7 +86,7 @@ export default function RecipeRating({ recipeId }: { recipeId: string }) {
       </div>
       <div className="leading-tight">
         {count > 0 ? (
-          <p className="text-[13px] font-semibold" style={{ color: "#1C1A17" }}>
+          <p className="text-[13px] font-semibold" style={{ color: INK }}>
             {average.toFixed(1)}
             <span className="ml-1 font-normal" style={{ color: INK_SOFT }}>
               · {count} {count === 1 ? "rating" : "ratings"}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import WelcomePhoneMockup from "@/components/onboarding/WelcomePhoneMockup";
+import { CREAM, INK } from "@/lib/theme";
 
 /**
  * Pre-signup feature tour: a 5-screen carousel that walks new users through what
@@ -27,7 +28,7 @@ export default function FeatureTour({ onBack, onComplete }: { onBack: () => void
   const slide = SLIDES[step];
 
   return (
-    <div className="flex flex-col" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
+    <div className="flex flex-col" style={{ background: CREAM, minHeight: "100dvh" }}>
       {/* Top bar — back chevron + page dots */}
       <div
         className="flex items-center px-4 flex-shrink-0"
@@ -39,7 +40,7 @@ export default function FeatureTour({ onBack, onComplete }: { onBack: () => void
           style={{ background: "rgba(0,0,0,0.05)" }}
           aria-label="Back"
         >
-          <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -89,7 +90,7 @@ export default function FeatureTour({ onBack, onComplete }: { onBack: () => void
             fontSize: "clamp(34px, 9.5vw, 44px)",
             lineHeight: 1.0,
             letterSpacing: "-0.03em",
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
           }}
         >
           {slide.title}

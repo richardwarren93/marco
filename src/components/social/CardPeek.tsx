@@ -5,16 +5,9 @@
 // "you snap this, Marco makes it that". Pure aspiration, never a real post.
 
 import { useEffect, useState } from "react";
+import { BUTTER, COBALT, DISPLAY, HAND, INK, LIME, PAPER, PINK, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const PINK = "#FF4D9D";
-const BUTTER = "#FFD84D";
-const COBALT = "#2540E8";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 

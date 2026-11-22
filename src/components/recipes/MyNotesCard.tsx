@@ -78,7 +78,7 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-[#1C1A17]">My Notes</h3>
+        <h3 className="text-sm font-bold text-[var(--ink)]">My Notes</h3>
         <div className="flex items-center gap-1">
           {lastSaved && (
             <span className="text-[10px] text-gray-400 mr-2">{lastSaved}</span>
@@ -103,8 +103,8 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
                 onMouseLeave={() => setHovering(0)}
                 disabled={saving}
                 className={`text-xl transition-colors ${
-                  filled ? "text-[#e8530a]" : "text-gray-200"
-                } hover:text-[#e8530a] disabled:opacity-50`}
+                  filled ? "text-[var(--tomato)]" : "text-gray-200"
+                } hover:text-[var(--tomato)] disabled:opacity-50`}
               >
                 &#9733;
               </button>
@@ -123,7 +123,7 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
         onFocus={(e) => scrollIntoViewAboveKeyboard(e.target)}
         placeholder="Add notes, tips, modifications..."
         rows={3}
-        className="w-full px-4 py-3 bg-[#F5EEE2] border border-gray-100 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:ring-gray-200 focus:border-gray-200 outline-none resize-none"
+        className="w-full px-4 py-3 bg-[var(--cream)] border border-gray-100 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:ring-gray-200 focus:border-gray-200 outline-none resize-none"
       />
     </div>
   );

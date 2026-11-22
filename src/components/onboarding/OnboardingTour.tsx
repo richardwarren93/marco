@@ -1,12 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import MarcoPhone, { type MarcoScreen } from "@/components/onboarding/MarcoPhone";
+import { BUTTER, COBALT, DISPLAY, HAND, INK, INK_SOFT, LAV, LIME, PAPER, PINK, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const DOTS = "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)";
 
@@ -47,7 +44,7 @@ const primaryBtn: React.CSSProperties = { color: PAPER, background: TOMATO, font
 // A single playful accent per panel — a tape strip or a sparkle, colour-cycled —
 // so the beautiful-chaos tone carries through the tour without competing with
 // the phone (which is already the colourful hero).
-const ACCENTS = ["#FFD84D", "#C4EE45", "#C9B8FF", "#FF4D9D", "#2540E8"]; // butter · lime · lav · pink · cobalt
+const ACCENTS = [BUTTER, LIME, LAV, PINK, COBALT]; // butter · lime · lav · pink · cobalt
 function PanelAccent({ step }: { step: number }) {
   const c = ACCENTS[step % ACCENTS.length];
   const tape = step % 2 === 0;
@@ -68,7 +65,7 @@ export default function OnboardingTour({ onDone }: { onDone: () => void }) {
   const [step, setStep] = useState(0);
 
   return (
-    <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", backgroundImage: DOTS, backgroundSize: "13px 13px", color: INK }}>
+    <div className="min-h-[100dvh] w-full" style={{ background: SURFACE, backgroundImage: DOTS, backgroundSize: "13px 13px", color: INK }}>
       <div className="relative mx-auto flex w-full max-w-md flex-col px-6" style={{ minHeight: "100dvh", paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 24 }}>
         <div className="flex items-center justify-between">
           <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>Marco</span>
@@ -84,7 +81,7 @@ export default function OnboardingTour({ onDone }: { onDone: () => void }) {
           </div>
           <div key={`copy-${step}`} className="text-center" style={{ animation: "ob-slide 0.4s ease 0.05s both" }}>
             <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, lineHeight: 1.04, letterSpacing: "-0.01em", color: INK }}>{PANELS[step].title}</h1>
-            <p className="mx-auto" style={{ fontFamily: SANS, fontSize: 15, color: "#4A4742", marginTop: 8, lineHeight: 1.45, maxWidth: "20rem" }}>{PANELS[step].sub}</p>
+            <p className="mx-auto" style={{ fontFamily: SANS, fontSize: 15, color: INK_SOFT, marginTop: 8, lineHeight: 1.45, maxWidth: "20rem" }}>{PANELS[step].sub}</p>
           </div>
           <div className="flex items-center justify-center gap-1.5" style={{ margin: "16px 0" }}>
             {PANELS.map((_, i) => <span key={i} style={{ width: i === step ? 22 : 8, height: 8, borderRadius: 99, background: i === step ? TOMATO : "rgba(23,20,16,0.2)", transition: "all .25s" }} />)}

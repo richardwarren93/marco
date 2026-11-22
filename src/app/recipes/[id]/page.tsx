@@ -15,6 +15,7 @@ import RecipeRating from "@/components/recipes/RecipeRating";
 import { useToast } from "@/components/ui/Toast";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import CookCard from "@/components/social/CookCard";
+import { CREAM, DISPLAY, HAND, INK, LIME, MUSTARD, PAPER, TOMATO } from "@/lib/theme";
 
 // One entry in a recipe's lineage — a cook posted from it (photo + variation).
 interface LineageCook {
@@ -34,7 +35,7 @@ function Accordion({ title, children }: { title: string; children: React.ReactNo
       >
         {title}
         <svg
-          className={`w-4 h-4 text-[#a09890] transition-transform ${open ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-[var(--ink-muted)] transition-transform ${open ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -53,7 +54,6 @@ const RecipeForm = dynamic(() => import("@/components/recipes/RecipeForm"), { ss
 const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
 const ShareWithFriendsModal = dynamic(() => import("@/components/friends/ShareWithFriendsModal"), { ssr: false });
 const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
-const CommunitySection = dynamic(() => import("@/components/community/CommunitySection"));
 const CookPhotosGallery = dynamic(() => import("@/components/recipes/CookPhotosGallery"));
 // CookWithMarcoChat is deliberately quarantined — its substitution / technique-
 // question logic comes back as voice features inside Cook mode in Phase 2.
@@ -287,7 +287,7 @@ function tagIconPath(tag: string): string {
 
 function TagChip({ tag }: { tag: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium" style={{ background: "#F2EEE6", color: "var(--ink, #1C1A17)" }}>
+    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium" style={{ background: "#F2EEE6", color: "var(--ink, #171410)" }}>
       <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
         <path d={tagIconPath(tag)} />
       </svg>
@@ -520,7 +520,7 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20" style={{ backgroundColor: "#F5EEE2" }}>
+      <div className="flex items-center justify-center py-20" style={{ backgroundColor: CREAM }}>
         <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -528,9 +528,9 @@ export default function RecipeDetailPage() {
 
   if (!recipe) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-3" style={{ backgroundColor: "#F5EEE2" }}>
-        <p className="text-[#a09890]">Recipe not found</p>
-        <Link href="/recipes" className="text-[#e8530a] text-sm font-medium hover:underline">
+      <div className="flex flex-col items-center justify-center py-20 space-y-3" style={{ backgroundColor: CREAM }}>
+        <p className="text-[var(--ink-muted)]">Recipe not found</p>
+        <Link href="/recipes" className="text-[var(--tomato)] text-sm font-medium hover:underline">
           Back to recipes
         </Link>
       </div>
@@ -539,7 +539,7 @@ export default function RecipeDetailPage() {
 
   if (editing) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6" style={{ backgroundColor: "#F5EEE2", minHeight: "100vh" }}>
+      <div className="max-w-3xl mx-auto px-4 py-6" style={{ backgroundColor: CREAM, minHeight: "100vh" }}>
         <RecipeForm
           recipe={recipe}
           onCancel={() => setEditing(false)}
@@ -623,10 +623,10 @@ export default function RecipeDetailPage() {
             aria-label={standingSub ? `Substitute ${effective.name} (was ${ing.name})` : `Substitute ${ing.name}`}
           >
             {displayAmount && (
-              <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[#e8530a]" : ""}`}>{displayAmount}{" "}</span>
+              <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[var(--tomato)]" : ""}`}>{displayAmount}{" "}</span>
             )}
             {displayUnit && (
-              <span className={`${wasConverted ? "text-[#e8530a] font-medium" : "text-gray-500"}`}>{displayUnit}{" "}</span>
+              <span className={`${wasConverted ? "text-[var(--tomato)] font-medium" : "text-gray-500"}`}>{displayUnit}{" "}</span>
             )}
             {effective.name}
           </button>
@@ -658,7 +658,7 @@ export default function RecipeDetailPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#F5EEE2" }}>
+    <div className="min-h-screen" style={{ backgroundColor: CREAM }}>
       {/* ── 1. Hero Image ──────────────────────────────────────────────── */}
       <div className="relative max-w-3xl mx-auto">
         {recipe.image_url ? (
@@ -764,31 +764,31 @@ export default function RecipeDetailPage() {
           <h1
             className="leading-[1.02]"
             style={{
-              fontFamily: '"Marker Felt", Georgia, serif',
+              fontFamily: DISPLAY,
               fontWeight: 700,
               fontSize: "clamp(1.9rem, 7vw, 2.5rem)",
               letterSpacing: "-0.01em",
-              color: "#171410",
+              color: INK,
             }}
           >
             {recipe.title}
           </h1>
           {/* hand-drawn underline — ties the page to the cook card it came from */}
           <svg width="188" height="11" viewBox="0 0 188 11" fill="none" aria-hidden className="-mt-1.5 block">
-            <path d="M2 7 C 30 2, 56 10, 84 6 S 146 2, 186 6" stroke="#E5462E" strokeWidth="3.5" strokeLinecap="round" />
+            <path d="M2 7 C 30 2, 56 10, 84 6 S 146 2, 186 6" stroke={TOMATO} strokeWidth="3.5" strokeLinecap="round" />
           </svg>
 
           {/* Rating + stats inline */}
           <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[13.5px]" style={{ color: "var(--ink-soft, #4A4742)" }}>
             <span className="inline-flex items-center" aria-label={ratingCount > 0 ? `${ratingAvg} out of 5` : "No ratings yet"}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <svg key={n} className="w-4 h-4" viewBox="0 0 24 24" fill={Math.round(ratingAvg) >= n ? "#E8A33D" : "none"} stroke={Math.round(ratingAvg) >= n ? "#E8A33D" : "#d9d0c2"} strokeWidth={1.4}>
+                <svg key={n} className="w-4 h-4" viewBox="0 0 24 24" fill={Math.round(ratingAvg) >= n ? MUSTARD : "none"} stroke={Math.round(ratingAvg) >= n ? MUSTARD : "#d9d0c2"} strokeWidth={1.4}>
                   <path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" />
                 </svg>
               ))}
             </span>
             {ratingCount > 0 ? (
-              <span className="font-bold" style={{ color: "var(--ink, #1C1A17)" }}>
+              <span className="font-bold" style={{ color: "var(--ink, #171410)" }}>
                 {ratingAvg.toFixed(1)} <span className="font-normal" style={{ color: "var(--ink-soft, #4A4742)" }}>({ratingCount})</span>
               </span>
             ) : (
@@ -821,7 +821,7 @@ export default function RecipeDetailPage() {
             <button
               onClick={() => setShowAddMealSheet(true)}
               className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl text-left active:scale-[0.98] transition-transform"
-              style={{ background: "#E5462E", color: "#fff", boxShadow: "0 2px 12px rgba(229,70,46,0.25)" }}
+              style={{ background: TOMATO, color: "#fff", boxShadow: "0 2px 12px rgba(229,70,46,0.25)" }}
             >
               <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="4" width="18" height="17" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 9h18M8 2v4M16 2v4M9 14l2 2 4-4" /></svg>
               <span className="min-w-0">
@@ -834,9 +834,9 @@ export default function RecipeDetailPage() {
               className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl text-left active:scale-[0.98] transition-transform"
               style={{ background: "#fff", border: "1.5px solid rgba(229,70,46,0.45)" }}
             >
-              <svg className="w-6 h-6 flex-shrink-0" style={{ color: "#E5462E" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10M9 21v-3m6 3v-3M6 18h12a4 4 0 00.5-7.97 6 6 0 00-11.9-.5A3.5 3.5 0 006 18z" /></svg>
+              <svg className="w-6 h-6 flex-shrink-0" style={{ color: TOMATO }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10M9 21v-3m6 3v-3M6 18h12a4 4 0 00.5-7.97 6 6 0 00-11.9-.5A3.5 3.5 0 006 18z" /></svg>
               <span className="min-w-0">
-                <span className="block text-[14px] font-bold leading-tight" style={{ color: "#1C1A17" }}>Start cooking</span>
+                <span className="block text-[14px] font-bold leading-tight" style={{ color: INK }}>Start cooking</span>
                 <span className="block text-[11px] leading-tight mt-0.5" style={{ color: "#6B655C" }}>One step at a time</span>
               </span>
             </button>
@@ -846,25 +846,25 @@ export default function RecipeDetailPage() {
         {/* ── Ingredients ────────────────────────────────────────────── */}
         <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-[16px] font-bold" style={{ color: "#1C1A17" }}>Ingredients</h3>
+            <h3 className="text-[16px] font-bold" style={{ color: INK }}>Ingredients</h3>
             {originalServings && (
               <div className="flex items-center gap-2">
                 <span className="text-[13px]" style={{ color: "#6B655C" }}>Scale</span>
                 <div className="flex items-center gap-2.5">
                       <button
                         onClick={() => changeServings(-1)}
-                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#e8530a]/40 hover:text-[#e8530a] active:scale-95 transition-all"
+                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[var(--tomato)]/40 hover:text-[var(--tomato)] active:scale-95 transition-all"
                       >
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" d="M5 12h14" />
                         </svg>
                       </button>
-                      <span className={`text-sm font-bold w-5 text-center tabular-nums ${servingsChanged ? "text-[#e8530a]" : "text-gray-900"}`}>
+                      <span className={`text-sm font-bold w-5 text-center tabular-nums ${servingsChanged ? "text-[var(--tomato)]" : "text-gray-900"}`}>
                         {currentServings}
                       </span>
                       <button
                         onClick={() => changeServings(1)}
-                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[#e8530a]/40 hover:text-[#e8530a] active:scale-95 transition-all"
+                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[var(--tomato)]/40 hover:text-[var(--tomato)] active:scale-95 transition-all"
                       >
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" d="M12 5v14m-7-7h14" />
@@ -873,7 +873,7 @@ export default function RecipeDetailPage() {
                       {servingsChanged && (
                         <button
                           onClick={resetServings}
-                          className="text-[10px] text-[#a09890] hover:text-gray-600 font-medium ml-1 transition-colors"
+                          className="text-[10px] text-[var(--ink-muted)] hover:text-gray-600 font-medium ml-1 transition-colors"
                         >
                           Reset
                         </button>
@@ -892,7 +892,7 @@ export default function RecipeDetailPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={() => { setShowMealPlanPrompt(false); setShowAddMealSheet(true); }}
-                        className="flex-1 py-1.5 bg-[#e8530a] text-white rounded-lg text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+                        className="flex-1 py-1.5 bg-[var(--tomato)] text-white rounded-lg text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
                       >
                         Add to Meal Plan
                       </button>
@@ -928,17 +928,17 @@ export default function RecipeDetailPage() {
             onClick={() => setShowStepsModal(true)}
             className="w-full bg-white rounded-2xl shadow-sm p-4 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
           >
-            <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--cream-warm, #EFE5D2)", color: "#1C1A17" }}>
+            <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--cream-warm, #EFE5D2)", color: INK }}>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 012-2h6v16H6a2 2 0 00-2 2V5zM20 5a2 2 0 00-2-2h-6v16h6a2 2 0 012 2V5z" /></svg>
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-[15px] font-bold" style={{ color: "#1C1A17" }}>Instructions</p>
+              <p className="text-[15px] font-bold" style={{ color: INK }}>Instructions</p>
               <p className="text-[12.5px]" style={{ color: "#6B655C" }}>{steps.length} {steps.length === 1 ? "step" : "steps"}{totalTime > 0 ? ` · About ${totalTime} minutes` : ""}</p>
             </div>
             {recipe.image_url && (
               <img src={recipe.image_url} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
             )}
-            <svg className="w-5 h-5 flex-shrink-0" style={{ color: "#E5462E" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            <svg className="w-5 h-5 flex-shrink-0" style={{ color: TOMATO }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
         )}
 
@@ -946,7 +946,7 @@ export default function RecipeDetailPage() {
         {/* ── Nutrition (per serving) ────────────────────────────────── */}
         {hasMacros && (
           <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
-            <h3 className="text-[16px] font-bold mb-3" style={{ color: "#1C1A17" }}>
+            <h3 className="text-[16px] font-bold mb-3" style={{ color: INK }}>
               Nutrition <span className="text-[13px] font-normal" style={{ color: "#6B655C" }}>per serving</span>
             </h3>
             <div className="grid grid-cols-4 divide-x" style={{ borderColor: "rgba(28,26,23,0.06)" }}>
@@ -957,8 +957,8 @@ export default function RecipeDetailPage() {
                 { v: recipe.fat_g, unit: "g", label: "fat", icon: "M12 21a7 7 0 01-7-7c0-4 3-7 7-11 4 4 7 7 7 11a7 7 0 01-7 7z" },
               ].map((m) => (
                 <div key={m.label} className="flex flex-col items-center gap-1 px-1">
-                  <svg className="w-5 h-5" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d={m.icon} /></svg>
-                  <span className="text-[18px] font-bold" style={{ color: "#1C1A17" }}>{m.v != null ? `${Math.round(m.v * ratio)}${m.unit}` : "—"}</span>
+                  <svg className="w-5 h-5" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d={m.icon} /></svg>
+                  <span className="text-[18px] font-bold" style={{ color: INK }}>{m.v != null ? `${Math.round(m.v * ratio)}${m.unit}` : "—"}</span>
                   <span className="text-[11px]" style={{ color: "#8a847a" }}>{m.label}</span>
                 </div>
               ))}
@@ -969,17 +969,17 @@ export default function RecipeDetailPage() {
 
         </details>}
         {/* ── The lineage — every cook of this recipe, same or tweaked ── */}
-        <details id="lineage" className="mb-4 rounded-2xl bg-white p-4" style={{ scrollMarginTop: 80 }}><summary className="font-semibold cursor-pointer mb-3">Cooks &amp; photos ({cookedCount})</summary><button onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)} className="mb-4 rounded-xl bg-[#E5462E] text-white px-4 py-2 font-semibold">Post your cook</button>
+        <details id="lineage" className="mb-4 rounded-2xl bg-white p-4" style={{ scrollMarginTop: 80 }}><summary className="font-semibold cursor-pointer mb-3">Cooks &amp; photos ({cookedCount})</summary><button onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)} className="mb-4 rounded-xl bg-[var(--tomato)] text-white px-4 py-2 font-semibold">Post your cook</button>
           <div className="flex items-baseline gap-2 mb-3">
-            <h3 style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 22, color: "#171410" }}>The lineage</h3>
-            {cookedCount > 0 && <span style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 16, color: "#E5462E", transform: "rotate(-1.5deg)", display: "inline-block" }}>{cookedCount} {cookedCount === 1 ? "cook" : "cooks"}, same or tweaked</span>}
+            <h3 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 22, color: INK }}>The lineage</h3>
+            {cookedCount > 0 && <span style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, transform: "rotate(-1.5deg)", display: "inline-block" }}>{cookedCount} {cookedCount === 1 ? "cook" : "cooks"}, same or tweaked</span>}
           </div>
           {lineageCooks.length > 0 ? (
             <div className="flex flex-col" style={{ gap: 26 }}>
               {lineageCooks.map((c) => (
                 <div key={c.id} style={{ position: "relative" }}>
                   {c.isMine && (
-                    <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: "#C4EE45", color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: "2px solid #171410", transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>✦ your cook</div>
+                    <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: LIME, color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: "2px solid #171410", transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>✦ your cook</div>
                   )}
                   <button
                     onClick={() => c.user_id && router.push(`/u/${c.user_id}`)}
@@ -1001,9 +1001,9 @@ export default function RecipeDetailPage() {
               ))}
             </div>
           ) : (
-            <div style={{ background: "#FBF7EE", border: "2px dashed #171410", borderRadius: 14, padding: "22px 18px", textAlign: "center" }}>
-              <div style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 18, color: "#171410" }}>no one&apos;s cooked this yet.</div>
-              <div style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 15, color: "#E5462E", marginTop: 4 }}>Be the first to post your cook.</div>
+            <div style={{ background: PAPER, border: "2px dashed #171410", borderRadius: 14, padding: "22px 18px", textAlign: "center" }}>
+              <div style={{ fontFamily: HAND, fontSize: 18, color: INK }}>no one&apos;s cooked this yet.</div>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 15, color: TOMATO, marginTop: 4 }}>Be the first to post your cook.</div>
             </div>
           )}
 
@@ -1034,12 +1034,12 @@ export default function RecipeDetailPage() {
               {recipe.image_url && <img src={recipe.image_url} alt="" className="w-full h-full object-cover" />}
               <span className="absolute inset-0 flex items-center justify-center">
                 <span className="w-7 h-7 rounded-full bg-white/85 flex items-center justify-center">
-                  <svg className="w-3.5 h-3.5 ml-0.5" style={{ color: "#1C1A17" }} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+                  <svg className="w-3.5 h-3.5 ml-0.5" style={{ color: INK }} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                 </span>
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>Original recipe</p>
+              <p className="text-[14px] font-bold" style={{ color: INK }}>Original recipe</p>
               <p className="text-[12px] capitalize" style={{ color: "#6B655C" }}>
                 {recipe.source_platform && recipe.source_platform !== "other" ? recipe.source_platform : "View original"}
               </p>
@@ -1054,9 +1054,9 @@ export default function RecipeDetailPage() {
             onClick={() => setShowRatingSheet(true)}
             className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
           >
-            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill={ratingCount > 0 ? "#E8A33D" : "none"} stroke="#E8A33D" strokeWidth={1.5}><path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" /></svg>
+            <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill={ratingCount > 0 ? MUSTARD : "none"} stroke={MUSTARD} strokeWidth={1.5}><path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" /></svg>
             <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>Reviews</p>
+              <p className="text-[14px] font-bold" style={{ color: INK }}>Reviews</p>
               <p className="text-[12px]" style={{ color: "#6B655C" }}>{ratingCount > 0 ? `${ratingAvg.toFixed(1)} (${ratingCount})` : "Rate this recipe"}</p>
             </div>
             <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#c5beb2" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
@@ -1066,9 +1066,9 @@ export default function RecipeDetailPage() {
               onClick={() => setShowNotesSheet(true)}
               className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
             >
-              <svg className="w-5 h-5 flex-shrink-0" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4m3 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <svg className="w-5 h-5 flex-shrink-0" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4m3 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-bold" style={{ color: "#1C1A17" }}>My Notes</p>
+                <p className="text-[14px] font-bold" style={{ color: INK }}>My Notes</p>
                 <p className="text-[12px] line-clamp-1" style={{ color: "#6B655C" }}>Add your notes, tips, or modifications</p>
               </div>
               <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#c5beb2" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
@@ -1111,7 +1111,7 @@ export default function RecipeDetailPage() {
 
       {/* ── Sticky save bar (public view only) ───────────────────────── */}
       {isPublicView && (
-      <div className="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto z-40 rounded-t-2xl overflow-hidden" style={{ paddingBottom: "var(--safe-bottom, 0px)", background: "#FBF7EE", borderTop: "2px solid #171410", boxShadow: "0 -8px 30px rgba(23,20,16,0.16)" }}>
+      <div className="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto z-40 rounded-t-2xl overflow-hidden" style={{ paddingBottom: "var(--safe-bottom, 0px)", background: PAPER, borderTop: "2px solid #171410", boxShadow: "0 -8px 30px rgba(23,20,16,0.16)" }}>
         <div className="px-4 py-3 space-y-2">
             <button
               onClick={async () => {
@@ -1169,7 +1169,7 @@ export default function RecipeDetailPage() {
               }}
               disabled={alreadySaved || savingPublic}
               className="w-full active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: alreadySaved ? "#94a394" : "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: alreadySaved ? "none" : "0 10px 24px rgba(229,70,46,0.32)" }}
+              style={{ background: alreadySaved ? "#94a394" : TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: alreadySaved ? "none" : "0 10px 24px rgba(229,70,46,0.32)" }}
             >
               {alreadySaved ? "✓ In your kitchen" : savingPublic ? "Saving…" : "Save to my kitchen →"}
             </button>
@@ -1197,7 +1197,7 @@ export default function RecipeDetailPage() {
               fontStyle: "italic",
               fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
               fontSize: "20px",
-              color: "var(--ink, #1C1A17)",
+              color: "var(--ink, #171410)",
               marginTop: "1.75rem",
             }}
           >
@@ -1245,9 +1245,9 @@ export default function RecipeDetailPage() {
             <div className="max-w-3xl mx-auto px-5 pt-3">
               <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
               <div className="flex items-center justify-between mb-5">
-                <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 22, color: "#1C1A17" }}>Instructions</h3>
+                <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 22, color: INK }}>Instructions</h3>
                 <button onClick={() => setShowStepsModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.05)" }}>
-                  <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
               <ol className="space-y-5 pb-2">
@@ -1262,7 +1262,7 @@ export default function RecipeDetailPage() {
                 <button
                   onClick={() => { setShowStepsModal(false); setShowMarcoChat(true); }}
                   className="w-full mt-3 py-3.5 rounded-2xl font-semibold text-[14px] text-white active:scale-[0.98] transition-all"
-                  style={{ background: "#E5462E" }}
+                  style={{ background: TOMATO }}
                 >
                   Start cooking
                 </button>
@@ -1282,12 +1282,12 @@ export default function RecipeDetailPage() {
           >
             <div className="max-w-md mx-auto px-5 pt-3">
               <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
-              <h3 className="mb-1" style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: "#1C1A17" }}>
+              <h3 className="mb-1" style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: INK }}>
                 {ratingCount > 0 ? `${ratingAvg.toFixed(1)} · ${ratingCount} ${ratingCount === 1 ? "rating" : "ratings"}` : "Be the first to rate"}
               </h3>
               <p className="text-[13px] mb-4" style={{ color: "#6B655C" }}>Tap a star to rate this recipe.</p>
               <RecipeRating recipeId={recipe.id} />
-              <button onClick={() => setShowRatingSheet(false)} className="w-full mt-6 py-3.5 rounded-2xl font-semibold text-[14px] text-white active:scale-[0.98] transition-all" style={{ background: "#1C1A17" }}>Done</button>
+              <button onClick={() => setShowRatingSheet(false)} className="w-full mt-6 py-3.5 rounded-2xl font-semibold text-[14px] text-white active:scale-[0.98] transition-all" style={{ background: INK }}>Done</button>
             </div>
           </div>
         </>
@@ -1304,9 +1304,9 @@ export default function RecipeDetailPage() {
             <div className="max-w-md mx-auto px-5 pt-3">
               <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
               <div className="flex items-center justify-between mb-4">
-                <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: "#1C1A17" }}>My Notes</h3>
+                <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: INK }}>My Notes</h3>
                 <button onClick={() => setShowNotesSheet(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.05)" }}>
-                  <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                  <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
               <MyNotesCard recipeId={recipe.id} />

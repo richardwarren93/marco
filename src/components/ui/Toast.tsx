@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { SPRING_STICKER } from "@/lib/motion";
+import { BUTTER, DISPLAY, INK, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 type ToastVariant = "success" | "badge" | "info";
@@ -133,12 +134,7 @@ export function useToast(): ToastContextValue {
 }
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const BUTTER = "#FFD84D";
-const DISP = '"Marker Felt", Georgia, serif';
+const DISP = DISPLAY;
 
 function DefaultIcon({ variant }: { variant: ToastVariant }) {
   if (variant === "badge") return <span className="text-lg">🏆</span>;

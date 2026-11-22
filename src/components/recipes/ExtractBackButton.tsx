@@ -20,7 +20,7 @@ export default function ExtractBackButton({
       onClick={onClick ?? (() => router.back())}
       aria-label="Go back"
       className="inline-flex items-center gap-2 mb-5 active:scale-95 transition-transform"
-      style={{ color: "var(--ink, #1C1A17)" }}
+      style={{ color: "var(--ink, #171410)" }}
     >
       <span
         className="flex items-center justify-center rounded-full"

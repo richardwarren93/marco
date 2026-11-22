@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import DiscoverRecipeCard from "@/components/recipes/discover/DiscoverRecipeCard";
 import { useDiscoverSave } from "@/components/recipes/discover/useDiscoverSave";
+import { CREAM, INK, INK_SOFT } from "@/lib/theme";
 
 interface FriendRecipe {
   id: string;
@@ -25,8 +26,6 @@ interface FriendActivity {
   friends: FriendProfile[];
 }
 
-const INK = "#1C1A17";
-const INK_SOFT = "#4A4742";
 
 function initials(name: string): string {
   return (name || "?").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
@@ -49,7 +48,7 @@ export default function FriendRecipesPage() {
   const name = friend?.display_name || "Friend";
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
+    <div className="min-h-screen" style={{ background: CREAM }}>
       {/* Header */}
       <div
         className="flex items-center gap-2 px-3 pb-2 max-w-2xl mx-auto"

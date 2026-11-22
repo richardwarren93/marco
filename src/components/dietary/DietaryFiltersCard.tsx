@@ -73,7 +73,7 @@ export default function DietaryFiltersCard() {
       <div className="flex items-baseline justify-between mb-1">
         <h3
           className="text-[15px] font-semibold"
-          style={{ color: "var(--ink, #1C1A17)" }}
+          style={{ color: "var(--ink, #171410)" }}
         >
           Dietary filters
         </h3>
@@ -112,7 +112,7 @@ export default function DietaryFiltersCard() {
                 className="text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors disabled:opacity-60"
                 style={{
                   background: on ? "var(--tomato, #E5462E)" : "#fff",
-                  color: on ? "#fff" : "var(--ink, #1C1A17)",
+                  color: on ? "#fff" : "var(--ink, #171410)",
                   borderColor: on ? "var(--tomato, #E5462E)" : "rgba(28,26,23,0.12)",
                 }}
                 title={filter.description}

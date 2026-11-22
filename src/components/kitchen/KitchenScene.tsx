@@ -13,10 +13,8 @@ import { useState, useEffect } from "react";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 import type { TomatoHealthState } from "@/lib/gamification";
 import { getKitchen, deriveKitchenState, zoneImage, type KitchenState } from "@/lib/kitchen/scene";
+import { INK, INK_SOFT, PAPER, TOMATO } from "@/lib/theme";
 
-const INK = "#1C1A17";
-const INK_SOFT = "#4A4742";
-const TOMATO = "#E5462E";
 const LEAF = "#5E6E38";
 
 export interface KitchenSceneProps {
@@ -269,7 +267,7 @@ export default function KitchenScene({
               onClick={onLineTap}
               className="text-left active:scale-95 transition-transform"
               style={{
-                background: "#FFFDF9",
+                background: PAPER,
                 border: "1.5px solid rgba(229,70,46,0.5)",
                 borderRadius: 18,
                 padding: "11px 16px",

@@ -6,16 +6,9 @@
    rank that feeds your taste. Beautiful-chaos throughout. */
 
 import { useState } from "react";
+import { BUTTER, COBALT, DISPLAY, HAND, INK, INK_SOFT, LAV, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const BUTTER = "#FFD84D";
-const LAV = "#C9B8FF";
-const COBALT = "#2540E8";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 
 type Sentiment = "loved" | "fine" | "nope";
@@ -78,7 +71,7 @@ export default function CookRating({ recipeId, title, photo, onDone }: { recipeI
     setLo(nlo); setHi(nhi); setComps(nComps);
   }
 
-  const frame: React.CSSProperties = { minHeight: "100dvh", background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK };
+  const frame: React.CSSProperties = { minHeight: "100dvh", background: SURFACE, backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK };
 
   // ── Sentiment ──────────────────────────────────────────────────────────────
   if (phase === "sentiment" || phase === "loading") {
@@ -134,7 +127,7 @@ export default function CookRating({ recipeId, title, photo, onDone }: { recipeI
       <div style={{ fontSize: 58 }}>{s.emoji}</div>
       <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 32, color: INK, marginTop: 8 }}>Ranked!</h1>
       <svg width="150" height="11" viewBox="0 0 150 11" fill="none" aria-hidden className="mx-auto" style={{ marginTop: 2 }}><path d="M2 7 C 26 2, 50 10, 76 6 S 128 2, 148 6" stroke={TOMATO} strokeWidth="3.5" strokeLinecap="round" /></svg>
-      <p className="mx-auto" style={{ fontFamily: SANS, fontSize: 16, color: "#4A4742", marginTop: 16, lineHeight: 1.5, maxWidth: "19rem" }}>
+      <p className="mx-auto" style={{ fontFamily: SANS, fontSize: 16, color: INK_SOFT, marginTop: 16, lineHeight: 1.5, maxWidth: "19rem" }}>
         <b style={{ color: INK }}>{title || "This cook"}</b> is <b style={{ color: INK }}>#{result?.rank}</b> of {result?.total} in your <b style={{ color: INK }}>{s.label.toLowerCase()}</b> dishes.
       </p>
       <div style={{ fontFamily: HAND, fontSize: 15.5, color: TOMATO, marginTop: 10, transform: "rotate(-1deg)" }}>the more you cook, the sharper this gets</div>

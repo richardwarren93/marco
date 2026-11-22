@@ -1,14 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BUTTER, DISPLAY, HAND, INK, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const BUTTER = "#FFD84D";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const MONO = "ui-monospace, monospace";
 
 export default function IMessageConnection() {
@@ -38,7 +33,7 @@ export default function IMessageConnection() {
   const outlineBtn: React.CSSProperties = { background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "11px 18px", borderRadius: 12, border: `2px solid ${INK}` };
 
   return (
-    <main className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }}>
+    <main className="min-h-[100dvh] w-full" style={{ background: SURFACE, backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }}>
       <div className="mx-auto w-full max-w-lg px-6" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 20px)", paddingBottom: 48 }}>
         <Link href="/kitchen" style={{ fontFamily: HAND, fontSize: 16, color: INK }}>‹ Kitchen</Link>
 

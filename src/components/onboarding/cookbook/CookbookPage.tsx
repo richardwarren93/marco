@@ -8,6 +8,7 @@
 // question UI as children and the continue button (or similar) as `footer`.
 
 import type { ReactNode } from "react";
+import { INK, TOMATO } from "@/lib/theme";
 import {
   CookbookKeyframes,
   PaperTextureFilters,
@@ -114,7 +115,7 @@ export default function CookbookPage({
                 fontSize: "30px",
                 lineHeight: 1.05,
                 letterSpacing: "-0.02em",
-                color: "#1C1A17",
+                color: INK,
               }}
             >
               <span
@@ -126,7 +127,7 @@ export default function CookbookPage({
                   lineHeight: "0.85",
                   marginRight: "8px",
                   marginTop: "2px",
-                  color: "#E5462E",
+                  color: TOMATO,
                   animation: "cookbook-drop-cap-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both",
                 }}
               >

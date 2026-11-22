@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Fraunces } from "next/font/google";
+import { Geist, Fraunces, Caveat } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
 import AppMain from "@/components/layout/AppMain";
 import MarcoDock from "@/components/layout/MarcoDock";
 import MarcoGuide from "@/components/guide/MarcoGuide";
 import Providers from "@/components/ui/Providers";
+import { CREAM } from "@/lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,13 +22,23 @@ const fraunces = Fraunces({
   display: "swap",
 });
 
+// The handwriting. `--font-hand` prefers the system faces Marco has always
+// used (Marker Felt, Bradley Hand); this is what every device that doesn't
+// have them gets instead of a generic `cursive`, which on Android is a
+// clumsy serif.
+const caveat = Caveat({
+  variable: "--font-caveat",
+  subsets: ["latin"],
+  display: "swap",
+});
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: "#F5EEE2",
+  themeColor: CREAM,
 };
 
 export const metadata: Metadata = {
@@ -59,8 +69,8 @@ export default function RootLayout({
     // Cream on <html> paints the canvas itself: with viewport-fit=cover the
     // iOS WebView extends under the home indicator, and any strip the body
     // doesn't cover (there, or in a rubber-band overscroll) showed up white.
-    <html lang="en" className={`${geistSans.variable} ${fraunces.variable} bg-[#F5EEE2]`}>
-      <body className={`${geistSans.variable} ${fraunces.variable} font-sans antialiased bg-[#F5EEE2] text-[#1C1A17] h-full flex flex-col overscroll-none`}>
+    <html lang="en" className={`${geistSans.variable} ${fraunces.variable} ${caveat.variable} bg-[var(--cream)]`}>
+      <body className={`${geistSans.variable} ${fraunces.variable} ${caveat.variable} font-sans antialiased bg-[var(--cream)] text-[var(--ink)] h-full flex flex-col overscroll-none`}>
         {/* Prevent pinch-to-zoom and visual-viewport scroll on iOS PWA */}
         <Script id="prevent-zoom" strategy="afterInteractive">{`
           document.addEventListener('gesturestart', function(e) { if (!location.pathname.startsWith('/connect')) e.preventDefault(); }, { passive: false });
@@ -84,7 +94,6 @@ export default function RootLayout({
           }
         `}</Script>
 <Providers>
-<Navbar />
         <AppMain>{children}</AppMain>
         <MarcoDock />
         <MarcoGuide />

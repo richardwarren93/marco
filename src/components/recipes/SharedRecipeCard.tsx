@@ -2,6 +2,7 @@
 
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import { DISPLAY } from "@/lib/theme";
 
 /**
  * Shared visual recipe card used across Discover, My Recipes, and Grocery.
@@ -138,7 +139,7 @@ export default function SharedRecipeCard({
         <h4
           className={`text-white mb-1.5 line-clamp-2 ${excluded ? "line-through" : ""}`}
           style={{
-            fontFamily: '"Marker Felt", Georgia, serif',
+            fontFamily: DISPLAY,
             fontWeight: 700,
             fontSize: "17px",
             lineHeight: "1.12",

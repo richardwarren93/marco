@@ -54,7 +54,7 @@ export default function FriendsEmptyState({ hasFriends, onSwitchToCommunity }: P
       <div className="text-center py-12 px-4">
         <p
           className="marco-signature"
-          style={{ fontSize: "2.5rem", color: "var(--ink, #1C1A17)" }}
+          style={{ fontSize: "2.5rem", color: "var(--ink, #171410)" }}
         >
           quiet kitchens
         </p>
@@ -76,7 +76,7 @@ export default function FriendsEmptyState({ hasFriends, onSwitchToCommunity }: P
             onClick={onSwitchToCommunity}
             className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
             style={{
-              background: "var(--ink, #1C1A17)",
+              background: "var(--ink, #171410)",
               color: "var(--cream, #F5EEE2)",
               borderRadius: "100px",
             }}
@@ -98,7 +98,7 @@ export default function FriendsEmptyState({ hasFriends, onSwitchToCommunity }: P
     >
       <p
         className="marco-signature"
-        style={{ fontSize: "3rem", color: "var(--ink, #1C1A17)" }}
+        style={{ fontSize: "3rem", color: "var(--ink, #171410)" }}
       >
         no signatures yet
       </p>

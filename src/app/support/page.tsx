@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CREAM, INK, INK_MUTED, TOMATO } from "@/lib/theme";
 
 export const metadata = {
   title: "Support · Marco",
@@ -9,21 +10,21 @@ const SUPPORT_EMAIL = "questions@windwalk.com";
 
 export default function SupportPage() {
   return (
-    <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
+    <div className="min-h-screen" style={{ background: CREAM }}>
       <div className="max-w-2xl mx-auto px-5 py-10">
-        <Link href="/" className="text-sm font-semibold" style={{ color: "#e8530a" }}>← Marco</Link>
-        <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
+        <Link href="/" className="text-sm font-semibold" style={{ color: TOMATO }}>← Marco</Link>
+        <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: INK, letterSpacing: "-0.02em" }}>
           Support
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "#a09890" }}>
+        <p className="mt-2 text-sm" style={{ color: INK_MUTED }}>
           We&apos;re a small team and we read every message.
         </p>
 
-        <div className="mt-8 space-y-6 text-sm leading-relaxed" style={{ color: "#1C1A17" }}>
+        <div className="mt-8 space-y-6 text-sm leading-relaxed" style={{ color: INK }}>
           <Section title="Get in touch">
             <p>
               Questions, bugs, or feedback? Email us at{" "}
-              <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold" style={{ color: "#e8530a" }}>
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="font-semibold" style={{ color: TOMATO }}>
                 {SUPPORT_EMAIL}
               </a>
               . We typically reply within 1–2 business days.
@@ -64,8 +65,8 @@ export default function SupportPage() {
 
           <Section title="More">
             <p className="space-x-4">
-              <Link href="/privacy" className="font-semibold" style={{ color: "#e8530a" }}>Privacy Policy</Link>
-              <Link href="/terms" className="font-semibold" style={{ color: "#e8530a" }}>Terms of Service</Link>
+              <Link href="/privacy" className="font-semibold" style={{ color: TOMATO }}>Privacy Policy</Link>
+              <Link href="/terms" className="font-semibold" style={{ color: TOMATO }}>Terms of Service</Link>
             </p>
           </Section>
         </div>
@@ -77,7 +78,7 @@ export default function SupportPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-base font-black" style={{ color: "#1C1A17" }}>{title}</h2>
+      <h2 className="text-base font-black" style={{ color: INK }}>{title}</h2>
       <div className="mt-2">{children}</div>
     </section>
   );

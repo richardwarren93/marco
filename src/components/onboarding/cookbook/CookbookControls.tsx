@@ -4,6 +4,7 @@
 // the dark "Continue" button and the cream selectable option card.
 
 import type { ReactNode } from "react";
+import { INK, TOMATO } from "@/lib/theme";
 
 export function CookbookButton({
   children,
@@ -19,7 +20,7 @@ export function CookbookButton({
       onClick={onClick}
       disabled={disabled}
       className="w-full py-3.5 px-4 text-white rounded-2xl disabled:opacity-40 font-semibold text-sm shadow-sm transition-colors active:scale-[0.98]"
-      style={{ background: disabled ? "rgba(28, 26, 23, 0.35)" : "#1C1A17" }}
+      style={{ background: disabled ? "rgba(28, 26, 23, 0.35)" : INK }}
     >
       {children}
     </button>
@@ -53,7 +54,7 @@ export function CookbookOptionCard({
       }}
     >
       {icon && (
-        <span className="flex-shrink-0" style={{ color: selected ? "#E5462E" : "rgba(28, 26, 23, 0.7)" }}>
+        <span className="flex-shrink-0" style={{ color: selected ? TOMATO : "rgba(28, 26, 23, 0.7)" }}>
           {icon}
         </span>
       )}
@@ -65,7 +66,7 @@ export function CookbookOptionCard({
             fontVariationSettings: '"opsz" 14, "wght" 500',
             fontSize: "15px",
             lineHeight: 1.35,
-            color: "#1C1A17",
+            color: INK,
           }}
         >
           {label}
@@ -84,7 +85,7 @@ export function CookbookOptionCard({
           </span>
         )}
       </span>
-      {selected && <span style={{ color: "#E5462E", fontSize: 20 }}>✓</span>}
+      {selected && <span style={{ color: TOMATO, fontSize: 20 }}>✓</span>}
     </button>
   );
 }

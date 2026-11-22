@@ -2,6 +2,7 @@
 
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import TomatoFlourish from "@/components/brand/TomatoFlourish";
+import { INK, INK_SOFT, MUSTARD } from "@/lib/theme";
 
 /**
  * Light Discover card — the redesigned Discover surface (image on top, text
@@ -36,8 +37,6 @@ interface Props {
   savedByAvatar?: string | null;
 }
 
-const INK = "#1C1A17";
-const INK_SOFT = "#4A4742";
 
 export default function DiscoverRecipeCard({
   recipe,
@@ -178,7 +177,7 @@ export default function DiscoverRecipeCard({
         <div className="mt-1.5 flex items-center gap-1" style={{ display: savedByName ? "none" : undefined }}>
           {rating.count > 0 ? (
             <>
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="#E8A33D">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill={MUSTARD}>
                 <path d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" />
               </svg>
               <span style={{ fontSize: "11.5px", fontWeight: 700, color: INK }}>

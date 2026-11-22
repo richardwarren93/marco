@@ -38,6 +38,6 @@ export default function RecipeSaving() {
     {error && <p role="alert">{error}</p>}
     {signIn && <p><a href="/auth/login" target="_blank" rel="noreferrer" className="underline">Sign in to Marco</a>, then <button className="underline" onClick={() => { setError(""); setBusy(true); setReload(v => v + 1); }}>check sign-in again</button>.</p>}
     <p role="status">{busy ? "Please wait…" : enabled === null ? "" : enabled ? "Recipe saving is enabled. Return to ChatGPT and retry your save." : "Recipe saving is off. Your connection can still read your cooking data."}</p>
-    {enabled !== null && <button disabled={busy} onClick={change} className="rounded-xl bg-[#1C1A17] text-white px-5 py-3 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50">{enabled ? "Turn off recipe saving" : "Enable recipe saving"}</button>}
+    {enabled !== null && <button disabled={busy} onClick={change} className="rounded-xl bg-[var(--ink)] text-white px-5 py-3 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50">{enabled ? "Turn off recipe saving" : "Enable recipe saving"}</button>}
   </div>;
 }

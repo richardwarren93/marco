@@ -8,19 +8,13 @@
 
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 
-export const INK = "#171410";
-export const PAPER = "#FBF7EE";
-export const TOMATO = "#E5462E";
-export const LIME = "#C4EE45";
-export const BUTTER = "#FFD84D";
-export const COBALT = "#2540E8";
-export const PINK = "#FF4D9D";
-export const LAV = "#C9B8FF";
-export const DISP = '"Marker Felt", Georgia, serif';
-export const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+// The palette and the faces live in src/lib/theme.ts. These re-exports keep
+// the pages that import colour and chrome from one place working unchanged.
+import { INK, PAPER, TOMATO, LIME, BUTTER, PINK, SURFACE, DISPLAY as DISP, HAND } from "@/lib/theme";
+export { INK, PAPER, TOMATO, LIME, BUTTER, COBALT, PINK, LAV, DISPLAY as DISP, HAND } from "@/lib/theme";
 export const SANS = "system-ui, -apple-system, sans-serif";
 
-export const dotted: React.CSSProperties = { background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" };
+export const dotted: React.CSSProperties = { background: SURFACE, backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" };
 
 // Hard offset "sticker" shadow — the signature chaos depth cue.
 export const hardShadow = (c = INK, x = 5, y = 6) => `${x}px ${y}px 0 ${c}`;
@@ -58,7 +52,7 @@ export function Tape({ color = BUTTER, w = 120, rot = -8, style }: { color?: str
 // A little hand-labelled food polaroid.
 export function Polaroid({ src, caption, rot = -5, w = 118, captionColor = INK, style }: { src: string; caption?: string; rot?: number; w?: number; captionColor?: string; style?: React.CSSProperties }) {
   return (
-    <div aria-hidden style={{ position: "absolute", width: w, background: "#FFFDF7", border: `2.5px solid ${INK}`, borderRadius: 8, padding: 6, paddingBottom: caption ? 2 : 6, transform: `rotate(${rot}deg)`, boxShadow: `4px 6px 0 ${INK}`, ...style }}>
+    <div aria-hidden style={{ position: "absolute", width: w, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 8, padding: 6, paddingBottom: caption ? 2 : 6, transform: `rotate(${rot}deg)`, boxShadow: `4px 6px 0 ${INK}`, ...style }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={src} alt="" referrerPolicy="no-referrer" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", borderRadius: 4, border: `1.5px solid ${INK}`, display: "block" }} />
       {caption && <div style={{ fontFamily: HAND, fontSize: 14, color: captionColor, textAlign: "center", marginTop: 3, lineHeight: 1.1 }}>{caption}</div>}

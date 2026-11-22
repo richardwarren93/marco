@@ -3,17 +3,9 @@
 import { useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import MotionSheet from "@/components/ui/MotionSheet";
+import { COBALT, DISPLAY, HAND, INK, INK_SOFT, LAV, LIME, PAPER, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const BUTTER = "#FFD84D";
-const COBALT = "#2540E8";
-const PINK = "#FF4D9D";
-const LAV = "#C9B8FF";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 
 interface ImportRecipeSheetProps {
@@ -210,7 +202,7 @@ export default function ImportRecipeSheet({ isOpen, onClose }: ImportRecipeSheet
             {docResult.status === "error" && (
               <div className="text-center" style={{ padding: "20px 0" }}>
                 <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>Couldn&apos;t read that document</div>
-                <p style={{ fontFamily: SANS, fontSize: 13, color: "#4A4742", margin: "6px 0 14px" }}>{docResult.error}</p>
+                <p style={{ fontFamily: SANS, fontSize: 13, color: INK_SOFT, margin: "6px 0 14px" }}>{docResult.error}</p>
                 <button onClick={() => setDocResult({ status: "idle", recipes: [], totalExtracted: 0 })} style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: TOMATO, background: "none", border: "none" }}>try again ↻</button>
               </div>
             )}

@@ -8,8 +8,9 @@ import { createClient } from "@/lib/supabase/client";
 import type { UserProfile, CookingGoal } from "@/types";
 import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/use-data";
 import type { TomatoHealthState } from "@/lib/gamification";
-import MobileHeader from "@/components/layout/MobileHeader";
+import PageHeader from "@/components/layout/PageHeader";
 import { TastePreviewCard, BadgesPreviewCard } from "@/components/profile/PreviewCards";
+import { CREAM, INK, INK_MUTED, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 /* Profile hub — identity + living stats up top, features as visual tiles
    (Taste DNA, Badges, Tomatoes, Household), the weekly recap, and the one-time
@@ -32,7 +33,7 @@ interface HouseholdTile {
 }
 
 const TILE_STYLE = {
-  background: "#FFFDF7",
+  background: PAPER,
   border: "1px solid rgba(28,26,23,0.08)",
   boxShadow: "0 1px 3px rgba(28,26,23,0.05)",
 } as const;
@@ -151,10 +152,10 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="max-w-lg mx-auto" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
+      <div className="max-w-lg mx-auto" style={{ background: CREAM, minHeight: "100vh" }}>
         <div className="h-36 rounded-b-[2rem] skeleton-warm" />
         <div className="px-5 -mt-10 space-y-4">
-          <div className="w-20 h-20 rounded-full skeleton-warm mx-auto ring-4 ring-[#F5EEE2]" />
+          <div className="w-20 h-20 rounded-full skeleton-warm mx-auto ring-4 ring-[var(--cream)]" />
           <div className="h-5 skeleton-warm rounded-2xl w-32 mx-auto" />
           <div className="grid grid-cols-2 gap-2.5">
             {[0, 1, 2, 3].map((i) => (
@@ -187,8 +188,8 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="max-w-lg mx-auto pb-8" style={{ background: "#F5EEE2", minHeight: "100vh" }}>
-      <MobileHeader title="Profile" />
+    <div className="max-w-lg mx-auto pb-8" style={{ background: CREAM, minHeight: "100vh" }}>
+      <PageHeader title="Profile" bell balance />
 
       {/* ── Guest banner — slim; the upgrade flow lives on the Account page ── */}
       {isGuest && (
@@ -199,8 +200,8 @@ export default function ProfilePage() {
         >
           <span className="text-xl flex-shrink-0">🔒</span>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
-            <p className="text-[11.5px]" style={{ color: "#a09890" }}>Add an email so you never lose your recipes</p>
+            <p className="text-[13px] font-bold" style={{ color: INK }}>Secure your account</p>
+            <p className="text-[11.5px]" style={{ color: INK_MUTED }}>Add an email so you never lose your recipes</p>
           </div>
           <Chevron />
         </Link>
@@ -217,7 +218,7 @@ export default function ProfilePage() {
           <button
             onClick={() => avatarInputRef.current?.click()}
             disabled={uploadingAvatar}
-            className="relative w-20 h-20 rounded-full ring-4 ring-[#F5EEE2] shadow-xl group"
+            className="relative w-20 h-20 rounded-full ring-4 ring-[var(--cream)] shadow-xl group"
           >
             {profile?.avatar_url ? (
               <Image src={profile.avatar_url} alt={profile.display_name} width={80} height={80} className="w-20 h-20 rounded-full object-cover" />
@@ -251,7 +252,7 @@ export default function ProfilePage() {
               autoFocus
             />
             <div className="flex items-center justify-center gap-2">
-              <button onClick={handleSave} disabled={saving} className="px-5 py-2 rounded-full text-sm font-bold text-white active:scale-95 transition-all" style={{ background: "#e8530a" }}>
+              <button onClick={handleSave} disabled={saving} className="px-5 py-2 rounded-full text-sm font-bold text-white active:scale-95 transition-all" style={{ background: TOMATO }}>
                 {saving ? "Saving..." : "Save"}
               </button>
               <button onClick={() => { setEditing(false); setDisplayName(profile?.display_name || ""); }} className="px-5 py-2 rounded-full text-sm font-semibold text-gray-600 active:scale-95 transition-all" style={{ background: "#eeecea" }}>
@@ -264,7 +265,7 @@ export default function ProfilePage() {
             onClick={() => setEditing(true)}
             className="inline-flex items-center gap-2 active:scale-[0.98] transition-transform"
           >
-            <h1 className="text-[22px] font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
+            <h1 className="text-[22px] font-black tracking-tight" style={{ color: INK, letterSpacing: "-0.02em" }}>
               {profile?.display_name}
             </h1>
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#c0b8af" }}>
@@ -278,7 +279,7 @@ export default function ProfilePage() {
             <Link
               href="/tomatoes"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold active:scale-95 transition-transform"
-              style={{ background: "rgba(229,70,46,0.1)", color: "#B8331E" }}
+              style={{ background: "rgba(229,70,46,0.1)", color: TOMATO_DARK }}
             >
               {streak > 0 ? <>🔥 {streak}-day streak</> : <>🍅 {tomatoes.balance ?? 0}</>}
               {streak > 0 && <span style={{ opacity: 0.7 }}>· 🍅 {tomatoes.balance ?? 0}</span>}
@@ -294,32 +295,32 @@ export default function ProfilePage() {
             href="/recipes"
             className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
           >
-            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{stats.recipes}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Recipes</span>
+            <span className="text-3xl marco-h1" style={{ color: INK }}>{stats.recipes}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Recipes</span>
           </Link>
 
           <Link
             href="/collections"
             className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
           >
-            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{stats.collections}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Collections</span>
+            <span className="text-3xl marco-h1" style={{ color: INK }}>{stats.collections}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Collections</span>
           </Link>
 
           <Link
             href="/friends"
             className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
           >
-            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{stats.friends}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Friends</span>
+            <span className="text-3xl marco-h1" style={{ color: INK }}>{stats.friends}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Friends</span>
           </Link>
 
           <button
             onClick={() => setShowGoalPicker(!showGoalPicker)}
             className="relative flex flex-col items-center gap-1 py-4 active:bg-gray-50 transition-colors"
           >
-            <span className="text-3xl marco-h1" style={{ color: "#1C1A17" }}>{goalTarget || "–"}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Per Week</span>
+            <span className="text-3xl marco-h1" style={{ color: INK }}>{goalTarget || "–"}</span>
+            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Per Week</span>
           </button>
         </div>
 
@@ -340,7 +341,7 @@ export default function ProfilePage() {
                         ? "text-white shadow-sm"
                         : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                     }`}
-                    style={n === goalTarget ? { background: "#e8530a" } : undefined}
+                    style={n === goalTarget ? { background: TOMATO } : undefined}
                   >
                     {n}
                   </button>
@@ -374,7 +375,7 @@ export default function ProfilePage() {
             style={i < arr.length - 1 ? { borderBottom: "1px solid rgba(28,26,23,0.06)" } : undefined}
           >
             <span className="text-[16px] flex-shrink-0" aria-hidden>{row.icon}</span>
-            <span className="text-[13.5px] font-medium flex-1" style={{ color: "#1C1A17" }}>{row.label}</span>
+            <span className="text-[13.5px] font-medium flex-1" style={{ color: INK }}>{row.label}</span>
             {row.hint && <span className="text-[11px] flex-shrink-0" style={{ color: "#8a8378" }}>{row.hint}</span>}
             <Chevron />
           </Link>

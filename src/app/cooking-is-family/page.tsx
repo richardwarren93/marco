@@ -12,12 +12,8 @@
 // a public launch if you don't want it indexable.
 
 import { useEffect, useState } from "react";
+import { CREAM, CREAM_WARM, INK, INK_SOFT, TOMATO } from "@/lib/theme";
 
-const TOMATO = "#E5462E";
-const INK = "#1C1A17";
-const INK_SOFT = "#4A4742";
-const CREAM = "#F5EEE2";
-const CREAM_WARM = "#EFE5D2";
 const FRAUNCES = "var(--font-display, 'Fraunces', Georgia, serif)";
 const MONO = "var(--font-mono, 'Geist Mono', monospace)";
 

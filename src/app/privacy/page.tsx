@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CREAM, INK, INK_MUTED, TOMATO } from "@/lib/theme";
 
 export const metadata = {
   title: "Privacy Policy · Marco",
@@ -6,15 +7,15 @@ export const metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
+    <div className="min-h-screen" style={{ background: CREAM }}>
       <div className="max-w-2xl mx-auto px-5 py-10">
-        <Link href="/" className="text-sm font-semibold" style={{ color: "#e8530a" }}>← Marco</Link>
-        <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: "#1C1A17", letterSpacing: "-0.02em" }}>
+        <Link href="/" className="text-sm font-semibold" style={{ color: TOMATO }}>← Marco</Link>
+        <h1 className="mt-6 text-3xl font-black tracking-tight" style={{ color: INK, letterSpacing: "-0.02em" }}>
           Privacy Policy
         </h1>
-        <p className="mt-2 text-sm" style={{ color: "#a09890" }}>Last updated: September 30, 2026</p>
+        <p className="mt-2 text-sm" style={{ color: INK_MUTED }}>Last updated: September 30, 2026</p>
 
-        <div className="mt-8 space-y-6 text-sm leading-relaxed" style={{ color: "#1C1A17" }}>
+        <div className="mt-8 space-y-6 text-sm leading-relaxed" style={{ color: INK }}>
           <Section title="What we collect">
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>Account:</strong> email, password (hashed), display name, avatar.</li>
@@ -109,7 +110,7 @@ export default function PrivacyPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section>
-      <h2 className="text-base font-bold mb-2" style={{ color: "#1C1A17" }}>{title}</h2>
+      <h2 className="text-base font-bold mb-2" style={{ color: INK }}>{title}</h2>
       <div>{children}</div>
     </section>
   );

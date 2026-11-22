@@ -3,17 +3,15 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import Link from "next/link";
 import type { UserProfile, Friendship } from "@/types";
-import MobileHeader from "@/components/layout/MobileHeader";
+import PageHeader from "@/components/layout/PageHeader";
 import FriendCodeCard from "@/components/friends/FriendCodeCard";
 import AddFriendForm from "@/components/friends/AddFriendForm";
 import FriendsCookingRow from "@/components/friends/FriendsCookingRow";
 import { FriendsIcon } from "@/components/icons/HandDrawnIcons";
+import { CREAM, INK, INK_SOFT, TOMATO } from "@/lib/theme";
 
 type FriendItem = Friendship & { recipe_count?: number };
 
-const INK = "#1C1A17";
-const INK_SOFT = "#4A4742";
-const TOMATO = "#E5462E";
 
 function handleFor(p: UserProfile | null): string {
   if (!p) return "";
@@ -105,14 +103,7 @@ export default function FriendsPage() {
   }, [friends, search]);
 
   const header = (
-    <MobileHeader>
-      <div>
-        <h1 className="text-3xl marco-h1" style={{ color: INK }}>Friends</h1>
-        <p className="text-[13px] mt-0.5" style={{ color: INK_SOFT, opacity: 0.8 }}>
-          Cook, save, and share together
-        </p>
-      </div>
-    </MobileHeader>
+    <PageHeader title="Friends" subtitle="cook, save, and share together" bell balance avatar />
   );
 
   if (loading) {
@@ -133,7 +124,7 @@ export default function FriendsPage() {
       {header}
       <div
         className="max-w-2xl mx-auto px-4 pt-3 space-y-6 animate-fade-slide-up"
-        style={{ background: "#F5EEE2", paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
+        style={{ background: CREAM, paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
       >
         {/* Tab toggle */}
         <div className="grid grid-cols-2 gap-2.5">
@@ -220,7 +211,7 @@ export default function FriendsPage() {
                     return (
                       <Link
                         key={f.id}
-                        href={p?.user_id ? `/friends/${p.user_id}` : "/recipes?tab=discover"}
+                        href={p?.user_id ? `/friends/${p.user_id}` : "/discover"}
                         className="rounded-2xl px-1.5 py-3 flex flex-col items-center text-center active:scale-[0.97] transition-transform"
                         style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}
                       >

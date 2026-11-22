@@ -8,6 +8,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { INK, TOMATO } from "@/lib/theme";
 import {
   CookbookKeyframes,
   PaperTextureFilters,
@@ -160,11 +161,11 @@ function CoverPage({ onOpen }: { onOpen: () => void }) {
             fontSize: "clamp(2rem, 7.5vw, 2.6rem)",
             lineHeight: 0.98,
             letterSpacing: "-0.025em",
-            color: "#1C1A17",
+            color: INK,
           }}
         >
           Build My{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>Recipe</em> Book
+          <em style={{ color: TOMATO, fontStyle: "italic" }}>Recipe</em> Book
         </h1>
         <p
           className="italic text-center mt-3"
@@ -191,7 +192,7 @@ function CoverPage({ onOpen }: { onOpen: () => void }) {
             fontStyle: "italic",
             fontVariationSettings: '"opsz" 14, "wght" 400',
             fontSize: "16px",
-            color: "#1C1A17",
+            color: INK,
           }}
           className="group-active:opacity-60"
         >

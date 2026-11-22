@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import type { TomatoHealthState } from "@/lib/gamification";
+import { INK, TOMATO } from "@/lib/theme";
 
 /**
  * The earning mascot — a hand-painted-feeling tomato whose look reflects how
@@ -25,7 +26,7 @@ interface StateConfig {
 }
 
 const CONFIG: Record<TomatoHealthState, StateConfig> = {
-  thriving: { light: "#FF6B4E", dark: "#E5462E", leaf: "#5E6E38", anim: "bounce", eyes: "happy", mouth: "none", fx: "sparkle", rx: 92, ry: 80, leafRot: 0 },
+  thriving: { light: "#FF6B4E", dark: TOMATO, leaf: "#5E6E38", anim: "bounce", eyes: "happy", mouth: "none", fx: "sparkle", rx: 92, ry: 80, leafRot: 0 },
   happy:    { light: "#F4593C", dark: "#D8401F", leaf: "#5E6E38", anim: "bounce", eyes: "open",  mouth: "none",    fx: "none",    rx: 92, ry: 80, leafRot: 0 },
   content:  { light: "#E9694C", dark: "#C9462C", leaf: "#63692F", anim: "sway",   eyes: "open",  mouth: "neutral", fx: "none",    rx: 93, ry: 78, leafRot: 0 },
   wilting:  { light: "#D6856B", dark: "#AE5C43", leaf: "#6E6636", anim: "sag",    eyes: "droop", mouth: "frown",   fx: "none",    rx: 95, ry: 74, leafRot: 8 },
@@ -47,7 +48,6 @@ function Leaf({ color, rot }: { color: string; rot: number }) {
 }
 
 function Eye({ cx, type }: { cx: number; type: StateConfig["eyes"] }) {
-  const INK = "#1C1A17";
   if (type === "dead") {
     return (
       <g stroke={INK} strokeWidth={7} strokeLinecap="round">
@@ -84,7 +84,6 @@ function Mouth({ type }: { type: StateConfig["mouth"] }) {
    open, the right one closes into a happy arc, and a wide open grin shows a tongue
    and two little teeth. Layered over any state's body colours. */
 function GreetingFace({ clipId }: { clipId: string }) {
-  const INK = "#1C1A17";
   const MOUTH = "#5E2317";
   return (
     <g>

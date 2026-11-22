@@ -136,7 +136,7 @@ export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made 
             ? `px-5 py-2 rounded-full text-xs ${
                 justCooked
                   ? "bg-[var(--teal,#0F4C5C)]/10 text-[var(--teal-deep,#082E38)] border border-[var(--teal,#0F4C5C)]/30"
-                  : "bg-[#1C1A17]/5 text-[#1C1A17]/60 hover:bg-[#1C1A17]/10 border border-[#1C1A17]/10"
+                  : "bg-[var(--ink)]/5 text-[var(--ink)]/60 hover:bg-[var(--ink)]/10 border border-[var(--ink)]/10"
               }`
             : `w-full py-3 px-4 rounded-2xl text-sm ${
                 justCooked

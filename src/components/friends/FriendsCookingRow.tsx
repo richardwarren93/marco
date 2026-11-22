@@ -6,6 +6,7 @@ import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import DiscoverRecipeCard from "@/components/recipes/discover/DiscoverRecipeCard";
 import { useDiscoverSave } from "@/components/recipes/discover/useDiscoverSave";
+import { INK } from "@/lib/theme";
 
 /* "What your friends are cooking" — a horizontal row of the SAME cards used on
    the Discover (Explore) tab, fed by the same friends-activity feed. "See all"
@@ -23,7 +24,6 @@ interface FriendRecipe {
   owner_avatar: string | null;
 }
 
-const INK = "#1C1A17";
 
 export default function FriendsCookingRow() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function FriendsCookingRow() {
           What your friends are cooking
         </h2>
         <Link
-          href="/recipes?tab=discover"
+          href="/discover"
           className="flex items-center gap-0.5 text-[12.5px] font-semibold active:scale-95"
           style={{ color: "var(--ink-soft, #4A4742)" }}
         >

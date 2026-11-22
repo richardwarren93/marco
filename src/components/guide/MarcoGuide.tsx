@@ -1,14 +1,10 @@
 "use client";
 
-/* The first-run guide, in two chapters.
-   Chapter 1 — "your kitchen": cook around (diets + allergies) → this or that
-   (taste) → save a recipe (or Surprise me) → when are you cooking it? (plans it,
-   fills groceries, asks for notifications in context) → graduation.
-   Chapter 2 — "your people": one step — start a chat with Marco and add your
-   household or your table. If you don't, Home keeps a persistent button for it.
-   Completion is data-driven (/api/quests). It can't be dismissed, only skipped
-   step by step, and it only appears on Kitchen and Table so it never blocks
-   Grocery, Plan or Profile. */
+/* The first-run guide: one chapter.
+
+   "your kitchen": allergies (cook around) → taste (this-or-that) → save a
+   recipe → plan it → graduate. Chapter 2 ("your people" — bring Marco into
+   a group chat) was removed on 2026-11-22; Marco is 1:1 only now. */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,22 +15,15 @@ import { DIET_OPTIONS, ALLERGY_OPTIONS, tagsSafe, type FoodTag } from "@/lib/coo
 import { guideStore } from "./guideStore";
 import { AnimatePresence, motion } from "motion/react";
 import { SPRING_SHEET, SPRING_STICKER } from "@/lib/motion";
-import GroupChats, { pendingGroups, peoplePollInterval, type Groups } from "@/components/people/GroupChats";
+import { BUTTER, DISPLAY, HAND, INK, INK_SOFT, LIME, PAPER, PINK, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const BUTTER = "#FFD84D";
-const COBALT = "#2540E8";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const img = (p: string) => encodeURI(p);
 const SHEET_SHADOW = `5px 6px 0 ${INK}`;
 
 type Done = Record<string, boolean>;
-type Kind = "around" | "duel" | "action" | "plan" | "graduate" | "people";
+type Kind = "around" | "duel" | "action" | "plan" | "graduate";
 type Step = {
   key: string;
   kind: Kind;
@@ -53,7 +42,6 @@ const STEPS: Step[] = [
   { key: "recipe", kind: "action", chapter: 1, title: "Save your first recipe", body: "Tap + below, then Add a recipe — paste a link or snap a photo. Or let me pick one.", cta: "Add a recipe", ctaRoute: "/recipes?import=1", spotlight: "[data-guide='create']", surprise: true },
   { key: "plan", kind: "plan", chapter: 1, title: "When are you cooking it?", body: "I'll put it on your plan and build your grocery list." },
   { key: "graduate", kind: "graduate", chapter: 1, title: "Your kitchen is open", body: "" },
-  { key: "people", kind: "people", chapter: 2, title: "Cook with your people", body: "Bring me into your chats. Your household shares one kitchen — recipes anyone drops in land for everyone. Family and friends get a table, where you share what you cooked. Do one now, the rest whenever." },
 ];
 const CHAPTER1 = STEPS.filter((s) => s.chapter === 1 && s.kind !== "graduate");
 
@@ -120,12 +108,9 @@ export default function MarcoGuide() {
 
   const shown = SHOW_ON.includes(pathname);
   // A fresh refreshInterval identity after each chat send re-arms SWR's poll.
-  const [sentTick, setSentTick] = useState(0);
-  const pollInterval = useMemo(() => (d: { groups?: Groups; uid?: string } | undefined) => peoplePollInterval(d), [sentTick]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { data, mutate } = useSWR<{ done: Done; uid?: string; groups?: Groups; epoch?: string | null }>(shown ? "/api/quests" : null, fetcher, { revalidateOnFocus: true, revalidateOnMount: true, refreshInterval: pollInterval });
+  const { data, mutate } = useSWR<{ done: Done; uid?: string; epoch?: string | null }>(shown ? "/api/quests" : null, fetcher, { revalidateOnFocus: true, revalidateOnMount: true, refreshInterval: 0 });
   const done = data?.done;
   const uid = data?.uid;
-  const groups: Groups = data?.groups ?? { household: false, family: false, friends: false };
 
   // Skips are remembered per ACCOUNT (not per device), once we know who you are.
   // Scoped to the guide's restart point too: after an onboarding reset, steps
@@ -318,37 +303,19 @@ export default function MarcoGuide() {
     addSkip("graduate"); // never trapped on this screen, even if the mark failed
     setBusy(false); await mutate();
   }
-  async function donePeople() {
-    if (busy) return;
-    setBusy(true);
-    const r = await mark("people_done").catch(() => null);
-    if (!r?.ok) addSkip("people"); // never stuck here, even if the save failed
-    setBusy(false); await mutate();
-  }
-  // Solo still means a chat: a 1:1 thread with Marco, where you text him recipes.
-  // Messages opens FIRST, inside the tap (mobile Safari drops an sms: link set
-  // after an await) — the number and body were prefetched when the step
-  // mounted. Then we record it in the background.
-  function justMe(n: string, body: string) {
-    window.location.href = `sms:${n}&body=${encodeURIComponent(body)}`;
-    void mark("people_solo").catch(() => {}).finally(() => { void mutate(); });
-    addSkip("people");
-  }
   const toggle = (list: string[], set: (v: string[]) => void, v: string) => { touched.current = true; set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v]); };
 
   // ── shared pieces ──────────────────────────────────────────────────────────
   const idx = active ? CHAPTER1.findIndex((s) => s.key === active.key) : -1;
-  const header = (title: string, chapter2?: boolean) => (
+  const header = (title: string) => (
     <>
-      {chapter2 ? (
-        <div style={{ fontFamily: HAND, fontSize: 15, color: COBALT, marginBottom: 8, transform: "rotate(-1deg)" }}>now, your people</div>
-      ) : idx >= 0 ? (
+      {idx >= 0 ? (
         <div role="img" className="flex items-center gap-1.5" style={{ marginBottom: 12 }} aria-label={`Step ${idx + 1} of ${CHAPTER1.length}`}>
           {CHAPTER1.map((_, i) => <span key={i} aria-hidden style={{ width: i === idx ? 20 : 7, height: 7, borderRadius: 99, background: i <= idx ? TOMATO : "rgba(23,20,16,0.18)", border: i === idx ? `1.5px solid ${INK}` : "none", transition: "all .3s" }} />)}
         </div>
       ) : null}
       <div className="flex items-start gap-2.5">
-        <span aria-hidden className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 36, height: 36, borderRadius: 99, background: chapter2 ? BUTTER : LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={29} greeting /></span>
+        <span aria-hidden className="flex flex-shrink-0 items-center justify-center overflow-hidden" style={{ width: 36, height: 36, borderRadius: 99, background: LIME, border: `2px solid ${INK}` }}><TomatoMascot state="thriving" size={29} greeting /></span>
         <div className="min-w-0 flex-1">
           <div style={{ fontFamily: HAND, fontSize: 13, color: TOMATO, lineHeight: 1, marginBottom: 2 }}>Marco</div>
           <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: INK, lineHeight: 1.08 }}>{title}</div>
@@ -530,9 +497,9 @@ export default function MarcoGuide() {
     try { planLabel = sessionStorage.getItem("marco_plan_label"); } catch { /* ignore */ }
     const around = [...diets.map((d) => DIET_OPTIONS.find((o) => o.id === d)?.label).filter(Boolean), ...allergies.map((a) => `no ${a.toLowerCase()}`)].slice(0, 4).join(", ");
     return (
-      <div role="dialog" aria-modal="true" aria-labelledby="mg-grad-title" className="fixed inset-0 z-[85] flex flex-col overflow-y-auto overflow-x-hidden" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.06) 1px, transparent 1px)", backgroundSize: "13px 13px", padding: "calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)", animation: "mg-fade .3s ease both" }}>
+      <div role="dialog" aria-modal="true" aria-labelledby="mg-grad-title" className="fixed inset-0 z-[85] flex flex-col overflow-y-auto overflow-x-hidden" style={{ background: SURFACE, backgroundImage: "radial-gradient(rgba(23,20,16,0.06) 1px, transparent 1px)", backgroundSize: "13px 13px", padding: "calc(env(safe-area-inset-top,0px) + 20px) 22px calc(env(safe-area-inset-bottom,0px) + 22px)", animation: "mg-fade .3s ease both" }}>
         <span aria-hidden style={{ position: "absolute", top: 38, left: -36, width: 170, height: 26, background: BUTTER, opacity: 0.85, transform: "rotate(-12deg)" }} />
-        <span aria-hidden style={{ position: "absolute", bottom: 66, right: -40, width: 170, height: 26, background: "#FF4D9D", opacity: 0.55, transform: "rotate(-9deg)" }} />
+        <span aria-hidden style={{ position: "absolute", bottom: 66, right: -40, width: 170, height: 26, background: PINK, opacity: 0.55, transform: "rotate(-9deg)" }} />
         <div className="flex w-full flex-col items-center" style={{ margin: "auto 0", flexShrink: 0 }}>
           <div aria-hidden style={{ animation: "mg-pop .5s cubic-bezier(0.34,1.56,0.64,1) both", flexShrink: 0 }}><TomatoMascot state="thriving" size={104} greeting /></div>
           <h2 id="mg-grad-title" tabIndex={-1} style={{ outline: "none", fontFamily: DISP, fontWeight: 700, fontSize: 40, lineHeight: 1.02, color: INK, textAlign: "center", marginTop: 6 }}>Your kitchen is open.</h2>
@@ -555,16 +522,6 @@ export default function MarcoGuide() {
     );
   }
 
-  // ── Your people — bring Marco into Household / Family / Friends chats ──────
-  if (active.kind === "people") {
-    return (
-      <Sheet sheetKey={active.key} label={active.title}>
-        {header(active.title, true)}
-        <Body text={active.body} />
-        <PeopleStep groups={groups} uid={uid} busy={busy} primary={primary} onChange={() => { setSentTick((t) => t + 1); void mutate(); }} onDone={donePeople} onSolo={justMe} />
-      </Sheet>
-    );
-  }
 
   // ── Action steps — spotlight the real control + a coach sheet ──────────────
   const pad = 10;
@@ -591,65 +548,6 @@ export default function MarcoGuide() {
 // re-read this device's "waiting for Marco" marks after a sheet closes.
 // If your number isn't linked yet, the 1:1 opens with a one-time "link <code>"
 // so your very first text connects Marco to this account.
-const SOLO_HELLO = "hey Marco 🍅 it's just me — I'll send you recipes here";
-function PeopleStep({ groups, uid, busy, primary, onChange, onDone, onSolo }: { groups: Groups; uid?: string; busy: boolean; primary: React.CSSProperties; onChange: () => void; onDone: () => void; onSolo: (marcoNumber: string, body: string) => void }) {
-  const [solo, setSolo] = useState<{ number: string | null; body: string; at: number } | null>(null);
-  const [soloErr, setSoloErr] = useState("");
-  const [, setSent] = useState(0);
-  const load = useCallback(async () => {
-    const v = await fetch("/api/imessage/link", { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-    const number = (v?.marcoNumber as string | undefined) || null;
-    let body = SOLO_HELLO;
-    if (v && v.linked === false) {
-      const c = await fetch("/api/imessage/link", { method: "POST" }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
-      if (typeof c?.code === "string") body = `link ${c.code}`;
-    }
-    setSolo({ number, body, at: Date.now() });
-  }, []);
-  // Link codes last 10 minutes — keep a fresh one while the step is up (the
-  // iOS web view reports coming back via visibilitychange, not always focus).
-  const at = useRef(0);
-  useEffect(() => { at.current = solo?.at ?? 0; }, [solo]);
-  useEffect(() => {
-    const t = setTimeout(() => { void load(); }, 0);
-    const refresh = () => { if (document.visibilityState === "visible" && Date.now() - at.current > 8 * 60_000) void load(); };
-    const every = setInterval(() => { void load(); }, 8 * 60_000);
-    window.addEventListener("focus", refresh);
-    document.addEventListener("visibilitychange", refresh);
-    return () => { clearTimeout(t); clearInterval(every); window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); };
-  }, [load]);
-  // Done or sent-and-waiting both count — the checkmark itself only lands once
-  // Marco hears the first message in the group.
-  const anyStarted = groups.household || groups.family || groups.friends || pendingGroups(groups, uid).length > 0;
-  function tapSolo() {
-    if (!solo?.number) {
-      setSoloErr("Marco's number isn't available right now — try again in a moment.");
-      void load(); // ready for the next tap
-      return;
-    }
-    // Never send a link code that may have expired (Messages must open inside
-    // this tap, so we can't fetch a new one first).
-    if (solo.body.startsWith("link ") && Date.now() - solo.at > 9 * 60_000) {
-      setSoloErr("One sec — getting a fresh code. Tap again.");
-      void load();
-      return;
-    }
-    setSoloErr("");
-    onSolo(solo.number, solo.body);
-  }
-  return (
-    <>
-      <GroupChats groups={groups} uid={uid} onChange={() => { setSent((x) => x + 1); onChange(); }} variant="full" />
-      {anyStarted && <button onClick={onDone} disabled={busy} className="mt-4 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ ...primary, background: COBALT }}>Done for now</button>}
-      {!anyStarted && (
-        <button onClick={tapSolo} disabled={busy} className="mt-3 w-full transition-transform active:scale-[0.98] disabled:opacity-60" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, background: "#fff", border: `2px solid ${INK}`, borderRadius: 14, padding: "11px 0", minHeight: 48 }}>
-          Just me — text Marco 1:1
-        </button>
-      )}
-      {soloErr && !anyStarted && <p role="alert" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: TOMATO, marginTop: 10 }}>{soloErr}</p>}
-    </>
-  );
-}
 
 // A calm paper sheet. Chaos (tape, tilt) is reserved for the artifacts inside it.
 // Module-level so React keeps it mounted across re-renders (no replayed entrance,
@@ -672,7 +570,7 @@ function Sheet({ children, sheetKey, label }: { children: React.ReactNode; sheet
   );
 }
 function Body({ text }: { text: string }) {
-  return <p style={{ fontFamily: SANS, fontSize: 14, color: "#4A4742", marginTop: 8, lineHeight: 1.45 }}>{text}</p>;
+  return <p style={{ fontFamily: SANS, fontSize: 14, color: INK_SOFT, marginTop: 8, lineHeight: 1.45 }}>{text}</p>;
 }
 
 function Keyframes() {

@@ -9,6 +9,7 @@ import { useState } from "react";
 import CookbookPage from "./CookbookPage";
 import { DualPolaroid } from "./CookbookOrnaments";
 import { CookbookButton, CookbookOptionCard } from "./CookbookControls";
+import { TOMATO } from "@/lib/theme";
 import {
   SearchIcon,
   SaveRecipeIcon,
@@ -42,7 +43,7 @@ export default function MotivationStep({ value, pageNumber, onBack, onNext }: Pr
       title={
         <>
           hat brings you{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>here?</em>
+          <em style={{ color: TOMATO, fontStyle: "italic" }}>here?</em>
         </>
       }
       subtitle="This helps us personalize your experience."

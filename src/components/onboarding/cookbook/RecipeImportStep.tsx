@@ -10,6 +10,7 @@ import Image from "next/image";
 import { useRef, useState } from "react";
 import GuidedShell from "../guided/GuidedShell";
 import { SEED_REEL_URL, SEED_RECIPE, SEED_DETAIL } from "../data/seed-recipe";
+import { PAPER } from "@/lib/theme";
 
 export interface SavedRecipe {
   id: string;
@@ -188,7 +189,7 @@ export default function RecipeImportStep({ step, totalSteps, onBack, onNext }: P
             fontSize: "28px",
             lineHeight: 1.1,
             letterSpacing: "-0.02em",
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
           }}
         >
           Let&apos;s fill your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>book</em>
@@ -217,11 +218,11 @@ export default function RecipeImportStep({ step, totalSteps, onBack, onNext }: P
           disabled={importing}
           className="w-full px-4 py-3 rounded-xl outline-none resize-none disabled:opacity-60"
           style={{
-            background: "#FFFDF7",
+            background: PAPER,
             border: "1px solid rgba(28,26,23,0.14)",
             fontFamily: "var(--font-mono, ui-monospace)",
             fontSize: "13px",
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
             lineHeight: 1.5,
           }}
         />
@@ -232,14 +233,14 @@ export default function RecipeImportStep({ step, totalSteps, onBack, onNext }: P
           onClick={() => !photoBusy && photoRef.current?.click()}
           disabled={photoBusy}
           className="w-full mt-3 flex items-center justify-center gap-2.5 py-3.5 rounded-xl transition-all active:scale-[0.98] disabled:opacity-60"
-          style={{ background: "#FFFDF7", border: "1px dashed rgba(28,26,23,0.28)" }}
+          style={{ background: PAPER, border: "1px dashed rgba(28,26,23,0.28)" }}
         >
           {photoBusy ? (
-            <span className="inline-block w-4 h-4 border-2 border-[#1C1A17] border-t-transparent rounded-full animate-spin" />
+            <span className="inline-block w-4 h-4 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
           ) : (
             <span className="text-lg">📷</span>
           )}
-          <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "15px", color: "var(--ink, #1C1A17)" }}>
+          <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "15px", color: "var(--ink, #171410)" }}>
             {photoBusy ? "Reading your photo…" : "Snap or upload a recipe photo"}
           </span>
         </button>
@@ -261,7 +262,7 @@ export default function RecipeImportStep({ step, totalSteps, onBack, onNext }: P
                     )}
                     <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full flex items-center justify-center text-white" style={{ background: "var(--tomato, #E5462E)", fontSize: 14 }}>✓</span>
                   </div>
-                  <div className="px-2.5 py-2" style={{ background: "#FFFDF7", fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "13px", color: "var(--ink, #1C1A17)", lineHeight: 1.2 }}>
+                  <div className="px-2.5 py-2" style={{ background: PAPER, fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 500', fontSize: "13px", color: "var(--ink, #171410)", lineHeight: 1.2 }}>
                     {r.title}
                   </div>
                 </div>

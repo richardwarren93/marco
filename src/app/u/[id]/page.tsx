@@ -8,13 +8,9 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getUserCooks, type Cook } from "@/lib/social";
 import CookCard from "@/components/social/CookCard";
+import { BUTTER, DISPLAY, HAND, INK, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const MONO = "ui-monospace, monospace";
 
 function timeAgo(iso: string) {
@@ -40,7 +36,7 @@ export default function MemberProfile() {
   const thisWeek = (cooks ?? []).filter((c) => new Date(c.created_at).getTime() >= weekAgo).length;
 
   return (
-    <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
+    <div className="min-h-[100dvh] w-full" style={{ background: SURFACE, position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
       <div className="relative mx-auto w-full max-w-md px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 120 }}>
         <button onClick={() => router.back()} aria-label="Back" style={{ fontFamily: HAND, fontSize: 16, color: INK, background: "none", border: "none" }}>← back</button>
@@ -69,7 +65,7 @@ export default function MemberProfile() {
                 <div key={c.id}>
                   <CookCard treatment={c.card_treatment} photo={c.photo_url ?? ""} title={c.title ?? ""} note={c.note ?? ""} authorName={c.author_name ?? name} authorAvatar={c.author_avatar ?? avatar} timeLabel={timeAgo(c.created_at)} h={180} />
                   {c.source_recipe_id && (
-                    <button onClick={() => router.push(`/recipes/${c.source_recipe_id}`)} className="w-full flex items-center justify-between active:scale-[0.99] transition-transform" style={{ marginTop: 12, background: "#FFD84D", border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px" }}>
+                    <button onClick={() => router.push(`/recipes/${c.source_recipe_id}`)} className="w-full flex items-center justify-between active:scale-[0.99] transition-transform" style={{ marginTop: 12, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "11px 14px" }}>
                       <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK }}>📖 see the recipe</span>
                       <span style={{ color: INK, fontSize: 18 }}>›</span>
                     </button>

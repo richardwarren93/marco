@@ -11,13 +11,9 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { stashInvite, PENDING_HOUSE_KEY } from "@/components/people/PendingInvites";
+import { DISPLAY, HAND, INK, INK_SOFT, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 
 // Accepts "HOUSE-ABCD" or just "abcd" (same alphabet as the household codes).
@@ -73,7 +69,7 @@ export default function JoinHousehold() {
   const secondary = { marginTop: 12, background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 14, border: `2px solid ${INK}`, minHeight: 48 } as const;
 
   return (
-    <div className="min-h-[100dvh] w-full flex items-center justify-center" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
+    <div className="min-h-[100dvh] w-full flex items-center justify-center" style={{ background: SURFACE, position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
       <div className="relative w-full max-w-md px-6 text-center" aria-live="polite">
         {state === "not-found" ? (
@@ -113,7 +109,7 @@ export default function JoinHousehold() {
             <div className="mx-auto flex items-center justify-center" style={{ width: 76, height: 76, borderRadius: 20, background: LIME, border: `2.5px solid ${INK}`, boxShadow: `3px 4px 0 ${INK}`, fontSize: 38, transform: "rotate(-4deg)" }} aria-hidden>🏠</div>
             <div style={{ fontFamily: HAND, fontSize: 17, color: INK, opacity: 0.7, marginTop: 16 }}>join the kitchen at</div>
             <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1.05, marginTop: 2, overflowWrap: "anywhere" }}>{house.name}</h1>
-            <div style={{ fontFamily: SANS, fontSize: 14, color: "#4A4742", lineHeight: 1.45, marginTop: 10 }}>
+            <div style={{ fontFamily: SANS, fontSize: 14, color: INK_SOFT, lineHeight: 1.45, marginTop: 10 }}>
               You&apos;ll share one kitchen{house.members > 0 ? ` with ${house.members === 1 ? "1 person" : `${house.members} people`}` : ""}: recipes, the meal plan and the grocery list.
             </div>
             <button onClick={() => { void join(); }} className="w-full active:scale-[0.98] transition-transform" style={primary}>Join this kitchen</button>

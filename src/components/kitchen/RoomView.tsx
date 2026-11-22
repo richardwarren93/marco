@@ -15,6 +15,7 @@
 //  • Edge chevrons + a one-time "look around" hint aid discovery.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { CREAM_WARM, INK, TOMATO } from "@/lib/theme";
 
 export type RoomPanel = "left" | "center" | "right";
 const ORDER: RoomPanel[] = ["left", "center", "right"];
@@ -141,7 +142,7 @@ export default function RoomView({ left, center, right, initial = "center", reve
     <div
       ref={wrapRef}
       className="absolute inset-0 overflow-hidden touch-pan-y select-none"
-      style={{ background: overview ? "#241C15" : "#EFE5D2" }}
+      style={{ background: overview ? "#241C15" : CREAM_WARM }}
       onDoubleClick={() => setOverview((o) => !o)}
     >
       {/* Zoom-out surround: a soft, blurred, dimmed copy of the room fills the
@@ -240,7 +241,7 @@ export default function RoomView({ left, center, right, initial = "center", reve
         className="absolute z-20 flex items-center justify-center rounded-full active:scale-95 transition-transform"
         style={{ top: "calc(env(safe-area-inset-top,0px) + 12px)", right: 12, width: 36, height: 36, background: "rgba(255,253,247,0.82)", boxShadow: "0 4px 14px rgba(28,20,4,0.2)" }}
       >
-        <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="#1C1A17" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke={INK} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           {overview ? (
             <path d="M9 3H5a2 2 0 0 0-2 2v4M15 3h4a2 2 0 0 1 2 2v4M9 21H5a2 2 0 0 1-2-2v-4M15 21h4a2 2 0 0 0 2-2v-4" />
           ) : (
@@ -262,7 +263,7 @@ export default function RoomView({ left, center, right, initial = "center", reve
               aria-label={`Look ${p}`}
               onClick={() => settle(i)}
               className="rounded-full transition-all"
-              style={{ width: i === view ? 18 : 7, height: 7, background: i === view ? "#E5462E" : "rgba(28,20,4,0.28)" }}
+              style={{ width: i === view ? 18 : 7, height: 7, background: i === view ? TOMATO : "rgba(28,20,4,0.28)" }}
             />
           ))}
         </div>
@@ -273,7 +274,7 @@ export default function RoomView({ left, center, right, initial = "center", reve
         <div className="absolute inset-x-0 flex justify-center pointer-events-none" style={{ top: "calc(env(safe-area-inset-top,0px) + 64px)" }}>
           <div
             className="mk-hint flex items-center gap-2 px-4 py-2 rounded-full"
-            style={{ background: "rgba(255,253,247,0.94)", boxShadow: "0 8px 24px rgba(28,20,4,0.22)", fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: 14, color: "#1C1A17" }}
+            style={{ background: "rgba(255,253,247,0.94)", boxShadow: "0 8px 24px rgba(28,20,4,0.22)", fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: 14, color: INK }}
           >
             <span aria-hidden>‹</span> Look around your kitchen <span aria-hidden>›</span>
           </div>
@@ -307,7 +308,7 @@ function Chevron({ dir, show, onClick }: { dir: "left" | "right"; show: boolean;
         pointerEvents: show ? "auto" : "none",
       } as React.CSSProperties}
     >
-      <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="#1C1A17" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke={INK} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
         {dir === "left" ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
       </svg>
     </button>

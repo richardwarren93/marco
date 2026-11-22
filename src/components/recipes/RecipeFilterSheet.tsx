@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { INK, TOMATO } from "@/lib/theme";
 
 export interface RecipeFilters {
   sort: "newest" | "prep_time";
@@ -19,8 +20,7 @@ const MEAL_TYPES = [
   { key: "snack", label: "Snack" },
 ];
 
-const ACCENT = "#E5462E";
-const INK = "#1C1A17";
+const ACCENT = TOMATO;
 
 /** Count of active constraints — drives the filter button's badge. Sort counts
  *  only when it's off the default (newest). */

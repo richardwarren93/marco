@@ -6,6 +6,7 @@ import CollectionCard from "@/components/collections/CollectionCard";
 import CreateCollectionForm from "@/components/collections/CreateCollectionForm";
 import type { Collection } from "@/types";
 import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
+import { CREAM, INK, INK_MUTED } from "@/lib/theme";
 
 export default function CollectionsPage() {
   const router = useRouter();
@@ -34,7 +35,7 @@ export default function CollectionsPage() {
     <div
       className="max-w-2xl mx-auto px-4 space-y-5 animate-fade-slide-up"
       style={{
-        background: "#F5EEE2",
+        background: CREAM,
         minHeight: "100vh",
         paddingTop: "max(env(safe-area-inset-top, 0px), 20px)",
         paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)",
@@ -48,15 +49,15 @@ export default function CollectionsPage() {
             className="w-8 h-8 rounded-full flex items-center justify-center transition-colors -ml-1"
             style={{ background: "rgba(0,0,0,0.05)" }}
           >
-            <svg className="w-4 h-4" style={{ color: "#1C1A17" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           <div>
-            <h1 className="text-3xl marco-h1 flex items-center gap-2" style={{ color: "#1C1A17" }}>
+            <h1 className="text-3xl marco-h1 flex items-center gap-2" style={{ color: INK }}>
               <CollectionsIcon className="w-6 h-6 text-orange-600" /> Collections
             </h1>
-            <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>Organize your saved recipes</p>
+            <p className="text-xs mt-0.5" style={{ color: INK_MUTED }}>Organize your saved recipes</p>
           </div>
         </div>
         <button
@@ -87,7 +88,7 @@ export default function CollectionsPage() {
       ) : collections.length === 0 ? (
         <div className="text-center py-16 rounded-3xl" style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
           <div className="flex justify-center mb-3" style={{ color: "#d4c9be" }}><CollectionsIcon className="w-12 h-12" /></div>
-          <p style={{ color: "#a09890" }}>No collections yet</p>
+          <p style={{ color: INK_MUTED }}>No collections yet</p>
           <button
             onClick={() => setShowForm(true)}
             className="text-orange-600 hover:text-orange-700 font-medium text-sm mt-2"

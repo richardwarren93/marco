@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { CREAM, INK } from "@/lib/theme";
 
 /* Shared chrome for the ReciMe-style guided onboarding flow: a wordmark logo,
    a back chevron + progress bar row, a scrollable body, and a pinned footer
@@ -31,7 +32,7 @@ export default function GuidedShell({
   return (
     <div
       className="flex flex-col"
-      style={{ background: "#F5EEE2", minHeight: "100dvh" }}
+      style={{ background: CREAM, minHeight: "100dvh" }}
     >
       {/* Logo */}
       <div
@@ -57,7 +58,7 @@ export default function GuidedShell({
               height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#1C1A17"
+              stroke={INK}
               strokeWidth={2.5}
               strokeLinecap="round"
               strokeLinejoin="round"

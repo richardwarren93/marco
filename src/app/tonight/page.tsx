@@ -9,23 +9,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 import type { TomatoHealthState } from "@/lib/gamification";
-import MobileHeader from "@/components/layout/MobileHeader";
 import KitchenScene from "@/components/kitchen/KitchenScene";
 import { type RoomPanel } from "@/components/kitchen/RoomView";
 import RoomPan from "@/components/kitchen/RoomPan";
 import KitchenOnboarding from "@/components/kitchen/KitchenOnboarding";
+import { CREAM, INK, INK_SOFT, PAPER, TOMATO } from "@/lib/theme";
 
-const CREAM = "#F5EEE2";
-const INK = "#1C1A17";
-const INK_SOFT = "#4A4742";
-const TOMATO = "#E5462E";
 // Warm fallback ground behind the full-bleed kitchen (image covers it; this only
 // shows for the split second before the art paints, or if it fails to load).
 const SHADOW = "#A9683A";
-// Hidden for now (fully immersive kitchen). Flip to true to bring back the
-// greeting + notifications/profile header on the home.
-const SHOW_HOME_HEADER = false;
-
 type TimeBudget = "quick" | "medium" | "long";
 type Energy = "low" | "medium" | "high";
 type IngredientMode = "have" | "shop" | "either";
@@ -240,24 +232,10 @@ export default function TonightPage() {
                 aspect={1536 / 1024}
                 focals={[0.13, 0.5, 0.82]}
                 hideDots
-                onExpand={() => router.push("/my-kitchen")}
+                onExpand={() => router.push("/kitchen")}
                 onFocalChange={(i) => setRoomPanel(i === 0 ? "left" : i === 2 ? "right" : "center")}
               />
             </div>
-
-            {/* greeting + notifications, overlaid on the scene (hidden for now) */}
-            {SHOW_HOME_HEADER && (
-              <div className="relative">
-                <div className="absolute inset-x-0 top-0 pointer-events-none" style={{ height: 160, background: "linear-gradient(to bottom, rgba(250,244,232,0.9), rgba(250,244,232,0))" }} />
-                <MobileHeader hideBalance>
-                  <div style={{ paddingLeft: 20 }}>
-                    <h1 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontSize: 24, lineHeight: 1.05, letterSpacing: "-0.02em", color: INK }}>
-                      {greeting()}{name ? `, ${name}` : ""}
-                    </h1>
-                  </div>
-                </MobileHeader>
-              </div>
-            )}
 
             <div className="flex-1 pointer-events-none" />
 
@@ -274,7 +252,7 @@ export default function TonightPage() {
               <div className="px-5 pb-2">
                 <div
                   className="rounded-3xl p-3 flex items-center gap-3"
-                  style={{ background: "#FFFDF9", border: "1px solid rgba(28,26,23,0.06)", boxShadow: "0 8px 22px rgba(28,26,23,0.07)" }}
+                  style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.06)", boxShadow: "0 8px 22px rgba(28,26,23,0.07)" }}
                 >
                   {primary.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -316,7 +294,7 @@ export default function TonightPage() {
                   onClick={() => setStep("checkin")}
                   className="relative active:scale-95 transition-transform text-center"
                   style={{
-                    background: "#FFFDF9",
+                    background: PAPER,
                     border: "1.5px solid rgba(229,70,46,0.55)",
                     borderRadius: 20,
                     padding: "13px 20px",
@@ -340,7 +318,7 @@ export default function TonightPage() {
                       transform: "translateX(-50%) rotate(45deg)",
                       width: 14,
                       height: 14,
-                      background: "#FFFDF9",
+                      background: PAPER,
                       borderBottom: "1.5px solid rgba(229,70,46,0.55)",
                       borderRight: "1.5px solid rgba(229,70,46,0.55)",
                       borderBottomRightRadius: 3,
@@ -698,7 +676,7 @@ function ImportRow({ label, onClick, icon }: { label: string; onClick: () => voi
   return (
     <button onClick={onClick} className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100 transition-colors text-left w-full">
       <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#f3f3f1" }}>{icon}</div>
-      <p className="text-sm font-semibold" style={{ color: "#1C1A17" }}>{label}</p>
+      <p className="text-sm font-semibold" style={{ color: INK }}>{label}</p>
     </button>
   );
 }

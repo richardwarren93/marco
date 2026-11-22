@@ -160,7 +160,7 @@ export default function SignedRecipeCard({
             fontSize: "18px",
             letterSpacing: "-0.015em",
             lineHeight: 1.2,
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
           }}
         >
           {item.title}
@@ -172,7 +172,7 @@ export default function SignedRecipeCard({
             <span
               key={sig.name + i}
               className="marco-signature"
-              style={{ fontSize: "1.15rem", color: "var(--ink, #1C1A17)" }}
+              style={{ fontSize: "1.15rem", color: "var(--ink, #171410)" }}
             >
               ~{sig.name.toLowerCase().split(" ")[0]}
             </span>

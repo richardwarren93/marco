@@ -8,6 +8,7 @@ import { apiFetcher } from "@/lib/hooks/use-data";
 import DiscoverRecipeCard, { type DiscoverCardData } from "./discover/DiscoverRecipeCard";
 import DiscoverFilterSheet, { type DiscoverFilters, activeFilterCount } from "./discover/DiscoverFilterSheet";
 import { useDiscoverSave } from "./discover/useDiscoverSave";
+import { INK, TOMATO } from "@/lib/theme";
 
 interface DiscoverItem extends DiscoverCardData {
   prep_time_minutes: number | null;
@@ -41,8 +42,7 @@ interface FriendsResponse {
   friends: { user_id: string; display_name: string; avatar_url: string | null }[];
 }
 
-const INK = "#1C1A17";
-const ACCENT = "#E5462E";
+const ACCENT = TOMATO;
 
 export default function DiscoverTab({
   onAddToCollection,
@@ -154,7 +154,10 @@ export default function DiscoverTab({
   return (
     <div
       className="max-w-2xl mx-auto px-4 pt-3"
-      style={{ background: "var(--cream, #F5EEE2)", paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
+      // Transparent: the page's KitchenSurface paints the paper. This used to
+      // set --cream, which is a different cream from the Kitchen layer's, so
+      // the page visibly changed colour halfway down.
+      style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
     >
       {/* ── Search + filter ─────────────────────────────────────── */}
       <div className="flex items-center gap-2 mb-5">

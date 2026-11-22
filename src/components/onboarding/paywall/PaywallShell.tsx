@@ -6,6 +6,7 @@
 // footer. Each Plus screen owns its own body layout; this just provides chrome.
 
 import type { ReactNode } from "react";
+import { CREAM } from "@/lib/theme";
 
 interface Props {
   /** Small mono eyebrow, e.g. "PLUS". */
@@ -20,7 +21,7 @@ interface Props {
 
 export default function PaywallShell({ eyebrow, eyebrowAside, onClose, footer, children }: Props) {
   return (
-    <div className="flex flex-col" style={{ background: "#F5EEE2", minHeight: "100dvh" }}>
+    <div className="flex flex-col" style={{ background: CREAM, minHeight: "100dvh" }}>
       {/* Logo */}
       <div
         className="relative flex justify-center flex-shrink-0"

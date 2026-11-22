@@ -20,17 +20,44 @@
   --mustard-soft: #F2C77A;
   --teal: #0F4C5C;          /* anchor */
   --teal-deep: #082E38;
+  /* Two palettes used to ship side by side: the original design-system set
+     and the "beautiful chaos" set the later redesign pasted into 32 files.
+     Where the two disagreed by less than a shade they're merged here:
+       ink     #1C1A17 + #171410        -> #171410  (5/255 per channel apart)
+       paper   #FBF7EE + #FFFDF7/#FFFDF9 -> #FBF7EE
+       tomato  #E5462E + #E8530A        -> #E5462E  (two accent oranges; the
+               second is the pre-rename terracotta, still in 28 places)
+     src/lib/theme.ts mirrors these for inline styles. Nothing should write a
+     brand hex by hand again. */
+  --butter: #FFD84D;        /* chaos: highlighter yellow */
+  --lime: #C4EE45;          /* chaos: "you are here" sticker */
+  --lav: #C9B8FF;           /* chaos: soft accent */
+  --cobalt: #2540E8;        /* chaos: link/ink blue */
+  --pink: #FF4D9D;          /* chaos: hot accent */
+  --surface: #E9E2D3;       /* the Kitchen layer's paper */
   --cream: #F5EEE2;         /* default surface */
   --cream-warm: #EFE5D2;    /* recessed surface */
-  --ink: #1C1A17;           /* type · UI chrome */
+  --paper: #FBF7EE;         /* cards, the dock, anything raised */
+  --ink: #171410;           /* type · UI chrome */
   --ink-soft: #4A4742;
-  --line: rgba(28, 26, 23, 0.12);
+  --ink-muted: #A09890;     /* captions, placeholders */
+  --line: rgba(23, 20, 16, 0.12);
   --line-on-dark: rgba(245, 238, 226, 0.18);
 
   /* Type families */
   --font-display: var(--font-fraunces), 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-script: 'Caveat', 'Comic Sans MS', cursive;
   --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  /* The "beautiful chaos" faces. These were pasted literally into 37 files as
+     `'"Marker Felt", Georgia, serif'`, which meant every non-Apple device
+     (Android, Windows, most browsers) silently fell back to Georgia and a
+     generic cursive — the app looked like a different product per platform.
+     Same first choice as before, but Fraunces/Caveat — which we already
+     self-host via next/font — now catch the fall instead of Georgia.
+     One place to change the face when we pick a licensed one. */
+  --font-chaos: 'Marker Felt', var(--font-fraunces), Georgia, serif;
+  --font-hand: 'Bradley Hand', 'Segoe Script', 'Snell Roundhand', var(--font-caveat), 'Caveat', cursive;
 
   /* Radii (pill-first, then editorial) */
   --radius-pill: 100px;
@@ -175,6 +202,14 @@ body {
   --shadow-card-hover: 0 8px 24px rgba(0, 0, 0, 0.1);
 
   /* Marco brand colors as Tailwind utilities — bg-tomato, text-cream, etc. */
+  --color-butter: var(--butter);
+  --color-lime: var(--lime);
+  --color-lav: var(--lav);
+  --color-cobalt: var(--cobalt);
+  --color-pink: var(--pink);
+  --color-surface: var(--surface);
+  --color-paper: var(--paper);
+  --color-ink-muted: var(--ink-muted);
   --color-tomato: var(--tomato);
   --color-tomato-dark: var(--tomato-dark);
   --color-mustard: var(--mustard);

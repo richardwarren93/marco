@@ -9,15 +9,9 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getCrewByCode, joinCrewByCode, type Crew } from "@/lib/social";
 import { stashInvite } from "@/components/people/PendingInvites";
+import { DISPLAY, HAND, INK, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const COBALT = "#2540E8";
-const BUTTER = "#FFD84D";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
@@ -51,7 +45,7 @@ export default function JoinCrew() {
   }, [code, router]);
 
   return (
-    <div className="min-h-[100dvh] w-full flex items-center justify-center" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
+    <div className="min-h-[100dvh] w-full flex items-center justify-center" style={{ background: SURFACE, position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
       <div className="relative w-full max-w-md px-6 text-center">
         {state === "not-found" ? (

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithApple } from "@/lib/appleAuth";
 import OnboardingTour from "@/components/onboarding/OnboardingTour";
+import { INK_SOFT } from "@/lib/theme";
 import {
   INK, PAPER, TOMATO, LIME, BUTTER, DISP, HAND, SANS,
   AuthShell, Wordmark, Squiggle, Sticker, Highlight, MascotCard,
@@ -58,7 +59,7 @@ export default function SignupPage() {
           <MascotCard size={118} bg={BUTTER} />
           <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 32, color: INK, marginTop: 22 }}>Check your email!</h1>
           <Squiggle w={170} />
-          <p style={{ fontFamily: SANS, fontSize: 15, color: "#4A4742", marginTop: 14, lineHeight: 1.5, maxWidth: 320 }}>We sent a confirmation link to <b style={{ color: INK }}>{email}</b></p>
+          <p style={{ fontFamily: SANS, fontSize: 15, color: INK_SOFT, marginTop: 14, lineHeight: 1.5, maxWidth: 320 }}>We sent a confirmation link to <b style={{ color: INK }}>{email}</b></p>
           <Link href="/auth/login" className="inline-block active:scale-[0.98] transition-transform" style={{ ...tomatoBtn, padding: "14px 26px", marginTop: 24 }}>Back to sign in</Link>
         </div>
       </AuthShell>

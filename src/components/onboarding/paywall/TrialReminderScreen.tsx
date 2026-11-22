@@ -8,9 +8,8 @@
 import { useMemo } from "react";
 import PaywallShell, { PlusPrimaryButton } from "./PaywallShell";
 import { PLUS_PRICING } from "./plus-config";
+import { INK, TOMATO } from "@/lib/theme";
 
-const INK = "#1C1A17";
-const TOMATO = "#E5462E";
 
 function formatDate(d: Date) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });

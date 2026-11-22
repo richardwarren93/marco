@@ -8,9 +8,8 @@
 import { useState } from "react";
 import PaywallShell, { PlusPrimaryButton } from "./PaywallShell";
 import { PLUS_PRICING, PLUS_TESTIMONIALS, PLUS_SOCIAL_PROOF } from "./plus-config";
+import { INK, MUSTARD, TOMATO } from "@/lib/theme";
 
-const INK = "#1C1A17";
-const TOMATO = "#E5462E";
 
 // Compact value reinforcement shown right above the price. The cash-back line
 // carries the green savings figure (the ROI hook).
@@ -149,7 +148,7 @@ export default function PlusPaywallScreen({ onStartTrial, onSkip, onBack }: Prop
 
           {/* Social proof */}
           <div className="mt-3 flex items-center justify-center gap-1.5">
-            <span style={{ color: "#E8A33D", fontSize: 15, letterSpacing: "1px" }}>★★★★★</span>
+            <span style={{ color: MUSTARD, fontSize: 15, letterSpacing: "1px" }}>★★★★★</span>
             <span
               style={{
                 fontFamily: "var(--font-mono, ui-monospace)",

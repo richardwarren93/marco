@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import type { AppNotification } from "@/types";
+import { INK, INK_MUTED } from "@/lib/theme";
 
 interface SuggestedUser {
   user_id: string;
@@ -191,7 +192,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                 onClick={() => handleFriendRespond(n, "accept")}
                 disabled={respondingId === n.id}
                 className="px-4 py-1.5 rounded-full text-xs font-bold text-white active:scale-95 transition-all disabled:opacity-50"
-                style={{ background: "#1C1A17" }}
+                style={{ background: INK }}
               >
                 {respondingId === n.id ? "..." : "Accept"}
               </button>
@@ -241,7 +242,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-base font-black" style={{ color: "#1C1A17" }}>
+          <h2 className="text-base font-black" style={{ color: INK }}>
             Notifications
           </h2>
           <button
@@ -269,7 +270,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                     className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
                     style={{ background: "#f5f0eb" }}
                   >
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="#a09890" strokeWidth={1.5}>
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke={INK_MUTED} strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     </svg>
                   </div>
@@ -331,7 +332,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                                 onClick={() => handleBefriend(profile)}
                                 disabled={inProgress}
                                 className="px-4 py-1.5 rounded-full text-xs font-bold text-white active:scale-95 transition-all disabled:opacity-50"
-                                style={{ background: "#1C1A17" }}
+                                style={{ background: INK }}
                               >
                                 {inProgress ? "..." : "Befriend"}
                               </button>
