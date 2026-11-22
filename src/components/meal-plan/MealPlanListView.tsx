@@ -27,12 +27,13 @@ import CoordinationView from "./CoordinationView";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { GroceryIcon } from "@/components/icons/HandDrawnIcons";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import { DISPLAY, HAND, INK, INK_SOFT, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
-const ACCENT = "#E5462E";          // Marco tomato — the app's primary
+const ACCENT = TOMATO;          // Marco tomato — the app's primary
 const BG = "transparent"; // the dotted cream shows through from ScheduleScreen
 const SURFACE = "#ffffff";
-const TEXT_1 = "#171410";          // ink
+const TEXT_1 = INK;          // ink
 const TEXT_2 = "#888";
 const BORDER = "#e8e8e5";
 // An ink "border" via box-shadow — rings every surface card in the app's
@@ -187,7 +188,7 @@ function MealAction({
       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-semibold transition-all active:scale-95"
       style={{
         background: danger ? "rgba(229,70,46,0.05)" : "rgba(28,26,23,0.04)",
-        color: danger ? "#E5462E" : "#4A4742",
+        color: danger ? TOMATO : INK_SOFT,
         border: danger ? "1px solid rgba(229,70,46,0.20)" : "1px solid rgba(28,26,23,0.08)",
       }}
     >
@@ -905,7 +906,7 @@ export default function MealPlanListView({
                       <h4
                         className="text-white line-clamp-2"
                         style={{
-                          fontFamily: '"Marker Felt", Georgia, serif',
+                          fontFamily: DISPLAY,
                           fontWeight: 700,
                           fontSize: "16px",
                           lineHeight: 1.18,
@@ -946,7 +947,7 @@ export default function MealPlanListView({
                 Trending Recipes
               </p>
               <button
-                onClick={() => router.push("/recipes?tab=discover")}
+                onClick={() => router.push("/discover")}
                 className="text-[11px] font-semibold"
                 style={{ color: ACCENT }}
               >
@@ -1008,7 +1009,7 @@ export default function MealPlanListView({
                       <h4
                         className="text-white line-clamp-2"
                         style={{
-                          fontFamily: '"Marker Felt", Georgia, serif',
+                          fontFamily: DISPLAY,
                           fontWeight: 700,
                           fontSize: "16px",
                           lineHeight: 1.18,
@@ -1084,26 +1085,26 @@ export default function MealPlanListView({
         {/* ── Week progress — zany meal pips, one per goal meal ───────── */}
         <div
           className="flex items-center justify-between gap-3 rounded-2xl px-4 py-3"
-          style={{ background: "#FBF7EE", boxShadow: CARD_SHADOW }}
+          style={{ background: PAPER, boxShadow: CARD_SHADOW }}
         >
           <div className="min-w-0">
-            <div style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "18px", color: "#171410", lineHeight: 1 }}>
+            <div style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: "18px", color: INK, lineHeight: 1 }}>
               {planned} of {GOAL} this week
             </div>
-            <div style={{ fontFamily: '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive', fontSize: "13.5px", color: "#E5462E", marginTop: "3px", transform: "rotate(-1deg)" }}>
+            <div style={{ fontFamily: HAND, fontSize: "13.5px", color: TOMATO, marginTop: "3px", transform: "rotate(-1deg)" }}>
               {planned >= GOAL ? "your week's full 🎉" : "your week's taking shape"}
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             {Array.from({ length: GOAL }).map((_, i) => (
-              <span key={i} aria-hidden style={{ width: "15px", height: "15px", borderRadius: "99px", border: "2px solid #171410", background: i < planned ? (planned >= GOAL ? "#C4EE45" : "#E5462E") : "transparent", transform: `rotate(${i % 2 ? 5 : -5}deg)` }} />
+              <span key={i} aria-hidden style={{ width: "15px", height: "15px", borderRadius: "99px", border: "2px solid #171410", background: i < planned ? (planned >= GOAL ? LIME : TOMATO) : "transparent", transform: `rotate(${i % 2 ? 5 : -5}deg)` }} />
             ))}
           </div>
         </div>
 
         {/* ── This Week + collapse-all ────────────────────────────────── */}
         <div className="flex items-center justify-between px-1 pt-1">
-          <h2 style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "20px", letterSpacing: "-0.01em", color: TEXT_1 }}>
+          <h2 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: "20px", letterSpacing: "-0.01em", color: TEXT_1 }}>
             This Week
           </h2>
           <button onClick={toggleAll} className="flex items-center gap-1 text-[12.5px] font-semibold active:scale-95" style={{ color: TEXT_2 }}>
@@ -1149,11 +1150,11 @@ export default function MealPlanListView({
                 className="w-full flex items-center justify-between px-4 py-3.5 text-left active:bg-black/[0.015]"
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="flex-shrink-0" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "16px", color: isPast ? "var(--ink-soft, #4A4742)" : TEXT_1, opacity: isPast ? 0.6 : 1 }}>
+                  <span className="flex-shrink-0" style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: "16px", color: isPast ? "var(--ink-soft, #4A4742)" : TEXT_1, opacity: isPast ? 0.6 : 1 }}>
                     {weekday} {dayNum}
                   </span>
                   {isToday && (
-                    <span className="px-2 py-0.5 rounded-full flex-shrink-0" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "10px", background: "#E5462E", color: "#FBF7EE", border: "1.5px solid #171410" }}>Today</span>
+                    <span className="px-2 py-0.5 rounded-full flex-shrink-0" style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: "10px", background: TOMATO, color: PAPER, border: "1.5px solid #171410" }}>Today</span>
                   )}
                   {dayHasDietaryConflict && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: "rgba(232, 163, 61, 0.18)", color: "#8A6418" }} title="One of this day's recipes doesn't fit your dietary filters.">Needs swap</span>
@@ -1222,7 +1223,7 @@ export default function MealPlanListView({
                     <button
                       onClick={() => setCoordinatePlans(plans)}
                       className="w-full mt-2 flex items-center justify-center gap-1.5 py-2 rounded-xl text-[12px] font-semibold transition-all active:scale-[0.98]"
-                      style={{ background: "var(--ink, #1C1A17)", color: "var(--cream, #F5EEE2)" }}
+                      style={{ background: "var(--ink, #171410)", color: "var(--cream, #F5EEE2)" }}
                     >
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <circle cx="12" cy="12" r="10" />
@@ -1264,7 +1265,7 @@ export default function MealPlanListView({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="text-base whitespace-nowrap" style={{ color: "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
+            <span className="text-base whitespace-nowrap" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
             <button
               onClick={() => changeWeek(addDays(weekStart, 7))}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
@@ -1282,7 +1283,7 @@ export default function MealPlanListView({
               <button
                 onClick={() => setViewDropdownOpen((v) => !v)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
-                style={{ color: viewDropdownOpen ? "#E5462E" : "#888", background: viewDropdownOpen ? "#ebebea" : "transparent" }}
+                style={{ color: viewDropdownOpen ? TOMATO : "#888", background: viewDropdownOpen ? "#ebebea" : "transparent" }}
                 aria-label="Switch view"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1326,7 +1327,7 @@ export default function MealPlanListView({
           <button
             onClick={() => router.push("/grocery")}
             className="flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full transition-all active:scale-95 flex-shrink-0"
-            style={{ background: "var(--cream-warm, #EFE5D2)", color: "#1C1A17" }}
+            style={{ background: "var(--cream-warm, #EFE5D2)", color: INK }}
             aria-label="View grocery list"
           >
             <GroceryIcon className="w-4 h-4" />
@@ -1358,7 +1359,7 @@ export default function MealPlanListView({
               >
                 <span
                   className="text-[9px] font-semibold tracking-wide"
-                  style={{ color: isSelected ? ACCENT : isToday ? "#1C1A17" : "#c0c0be" }}
+                  style={{ color: isSelected ? ACCENT : isToday ? INK : "#c0c0be" }}
                 >
                   {abbr.slice(0, 3)}
                 </span>

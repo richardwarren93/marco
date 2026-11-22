@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SubPageHeader from "@/components/layout/SubPageHeader";
+import PageHeader from "@/components/layout/PageHeader";
+import { CREAM, INK, PAPER, TOMATO } from "@/lib/theme";
 
 /* Notifications — permission status + enable. Mirrors the onboarding
    NotificationsStep request logic: Capacitor push on native, the Notification
@@ -71,23 +72,23 @@ export default function NotificationsPage() {
   const c = perm ? COPY[perm] : null;
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
-      <SubPageHeader title="Notifications" />
+    <div className="min-h-screen" style={{ background: CREAM }}>
+      <PageHeader back title="Notifications" />
       <div className="max-w-lg mx-auto px-4 pt-1" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
         {c && (
           <div
             className="rounded-2xl p-5 text-center"
-            style={{ background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)", boxShadow: "0 2px 12px rgba(28,26,23,0.05)" }}
+            style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.08)", boxShadow: "0 2px 12px rgba(28,26,23,0.05)" }}
           >
             <span className="text-4xl block mb-3">{c.icon}</span>
-            <p className="font-semibold text-[15.5px]" style={{ color: "#1C1A17" }}>{c.title}</p>
+            <p className="font-semibold text-[15.5px]" style={{ color: INK }}>{c.title}</p>
             <p className="text-[13px] mt-1.5 leading-relaxed max-w-xs mx-auto" style={{ color: "#6B655C" }}>{c.body}</p>
             {perm === "prompt" && (
               <button
                 onClick={handleEnable}
                 disabled={requesting}
                 className="mt-5 w-full py-3.5 rounded-2xl font-semibold text-[14.5px] text-white active:scale-[0.98] transition-transform disabled:opacity-60"
-                style={{ background: "#E5462E" }}
+                style={{ background: TOMATO }}
               >
                 {requesting ? "Asking…" : "Turn on notifications"}
               </button>

@@ -74,7 +74,7 @@ export default function GroceryItem({ item, onToggle, onEdit, onDelete, ownerNam
             <span
               className="text-sm font-medium capitalize transition-all duration-300"
               style={{
-                color: item.checked ? "var(--ink-soft, #4A4742)" : "var(--ink, #1C1A17)",
+                color: item.checked ? "var(--ink-soft, #4A4742)" : "var(--ink, #171410)",
                 textDecoration: item.checked ? "line-through" : "none",
                 textDecorationColor: "var(--tomato, #E5462E)",
                 textDecorationThickness: "1.5px",

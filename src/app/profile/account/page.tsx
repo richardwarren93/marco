@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/lib/hooks/use-data";
-import SubPageHeader from "@/components/layout/SubPageHeader";
+import PageHeader from "@/components/layout/PageHeader";
 import RestorePurchasesButton from "@/components/purchases/RestorePurchasesButton";
+import { CREAM, INK, INK_MUTED, PAPER, TOMATO } from "@/lib/theme";
 
 /* Account — the one-time/dangerous stuff, moved off the profile hub: guest
    email upgrade, restore purchases (App Store requirement), log out, and
@@ -59,15 +60,15 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
-      <SubPageHeader title="Account" />
+    <div className="min-h-screen" style={{ background: CREAM }}>
+      <PageHeader back title="Account" />
 
       <div className="max-w-lg mx-auto px-4 pt-1" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
         {/* ── Who you are ── */}
         {!isGuest && (
-          <div className="p-4 rounded-2xl" style={{ background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)" }}>
-            <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: "#a09890" }}>Signed in as</p>
-            <p className="text-sm font-semibold mt-1 truncate" style={{ color: "#1C1A17" }}>{email || profile?.display_name || "—"}</p>
+          <div className="p-4 rounded-2xl" style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.08)" }}>
+            <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Signed in as</p>
+            <p className="text-sm font-semibold mt-1 truncate" style={{ color: INK }}>{email || profile?.display_name || "—"}</p>
           </div>
         )}
 
@@ -76,14 +77,14 @@ export default function AccountPage() {
           <div className="p-4 rounded-2xl flex items-start gap-3" style={{ background: "#fff4ec", border: "1px solid #fcd9bd" }}>
             <span className="text-2xl flex-shrink-0">🔒</span>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
-              <p className="text-xs mt-0.5 leading-relaxed" style={{ color: "#a09890" }}>
+              <p className="text-sm font-bold" style={{ color: INK }}>Secure your account</p>
+              <p className="text-xs mt-0.5 leading-relaxed" style={{ color: INK_MUTED }}>
                 Add an email to access Marco from any device and never lose your recipes.
               </p>
               <button
                 onClick={() => setShowUpgrade(true)}
                 className="mt-2.5 px-4 py-1.5 rounded-full text-xs font-bold text-white transition-all active:scale-95"
-                style={{ background: "#e8530a" }}
+                style={{ background: TOMATO }}
               >
                 Add email
               </button>
@@ -94,7 +95,7 @@ export default function AccountPage() {
         {isGuest && showUpgrade && !upgradeSent && (
           <div className="p-4 rounded-2xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Secure your account</p>
+              <p className="text-sm font-bold" style={{ color: INK }}>Secure your account</p>
               <button onClick={() => setShowUpgrade(false)} className="text-gray-400 text-sm" aria-label="Close">✕</button>
             </div>
             <form onSubmit={handleUpgrade} className="space-y-2.5">
@@ -122,7 +123,7 @@ export default function AccountPage() {
                 type="submit"
                 disabled={upgradeLoading}
                 className="w-full py-2.5 rounded-xl font-bold text-sm text-white transition-all active:scale-[0.98] disabled:opacity-50"
-                style={{ background: "#e8530a" }}
+                style={{ background: TOMATO }}
               >
                 {upgradeLoading ? "Securing..." : "Secure account"}
               </button>
@@ -184,7 +185,7 @@ export default function AccountPage() {
         >
           <div
             className="w-full max-w-sm rounded-3xl p-6 shadow-xl"
-            style={{ background: "#F5EEE2" }}
+            style={{ background: CREAM }}
             onClick={(e) => e.stopPropagation()}
           >
             <h3
@@ -193,7 +194,7 @@ export default function AccountPage() {
                 fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
                 fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
                 fontSize: "22px",
-                color: "var(--ink, #1C1A17)",
+                color: "var(--ink, #171410)",
               }}
             >
               Delete your account?
@@ -204,7 +205,7 @@ export default function AccountPage() {
             </p>
 
             <label htmlFor="delete-confirm" className="block text-xs font-medium mb-1.5" style={{ color: "var(--ink-soft, #4A4742)" }}>
-              Type <span style={{ fontFamily: "monospace", color: "var(--ink, #1C1A17)" }}>DELETE</span> to confirm
+              Type <span style={{ fontFamily: "monospace", color: "var(--ink, #171410)" }}>DELETE</span> to confirm
             </label>
             <input
               id="delete-confirm"
@@ -213,7 +214,7 @@ export default function AccountPage() {
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               disabled={deleting}
               className="w-full px-4 py-3 rounded-2xl outline-none text-sm bg-white"
-              style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #1C1A17)" }}
+              style={{ border: "1px solid rgba(28,26,23,0.12)", color: "var(--ink, #171410)" }}
               autoComplete="off"
               autoCapitalize="characters"
             />
@@ -227,7 +228,7 @@ export default function AccountPage() {
                 onClick={() => setShowDelete(false)}
                 disabled={deleting}
                 className="flex-1 py-3 rounded-2xl text-sm font-medium transition-colors disabled:opacity-50"
-                style={{ background: "rgba(28,26,23,0.06)", color: "var(--ink, #1C1A17)" }}
+                style={{ background: "rgba(28,26,23,0.06)", color: "var(--ink, #171410)" }}
               >
                 Keep my account
               </button>
@@ -249,7 +250,7 @@ export default function AccountPage() {
                 }}
                 disabled={deleting || deleteConfirmText !== "DELETE"}
                 className="flex-1 py-3 rounded-2xl text-sm font-semibold text-white transition-colors disabled:opacity-50"
-                style={{ background: "#E5462E" }}
+                style={{ background: TOMATO }}
               >
                 {deleting ? "Deleting..." : "Delete forever"}
               </button>

@@ -8,7 +8,9 @@ import ChooseMealsScreen from "@/components/meal-plan/ChooseMealsScreen";
 import ReviewMealsScreen from "@/components/meal-plan/ReviewMealsScreen";
 import ScheduleScreen from "@/components/meal-plan/ScheduleScreen";
 import AssignDaysScreen, { type DayAssignment } from "@/components/meal-plan/AssignDaysScreen";
-import KitchenLayerHeader from "@/components/layout/KitchenLayerHeader";
+import PageHeader from "@/components/layout/PageHeader";
+import KitchenSurface from "@/components/layout/KitchenSurface";
+import KitchenTabs from "@/components/layout/KitchenTabs";
 import type { MealPlan, Recipe } from "@/types";
 import { useToast } from "@/components/ui/Toast";
 
@@ -287,8 +289,9 @@ function MealPlanInner() {
 
   // ─── Step 3: Schedule (default) ───────────────────────────────────────────────
   return (
-    <>
-      <KitchenLayerHeader title="Meal plan" sub="Plan your week" />
+    <KitchenSurface>
+      <PageHeader title="Meal plan" subtitle="your week, sorted" avatar />
+      <div className="px-4"><KitchenTabs /></div>
       {error && (
         <div className="bg-red-50 text-red-600 px-4 py-2 text-sm">{error}</div>
       )}
@@ -305,6 +308,6 @@ function MealPlanInner() {
         calendarWeek={calendarWeek}
         onCalendarWeekChange={setCalendarWeek}
       />
-    </>
+    </KitchenSurface>
   );
 }

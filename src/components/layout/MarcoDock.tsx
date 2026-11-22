@@ -10,12 +10,9 @@
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { SPRING_STICKER, PRESS } from "@/lib/motion";
+import { DISPLAY, INK, LIME, PAPER, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const DISP = '"Marker Felt", Georgia, serif';
+const DISP = DISPLAY;
 
 type TabDef = { label: string; href: string; match: string[]; guide: string; icon: (c: string) => React.ReactNode };
 
@@ -33,7 +30,7 @@ const TableIcon = (c: string) => (
 );
 
 const TABS: TabDef[] = [
-  { label: "Kitchen", href: "/kitchen", match: ["/kitchen", "/recipes", "/meal-plan", "/grocery"], guide: "tab-kitchen", icon: HouseIcon },
+  { label: "Kitchen", href: "/kitchen", match: ["/kitchen", "/recipes", "/discover", "/meal-plan", "/grocery"], guide: "tab-kitchen", icon: HouseIcon },
   { label: "Table", href: "/friends-stack", match: ["/friends-stack", "/friends", "/crew", "/potluck"], guide: "tab-table", icon: TableIcon },
 ];
 

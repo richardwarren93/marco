@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { Recipe, Ingredient } from "@/types";
+import { CREAM, INK, INK_MUTED, TOMATO } from "@/lib/theme";
 
 interface Message {
   id: string;
@@ -264,7 +265,7 @@ export default function CookWithMarcoChat({
   return (
     <div
       className="fixed inset-0 z-50 flex flex-col"
-      style={{ background: "#F5EEE2" }}
+      style={{ background: CREAM }}
     >
       {/* Header */}
       <div
@@ -321,8 +322,8 @@ export default function CookWithMarcoChat({
                 disabled={isStreaming}
                 className="px-3.5 py-2 rounded-full text-xs font-medium border transition-all active:scale-95 disabled:opacity-50"
                 style={{
-                  borderColor: "#e8530a",
-                  color: "#e8530a",
+                  borderColor: TOMATO,
+                  color: TOMATO,
                   background: "rgba(232, 83, 10, 0.05)",
                 }}
               >
@@ -374,8 +375,8 @@ export default function CookWithMarcoChat({
                     }`}
                     style={
                       msg.role === "user"
-                        ? { background: "#e8530a", color: "white" }
-                        : { background: "#ffffff", color: "#1C1A17", boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }
+                        ? { background: TOMATO, color: "white" }
+                        : { background: "#ffffff", color: INK, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }
                     }
                   >
                     {msg.content || (
@@ -438,7 +439,7 @@ export default function CookWithMarcoChat({
               className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="#a09890"
+              stroke={INK_MUTED}
               strokeWidth={1.8}
             >
               <path
@@ -487,7 +488,7 @@ export default function CookWithMarcoChat({
               className="w-full resize-none rounded-2xl border px-4 py-2.5 text-sm outline-none transition-colors disabled:opacity-50 placeholder:text-gray-400"
               style={{
                 borderColor: "#e8e6e3",
-                background: "#F5EEE2",
+                background: CREAM,
                 maxHeight: 120,
                 lineHeight: "1.4",
               }}
@@ -501,7 +502,7 @@ export default function CookWithMarcoChat({
             className="p-2.5 rounded-full transition-all active:scale-90 disabled:opacity-40 shrink-0"
             style={{
               background:
-                input.trim() || pendingImage ? "#e8530a" : "#e8e6e3",
+                input.trim() || pendingImage ? TOMATO : "#e8e6e3",
             }}
             aria-label="Send message"
           >
@@ -509,7 +510,7 @@ export default function CookWithMarcoChat({
               className="w-5 h-5"
               fill="none"
               viewBox="0 0 24 24"
-              stroke={input.trim() || pendingImage ? "white" : "#a09890"}
+              stroke={input.trim() || pendingImage ? "white" : INK_MUTED}
               strokeWidth={2}
             >
               <path

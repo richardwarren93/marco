@@ -2,12 +2,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { DISPLAY, HAND, INK, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const DOTS = "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)";
 
@@ -53,7 +50,7 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", backgroundImage: DOTS, backgroundSize: "13px 13px", color: INK }}>
+    <div className="min-h-[100dvh] w-full" style={{ background: SURFACE, backgroundImage: DOTS, backgroundSize: "13px 13px", color: INK }}>
       <div className="relative mx-auto flex w-full max-w-md flex-col px-6" style={{ minHeight: "100dvh", paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 24 }}>
         <div className="flex items-center justify-between">
           <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK }}>Marco</span>

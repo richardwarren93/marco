@@ -6,21 +6,16 @@
 //   3. Top cooks — what you've cooked, Beli-ranked; unranked cooks wait below
 // Plus your people: the Household / Family / Friends group-chat checklist.
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { motion } from "motion/react";
 import { useGuideActive } from "@/components/guide/guideStore";
-import GroupChats, { peoplePollInterval, type Groups } from "@/components/people/GroupChats";
+import PageHeader from "@/components/layout/PageHeader";
+import KitchenTabs from "@/components/layout/KitchenTabs";
 import { SPRING_STICKER } from "@/lib/motion";
+import { BUTTER, DISPLAY, HAND, INK, INK_SOFT, LAV, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const BUTTER = "#FFD84D";
-const LAV = "#C9B8FF";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 
 type FeedItem = { key: string; source: "you" | "household" | "table"; title: string; image: string | null; by: string | null; href: string | null; at: string };
@@ -63,30 +58,24 @@ export default function KitchenHub() {
   const { data: hh } = useSWR<HouseholdData>("/api/household", fetcher, { revalidateOnFocus: false });
   // A fresh refreshInterval identity after each send makes SWR re-arm its poll
   // (it only re-reads the function when the option changes).
-  const [sentTick, setSentTick] = useState(0);
-  const pollInterval = useMemo(() => (d: { groups?: Groups; uid?: string } | undefined) => peoplePollInterval(d), [sentTick]); // eslint-disable-line react-hooks/exhaustive-deps
-  const { data: quests, mutate: mutateQuests } = useSWR<{ groups?: Groups; uid?: string }>("/api/quests", fetcher, { revalidateOnFocus: true, refreshInterval: pollInterval });
+  // The guide's state, read here only for the viewer's own id (so the
+  // household line can say who ELSE is in it).
+  const { data: quests } = useSWR<{ uid?: string }>("/api/quests", fetcher, { revalidateOnFocus: false });
 
   return (
-    <div className="min-h-[100dvh]" style={{ background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK }}>
+    <div className="min-h-[100dvh]" style={{ background: SURFACE, backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK }}>
       <div className="mx-auto w-full max-w-lg px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 130 }}>
-        {/* header */}
-        <div className="flex items-center justify-between gap-3 px-1">
-          <div className="min-w-0">
-            <h1 className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 23, letterSpacing: "-0.01em", color: INK, lineHeight: 1.05 }}>{data ? `${data.name}'s kitchen` : "Your kitchen"}</h1>
-            <div style={{ fontFamily: HAND, fontSize: 14, color: TOMATO, transform: "rotate(-1deg)", marginTop: 2 }}>{data ? `${plural(data.recipeCount, "recipe", "recipes")} · ${plural(data.cookCount, "cook", "cooks")}` : "make yourself at home"}</div>
-          </div>
-          <Link href="/profile" aria-label="Your profile" className="flex flex-shrink-0 items-center justify-center" style={{ width: 44, height: 44, borderRadius: 99, background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, transform: "rotate(5deg)", border: `2px solid ${BUTTER}` }}>{data?.name.slice(0, 1).toUpperCase() ?? "·"}</Link>
-        </div>
+        <PageHeader
+          title={data ? `${data.name}'s kitchen` : "Your kitchen"}
+          subtitle={data ? `${plural(data.recipeCount, "recipe", "recipes")} · ${plural(data.cookCount, "cook", "cooks")}` : "make yourself at home"}
+          avatar
+          bell
+        />
 
-        <People hh={hh} groups={quests?.groups} uid={quests?.uid} guideActive={guideActive} onChange={() => { setSentTick((t) => t + 1); void mutateQuests(); }} />
+        <People hh={hh} uid={quests?.uid} guideActive={guideActive} />
 
-        {/* recipes here, plan & shop a tap away */}
-        <div className="flex" style={{ marginTop: 14, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: 4, gap: 4, boxShadow: "0 5px 12px rgba(23,20,16,0.1)" }}>
-          <span className="flex-1 text-center" style={{ background: INK, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Recipes</span>
-          <Link href="/meal-plan" data-guide="tab-mealplan" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Meal plan</Link>
-          <Link href="/grocery" data-guide="tab-groceries" className="flex-1 text-center active:scale-95 transition-transform" style={{ color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "10px 0", borderRadius: 10 }}>Groceries</Link>
-        </div>
+        {/* recipes, discover, plan & shop — one tap away, same control everywhere */}
+        <KitchenTabs />
 
         {error && <div role="alert" className="mt-4 rounded-xl bg-white p-4" style={{ border: `2px solid ${INK}` }}><p>{error.message}</p><button className="mt-2 underline" onClick={() => mutate()}>Try again</button></div>}
         {!data && !error && <p role="status" className="mt-6" style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.6 }}>loading your kitchen…</p>}
@@ -219,7 +208,7 @@ function TopCooks({ ranked, hideEmpty }: { ranked: RankedItem[]; hideEmpty: bool
         <h2 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 20, color: INK, marginBottom: 10, marginLeft: 2 }}>top cooks</h2>
         <Link href="/i-cooked" className="block text-center active:scale-[0.99] transition-transform" style={{ border: `2px dashed ${INK}`, borderRadius: 16, padding: "18px 16px", background: PAPER }}>
           <div style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, transform: "rotate(-1deg)" }}>cook something, then rank it</div>
-          <div style={{ fontFamily: SANS, fontSize: 13, color: "#4A4742", marginTop: 5 }}>your best dishes climb to the top</div>
+          <div style={{ fontFamily: SANS, fontSize: 13, color: INK_SOFT, marginTop: 5 }}>your best dishes climb to the top</div>
           <div className="mt-3 inline-block" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 14, padding: "10px 18px", borderRadius: 11, border: `2px solid ${INK}`, boxShadow: `2px 3px 0 ${INK}` }}>I cooked something</div>
         </Link>
       </section>
@@ -260,22 +249,20 @@ function TopCooks({ ranked, hideEmpty }: { ranked: RankedItem[]; hideEmpty: bool
 // A shared household shows as a lime tag. Below it, the Household / Family /
 // Friends group-chat card, persistent until Marco is in all three chats (the
 // server's checkmarks — "sent, waiting for Marco" doesn't count).
-function People({ hh, groups, uid, guideActive, onChange }: { hh: HouseholdData | undefined; groups: Groups | undefined; uid: string | undefined; guideActive: boolean; onChange: () => void }) {
+function People({ hh, uid, guideActive }: { hh: HouseholdData | undefined; uid: string | undefined; guideActive: boolean }) {
   const [copied, setCopied] = useState(false);
-  if (!hh || !groups || guideActive) return null; // still loading, or the guide is driving
+  if (!hh || guideActive) return null; // still loading, or the guide is driving
   const members = hh.household?.members ?? [];
   const shared = members.length >= 2;
-  const allDone = groups.household && groups.family && groups.friends;
   const waitingCode = hh.household && !shared ? hh.household.invite_code : null;
   return (
     <div style={{ marginTop: 12 }}>
       {shared && (
-        <div className="flex items-center gap-2" style={{ background: LIME, border: `2px solid ${INK}`, borderRadius: 12, padding: "8px 12px", marginBottom: allDone ? 0 : 10 }}>
+        <div className="flex items-center gap-2" style={{ background: LIME, border: `2px solid ${INK}`, borderRadius: 12, padding: "8px 12px" }}>
           <span style={{ fontSize: 14, flexShrink: 0 }} aria-hidden>🍅</span>
           <span className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>shared with {members.filter((m) => m.user_id !== uid).map((m) => m.profile?.display_name || "your housemate").join(" & ")}</span>
         </div>
       )}
-      {!allDone && <GroupChats groups={groups} uid={uid} onChange={onChange} variant="compact" />}
       {waitingCode && (
         <div className="flex items-center gap-2" style={{ marginTop: 8, padding: "0 4px" }}>
           <span className="min-w-0 flex-1" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.8 }}>waiting for your household — share your code</span>

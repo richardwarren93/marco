@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import type { Recipe, Ingredient } from "@/types";
 import { parseStep, formatCountdown, classifyAllSteps, TRACK_LABELS, type StepToken, type StepTrack } from "@/lib/cook/stepParser";
+import { DISPLAY, INK, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 import {
   isVoiceSupported,
   createVoiceController,
@@ -319,7 +320,7 @@ export default function CookMode({ recipe, onClose }: Props) {
     <div
       className="fixed inset-0 z-[80] flex flex-col"
       style={{
-        background: "#E9E2D3",
+        background: SURFACE,
         backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)",
         backgroundSize: "13px 13px",
         paddingTop: "env(safe-area-inset-top, 0px)",
@@ -338,10 +339,10 @@ export default function CookMode({ recipe, onClose }: Props) {
           <p
             className="mt-1.5"
             style={{
-              fontFamily: '"Marker Felt", Georgia, serif',
+              fontFamily: DISPLAY,
               fontWeight: 700,
               fontSize: "22px",
-              color: "#171410",
+              color: INK,
               lineHeight: 1.05,
             }}
           >
@@ -597,7 +598,7 @@ export default function CookMode({ recipe, onClose }: Props) {
                 fontSize: "22px",
                 lineHeight: 1.4,
                 letterSpacing: "-0.01em",
-                color: "var(--ink, #1C1A17)",
+                color: "var(--ink, #171410)",
               }}
             >
               {activeTokens.map((tok, i) => {
@@ -755,7 +756,7 @@ export default function CookMode({ recipe, onClose }: Props) {
           <button
             onClick={handleDone}
             className="w-full py-3.5 rounded-2xl active:scale-[0.98] transition-transform"
-            style={{ background: "#E5462E", color: "#FBF7EE", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "17px", border: "2.5px solid #171410", boxShadow: "0 8px 18px rgba(229,70,46,0.28)" }}
+            style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: "17px", border: "2.5px solid #171410", boxShadow: "0 8px 18px rgba(229,70,46,0.28)" }}
           >
             {isLastStep ? "Finish cooking" : "Mark step done"}
           </button>
@@ -766,7 +767,7 @@ export default function CookMode({ recipe, onClose }: Props) {
       {isFinished && (
         <div className="flex-1 flex items-center justify-center px-6 text-center">
           <div>
-            <span className="marco-signature" style={{ fontSize: "3rem", color: "var(--ink, #1C1A17)" }}>
+            <span className="marco-signature" style={{ fontSize: "3rem", color: "var(--ink, #171410)" }}>
               done
             </span>
             <p

@@ -6,15 +6,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMyCrews, createCrew, joinCrewByCode, type Crew } from "@/lib/social";
-import { TableChatButton } from "@/components/people/GroupChats";
+import { COBALT, DISPLAY, HAND, INK, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const COBALT = "#2540E8";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
@@ -61,7 +55,7 @@ export default function CrewPage() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
+    <div className="min-h-[100dvh] w-full" style={{ background: SURFACE, position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
       <div className="relative mx-auto w-full max-w-md px-5" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 120 }}>
         <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1 }}>Your tables</div>
@@ -82,8 +76,6 @@ export default function CrewPage() {
                   <span style={{ fontFamily: MONO, fontWeight: 700, fontSize: 15, letterSpacing: "0.2em", color: INK, background: LIME, border: `2px solid ${INK}`, borderRadius: 8, padding: "3px 10px" }}>{c.invite_code}</span>
                   <button onClick={() => copyCode(c)} style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: PAPER, background: INK, borderRadius: 99, padding: "6px 14px", border: "none" }}>{copied === c.id ? "shared ✓" : "invite"}</button>
                 </div>
-                {/* each table gets its own group chat with Marco */}
-                <TableChatButton crewId={c.id} name={c.name} emoji={c.emoji} />
               </div>
             ))}
             <button onClick={() => router.push("/friends-stack")} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 6, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 16, border: `2.5px solid ${INK}` }}>Go to the table →</button>

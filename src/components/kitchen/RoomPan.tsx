@@ -10,6 +10,7 @@
 // pans horizontally.
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { CREAM_WARM, INK, TOMATO } from "@/lib/theme";
 
 export interface RoomPanProps {
   image: string;
@@ -91,7 +92,7 @@ export default function RoomPan({ image, aspect, focals = DEFAULT_FOCALS, initia
   const tx = (size.w ? txFor(view) : 0) + (dragging ? drag : 0);
 
   return (
-    <div ref={wrapRef} className="absolute inset-0 overflow-hidden touch-pan-y select-none" style={{ background: "#EFE5D2" }}
+    <div ref={wrapRef} className="absolute inset-0 overflow-hidden touch-pan-y select-none" style={{ background: CREAM_WARM }}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -111,7 +112,7 @@ export default function RoomPan({ image, aspect, focals = DEFAULT_FOCALS, initia
         <button aria-label="See the whole kitchen" onClick={onExpand}
           className="absolute z-20 flex items-center justify-center rounded-full active:scale-95 transition-transform"
           style={{ top: "calc(env(safe-area-inset-top,0px) + 12px)", right: 12, width: 36, height: 36, background: "rgba(255,253,247,0.82)", boxShadow: "0 4px 14px rgba(28,20,4,0.2)" }}>
-          <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="#1C1A17" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+          <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke={INK} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
         </button>
       )}
 
@@ -124,14 +125,14 @@ export default function RoomPan({ image, aspect, focals = DEFAULT_FOCALS, initia
         <div className="absolute left-1/2 -translate-x-1/2 flex gap-1.5" style={{ bottom: "calc(env(safe-area-inset-bottom,0px) + 12px)" }}>
           {focals.map((_, i) => (
             <button key={i} aria-label={`View ${i + 1}`} onClick={() => settle(i)} className="rounded-full transition-all"
-              style={{ width: i === view ? 18 : 7, height: 7, background: i === view ? "#E5462E" : "rgba(28,20,4,0.32)" }} />
+              style={{ width: i === view ? 18 : 7, height: 7, background: i === view ? TOMATO : "rgba(28,20,4,0.32)" }} />
           ))}
         </div>
       )}
 
       {showHint && (
         <div className="absolute inset-x-0 flex justify-center pointer-events-none" style={{ top: "calc(env(safe-area-inset-top,0px) + 64px)" }}>
-          <div className="mk-hint flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: "rgba(255,253,247,0.94)", boxShadow: "0 8px 24px rgba(28,20,4,0.22)", fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: 14, color: "#1C1A17" }}>
+          <div className="mk-hint flex items-center gap-2 px-4 py-2 rounded-full" style={{ background: "rgba(255,253,247,0.94)", boxShadow: "0 8px 24px rgba(28,20,4,0.22)", fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: 14, color: INK }}>
             <span aria-hidden>‹</span> Look around your kitchen <span aria-hidden>›</span>
           </div>
         </div>
@@ -151,7 +152,7 @@ function Chevron({ dir, onClick }: { dir: "left" | "right"; onClick: () => void 
     <button aria-label={dir === "left" ? "Look left" : "Look right"} onClick={onClick}
       className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center rounded-full"
       style={{ [dir]: 10, width: 34, height: 34, background: "rgba(255,253,247,0.72)", boxShadow: "0 4px 14px rgba(28,20,4,0.18)" } as React.CSSProperties}>
-      <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke="#1C1A17" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+      <svg viewBox="0 0 24 24" width={18} height={18} fill="none" stroke={INK} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
         {dir === "left" ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
       </svg>
     </button>

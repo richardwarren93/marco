@@ -21,6 +21,7 @@ import RANKING_RECIPES from "@/components/onboarding/data/ranking-recipes";
 import { SEED_REEL_URL, SEED_RECIPE, SEED_DETAIL } from "@/components/onboarding/data/seed-recipe";
 import { parseStep, classifyAllSteps, TRACK_LABELS, type StepTrack } from "@/lib/cook/stepParser";
 import type { Ingredient } from "@/types";
+import { CREAM, CREAM_WARM, INK, INK_SOFT, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 // Common food allergens (safety-critical hard filter). Stored as free strings in
 // user_preferences.allergies — same set the old allergies step used, + Sesame.
@@ -38,14 +39,9 @@ const TASTE_MATCHUPS: [string, string][] = [
 ];
 const dishById = (id: string) => RANKING_RECIPES.find((r) => r.id === id)!;
 
-const INK = "#1C1A17";
-const INK_SOFT = "#4A4742";
-const TOMATO = "#E5462E";
 const LEAF = "#5E6E38";
 const SHADOW = "#A9683A";
-const CARD = "#FFFDF9";
-const CREAM = "#F5EEE2";
-const CREAM_WARM = "#EFE5D2";
+const CARD = PAPER;
 
 type Beat = "space" | "welcome" | "goal" | "household" | "allergies" | "dietary" | "taste" | "import" | "bookshelf" | "cook" | "sprout" | "handoff";
 const ORDER: Beat[] = ["space", "welcome", "goal", "household", "allergies", "dietary", "taste", "import", "bookshelf", "cook", "sprout", "handoff"];
@@ -251,7 +247,7 @@ export default function KitchenOnboarding({ onComplete }: { onComplete: () => vo
           <div style={{ position: "absolute", left: "50%", top: 2, transform: "translate(-50%,-100%)", display: "flex", flexDirection: "column", alignItems: "center", whiteSpace: "nowrap" }}>
             <div
               style={{
-                transform: "rotate(-6deg)", background: "#FFFDF7", color: INK,
+                transform: "rotate(-6deg)", background: PAPER, color: INK,
                 padding: "9px 16px", borderRadius: 14, border: `2.5px solid ${TOMATO}`,
                 boxShadow: "0 8px 24px rgba(0,0,0,0.55)",
                 fontFamily: "var(--font-display, Georgia, serif)", fontWeight: 800, fontSize: 22, lineHeight: 1,
@@ -301,7 +297,7 @@ export default function KitchenOnboarding({ onComplete }: { onComplete: () => vo
           <div className="absolute left-0 right-0 flex justify-center mk-fadein" style={{ top: "7%", zIndex: 6 }}>
             <div
               style={{
-                transform: "rotate(-5deg)", background: "#FFFDF7", color: INK,
+                transform: "rotate(-5deg)", background: PAPER, color: INK,
                 padding: "9px 16px", borderRadius: 14, border: `2.5px solid ${TOMATO}`,
                 boxShadow: "0 8px 24px rgba(0,0,0,0.5)", whiteSpace: "nowrap",
                 fontFamily: "var(--font-display, Georgia, serif)", fontWeight: 800, fontSize: 22, lineHeight: 1,
@@ -618,14 +614,14 @@ function Rocket() {
       {/* body */}
       <path d="M35 4 C20 4 18 34 18 58 L18 80 C18 88 24 92 30 92 L40 92 C46 92 52 88 52 80 L52 58 C52 34 50 4 35 4 Z" fill="#F5EFE2" stroke="#D8C7A6" strokeWidth="1.5" />
       {/* nose */}
-      <path d="M35 4 C25 4 20 20 19 34 L51 34 C50 20 45 4 35 4 Z" fill="#E5462E" />
+      <path d="M35 4 C25 4 20 20 19 34 L51 34 C50 20 45 4 35 4 Z" fill={TOMATO} />
       {/* porthole + tiny Marco winking */}
-      <circle cx="35" cy="54" r="13" fill="#CFE3EE" stroke="#E5462E" strokeWidth="3" />
-      <circle cx="35" cy="55" r="9" fill="#E5462E" />
+      <circle cx="35" cy="54" r="13" fill="#CFE3EE" stroke={TOMATO} strokeWidth="3" />
+      <circle cx="35" cy="55" r="9" fill={TOMATO} />
       <path d="M35 46 q3 -3 5 0" stroke="#5E6E38" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <circle cx="31.5" cy="54" r="1.6" fill="#1C1A17" />
-      <path d="M37 52.5 q2 1.5 0 3" stroke="#1C1A17" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-      <path d="M31 59 q4 3 8 0" stroke="#1C1A17" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <circle cx="31.5" cy="54" r="1.6" fill={INK} />
+      <path d="M37 52.5 q2 1.5 0 3" stroke={INK} strokeWidth="1.4" fill="none" strokeLinecap="round" />
+      <path d="M31 59 q4 3 8 0" stroke={INK} strokeWidth="1.4" fill="none" strokeLinecap="round" />
     </svg>
   );
 }
@@ -846,7 +842,7 @@ export function GuidedCook({ title, steps, ingredients, onDone }: { title: strin
     if (tok.type === "text") return <span key={k}>{tok.content}</span>;
     if (tok.type === "duration") return (<span key={k} className="inline-flex items-center align-baseline mx-1" style={{ fontFamily: "var(--font-sans, system-ui, sans-serif)", fontSize: 13, fontWeight: 600, color: TOMATO, border: `1px solid ${TOMATO}`, borderRadius: 999, padding: "1px 9px", whiteSpace: "nowrap" }}>◷ {tok.label}</span>);
     const amt = [tok.amount, tok.unit].filter(Boolean).join(" ").trim();
-    return (<span key={k}>{tok.matchedText}{amt ? <span className="inline-flex items-baseline ml-1.5" style={{ fontFamily: "var(--font-sans, system-ui, sans-serif)", fontSize: 13, fontWeight: 600, background: CREAM_WARM, color: "#B8331E", padding: "1px 8px", borderRadius: 999, whiteSpace: "nowrap" }}>{amt}</span> : null}</span>);
+    return (<span key={k}>{tok.matchedText}{amt ? <span className="inline-flex items-baseline ml-1.5" style={{ fontFamily: "var(--font-sans, system-ui, sans-serif)", fontSize: 13, fontWeight: 600, background: CREAM_WARM, color: TOMATO_DARK, padding: "1px 8px", borderRadius: 999, whiteSpace: "nowrap" }}>{amt}</span> : null}</span>);
   });
 
   // ── Following the recipe, at the stove (CookMode-style) ──
@@ -1047,8 +1043,8 @@ function ShelfBook() {
   return (
     <div style={{ filter: "drop-shadow(0 7px 11px rgba(0,0,0,0.5))" }}>
       <svg width="86" height="126" viewBox="0 0 38 56" fill="none" aria-hidden="true">
-        <rect x="5" y="2" width="28" height="54" rx="3" fill="#E5462E" />
-        <rect x="5" y="2" width="5" height="54" fill="#B8331E" />
+        <rect x="5" y="2" width="28" height="54" rx="3" fill={TOMATO} />
+        <rect x="5" y="2" width="5" height="54" fill={TOMATO_DARK} />
         <rect x="14" y="10" width="15" height="3" rx="1.5" fill="#FBE7CE" />
         <rect x="14" y="16" width="11" height="2.5" rx="1.25" fill="#FBE7CE" opacity="0.85" />
         <circle cx="21" cy="37" r="6" fill="#FBE7CE" />

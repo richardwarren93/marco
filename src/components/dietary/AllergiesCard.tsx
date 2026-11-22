@@ -81,7 +81,7 @@ export default function AllergiesCard() {
       style={{ background: "#ffffff", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}
     >
       <div className="flex items-baseline justify-between mb-1">
-        <h3 className="text-[15px] font-semibold" style={{ color: "var(--ink, #1C1A17)" }}>
+        <h3 className="text-[15px] font-semibold" style={{ color: "var(--ink, #171410)" }}>
           Allergies
         </h3>
         {saving && (
@@ -116,7 +116,7 @@ export default function AllergiesCard() {
               onKeyDown={(e) => e.key === "Enter" && addCustom()}
               placeholder="Add another…"
               className="flex-1 px-3 py-2 rounded-xl outline-none text-[13px]"
-              style={{ background: "#fff", border: "1px solid rgba(28,26,23,0.14)", color: "var(--ink, #1C1A17)" }}
+              style={{ background: "#fff", border: "1px solid rgba(28,26,23,0.14)", color: "var(--ink, #171410)" }}
             />
             {custom.trim() && (
               <button
@@ -143,7 +143,7 @@ export default function AllergiesCard() {
                   className="text-[12px] font-semibold px-3 py-1.5 rounded-full border transition-colors disabled:opacity-60"
                   style={{
                     background: on ? "var(--tomato, #E5462E)" : "#fff",
-                    color: on ? "#fff" : "var(--ink, #1C1A17)",
+                    color: on ? "#fff" : "var(--ink, #171410)",
                     borderColor: on ? "var(--tomato, #E5462E)" : "rgba(28,26,23,0.12)",
                   }}
                   aria-pressed={on}

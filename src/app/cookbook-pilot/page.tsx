@@ -17,6 +17,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { INK, TOMATO } from "@/lib/theme";
 
 type PageIndex = 0 | 1;
 
@@ -218,11 +219,11 @@ function CoverPage({ onOpen }: { onOpen: () => void }) {
             fontSize: "clamp(2rem, 7.5vw, 2.6rem)",
             lineHeight: 0.98,
             letterSpacing: "-0.025em",
-            color: "#1C1A17",
+            color: INK,
           }}
         >
           Build My{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>Recipe</em> Book
+          <em style={{ color: TOMATO, fontStyle: "italic" }}>Recipe</em> Book
         </h1>
         <p
           className="italic text-center mt-3"
@@ -250,7 +251,7 @@ function CoverPage({ onOpen }: { onOpen: () => void }) {
             fontStyle: "italic",
             fontVariationSettings: '"opsz" 14, "wght" 400',
             fontSize: "16px",
-            color: "#1C1A17",
+            color: INK,
           }}
           className="group-active:opacity-60"
         >
@@ -293,7 +294,7 @@ function SampleStepPage({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           aria-label="Back"
           className="w-9 h-9 flex items-center justify-center active:opacity-60"
-          style={{ color: "#1C1A17" }}
+          style={{ color: INK }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
             <path d="M 21 12 L 5 12" />
@@ -328,7 +329,7 @@ function SampleStepPage({ onBack }: { onBack: () => void }) {
             fontSize: "30px",
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
-            color: "#1C1A17",
+            color: INK,
           }}
         >
           <span
@@ -340,14 +341,14 @@ function SampleStepPage({ onBack }: { onBack: () => void }) {
               lineHeight: "0.85",
               marginRight: "8px",
               marginTop: "2px",
-              color: "#E5462E",
+              color: TOMATO,
               animation: "drop-cap-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both",
             }}
           >
             W
           </span>
           hat brings you{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>here?</em>
+          <em style={{ color: TOMATO, fontStyle: "italic" }}>here?</em>
         </h1>
       </div>
 
@@ -388,7 +389,7 @@ function SampleStepPage({ onBack }: { onBack: () => void }) {
             >
               <span
                 className="flex-shrink-0"
-                style={{ color: isSelected ? "#E5462E" : "rgba(28, 26, 23, 0.7)" }}
+                style={{ color: isSelected ? TOMATO : "rgba(28, 26, 23, 0.7)" }}
               >
                 {opt.icon}
               </span>
@@ -399,13 +400,13 @@ function SampleStepPage({ onBack }: { onBack: () => void }) {
                   fontVariationSettings: '"opsz" 14, "wght" 500',
                   fontSize: "15px",
                   lineHeight: 1.35,
-                  color: "#1C1A17",
+                  color: INK,
                 }}
               >
                 {opt.label}
               </span>
               {isSelected && (
-                <span style={{ color: "#E5462E", fontSize: 20 }}>✓</span>
+                <span style={{ color: TOMATO, fontSize: 20 }}>✓</span>
               )}
             </button>
           );
@@ -681,20 +682,20 @@ function CornerFrame() {
 
 function SprigOrnament() {
   return (
-    <svg width="72" height="44" viewBox="0 0 72 44" fill="none" stroke="#1C1A17" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="72" height="44" viewBox="0 0 72 44" fill="none" stroke={INK} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M 4 36 Q 20 32, 36 22 Q 52 12, 68 8" />
-      <path d="M 16 32 Q 20 22, 26 26 Q 22 30, 16 32 Z" fill="#1C1A17" fillOpacity="0.85" />
-      <path d="M 26 26 Q 30 16, 36 20 Q 32 25, 26 26 Z" fill="#1C1A17" fillOpacity="0.85" />
-      <path d="M 38 20 Q 42 10, 48 14 Q 44 19, 38 20 Z" fill="#1C1A17" fillOpacity="0.85" />
-      <path d="M 50 14 Q 54 4, 60 8 Q 56 13, 50 14 Z" fill="#1C1A17" fillOpacity="0.85" />
-      <circle cx="68" cy="8" r="2.6" fill="#E5462E" />
+      <path d="M 16 32 Q 20 22, 26 26 Q 22 30, 16 32 Z" fill={INK} fillOpacity="0.85" />
+      <path d="M 26 26 Q 30 16, 36 20 Q 32 25, 26 26 Z" fill={INK} fillOpacity="0.85" />
+      <path d="M 38 20 Q 42 10, 48 14 Q 44 19, 38 20 Z" fill={INK} fillOpacity="0.85" />
+      <path d="M 50 14 Q 54 4, 60 8 Q 56 13, 50 14 Z" fill={INK} fillOpacity="0.85" />
+      <circle cx="68" cy="8" r="2.6" fill={TOMATO} />
     </svg>
   );
 }
 
 function DrawnArrow() {
   return (
-    <svg width="46" height="22" viewBox="0 0 46 22" fill="none" stroke="#1C1A17" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="46" height="22" viewBox="0 0 46 22" fill="none" stroke={INK} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path
         d="M 2 11 Q 16 4, 30 11 Q 36 14, 40 11"
         style={{ strokeDasharray: 60, strokeDashoffset: 60, animation: "draw-stroke 0.9s ease-out 1.1s forwards" }}
@@ -716,7 +717,7 @@ function Ribbon() {
         right: 32,
         width: 22,
         height: 64,
-        background: "#E5462E",
+        background: TOMATO,
         boxShadow: "1px 1px 2px rgba(0,0,0,0.18)",
         clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)",
         animation: "ribbon-swing 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both",
@@ -730,7 +731,7 @@ function HandUnderline({ width = 100 }: { width?: number }) {
     <svg width={width} height="8" viewBox={`0 0 ${width} 8`} fill="none">
       <path
         d={`M 2 5 Q ${width * 0.25} 2, ${width * 0.5} 4 T ${width - 2} 4`}
-        stroke="#1C1A17"
+        stroke={INK}
         strokeWidth="1.3"
         strokeLinecap="round"
         opacity={0.75}

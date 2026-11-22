@@ -90,7 +90,7 @@ export default function FriendsFeed({
         duration: 5000,
         action: {
           label: "Add to meal plan",
-          onClick: () => router.push("/recipes?tab=meal-plan"),
+          onClick: () => router.push("/meal-plan"),
         },
       });
     }
@@ -311,7 +311,7 @@ export default function FriendsFeed({
             fontSize: "clamp(1.5rem, 3vw, 2rem)",
             letterSpacing: "-0.02em",
             lineHeight: 1.05,
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
           }}
         >
           This week&apos;s table.

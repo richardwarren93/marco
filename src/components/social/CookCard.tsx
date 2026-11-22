@@ -1,18 +1,11 @@
+import { BUTTER, COBALT, DISPLAY, HAND, INK, LIME, PAPER, PINK, TOMATO } from "@/lib/theme";
 // The art-directed cook card — one of three treatments (polaroid / receipt /
 // poster). Shared by the "I cooked" reveal and the Table feed so a posted cook
 // looks the same everywhere and cooks visually vary by their saved treatment.
 // In the feed, the recipe actions live INSIDE the card's border (so it's
 // unambiguous they belong to this cook, not the one above or below).
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const COBALT = "#2540E8";
-const LIME = "#C4EE45";
-const PINK = "#FF4D9D";
-const BUTTER = "#FFD84D";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 

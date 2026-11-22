@@ -11,6 +11,7 @@ import type { BadgeProgress } from "@/lib/badges";
 import { TIER_COLORS } from "@/lib/badges";
 import type { TomatoHealthState } from "@/lib/gamification";
 import TomatoMascot from "./TomatoMascot";
+import { CREAM_WARM, INK, MUSTARD, MUSTARD_SOFT, TEAL, TOMATO } from "@/lib/theme";
 
 /** True when the user asks for reduced motion — gate confetti/sparkles/float-ups. */
 export function usePrefersReducedMotion(): boolean {
@@ -67,7 +68,7 @@ export function BadgeIcon({
 // ─── Sparkles that radiate outward from the badge ────────────────────────────
 export function Sparkles({ tier }: { tier: string }) {
   // Marco palette: gold→mustard, silver→teal, bronze→tomato
-  const color = tier === "gold" ? "#E8A33D" : tier === "silver" ? "#0F4C5C" : "#E5462E";
+  const color = tier === "gold" ? MUSTARD : tier === "silver" ? TEAL : TOMATO;
   // 8 sparkles at 45° increments, each with a unique translate direction
   const angles = [0, 45, 90, 135, 180, 225, 270, 315];
   return (
@@ -103,7 +104,7 @@ export function Sparkles({ tier }: { tier: string }) {
 // ─── Confetti raining from top ─────────────────────────────────────────────────
 export function Confetti({ className = "rounded-3xl" }: { className?: string }) {
   // Marco palette confetti: tomato, mustard, teal, cream variations
-  const colors = ["#E5462E", "#E8A33D", "#F2C77A", "#0F4C5C", "#1C1A17", "#EFE5D2"];
+  const colors = [TOMATO, MUSTARD, MUSTARD_SOFT, TEAL, INK, CREAM_WARM];
   const pieces = Array.from({ length: 22 }, (_, i) => ({
     id: i,
     color: colors[i % colors.length],
@@ -220,7 +221,7 @@ export function CookCelebration({
             fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
             fontSize: "23px",
             letterSpacing: "-0.02em",
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
           }}
         >
           {goalJustCompleted ? title : `🔥 ${title}`}
@@ -368,9 +369,9 @@ export function AchievementModal({ badge, onClose }: { badge: BadgeProgress; onC
             className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full border-2 border-white flex items-center justify-center shadow-md"
             style={{
               background:
-                badge.badge.tier === "gold" ? "#E8A33D"
-                : badge.badge.tier === "silver" ? "#0F4C5C"
-                : "#E5462E",
+                badge.badge.tier === "gold" ? MUSTARD
+                : badge.badge.tier === "silver" ? TEAL
+                : TOMATO,
             }}
           >
             <span className="text-[11px] font-black text-white">{tierMark}</span>
@@ -385,7 +386,7 @@ export function AchievementModal({ badge, onClose }: { badge: BadgeProgress; onC
             fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
             fontSize: "24px",
             letterSpacing: "-0.02em",
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
           }}
         >
           {badge.badge.name}

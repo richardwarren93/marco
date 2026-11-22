@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { INK_SOFT } from "@/lib/theme";
 import {
   INK, TOMATO, LIME, DISP, SANS,
   AuthShell, Wordmark, Squiggle, MascotCard,
@@ -74,7 +75,7 @@ export default function ResetPasswordConfirmPage() {
           <MascotCard size={118} bg={LIME} />
           <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 32, color: INK, marginTop: 22 }}>All set!</h1>
           <Squiggle w={150} />
-          <p style={{ fontFamily: SANS, fontSize: 15, color: "#4A4742", marginTop: 14, lineHeight: 1.5, maxWidth: 300 }}>New password saved. Taking you back to sign in.</p>
+          <p style={{ fontFamily: SANS, fontSize: 15, color: INK_SOFT, marginTop: 14, lineHeight: 1.5, maxWidth: 300 }}>New password saved. Taking you back to sign in.</p>
         </div>
       </AuthShell>
     );
@@ -89,7 +90,7 @@ export default function ResetPasswordConfirmPage() {
         <Squiggle w={160} />
 
         {!hasRecoverySession && (
-          <p style={{ fontFamily: SANS, fontSize: 14, color: "#4A4742", marginTop: 12, lineHeight: 1.5 }}>
+          <p style={{ fontFamily: SANS, fontSize: 14, color: INK_SOFT, marginTop: 12, lineHeight: 1.5 }}>
             Open this page from the reset link in your email.{" "}
             <Link href="/auth/reset-password" style={{ fontWeight: 700, color: TOMATO }}>Send a new link</Link>
           </p>

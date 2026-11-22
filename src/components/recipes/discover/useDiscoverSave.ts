@@ -39,7 +39,7 @@ export function useDiscoverSave(onAddToCollection?: (savedRecipeId: string) => v
     if (opts.showToast !== false) {
       showToast("Recipe saved!", {
         duration: 5000,
-        action: { label: "Add to meal plan", onClick: () => router.push("/recipes?tab=meal-plan") },
+        action: { label: "Add to meal plan", onClick: () => router.push("/meal-plan") },
       });
     }
 

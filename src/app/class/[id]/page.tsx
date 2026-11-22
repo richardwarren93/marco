@@ -6,15 +6,9 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getClass, registerForClass, isRegistered, type CookClass } from "@/lib/social";
+import { BUTTER, COBALT, DISPLAY, HAND, INK, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const COBALT = "#2540E8";
-const BUTTER = "#FFD84D";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
@@ -51,11 +45,11 @@ export default function ClassPage() {
     if (cls?.room_url) { try { window.open(cls.room_url, "_blank"); } catch { /* ignore */ } }
   }
 
-  if (loading) return <div style={{ minHeight: "100dvh", background: "#E9E2D3", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: HAND, color: INK }}>loading…</div>;
-  if (!cls) return <div style={{ minHeight: "100dvh", background: "#E9E2D3", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: HAND, color: INK }}>class not found</div>;
+  if (loading) return <div style={{ minHeight: "100dvh", background: SURFACE, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: HAND, color: INK }}>loading…</div>;
+  if (!cls) return <div style={{ minHeight: "100dvh", background: SURFACE, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: HAND, color: INK }}>class not found</div>;
 
   return (
-    <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
+    <div className="min-h-[100dvh] w-full" style={{ background: SURFACE, position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
       <div className="relative mx-auto w-full max-w-md px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 140 }}>
         {/* hero */}

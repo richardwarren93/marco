@@ -55,7 +55,7 @@ export default function Consent() {
       window.location.assign(data.redirect_url);
     } catch { setError("Connection could not be completed. Try again from ChatGPT."); setBusy(false); }
   }
-  const button = "rounded-xl border-2 border-[#1C1A17] px-5 py-3 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50";
+  const button = "rounded-xl border-2 border-[var(--ink)] px-5 py-3 font-semibold focus-visible:outline-2 focus-visible:outline-offset-4 disabled:opacity-50";
   return <div className="space-y-5">
     {error && <p role="alert" className="text-red-800">{error}</p>}
     {busy && <p role="status">Please wait…</p>}
@@ -78,7 +78,7 @@ export default function Consent() {
       <p>This free connection starts with read access. Recipe saving requires a separate opt-in in Marco and your explicit save request. It cannot edit or delete existing recipes, send messages, or buy groceries. Results requested in ChatGPT are shared with OpenAI.</p>
       <p className="text-sm">Requested identity permissions: {details.scope || "Account access"}</p>
       <div className="flex flex-wrap gap-3">
-        <button disabled={busy} className={`${button} bg-[#1C1A17] text-white`} onClick={() => decide("approve")}>Allow access</button>
+        <button disabled={busy} className={`${button} bg-[var(--ink)] text-white`} onClick={() => decide("approve")}>Allow access</button>
         <button disabled={busy} className={button} onClick={() => decide("deny")}>Cancel</button>
       </div>
       <p className="text-sm">You can disconnect Marco in ChatGPT’s plugin settings. <a className="underline" href="/privacy">Privacy policy</a> · <a className="underline" href="/terms">Terms</a></p>

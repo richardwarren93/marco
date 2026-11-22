@@ -212,7 +212,7 @@ export default function RecipeForm({
                 fontStyle: "italic",
                 fontVariationSettings: '"opsz" 30, "SOFT" 100, "wght" 400',
                 fontSize: "20px",
-                color: "var(--ink, #1C1A17)",
+                color: "var(--ink, #171410)",
                 lineHeight: 1.3,
               }}
             >
@@ -230,7 +230,7 @@ export default function RecipeForm({
               className="w-full px-4 py-3.5 rounded-2xl outline-none transition-all text-sm"
               style={{
                 background: "var(--cream-warm, #EFE5D2)",
-                color: "var(--ink, #1C1A17)",
+                color: "var(--ink, #171410)",
                 border: "1px solid transparent",
               }}
               onFocus={(e) => {
@@ -352,7 +352,7 @@ export default function RecipeForm({
                   fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
                   fontSize: "22px",
                   letterSpacing: "-0.015em",
-                  color: "var(--ink, #1C1A17)",
+                  color: "var(--ink, #171410)",
                   borderColor: "transparent",
                 }}
                 onFocus={(e) => { e.currentTarget.style.borderColor = "var(--tomato, #E5462E)"; }}
@@ -774,7 +774,7 @@ function ExtractingAnimation() {
           fontStyle: "italic",
           fontVariationSettings: '"opsz" 14, "SOFT" 100, "wght" 400',
           fontSize: "20px",
-          color: "var(--ink, #1C1A17)",
+          color: "var(--ink, #171410)",
           animation: "fadeSlideUp 0.4s cubic-bezier(0.16,1,0.3,1) both",
         }}
       >

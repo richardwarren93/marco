@@ -149,7 +149,7 @@ export default function CoordinationView({ plans, onClose }: Props) {
               fontStyle: "italic",
               fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 400',
               fontSize: "22px",
-              color: "var(--ink, #1C1A17)",
+              color: "var(--ink, #171410)",
               lineHeight: 1.15,
             }}
           >
@@ -211,7 +211,7 @@ export default function CoordinationView({ plans, onClose }: Props) {
               <div
                 className="relative rounded-2xl"
                 style={{
-                  background: "var(--ink, #1C1A17)",
+                  background: "var(--ink, #171410)",
                   color: "var(--cream, #F5EEE2)",
                   padding: "16px 18px 18px 20px",
                 }}
@@ -311,7 +311,7 @@ export default function CoordinationView({ plans, onClose }: Props) {
                           fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
                           fontVariationSettings: '"opsz" 30, "SOFT" 100, "wght" 500',
                           fontSize: "16px",
-                          color: "var(--ink, #1C1A17)",
+                          color: "var(--ink, #171410)",
                           opacity: isPast ? 0.55 : 1,
                           lineHeight: 1.25,
                         }}
@@ -358,7 +358,7 @@ export default function CoordinationView({ plans, onClose }: Props) {
                       fontStyle: "italic",
                       fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 500',
                       fontSize: "18px",
-                      color: "var(--ink, #1C1A17)",
+                      color: "var(--ink, #171410)",
                     }}
                   >
                     Serve.

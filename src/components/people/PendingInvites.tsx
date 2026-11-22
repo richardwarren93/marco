@@ -16,15 +16,13 @@ import { mutate } from "swr";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { getCrewByCode, joinCrewByCode } from "@/lib/social";
+import { DISPLAY, INK, LIME, PAPER } from "@/lib/theme";
 
 export const PENDING_CREW_KEY = "marco_pending_crew";
 export const PENDING_HOUSE_KEY = "marco_pending_house";
 const MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const LIME = "#C4EE45";
-const DISP = '"Marker Felt", Georgia, serif';
+const DISP = DISPLAY;
 
 export function stashInvite(key: string, code: string) {
   try { localStorage.setItem(key, code); localStorage.setItem(`${key}:at`, String(Date.now())); } catch { /* ignore */ }

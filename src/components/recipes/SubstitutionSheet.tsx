@@ -147,7 +147,7 @@ function SubstitutionSheetInner({
               fontStyle: "italic",
               fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 400',
               fontSize: "22px",
-              color: "var(--ink, #1C1A17)",
+              color: "var(--ink, #171410)",
               lineHeight: 1.2,
             }}
           >
@@ -310,7 +310,7 @@ function SubstitutionRow({ option }: { option: SubstitutionOption }) {
             fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
             fontVariationSettings: '"opsz" 30, "SOFT" 100, "wght" 500',
             fontSize: "16px",
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
             lineHeight: 1.25,
           }}
         >

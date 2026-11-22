@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { TomatoIcon } from "@/components/icons/HandDrawnIcons";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 import { useToast } from "@/components/ui/Toast";
+import { INK, PAPER, TOMATO_DARK } from "@/lib/theme";
 import {
   TOMATO_REASON_META,
   TOMATO_HEALTH_META,
@@ -91,14 +92,14 @@ export default function TomatoesPage() {
           aria-label="Back"
           className="w-9 h-9 -ml-1 rounded-full flex items-center justify-center hover:bg-gray-100/60 transition-colors"
         >
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#1C1A17" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke={INK} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
             <path d="M15 19l-7-7 7-7" />
           </svg>
         </button>
         <h1
           className="font-black"
           style={{
-            color: "#1C1A17",
+            color: INK,
             fontSize: "22px",
             fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
             fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 700',
@@ -112,11 +113,11 @@ export default function TomatoesPage() {
       {mascot && (
         <div
           className="flex flex-col items-center text-center rounded-3xl px-5 pt-6 pb-5 mb-5"
-          style={{ background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)", boxShadow: "0 2px 12px rgba(28,26,23,0.05)" }}
+          style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.08)", boxShadow: "0 2px 12px rgba(28,26,23,0.05)" }}
         >
           <TomatoMascot state={mascot.state} size={200} />
           <div className="flex items-center gap-2 mt-1">
-            <p className="font-black" style={{ fontSize: "20px", color: "#1C1A17", fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 40, "SOFT" 100, "wght" 700' }}>
+            <p className="font-black" style={{ fontSize: "20px", color: INK, fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 40, "SOFT" 100, "wght" 700' }}>
               {health?.label}
             </p>
             {mascot.state !== "dead" && mascot.streak > 0 && (
@@ -155,12 +156,12 @@ export default function TomatoesPage() {
       {/* Balance card */}
       <div
         className="flex items-center gap-3 rounded-3xl px-5 py-5 mb-6"
-        style={{ background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.08)", boxShadow: "0 2px 12px rgba(28,26,23,0.05)" }}
+        style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.08)", boxShadow: "0 2px 12px rgba(28,26,23,0.05)" }}
       >
         <TomatoIcon className="w-9 h-9 text-red-500" filled />
         <div>
           <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: "#9b938a" }}>Your balance</p>
-          <p className="font-black tabular-nums" style={{ fontSize: "30px", lineHeight: 1.05, color: "#1C1A17" }}>
+          <p className="font-black tabular-nums" style={{ fontSize: "30px", lineHeight: 1.05, color: INK }}>
             {balance ?? 0}
           </p>
         </div>
@@ -184,16 +185,16 @@ export default function TomatoesPage() {
               <li
                 key={t.id}
                 className="flex items-center gap-3 rounded-2xl px-3.5 py-3"
-                style={{ background: "#FFFDF7", border: "1px solid rgba(28,26,23,0.06)" }}
+                style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.06)" }}
               >
                 <span className="text-lg flex-shrink-0" aria-hidden>{meta.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: "#1C1A17" }}>{meta.label}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: INK }}>{meta.label}</p>
                   <p className="text-[11px]" style={{ color: "#9b938a" }}>{relativeTime(t.created_at)}</p>
                 </div>
                 <span
                   className="font-bold tabular-nums text-sm flex-shrink-0"
-                  style={{ color: positive ? "#16a34a" : "#B8331E" }}
+                  style={{ color: positive ? "#16a34a" : TOMATO_DARK }}
                 >
                   {positive ? "+" : "−"}{Math.abs(t.amount)}
                 </span>

@@ -3,9 +3,10 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
+import { TOMATO } from "@/lib/theme";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
-const ACCENT = "#E5462E";
+const ACCENT = TOMATO;
 const ACCENT_LIGHT = "#fff7ed";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -363,7 +364,7 @@ export default function AssignDaysScreen({
                     await save(pendingAssignments);
                   }}
                   className="w-full py-3 rounded-2xl font-semibold text-sm text-white transition-all active:scale-95"
-                  style={{ background: "#E5462E" }}
+                  style={{ background: TOMATO }}
                 >
                   Replace existing meals
                 </button>

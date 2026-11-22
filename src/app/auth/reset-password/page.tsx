@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import Link from "next/link";
+import { INK_SOFT } from "@/lib/theme";
 import {
   INK, TOMATO, BUTTER, DISP, SANS,
   AuthShell, Wordmark, Squiggle, MascotCard,
@@ -41,7 +42,7 @@ export default function ResetPasswordRequestPage() {
           <MascotCard size={118} bg={BUTTER} />
           <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 32, color: INK, marginTop: 22 }}>Check your email!</h1>
           <Squiggle w={170} />
-          <p style={{ fontFamily: SANS, fontSize: 15, color: "#4A4742", marginTop: 14, lineHeight: 1.5, maxWidth: 320 }}>
+          <p style={{ fontFamily: SANS, fontSize: 15, color: INK_SOFT, marginTop: 14, lineHeight: 1.5, maxWidth: 320 }}>
             We sent a reset link to <b style={{ color: INK }}>{email}</b>. Tap it on this device to set a new password.
           </p>
           <Link href="/auth/login" className="inline-block active:scale-[0.98] transition-transform" style={{ ...tomatoBtn, padding: "14px 26px", marginTop: 24 }}>Back to sign in</Link>
@@ -57,7 +58,7 @@ export default function ResetPasswordRequestPage() {
       <div className="flex-1 w-full mx-auto px-6" style={{ maxWidth: 400, paddingTop: 28 }}>
         <h1 style={{ fontFamily: DISP, fontWeight: 700, fontSize: 30, color: INK, lineHeight: 1.04 }}>Forgot your password?</h1>
         <Squiggle w={150} />
-        <p style={{ fontFamily: SANS, fontSize: 14.5, color: "#4A4742", marginTop: 12, lineHeight: 1.5 }}>Drop in your email and we&apos;ll send you a link to set a new one.</p>
+        <p style={{ fontFamily: SANS, fontSize: 14.5, color: INK_SOFT, marginTop: 12, lineHeight: 1.5 }}>Drop in your email and we&apos;ll send you a link to set a new one.</p>
 
         <form onSubmit={handleRequest} className="space-y-4" style={{ marginTop: 22 }}>
           {error && <div role="alert" style={{ background: "#fff", border: `2.5px solid ${INK}`, borderRadius: 12, padding: 12, color: TOMATO, fontFamily: DISP, fontWeight: 700, fontSize: 14, boxShadow: `3px 3px 0 ${INK}`, transform: "rotate(-0.4deg)" }}>{error}</div>}

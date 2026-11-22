@@ -1,6 +1,7 @@
 "use client";
 
 import TomatoMascot from "@/components/gamification/TomatoMascot";
+import { CREAM, INK, PAPER, TOMATO } from "@/lib/theme";
 
 /* The welcome-screen phone. Shows one of three Marco screens — Save
    recipes, Create a meal plan, Generate a grocery list — driven by the `screen`
@@ -30,7 +31,7 @@ const GROCERIES: { section: string; emoji: string; items: { name: string; qty: s
 ];
 
 const HOUSEHOLD = [
-  { initial: "Y", name: "You", note: "Owner", color: "#E5462E" },
+  { initial: "Y", name: "You", note: "Owner", color: TOMATO },
   { initial: "S", name: "Sam", note: "Cooking Tue · Thu", color: "#3E7C59" },
   { initial: "M", name: "Mia", note: "On groceries", color: "#C98A2B" },
   { initial: "J", name: "Jess", note: "Invited", color: "#6B5BD2" },
@@ -71,12 +72,12 @@ export default function WelcomePhoneMockup({ screen = 0, showSticker = false }: 
       {/* Phone bezel */}
       <div
         className="relative h-full w-full overflow-hidden"
-        style={{ borderRadius: "40px", background: "#1C1A17", padding: "8px", boxShadow: "0 22px 50px -12px rgba(28,26,23,0.45), 0 0 0 2px rgba(28,26,23,0.9), inset 0 0 0 1px rgba(255,255,255,0.08)" }}
+        style={{ borderRadius: "40px", background: INK, padding: "8px", boxShadow: "0 22px 50px -12px rgba(28,26,23,0.45), 0 0 0 2px rgba(28,26,23,0.9), inset 0 0 0 1px rgba(255,255,255,0.08)" }}
       >
         {/* Screen */}
-        <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: "33px", background: "#F5EEE2" }}>
+        <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: "33px", background: CREAM }}>
           {/* Dynamic island */}
-          <div aria-hidden className="absolute left-1/2 -translate-x-1/2 z-20" style={{ top: "9px", width: "32%", height: "16px", background: "#1C1A17", borderRadius: "100px" }} />
+          <div aria-hidden className="absolute left-1/2 -translate-x-1/2 z-20" style={{ top: "9px", width: "32%", height: "16px", background: INK, borderRadius: "100px" }} />
 
           {/* Active screen — remounts on change so it fades + staggers in */}
           <div key={idx} className="absolute inset-0" style={{ animation: "welcome-screen-in 0.45s ease both" }}>
@@ -94,7 +95,7 @@ export default function WelcomePhoneMockup({ screen = 0, showSticker = false }: 
         >
           <span
             className="block whitespace-nowrap"
-            style={{ fontFamily: "var(--font-script, 'Caveat', cursive)", fontWeight: 700, fontSize: "clamp(20px, 6.2vw, 30px)", lineHeight: 1, color: "#F5EEE2", background: "var(--tomato, #E5462E)", padding: "8px 18px 10px", borderRadius: "14px", boxShadow: "0 8px 20px -6px rgba(229,70,46,0.6)" }}
+            style={{ fontFamily: "var(--font-script, 'Caveat', cursive)", fontWeight: 700, fontSize: "clamp(20px, 6.2vw, 30px)", lineHeight: 1, color: CREAM, background: "var(--tomato, #E5462E)", padding: "8px 18px 10px", borderRadius: "14px", boxShadow: "0 8px 20px -6px rgba(229,70,46,0.6)" }}
           >
             {STICKERS[idx]}
           </span>
@@ -127,7 +128,7 @@ function RecipeScreen() {
 
       <div className="px-4 pb-2.5 animate-stagger-in" style={{ animationDelay: "0.05s" }}>
         <p style={{ ...labelMono, fontSize: "7.5px", letterSpacing: "0.22em", color: "var(--tomato, #E5462E)", marginBottom: "3px" }}>25 min · serves 4</p>
-        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #1C1A17)" }}>
+        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #171410)" }}>
           Creamy Tortellini Soup
         </h3>
       </div>
@@ -140,7 +141,7 @@ function RecipeScreen() {
         {INGREDIENTS.map((ing, i) => (
           <div key={ing.name} className="flex items-center gap-2.5 animate-stagger-in" style={{ paddingTop: "6.5px", paddingBottom: "6.5px", animationDelay: `${0.35 + i * 0.11}s` }}>
             <span className="flex items-center justify-center flex-shrink-0" style={{ width: "22px", height: "22px", fontSize: "12px", background: "rgba(255,253,247,0.8)", borderRadius: "50%", boxShadow: "0 1px 2px rgba(28,26,23,0.08)" }}>{ing.emoji}</span>
-            <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 450', fontSize: "11.5px", lineHeight: 1.2, color: "var(--ink, #1C1A17)" }}>
+            <span style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 450', fontSize: "11.5px", lineHeight: 1.2, color: "var(--ink, #171410)" }}>
               <strong style={{ fontVariationSettings: '"wght" 650' }}>{ing.amount}</strong> {ing.name}
             </span>
           </div>
@@ -161,7 +162,7 @@ function MealPlanScreen() {
 
       <div className="px-4 pb-2.5 animate-stagger-in" style={{ animationDelay: "0.05s" }}>
         <p style={{ ...labelMono, fontSize: "7.5px", letterSpacing: "0.22em", color: "var(--tomato, #E5462E)", marginBottom: "3px" }}>Jun 16 – 22</p>
-        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #1C1A17)" }}>
+        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #171410)" }}>
           Your meal plan
         </h3>
       </div>
@@ -180,7 +181,7 @@ function MealPlanScreen() {
               <img src={encodeURI(d.img)} alt={d.title} referrerPolicy="no-referrer" className="absolute inset-0 w-full h-full object-cover" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 550', fontSize: "11px", lineHeight: 1.15, color: "var(--ink, #1C1A17)" }}>{d.title}</p>
+              <p className="truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 550', fontSize: "11px", lineHeight: 1.15, color: "var(--ink, #171410)" }}>{d.title}</p>
               <p style={{ ...labelMono, fontSize: "6.5px", letterSpacing: "0.1em", marginTop: "1px" }}>{d.type}</p>
             </div>
             <span style={{ ...labelMono, fontSize: "7px", letterSpacing: "0.08em", color: "var(--tomato, #E5462E)", background: "rgba(229,70,46,0.1)", padding: "2px 5px", borderRadius: "5px" }}>{d.day}</span>
@@ -202,7 +203,7 @@ function HouseholdScreen() {
 
       <div className="px-4 pb-2.5 animate-stagger-in" style={{ animationDelay: "0.05s" }}>
         <p style={{ ...labelMono, fontSize: "7.5px", letterSpacing: "0.22em", color: "var(--tomato, #E5462E)", marginBottom: "3px" }}>4 members · in sync</p>
-        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #1C1A17)" }}>
+        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #171410)" }}>
           The Warren Kitchen
         </h3>
       </div>
@@ -215,7 +216,7 @@ function HouseholdScreen() {
           <span
             key={m.name}
             className="flex items-center justify-center flex-shrink-0"
-            style={{ width: "26px", height: "26px", borderRadius: "50%", background: m.color, color: "#FFFDF7", fontFamily: "var(--font-mono, monospace)", fontSize: "10px", fontWeight: 600, marginLeft: i === 0 ? 0 : "-7px", border: "2px solid #F5EEE2", zIndex: HOUSEHOLD.length - i }}
+            style={{ width: "26px", height: "26px", borderRadius: "50%", background: m.color, color: PAPER, fontFamily: "var(--font-mono, monospace)", fontSize: "10px", fontWeight: 600, marginLeft: i === 0 ? 0 : "-7px", border: "2px solid #F5EEE2", zIndex: HOUSEHOLD.length - i }}
           >
             {m.initial}
           </span>
@@ -230,9 +231,9 @@ function HouseholdScreen() {
             className="flex items-center gap-2 animate-stagger-in"
             style={{ padding: "5px 6px", borderRadius: "10px", background: "#FFFFFF", boxShadow: "0 1px 2px rgba(28,26,23,0.05)", animationDelay: `${0.25 + i * 0.12}s` }}
           >
-            <span className="flex items-center justify-center flex-shrink-0" style={{ width: "24px", height: "24px", borderRadius: "50%", background: m.color, color: "#FFFDF7", fontFamily: "var(--font-mono, monospace)", fontSize: "9.5px", fontWeight: 600 }}>{m.initial}</span>
+            <span className="flex items-center justify-center flex-shrink-0" style={{ width: "24px", height: "24px", borderRadius: "50%", background: m.color, color: PAPER, fontFamily: "var(--font-mono, monospace)", fontSize: "9.5px", fontWeight: 600 }}>{m.initial}</span>
             <div className="min-w-0 flex-1">
-              <p className="truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 550', fontSize: "11px", lineHeight: 1.15, color: "var(--ink, #1C1A17)" }}>{m.name}</p>
+              <p className="truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 550', fontSize: "11px", lineHeight: 1.15, color: "var(--ink, #171410)" }}>{m.name}</p>
               <p style={{ ...labelMono, fontSize: "6.5px", letterSpacing: "0.08em", marginTop: "1px" }}>{m.note}</p>
             </div>
           </div>
@@ -272,10 +273,10 @@ function DiscoverScreen() {
             <img src={encodeURI(d.img)} alt={d.title} referrerPolicy="no-referrer" className="absolute inset-0 w-full h-full object-cover" />
             <span className="absolute flex items-center gap-0.5" style={{ top: "5px", right: "5px", background: "rgba(255,253,247,0.92)", borderRadius: "100px", padding: "2px 5px" }}>
               <svg width="7" height="7" viewBox="0 0 24 24" fill="var(--tomato, #E5462E)"><path d="M12 2l3 6.5 7 .6-5.3 4.6 1.6 6.8L12 17l-6.9 4.1 1.6-6.8L1.4 9.1l7-.6z" /></svg>
-              <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "6.5px", fontWeight: 600, color: "var(--ink, #1C1A17)" }}>{d.rating}</span>
+              <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "6.5px", fontWeight: 600, color: "var(--ink, #171410)" }}>{d.rating}</span>
             </span>
             <div className="absolute inset-x-0 bottom-0" style={{ padding: "10px 7px 5px", background: "linear-gradient(to top, rgba(28,26,23,0.78), rgba(28,26,23,0))" }}>
-              <p className="truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "9.5px", color: "#FFFDF7" }}>{d.title}</p>
+              <p className="truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 600', fontSize: "9.5px", color: PAPER }}>{d.title}</p>
             </div>
           </div>
         ))}
@@ -301,12 +302,12 @@ function IMessageScreen() {
       {/* Group header — overlapping avatars make it read as a shared chat */}
       <div className="flex flex-col items-center px-3 pb-1.5" style={{ borderBottom: "1px solid rgba(28,26,23,0.08)" }}>
         <div className="flex items-center" style={{ height: "32px" }}>
-          <span className="flex items-center justify-center" style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#6B5BD2", color: "#FFFDF7", fontFamily: SANS, fontSize: "12px", fontWeight: 600, border: "2px solid #FFFFFF", zIndex: 1 }}>S</span>
+          <span className="flex items-center justify-center" style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#6B5BD2", color: PAPER, fontFamily: SANS, fontSize: "12px", fontWeight: 600, border: "2px solid #FFFFFF", zIndex: 1 }}>S</span>
           <span className="flex items-center justify-center overflow-hidden" style={{ width: "32px", height: "32px", borderRadius: "50%", background: "var(--lime, #C4EE45)", border: "2px solid #FFFFFF", marginLeft: "-10px", zIndex: 2 }}>
             <TomatoMascot state="thriving" size={25} />
           </span>
         </div>
-        <span style={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 600, color: "#1C1A17", marginTop: "2px" }}>Sam &amp; Marco ›</span>
+        <span style={{ fontFamily: SANS, fontSize: "10.5px", fontWeight: 600, color: INK, marginTop: "2px" }}>Sam &amp; Marco ›</span>
       </div>
 
       {/* Thread — received bubbles carry a sender name, like a group chat */}
@@ -316,7 +317,7 @@ function IMessageScreen() {
           return (
             <div key={i} className="flex flex-col animate-stagger-in" style={{ alignItems: me ? "flex-end" : "flex-start", marginTop: i > 0 && THREAD[i - 1].who !== r.who ? "3px" : 0, animationDelay: `${0.18 + i * 0.14}s` }}>
               {!me && <span style={{ fontFamily: SANS, fontSize: "7.5px", fontWeight: 600, color: r.who === "marco" ? "var(--tomato, #E5462E)" : "#6B5BD2", margin: "0 0 1px 9px", letterSpacing: "0.02em" }}>{r.who === "marco" ? "Marco" : "Sam"}</span>}
-              <span style={{ maxWidth: "80%", background: me ? BLUE : "#E9E9EB", color: me ? "#FFFFFF" : "#1C1A17", borderRadius: "15px", padding: "5px 9px", fontFamily: SANS, fontSize: "10.5px", lineHeight: 1.28, wordBreak: "break-word" }}>{r.text}</span>
+              <span style={{ maxWidth: "80%", background: me ? BLUE : "#E9E9EB", color: me ? "#FFFFFF" : INK, borderRadius: "15px", padding: "5px 9px", fontFamily: SANS, fontSize: "10.5px", lineHeight: 1.28, wordBreak: "break-word" }}>{r.text}</span>
             </div>
           );
         })}
@@ -346,7 +347,7 @@ function GroceryScreen() {
       </div>
 
       <div className="px-4 pb-2 animate-stagger-in" style={{ animationDelay: "0.05s" }}>
-        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #1C1A17)" }}>
+        <h3 style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "19px", lineHeight: 1.05, letterSpacing: "-0.01em", color: "var(--ink, #171410)" }}>
           Grocery list
         </h3>
         <span className="inline-block mt-1.5" style={{ ...labelMono, fontSize: "6.5px", letterSpacing: "0.1em", color: "var(--tomato, #E5462E)", background: "rgba(229,70,46,0.1)", padding: "2px 6px", borderRadius: "5px" }}>Auto-added from your plan</span>
@@ -372,7 +373,7 @@ function GroceryScreen() {
                         <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>
                       )}
                     </span>
-                    <span className="flex-1 truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 450', fontSize: "10.5px", color: it.done ? "var(--ink-soft, #4A4742)" : "var(--ink, #1C1A17)", textDecoration: it.done ? "line-through" : "none" }}>{it.name}</span>
+                    <span className="flex-1 truncate" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 14, "wght" 450', fontSize: "10.5px", color: it.done ? "var(--ink-soft, #4A4742)" : "var(--ink, #171410)", textDecoration: it.done ? "line-through" : "none" }}>{it.name}</span>
                     <span style={{ fontFamily: "var(--font-mono, monospace)", fontSize: "8px", color: "var(--ink-soft, #4A4742)" }}>{it.qty}</span>
                   </div>
                 );

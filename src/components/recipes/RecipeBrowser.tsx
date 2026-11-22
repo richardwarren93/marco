@@ -9,20 +9,20 @@ import SharedRecipeCard from "./SharedRecipeCard";
 import RecipeFilterSheet, { type RecipeFilters, recipeFilterCount } from "./RecipeFilterSheet";
 import { CollectionsIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
 import { MealIcon } from "@/components/icons/MealIcons";
+import { BUTTER, COBALT, DISPLAY, HAND, INK, LAV, LIME, PAPER, PINK, TOMATO } from "@/lib/theme";
 
-const INK = "#1C1A17";
-const ACCENT = "#E5462E";
+const ACCENT = TOMATO;
 
 // How many recipes the "Recently added" preview shows before "View all".
 const RECENT_LIMIT = 4;
 
 // Section heading — Marker Felt display, the app's beautiful-chaos voice.
 const SECTION_HEADING: CSSProperties = {
-  fontFamily: '"Marker Felt", Georgia, serif',
+  fontFamily: DISPLAY,
   fontWeight: 700,
   fontSize: "20px",
   letterSpacing: "-0.01em",
-  color: "#171410",
+  color: INK,
 };
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -136,7 +136,7 @@ function BrowserCard({
 
 function Chip({ label, color, active, onClick }: { label: string; color?: string; active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-transform" style={{ padding: "7px 13px", borderRadius: 99, border: `2px solid #171410`, background: active ? "#171410" : "#FBF7EE", color: active ? "#FBF7EE" : "#171410", fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: "13.5px", whiteSpace: "nowrap" }}>
+    <button onClick={onClick} className="flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-transform" style={{ padding: "7px 13px", borderRadius: 99, border: `2px solid #171410`, background: active ? INK : PAPER, color: active ? PAPER : INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: "13.5px", whiteSpace: "nowrap" }}>
       {color && <span aria-hidden style={{ width: 8, height: 8, borderRadius: 99, background: color, flexShrink: 0 }} />}
       {label}
     </button>
@@ -163,7 +163,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
   const [chip, setChip] = useState<string | null>(null);
   const autoCollections = useMemo(() => {
     const mins = (r: Recipe) => (r.prep_time_minutes ?? 0) + (r.cook_time_minutes ?? 0);
-    const COLORS = ["#E5462E", "#C4EE45", "#FFD84D", "#2540E8", "#FF4D9D", "#C9B8FF"];
+    const COLORS = [TOMATO, LIME, BUTTER, COBALT, PINK, LAV];
     let ci = 0; const col = () => COLORS[ci++ % COLORS.length];
     const out: { key: string; label: string; color: string; test: (r: Recipe) => boolean }[] = [];
     if (recipes.filter((r) => { const t = mins(r); return t > 0 && t <= 30; }).length >= 2)
@@ -269,7 +269,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         {/* Search + filter — same clean schema as Discover */}
         <div className="px-4 pt-3 pb-2.5">
           <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-2 rounded-full px-3.5 h-11" style={{ background: "#FBF7EE", border: "2px solid #171410" }}>
+            <div className="flex-1 flex items-center gap-2 rounded-full px-3.5 h-11" style={{ background: PAPER, border: "2px solid #171410" }}>
               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#a8a29a" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
               </svg>
@@ -294,7 +294,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               onClick={() => setSheetOpen(true)}
               aria-label="Filter and sort"
               className="relative w-11 h-11 flex items-center justify-center rounded-full active:scale-95 transition-transform flex-shrink-0"
-              style={{ background: filterCount > 0 ? ACCENT : "#FBF7EE", border: "2px solid #171410" }}
+              style={{ background: filterCount > 0 ? ACCENT : PAPER, border: "2px solid #171410" }}
             >
               <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={filterCount > 0 ? "#fff" : INK} strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18M6 12h12M10 19h4" />
@@ -344,19 +344,19 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             <div className="flex justify-center mb-4" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.45 }}>
               {hasFilters ? <SearchIcon className="w-12 h-12" /> : <MealIcon className="w-12 h-12" strokeWidth={1.5} />}
             </div>
-            <p style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 22, color: "#171410", marginBottom: 4 }}>
+            <p style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 22, color: INK, marginBottom: 4 }}>
               {hasFilters ? "No matches" : "Nothing saved yet"}
             </p>
-            <p style={{ fontFamily: '"Bradley Hand", "Segoe Script", cursive', fontSize: 17, color: "#E5462E", marginBottom: 20 }}>
+            <p style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, marginBottom: 20 }}>
               {hasFilters ? "try different filters" : "save your first recipe to get started"}
             </p>
             {hasFilters && (
-              <button onClick={clearFilters} style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 15, color: "#171410", background: "#FBF7EE", border: "2px solid #171410", borderRadius: 12, padding: "10px 18px" }}>
+              <button onClick={clearFilters} style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 15, color: INK, background: PAPER, border: "2px solid #171410", borderRadius: 12, padding: "10px 18px" }}>
                 Clear filters
               </button>
             )}
             {!hasFilters && props.mode === "library" && (
-              <Link href="/recipes/new" style={{ fontFamily: '"Marker Felt", Georgia, serif', fontWeight: 700, fontSize: 16, color: "#FBF7EE", background: "#E5462E", border: "2.5px solid #171410", borderRadius: 12, padding: "12px 20px", boxShadow: "0 8px 18px rgba(229,70,46,0.28)" }}>
+              <Link href="/recipes/new" style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 16, color: PAPER, background: TOMATO, border: "2.5px solid #171410", borderRadius: 12, padding: "12px 20px", boxShadow: "0 8px 18px rgba(229,70,46,0.28)" }}>
                 Save a recipe →
               </Link>
             )}
@@ -368,7 +368,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               <div className="flex items-end justify-between mb-3">
                 <div>
                   <h2 style={SECTION_HEADING}>Recently added</h2>
-                  <svg width="132" height="9" viewBox="0 0 132 9" fill="none" aria-hidden style={{ marginTop: 1 }}><path d="M2 6 C 26 2, 44 8, 66 5 S 110 2, 130 5" stroke="#E5462E" strokeWidth="3" strokeLinecap="round" /></svg>
+                  <svg width="132" height="9" viewBox="0 0 132 9" fill="none" aria-hidden style={{ marginTop: 1 }}><path d="M2 6 C 26 2, 44 8, 66 5 S 110 2, 130 5" stroke={TOMATO} strokeWidth="3" strokeLinecap="round" /></svg>
                 </div>
                 {canExpand && (
                   <button
@@ -415,7 +415,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                 <div className="flex items-end justify-between mb-3">
                   <div>
                     <h2 style={SECTION_HEADING}>Collections</h2>
-                    <svg width="96" height="9" viewBox="0 0 96 9" fill="none" aria-hidden style={{ marginTop: 1 }}><path d="M2 6 C 20 2, 34 8, 50 5 S 80 2, 94 5" stroke="#2540E8" strokeWidth="3" strokeLinecap="round" /></svg>
+                    <svg width="96" height="9" viewBox="0 0 96 9" fill="none" aria-hidden style={{ marginTop: 1 }}><path d="M2 6 C 20 2, 34 8, 50 5 S 80 2, 94 5" stroke={COBALT} strokeWidth="3" strokeLinecap="round" /></svg>
                   </div>
                   <button
                     onClick={() => router.push("/collections")}
@@ -449,7 +449,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                         </div>
                       )}
                     </div>
-                    <p className="mt-1.5 text-[13px] font-semibold truncate" style={{ color: "var(--ink, #1C1A17)" }}>
+                    <p className="mt-1.5 text-[13px] font-semibold truncate" style={{ color: "var(--ink, #171410)" }}>
                       Recently Added
                     </p>
                     <p className="text-[11px]" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.6 }}>
@@ -479,7 +479,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                             </div>
                           )}
                         </div>
-                        <p className="mt-1.5 text-[13px] font-semibold truncate" style={{ color: "var(--ink, #1C1A17)" }}>
+                        <p className="mt-1.5 text-[13px] font-semibold truncate" style={{ color: "var(--ink, #171410)" }}>
                           {c.name}
                         </p>
                         <p className="text-[11px]" style={{ color: "var(--ink-soft, #4A4742)", opacity: 0.6 }}>

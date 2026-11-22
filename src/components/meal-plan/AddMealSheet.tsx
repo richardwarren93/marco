@@ -8,9 +8,10 @@ import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import { useToast } from "@/components/ui/Toast";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import TomatoFlourish from "@/components/brand/TomatoFlourish";
+import { INK, INK_MUTED, TOMATO } from "@/lib/theme";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
-const ACCENT = "#E5462E";
+const ACCENT = TOMATO;
 const ACCENT_LIGHT = "#fff7ed";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
@@ -37,7 +38,7 @@ function RecipeRow({
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 rounded-xl text-left transition-colors border ${
         compact ? "px-2.5 py-1.5" : "px-3 py-2.5"
-      } ${isSelected ? "border-[#E5462E]/30" : "border-transparent hover:bg-gray-100"} ${dimmed ? "opacity-55" : ""}`}
+      } ${isSelected ? "border-[var(--tomato)]/30" : "border-transparent hover:bg-gray-100"} ${dimmed ? "opacity-55" : ""}`}
       style={isSelected ? { background: ACCENT_LIGHT } : { background: "#f5f5f3" }}
     >
       <div
@@ -54,7 +55,7 @@ function RecipeRow({
       </span>
       {badge && (
         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-          badge === "Scheduled" ? "bg-gray-100 text-gray-400" : "text-[#E5462E]"
+          badge === "Scheduled" ? "bg-gray-100 text-gray-400" : "text-[var(--tomato)]"
         }`} style={badge !== "Scheduled" ? { background: ACCENT_LIGHT } : {}}>
           {badge}
         </span>
@@ -431,8 +432,8 @@ export default function AddMealSheet({
           {onPlanMultiple && (
             <div className="px-4 pb-4 flex-shrink-0 text-center" style={{ borderTop: "1px solid #f0f0ee", paddingTop: 12 }}>
               <button onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}>
-                <span className="text-xs" style={{ color: "#a09890" }}>Or </span>
-                <span className="text-xs font-medium inline-block align-baseline" style={{ color: "var(--ink, #1C1A17)" }}>
+                <span className="text-xs" style={{ color: INK_MUTED }}>Or </span>
+                <span className="text-xs font-medium inline-block align-baseline" style={{ color: "var(--ink, #171410)" }}>
                 plan multiple meals
                 {/* Tomato flourish underneath, ending in the punctum — per refined brand doc */}
                 <TomatoFlourish className="mt-0.5 pointer-events-none" />
@@ -472,7 +473,7 @@ export default function AddMealSheet({
                   className="flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border"
                   style={
                     selectedMealTypes.has(mt)
-                      ? { background: "#1C1A17", color: "white", borderColor: "#1C1A17" }
+                      ? { background: INK, color: "white", borderColor: INK }
                       : { background: "#f3f3f1", color: "#888", borderColor: "#f3f3f1" }
                   }
                 >
@@ -520,7 +521,7 @@ export default function AddMealSheet({
                     className="flex-1 flex flex-col items-center py-1.5 rounded-xl transition-colors"
                     style={
                       isSelected
-                        ? { background: "#1C1A17", color: "white" }
+                        ? { background: INK, color: "white" }
                         : { background: "#f3f3f1", color: "#888" }
                     }
                   >
@@ -589,8 +590,8 @@ export default function AddMealSheet({
               onClick={() => { onClose(); onPlanMultiple(selectedRecipeId ?? undefined); }}
               className="w-full pt-3 pb-1 text-center"
             >
-              <span className="text-xs" style={{ color: "#a09890" }}>Or </span>
-              <span className="text-xs font-medium inline-block align-baseline" style={{ color: "var(--ink, #1C1A17)" }}>
+              <span className="text-xs" style={{ color: INK_MUTED }}>Or </span>
+              <span className="text-xs font-medium inline-block align-baseline" style={{ color: "var(--ink, #171410)" }}>
                 plan multiple meals
                 {/* Tomato flourish underneath, ending in the punctum — per refined brand doc */}
                 <TomatoFlourish className="mt-0.5 pointer-events-none" />

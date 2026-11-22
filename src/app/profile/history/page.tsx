@@ -2,8 +2,9 @@
 
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
-import SubPageHeader from "@/components/layout/SubPageHeader";
+import PageHeader from "@/components/layout/PageHeader";
 import { useToast } from "@/components/ui/Toast";
+import { CREAM, INK, INK_MUTED, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 /* Cooking history — every week gets its own section showing what you made
    (moved here from the profile hub's "Last week's cooking" card). Weeks are
@@ -28,7 +29,7 @@ interface HistoryData {
 }
 
 const CARD_STYLE = {
-  background: "#FFFDF7",
+  background: PAPER,
   border: "1px solid rgba(28,26,23,0.08)",
   boxShadow: "0 2px 12px rgba(28,26,23,0.05)",
 } as const;
@@ -93,8 +94,8 @@ export default function CookingHistoryPage() {
   let lastMonthShown = "";
 
   return (
-    <div className="min-h-screen" style={{ background: "#F5EEE2" }}>
-      <SubPageHeader title="Cooking history" />
+    <div className="min-h-screen" style={{ background: CREAM }}>
+      <PageHeader back title="Cooking history" />
 
       <div className="max-w-lg mx-auto px-4 pt-1" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
         {isLoading ? (
@@ -106,7 +107,7 @@ export default function CookingHistoryPage() {
         ) : weeks.length === 0 ? (
           <div className="text-center py-14 rounded-2xl px-6" style={CARD_STYLE}>
             <span className="text-4xl block mb-3">🍳</span>
-            <p className="font-semibold text-[15px]" style={{ color: "#1C1A17" }}>No cooks logged yet</p>
+            <p className="font-semibold text-[15px]" style={{ color: INK }}>No cooks logged yet</p>
             <p className="text-[13px] mt-1.5" style={{ color: "#6B655C" }}>
               Confirm meals with &ldquo;Cooked it&rdquo; and every week will show up here.
             </p>
@@ -129,12 +130,12 @@ export default function CookingHistoryPage() {
                         fontVariationSettings: '"opsz" 40, "SOFT" 100, "wght" 600',
                         fontSize: "18px",
                         letterSpacing: "-0.01em",
-                        color: "#1C1A17",
+                        color: INK,
                       }}
                     >
                       {month}
                     </h2>
-                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: "#a09890" }}>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: INK_MUTED }}>
                       {monthTotals.get(month)} {monthTotals.get(month) === 1 ? "meal" : "meals"}
                     </span>
                   </div>
@@ -143,11 +144,11 @@ export default function CookingHistoryPage() {
                 <div className="rounded-2xl overflow-hidden mb-3" style={CARD_STYLE}>
                   {/* Week header */}
                   <div className="flex items-center gap-2 px-4 pt-3.5 pb-1">
-                    <p className="text-[13px] font-semibold" style={{ color: "#1C1A17" }}>{rangeLabel(week.weekStart)}</p>
+                    <p className="text-[13px] font-semibold" style={{ color: INK }}>{rangeLabel(week.weekStart)}</p>
                     {chip && (
                       <span
                         className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full"
-                        style={{ background: "rgba(229,70,46,0.1)", color: "#B8331E" }}
+                        style={{ background: "rgba(229,70,46,0.1)", color: TOMATO_DARK }}
                       >
                         {chip}
                       </span>
@@ -157,7 +158,7 @@ export default function CookingHistoryPage() {
                       aria-label={`Share the week of ${rangeLabel(week.weekStart)}`}
                       className="ml-auto w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-transform"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#E5462E" strokeWidth={2}>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke={TOMATO} strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8.7 10.7l6.6-3.4M8.7 13.3l6.6 3.4M18 8a3 3 0 10-3-3 3 3 0 003 3zM6 15a3 3 0 103-3 3 3 0 00-3 3zM18 22a3 3 0 10-3-3 3 3 0 003 3z" />
                       </svg>
                     </button>
@@ -167,7 +168,7 @@ export default function CookingHistoryPage() {
                   <p className="px-4 pb-2.5 text-[11.5px]" style={{ color: "#8a8378" }}>
                     {week.totalCooks} {week.totalCooks === 1 ? "meal" : "meals"} · {distinct} {distinct === 1 ? "recipe" : "recipes"}
                     {week.tomatoesEarned > 0 && (
-                      <span style={{ color: "#B8331E", fontWeight: 600 }}> · +{week.tomatoesEarned} 🍅</span>
+                      <span style={{ color: TOMATO_DARK, fontWeight: 600 }}> · +{week.tomatoesEarned} 🍅</span>
                     )}
                   </p>
 
@@ -183,12 +184,12 @@ export default function CookingHistoryPage() {
                             <div className="w-full h-full flex items-center justify-center text-2xl">🍽️</div>
                           )}
                           {r.times > 1 && (
-                            <span className="absolute top-1 right-1 text-white text-[10px] font-bold rounded-full px-1.5" style={{ background: "#E5462E" }}>
+                            <span className="absolute top-1 right-1 text-white text-[10px] font-bold rounded-full px-1.5" style={{ background: TOMATO }}>
                               ×{r.times}
                             </span>
                           )}
                         </div>
-                        <p className="mt-1 text-[11px] leading-tight line-clamp-2" style={{ color: "#1C1A17" }}>{r.title}</p>
+                        <p className="mt-1 text-[11px] leading-tight line-clamp-2" style={{ color: INK }}>{r.title}</p>
                       </div>
                     ))}
                   </div>

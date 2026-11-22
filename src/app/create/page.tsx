@@ -5,16 +5,10 @@
 // "Add a recipe" is the quiet import. Dev-only.
 
 import { useRouter } from "next/navigation";
+import { DISPLAY, HAND, INK, LIME, PAPER, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const PINK = "#FF4D9D";
-const BUTTER = "#FFD84D";
 
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
-const DISP = '"Marker Felt", Georgia, serif';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 
 export default function CreateTray() {

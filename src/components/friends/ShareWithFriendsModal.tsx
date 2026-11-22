@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import type { Friendship } from "@/types";
 import { useToast } from "@/components/ui/Toast";
+import { INK, INK_SOFT, TOMATO } from "@/lib/theme";
 
 interface ShareWithFriendsModalProps {
   isOpen: boolean;
@@ -23,8 +24,6 @@ interface ShareWithFriendsModalProps {
   itemTitle: string;
 }
 
-const TOMATO = "#E5462E";
-const INK = "#1C1A17";
 
 export default function ShareWithFriendsModal({
   isOpen,
@@ -255,7 +254,7 @@ export default function ShareWithFriendsModal({
                         </div>
                       )}
                     </div>
-                    <span className="text-[11px] text-center leading-tight truncate w-full px-0.5" style={{ color: isSent ? TOMATO : "#4A4742", fontWeight: isSent ? 600 : 400 }}>
+                    <span className="text-[11px] text-center leading-tight truncate w-full px-0.5" style={{ color: isSent ? TOMATO : INK_SOFT, fontWeight: isSent ? 600 : 400 }}>
                       {isSent ? "Sent" : name.split(" ")[0]}
                     </span>
                   </button>
@@ -324,7 +323,7 @@ function ExternalTarget({
       <span className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: bg, color: fg }}>
         {children}
       </span>
-      <span className="text-[11px] text-center leading-tight" style={{ color: "#4A4742" }}>
+      <span className="text-[11px] text-center leading-tight" style={{ color: INK_SOFT }}>
         {label}
       </span>
     </button>

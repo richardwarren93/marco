@@ -4,7 +4,7 @@ export const metadata = { title: "Marco for ChatGPT · ACGC", description: "Read
 export const viewport = { width: "device-width", initialScale: 1, maximumScale: 5, userScalable: true };
 
 export default function MarcoPluginPage() {
-  return <article className="min-h-screen bg-[#F5EEE2] px-6 py-16 text-[#1C1A17]">
+  return <article className="min-h-screen bg-[var(--cream)] px-6 py-16 text-[var(--ink)]">
     <div className="mx-auto max-w-2xl space-y-7">
       <p className="text-sm font-semibold uppercase tracking-widest">ACGC · Marco for ChatGPT</p>
       <h1 className="text-4xl font-bold tracking-tight">Your recipes, ready to cook.</h1>
@@ -15,7 +15,7 @@ export default function MarcoPluginPage() {
         <li>Read saved grocery lists, including your shared household list.</li>
         <li>Preview recipe cards and save new recipes with your permission.</li>
       </ul>
-      <section className="rounded-2xl border border-[#1C1A17]/20 bg-white/40 p-6 space-y-3">
+      <section className="rounded-2xl border border-[var(--ink)]/20 bg-white/40 p-6 space-y-3">
         <h2 className="text-xl font-bold">Free, with your permission</h2>
         <p>A Marco account is required. Connect through ChatGPT and sign in to Marco to approve access. Marco Plus is not required for this plugin.</p>
         <p>Recipe saving requires a separate opt-in and an explicit save request. The plugin cannot edit or delete existing recipes, change plans, send messages, or buy groceries. Requested results are shared with OpenAI. You can disconnect the plugin in ChatGPT.</p>

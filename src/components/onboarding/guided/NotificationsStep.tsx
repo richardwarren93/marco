@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import GuidedShell from "./GuidedShell";
+import { INK, INK_SOFT } from "@/lib/theme";
 
 /* Guided flow — notifications opt-in, shown right after the Taste DNA reveal
    (permission grants are highest right after a payoff moment). Framed around
@@ -92,7 +93,7 @@ export default function NotificationsStep({ step, totalSteps, onBack, onContinue
             fontSize: "28px",
             lineHeight: 1.1,
             letterSpacing: "-0.02em",
-            color: "var(--ink, #1C1A17)",
+            color: "var(--ink, #171410)",
           }}
         >
           Keep your <em style={{ color: "var(--tomato, #E5462E)", fontStyle: "italic" }}>streak</em> alive
@@ -132,7 +133,7 @@ export default function NotificationsStep({ step, totalSteps, onBack, onContinue
                 fontFamily: "-apple-system, system-ui, sans-serif",
                 fontSize: "15px",
                 fontWeight: 600,
-                color: "#1C1A17",
+                color: INK,
                 lineHeight: 1.25,
                 marginBottom: "6px",
               }}
@@ -143,7 +144,7 @@ export default function NotificationsStep({ step, totalSteps, onBack, onContinue
               style={{
                 fontFamily: "-apple-system, system-ui, sans-serif",
                 fontSize: "12px",
-                color: "#4A4742",
+                color: INK_SOFT,
                 lineHeight: 1.35,
               }}
             >

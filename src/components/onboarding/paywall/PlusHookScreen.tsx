@@ -8,6 +8,7 @@
 import PaywallShell, { PlusPrimaryButton } from "./PaywallShell";
 import { PLUS_PRICING } from "./plus-config";
 import { HandUnderline } from "../cookbook/CookbookOrnaments";
+import { INK, TOMATO } from "@/lib/theme";
 
 interface Props {
   onContinue: () => void;
@@ -59,11 +60,11 @@ export default function PlusHookScreen({ onContinue, onClose }: Props) {
             fontSize: "34px",
             lineHeight: 1.04,
             letterSpacing: "-0.02em",
-            color: "#1C1A17",
+            color: INK,
           }}
         >
           Unlock your{" "}
-          <em style={{ color: "#E5462E", fontStyle: "italic" }}>whole kitchen</em>
+          <em style={{ color: TOMATO, fontStyle: "italic" }}>whole kitchen</em>
         </h1>
 
         <div className="mt-3 mb-1">
@@ -130,7 +131,7 @@ export default function PlusHookScreen({ onContinue, onClose }: Props) {
             >
               <span
                 className="flex items-center justify-center rounded-full flex-shrink-0"
-                style={{ width: 22, height: 22, background: "#E5462E", color: "white" }}
+                style={{ width: 22, height: 22, background: TOMATO, color: "white" }}
               >
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -140,7 +141,7 @@ export default function PlusHookScreen({ onContinue, onClose }: Props) {
                 style={{
                   fontFamily: "var(--font-display, Georgia, serif)",
                   fontSize: "14.5px",
-                  color: "#1C1A17",
+                  color: INK,
                 }}
               >
                 {line}

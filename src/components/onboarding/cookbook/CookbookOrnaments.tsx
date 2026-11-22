@@ -7,6 +7,7 @@
 // and CookbookOpening both include it) so the cookbook-* animations resolve.
 
 import Image from "next/image";
+import { INK, TOMATO } from "@/lib/theme";
 
 export function CookbookKeyframes() {
   return (
@@ -96,7 +97,7 @@ export function CornerFrame() {
 
 export function DrawnArrow() {
   return (
-    <svg width="46" height="22" viewBox="0 0 46 22" fill="none" stroke="#1C1A17" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg width="46" height="22" viewBox="0 0 46 22" fill="none" stroke={INK} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
       <path
         d="M 2 11 Q 16 4, 30 11 Q 36 14, 40 11"
         style={{ strokeDasharray: 60, strokeDashoffset: 60, animation: "cookbook-draw-stroke 0.9s ease-out 1.1s forwards" }}
@@ -118,7 +119,7 @@ export function Ribbon() {
         right: 32,
         width: 22,
         height: 64,
-        background: "#E5462E",
+        background: TOMATO,
         boxShadow: "1px 1px 2px rgba(0,0,0,0.18)",
         clipPath: "polygon(0 0, 100% 0, 100% 100%, 50% 80%, 0 100%)",
         animation: "cookbook-ribbon-swing 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both",
@@ -132,7 +133,7 @@ export function HandUnderline({ width = 100 }: { width?: number }) {
     <svg width={width} height="8" viewBox={`0 0 ${width} 8`} fill="none">
       <path
         d={`M 2 5 Q ${width * 0.25} 2, ${width * 0.5} 4 T ${width - 2} 4`}
-        stroke="#1C1A17"
+        stroke={INK}
         strokeWidth="1.3"
         strokeLinecap="round"
         opacity={0.75}

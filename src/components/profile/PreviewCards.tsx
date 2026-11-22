@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { INK, INK_SOFT, PAPER } from "@/lib/theme";
 
 /* Profile hub feature cards — simple, in-style, and each background is a real
    preview of what's inside: the Taste DNA card renders your flavor profile as
    a radar chart; the Badges card shows your actual earned badges. */
 
 const CARD_STYLE = {
-  background: "#FFFDF7",
+  background: PAPER,
   border: "1px solid rgba(28,26,23,0.1)",
   boxShadow: "0 2px 12px rgba(28,26,23,0.05)",
 } as const;
@@ -17,13 +18,13 @@ const TITLE_STYLE = {
   fontVariationSettings: '"opsz" 40, "SOFT" 100, "wght" 600',
   fontSize: "16px",
   letterSpacing: "-0.01em",
-  color: "#1C1A17",
+  color: INK,
 } as const;
 
 const VIEW_STYLE = {
   fontSize: "12px",
   fontWeight: 600,
-  color: "#1C1A17",
+  color: INK,
 } as const;
 
 type Scores = { sweet: number; savory: number; richness: number; tangy: number; spicy: number };
@@ -95,7 +96,7 @@ export function TastePreviewCard({ scores }: { scores: Scores | null }) {
       </div>
       <p
         className="mb-2"
-        style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12px", lineHeight: 1.4, color: "#4A4742" }}
+        style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12px", lineHeight: 1.4, color: INK_SOFT }}
       >
         {sentence ?? "Rank a few dinners and we'll map your taste."}
       </p>
@@ -132,7 +133,7 @@ export function BadgesPreviewCard({ earned, total, icons }: { earned?: number; t
       </div>
       <p
         className="mb-2"
-        style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12px", lineHeight: 1.4, color: "#4A4742" }}
+        style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12px", lineHeight: 1.4, color: INK_SOFT }}
       >
         {hasData ? `${earned ?? 0} of ${total} earned — keep cooking.` : "Cook, save, and share to earn your first."}
       </p>

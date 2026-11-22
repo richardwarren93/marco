@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import Image from "next/image";
 import RANKING_RECIPES, { type RankingRecipe } from "./data/ranking-recipes";
 import GuidedShell from "./guided/GuidedShell";
+import { INK, TOMATO } from "@/lib/theme";
 
 interface Props {
   step: number;
@@ -18,7 +19,7 @@ const rankHeadingStyle = {
   fontSize: "27px",
   lineHeight: 1.12,
   letterSpacing: "-0.02em",
-  color: "var(--ink, #1C1A17)",
+  color: "var(--ink, #171410)",
 } as const;
 
 /* ── Elo helpers ─────────────────────────────────────────────── */
@@ -266,7 +267,7 @@ export default function DinnerRankingStep({ step, totalSteps, onBack, onNext }: 
                   <div
                     className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[10px]"
                     style={{
-                      background: i === 0 ? "#E5462E" : i === 1 ? "#f07828" : i === 2 ? "#f5a05c" : "rgba(28, 26, 23, 0.1)",
+                      background: i === 0 ? TOMATO : i === 1 ? "#f07828" : i === 2 ? "#f5a05c" : "rgba(28, 26, 23, 0.1)",
                       color: i <= 2 ? "white" : "rgba(28, 26, 23, 0.5)",
                     }}
                   >
@@ -277,7 +278,7 @@ export default function DinnerRankingStep({ step, totalSteps, onBack, onNext }: 
                       fontFamily: "var(--font-display, Georgia, serif)",
                       fontVariationSettings: '"opsz" 14, "wght" 500',
                       fontSize: "14px",
-                      color: i <= 2 ? "#1C1A17" : "rgba(28, 26, 23, 0.5)",
+                      color: i <= 2 ? INK : "rgba(28, 26, 23, 0.5)",
                     }}
                   >
                     {recipe.title}
@@ -335,7 +336,7 @@ export default function DinnerRankingStep({ step, totalSteps, onBack, onNext }: 
       <div className="h-1.5 rounded-full overflow-hidden mb-3" style={{ background: "rgba(28, 26, 23, 0.1)" }}>
         <div
           className="h-full rounded-full transition-all duration-500 ease-out"
-          style={{ background: "#E5462E", width: `${(matchCount / MAX_MATCHES) * 100}%` }}
+          style={{ background: TOMATO, width: `${(matchCount / MAX_MATCHES) * 100}%` }}
         />
       </div>
 
@@ -401,7 +402,7 @@ export default function DinnerRankingStep({ step, totalSteps, onBack, onNext }: 
               <div className="px-4 pb-4 pt-1">
                 <p
                   className="text-base font-bold"
-                  style={{ color: "#1C1A17" }}
+                  style={{ color: INK }}
                 >
                   {recipe.title}
                 </p>
@@ -441,7 +442,7 @@ export default function DinnerRankingStep({ step, totalSteps, onBack, onNext }: 
             className="w-10 h-10 rounded-full flex items-center justify-center font-black text-xs shadow-lg"
             style={{
               background: "white",
-              color: "#E5462E",
+              color: TOMATO,
               border: "2px solid #fed7aa",
               boxShadow: "0 4px 16px rgba(234,88,12,0.15)",
             }}

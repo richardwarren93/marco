@@ -6,6 +6,7 @@ import { TIER_COLORS, CATEGORY_LABELS } from "@/lib/badges";
 // Celebration pieces (BadgeIcon, Confetti, Sparkles, AchievementModal) live in
 // the shared celebrations module — BadgeChecker and the cook flow use them too.
 import { BadgeIcon } from "./celebrations";
+import { MUSTARD, TEAL, TOMATO } from "@/lib/theme";
 
 // ─── Rarity colors for earned badges — Marco palette ────────────────────────
 // Bronze → tomato (primary punch) | Silver → teal (anchor) | Gold → mustard (energy)
@@ -16,19 +17,19 @@ const RARITY_STYLES: Record<
   bronze: {
     bgStyle: { background: "rgba(229,70,46,0.06)" },
     borderStyle: { borderColor: "rgba(229,70,46,0.30)" },
-    dotBg: "#E5462E",
+    dotBg: TOMATO,
     dotMark: "●",
   },
   silver: {
     bgStyle: { background: "rgba(15,76,92,0.06)" },
     borderStyle: { borderColor: "rgba(15,76,92,0.30)" },
-    dotBg: "#0F4C5C",
+    dotBg: TEAL,
     dotMark: "◆",
   },
   gold: {
     bgStyle: { background: "rgba(232,163,61,0.10)" },
     borderStyle: { borderColor: "rgba(232,163,61,0.45)" },
-    dotBg: "#E8A33D",
+    dotBg: MUSTARD,
     dotMark: "★",
   },
 };
@@ -119,7 +120,7 @@ function BadgeDetailModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
             fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
             fontSize: "20px",
             letterSpacing: "-0.015em",
-            color: badge.earned ? "var(--ink, #1C1A17)" : "var(--ink-soft, #4A4742)",
+            color: badge.earned ? "var(--ink, #171410)" : "var(--ink-soft, #4A4742)",
             opacity: badge.earned ? 1 : 0.6,
           }}
         >
@@ -221,7 +222,7 @@ function AllBadgesModal({
                 style={{
                   fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
                   fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-                  color: "var(--ink, #1C1A17)",
+                  color: "var(--ink, #171410)",
                   letterSpacing: "-0.015em",
                 }}
               >
@@ -369,7 +370,7 @@ export default function BadgesCard() {
               style={{
                 fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
                 fontVariationSettings: '"opsz" 60, "SOFT" 100, "wght" 600',
-                color: "var(--ink, #1C1A17)",
+                color: "var(--ink, #171410)",
                 letterSpacing: "-0.015em",
               }}
             >

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { INK, TOMATO } from "@/lib/theme";
 
 export interface DiscoverFilters {
   mealTypes: string[];
@@ -23,8 +24,7 @@ const DIETARY = [
   { key: "low_carb", label: "Low Carb" },
 ];
 
-const ACCENT = "#E5462E";
-const INK = "#1C1A17";
+const ACCENT = TOMATO;
 
 export function activeFilterCount(f: DiscoverFilters): number {
   return f.mealTypes.length + f.dietary.length + (f.maxTime > 0 ? 1 : 0);

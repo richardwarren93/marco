@@ -7,14 +7,10 @@ import dynamic from "next/dynamic";
 import useSWR from "swr";
 import { useRecipes, useCollections, apiFetcher } from "@/lib/hooks/use-data";
 import RecipeBrowser from "@/components/recipes/RecipeBrowser";
-import ChaosHeader from "@/components/layout/ChaosHeader";
-import { useToast } from "@/components/ui/Toast";
+import PageHeader from "@/components/layout/PageHeader";
+import KitchenSurface from "@/components/layout/KitchenSurface";
+import KitchenTabs from "@/components/layout/KitchenTabs";
 
-// ── Lazy-load inactive tabs & modals ──────────────────────────────────────────
-const DiscoverTab = dynamic(() => import("@/components/recipes/DiscoverTab"));
-const GroceryPageContent = dynamic(() => import("@/components/grocery/GroceryPageContent"), { ssr: false });
-const MealPlanPageContent = dynamic(() => import("@/components/meal-plan/MealPlanPageContent"), { ssr: false });
-const ProfilePage = dynamic(() => import("@/app/profile/page"), { ssr: false });
 const ImportRecipeSheet = dynamic(() => import("@/components/recipes/ImportRecipeSheet"), { ssr: false });
 const AddMealSheet = dynamic(() => import("@/components/meal-plan/AddMealSheet"), { ssr: false });
 const AddToCollectionModal = dynamic(() => import("@/components/collections/AddToCollectionModal"), { ssr: false });
@@ -31,7 +27,17 @@ function formatDateKey(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-type ActiveTab = "recipes" | "discover" | "grocery" | "meal-plan" | "profile";
+/* This page used to be the whole app: `?tab=` switched between recipes,
+   discover, the meal plan, the grocery list and — by importing the route
+   component — the profile page, each of which ALSO existed as its own route.
+   Those are routes now, and these redirects keep old links (and anything
+   still in a user's history) working. */
+const LEGACY_TABS: Record<string, string> = {
+  discover: "/discover",
+  "meal-plan": "/meal-plan",
+  grocery: "/grocery",
+  profile: "/profile",
+};
 
 export default function RecipesPage() {
   return (
@@ -45,13 +51,17 @@ function RecipesInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ── SWR data ────────────────────────────────────────────────────────────────
+  const tabParam = searchParams.get("tab");
+  const legacyTarget = tabParam ? LEGACY_TABS[tabParam] : undefined;
+  useEffect(() => {
+    if (legacyTarget) router.replace(legacyTarget);
+  }, [legacyTarget, router]);
+
   const { data: recipes = [], isLoading: recipesLoading } = useRecipes();
   const { data: collectionsData, isLoading: collectionsLoading, mutate: mutateCollections } = useCollections();
   const collections = collectionsData?.collections ?? [];
   const loading = recipesLoading || collectionsLoading;
 
-  // Fetch all recipe IDs that are in any collection
   const { data: collRecipesData, mutate: mutateCollRecipes } = useSWR<{ recipe_ids: string[] }>(
     "/api/collections/recipe-ids",
     apiFetcher,
@@ -59,31 +69,25 @@ function RecipesInner() {
   );
   const inCollectionIds = useMemo(() => new Set(collRecipesData?.recipe_ids ?? []), [collRecipesData]);
 
-  const tabParam = searchParams.get("tab");
-  const activeTab: ActiveTab = (["recipes", "discover", "grocery", "meal-plan", "profile"].includes(tabParam ?? "") ? tabParam : "recipes") as ActiveTab;
-
-  // Quick-add sheet state
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [addSheetRecipeId, setAddSheetRecipeId] = useState<string | null>(null);
   const [addSheetMealTypes, setAddSheetMealTypes] = useState<string[]>(["dinner"]);
-
-  // Add to collection modal state
   const [collectionRecipeId, setCollectionRecipeId] = useState<string | null>(null);
-  const [showImport, setShowImport] = useState(false);
-  // The guide (and any ?import=1 link) opens the import sheet directly.
-  useEffect(() => { if (searchParams.get("import")) setShowImport(true); }, [searchParams]);
+
+  /* The guide (and any ?import=1 link) opens the import sheet directly.
+     Derived rather than set from an effect, so there's no extra render and no
+     window where the sheet is open with the param already gone. */
+  const importParam = searchParams.get("import");
+  const [importClosedFor, setImportClosedFor] = useState<string | null>(null);
+  const showImport = Boolean(importParam) && importClosedFor !== importParam;
 
   const supabase = createClient();
-  const { showToast } = useToast();
-
   const today = useMemo(() => formatDateKey(new Date()), []);
   const weekStart = useMemo(() => getMonday(new Date()), []);
 
   const handleAddToMealPlan = useCallback(
     async (recipeId: string, dates: string[], mealType: string, servings?: number) => {
-      console.log("[MealAdd] handleAddToMealPlan called", { recipeId, dates, mealType });
       const { data: { user } } = await supabase.auth.getUser();
-      console.log("[MealAdd] user:", user?.id || "NO USER");
       if (!user) return;
       await Promise.all(
         dates.map((date) =>
@@ -97,74 +101,33 @@ function RecipesInner() {
           })
         )
       );
-
-      // Sheet handles toast + closing via AddMealSheet
     },
     [supabase]
   );
 
+  const openMealSheet = (id: string) => {
+    const recipe = recipes.find((r) => r.id === id);
+    setAddSheetRecipeId(id);
+    setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
+    setAddSheetOpen(true);
+  };
+
+  if (legacyTarget) return null;
+
   return (
-    <>
-      {/* Every tab now wears the same identity header as the Table (friends)
-          tab — Marker Felt wordmark + handwritten subtitle + avatar — on the
-          shared dotted-cream background, instead of the old utility top nav. */}
-
-      {/* Recipes tab */}
-      {activeTab === "recipes" && (
-        <div style={{ minHeight: "100dvh", background: "#E9E2D3", backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }}>
-          <ChaosHeader title="My Recipes" subtitle="everything you've saved" />
-          <RecipeBrowser
-            mode="library"
-            recipes={recipes}
-            loading={loading}
-            onAddToMealPlan={(id) => {
-              const recipe = recipes.find((r) => r.id === id);
-              setAddSheetRecipeId(id);
-              setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
-              setAddSheetOpen(true);
-            }}
-            onAddToCollection={(id) => setCollectionRecipeId(id)}
-            inCollectionIds={inCollectionIds}
-            onCollectionChanged={() => mutateCollRecipes()}
-            collections={collections}
-          />
-        </div>
-      )}
-
-      {/* Discover tab */}
-      {activeTab === "discover" && (
-        <>
-          <ChaosHeader title="Explore" subtitle="find your next cook" />
-          <DiscoverTab
-            onAddToMealPlan={(id) => {
-              const recipe = recipes.find((r) => r.id === id);
-              setAddSheetRecipeId(id);
-              setAddSheetMealTypes(recipe?.meal_type ? [recipe.meal_type] : ["dinner"]);
-              setAddSheetOpen(true);
-            }}
-            onAddToCollection={(id) => setCollectionRecipeId(id)}
-          />
-        </>
-      )}
-
-      {/* Meal Plan tab */}
-      {activeTab === "meal-plan" && (
-        <>
-          <ChaosHeader title="Meal Plan" subtitle="your week, sorted" />
-          <MealPlanPageContent />
-        </>
-      )}
-
-      {/* Grocery tab */}
-      {activeTab === "grocery" && (
-        <>
-          <ChaosHeader title="Grocery" subtitle="what to grab" />
-          <GroceryPageContent />
-        </>
-      )}
-
-      {/* Profile tab renders its own header. */}
-      {activeTab === "profile" && <ProfilePage />}
+    <KitchenSurface>
+      <PageHeader title="My Recipes" subtitle="everything you've saved" avatar />
+      <div className="px-4"><KitchenTabs /></div>
+      <RecipeBrowser
+        mode="library"
+        recipes={recipes}
+        loading={loading}
+        onAddToMealPlan={openMealSheet}
+        onAddToCollection={(id) => setCollectionRecipeId(id)}
+        inCollectionIds={inCollectionIds}
+        onCollectionChanged={() => mutateCollRecipes()}
+        collections={collections}
+      />
 
       <AddMealSheet
         isOpen={addSheetOpen}
@@ -186,7 +149,7 @@ function RecipesInner() {
         onClose={() => { setCollectionRecipeId(null); mutateCollections(); }}
       />
 
-      <ImportRecipeSheet isOpen={showImport} onClose={() => setShowImport(false)} />
-    </>
+      <ImportRecipeSheet isOpen={showImport} onClose={() => setImportClosedFor(importParam)} />
+    </KitchenSurface>
   );
 }

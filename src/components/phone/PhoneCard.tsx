@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useProfile } from "@/lib/hooks/use-data";
 import type { UserProfile } from "@/types";
+import { INK, INK_MUTED, TOMATO } from "@/lib/theme";
 
 type Mode = "view" | "enter_phone" | "enter_code";
 
@@ -85,8 +86,8 @@ export default function PhoneCard() {
     <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-bold" style={{ color: "#1C1A17" }}>Text Marco</p>
-          <p className="text-xs mt-0.5" style={{ color: "#a09890" }}>
+          <p className="text-sm font-bold" style={{ color: INK }}>Text Marco</p>
+          <p className="text-xs mt-0.5" style={{ color: INK_MUTED }}>
             {verified
               ? `Linked to ${profile!.phone}`
               : "Save & find recipes by text message"}
@@ -107,7 +108,7 @@ export default function PhoneCard() {
         <button
           onClick={() => { setMode("enter_phone"); setError(""); setInfo(""); }}
           className="mt-3 px-4 py-2 rounded-full text-xs font-bold text-white active:scale-95 transition-all"
-          style={{ background: "#e8530a" }}
+          style={{ background: TOMATO }}
         >
           Verify your number
         </button>
@@ -125,7 +126,7 @@ export default function PhoneCard() {
             autoFocus
             className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
           />
-          <p className="text-[11px] leading-relaxed" style={{ color: "#a09890" }}>
+          <p className="text-[11px] leading-relaxed" style={{ color: INK_MUTED }}>
             By tapping &quot;Send code&quot; you agree to receive transactional and conversational SMS from Marco
             (verification codes, recipe save confirmations, and replies to messages you initiate).
             Frequency varies by usage. Msg &amp; data rates may apply. Reply STOP to opt out, HELP for help.
@@ -136,7 +137,7 @@ export default function PhoneCard() {
               type="submit"
               disabled={busy}
               className="flex-1 py-2 rounded-xl font-bold text-sm text-white active:scale-[0.98] disabled:opacity-50 transition-all"
-              style={{ background: "#e8530a" }}
+              style={{ background: TOMATO }}
             >
               {busy ? "Sending…" : "Send code"}
             </button>
@@ -173,7 +174,7 @@ export default function PhoneCard() {
               type="submit"
               disabled={busy || code.length < 4}
               className="flex-1 py-2 rounded-xl font-bold text-sm text-white active:scale-[0.98] disabled:opacity-50 transition-all"
-              style={{ background: "#e8530a" }}
+              style={{ background: TOMATO }}
             >
               {busy ? "Verifying…" : "Verify"}
             </button>

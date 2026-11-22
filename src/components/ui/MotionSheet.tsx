@@ -11,8 +11,8 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useDragControls } from "motion/react";
 import { SPRING_SHEET } from "@/lib/motion";
+import { INK, PAPER } from "@/lib/theme";
 
-const INK = "#171410";
 
 export default function MotionSheet({
   open,
@@ -115,7 +115,7 @@ function SrClose({ onClose }: { onClose: () => void }) {
       onFocus={() => setFocused(true)}
       onBlur={() => setFocused(false)}
       style={focused
-        ? { position: "absolute", top: 8, left: 8, zIndex: 2, background: INK, color: "#FBF7EE", border: "none", borderRadius: 10, padding: "0 12px", minHeight: 44, fontWeight: 700 }
+        ? { position: "absolute", top: 8, left: 8, zIndex: 2, background: INK, color: PAPER, border: "none", borderRadius: 10, padding: "0 12px", minHeight: 44, fontWeight: 700 }
         : { position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0 0 0 0)", whiteSpace: "nowrap", border: 0 }}
     >
       Close

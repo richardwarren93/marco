@@ -6,9 +6,8 @@
 
 import PaywallShell, { PlusPrimaryButton } from "./PaywallShell";
 import { PLUS_FEATURES, PLUS_PRICING, type PlusFeatureRow } from "./plus-config";
+import { INK, TOMATO } from "@/lib/theme";
 
-const TOMATO = "#E5462E";
-const INK = "#1C1A17";
 
 function Cell({ value, plus }: { value: string | boolean; plus?: boolean }) {
   if (value === true) {

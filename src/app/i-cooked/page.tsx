@@ -10,6 +10,7 @@ import { postCook, getMyCrews, ensureCrew, type Crew, type RecipeSource } from "
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
 import CookRating from "@/components/social/CookRating";
+import { COBALT, DISPLAY, HAND, INK, LIME, PAPER, PINK, SURFACE, TOMATO } from "@/lib/theme";
 
 type ParsedRecipe = {
   title?: string;
@@ -21,17 +22,9 @@ type ParsedRecipe = {
   cook_time_minutes?: number;
 };
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const COBALT = "#2540E8";
-const LIME = "#C4EE45";
-const PINK = "#FF4D9D";
-const BUTTER = "#FFD84D";
 const ORANGE = "#FF7A1A";
 
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
-const DISP = '"Marker Felt", Georgia, serif';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 
@@ -45,7 +38,7 @@ function captionFor(recipe: { description?: string; title?: string }): string {
 
 export default function ICooked() {
   return (
-    <Suspense fallback={<div className="min-h-[100dvh]" style={{ background: "#E9E2D3" }} />}>
+    <Suspense fallback={<div className="min-h-[100dvh]" style={{ background: SURFACE }} />}>
       <ICookedInner />
     </Suspense>
   );
@@ -207,7 +200,7 @@ function ICookedInner() {
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="min-h-[100dvh] w-full" style={{ background: "#E9E2D3", position: "relative", overflowX: "hidden" }}>
+    <div className="min-h-[100dvh] w-full" style={{ background: SURFACE, position: "relative", overflowX: "hidden" }}>
       <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px" }} />
 
       {/* ── STEP 1: the camera (immersive when empty) ── */}
@@ -314,7 +307,7 @@ function ICookedInner() {
           </div>
 
           <label className="block mt-5 text-sm font-semibold">Share to table
-            <select value={crew?.id ?? ""} onChange={e => setCrew(crews.find(c => c.id === e.target.value) ?? null)} className="block w-full mt-2 rounded-xl border-2 border-[#171410] bg-[#FBF7EE] p-3">
+            <select value={crew?.id ?? ""} onChange={e => setCrew(crews.find(c => c.id === e.target.value) ?? null)} className="block w-full mt-2 rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] p-3">
               {crews.length === 0 && <option value="">Your new table</option>}
               {crews.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>

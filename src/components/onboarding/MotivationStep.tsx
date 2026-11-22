@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { INK, INK_MUTED, TOMATO } from "@/lib/theme";
 
 const OPTIONS = [
   { id: "find_recipes", label: "Find new recipes", emoji: "\u{1F50D}" },
@@ -20,10 +21,10 @@ export default function MotivationStep({ value, onNext }: Props) {
   return (
     <div className="flex flex-col h-full px-6 pb-24">
       <div className="pt-4 pb-8">
-        <h1 className="text-[28px] font-black tracking-tight" style={{ color: "#1C1A17" }}>
-          What brings <span style={{ color: "#E5462E" }}>you here</span>?
+        <h1 className="text-[28px] font-black tracking-tight" style={{ color: INK }}>
+          What brings <span style={{ color: TOMATO }}>you here</span>?
         </h1>
-        <p className="text-sm mt-2" style={{ color: "#a09890" }}>
+        <p className="text-sm mt-2" style={{ color: INK_MUTED }}>
           This helps us personalize your experience
         </p>
       </div>
@@ -46,12 +47,12 @@ export default function MotivationStep({ value, onNext }: Props) {
               <span className="text-2xl">{opt.emoji}</span>
               <span
                 className="font-semibold text-[15px]"
-                style={{ color: isSelected ? "#E5462E" : "#1C1A17" }}
+                style={{ color: isSelected ? TOMATO : INK }}
               >
                 {opt.label}
               </span>
               {isSelected && (
-                <div className="ml-auto w-6 h-6 rounded-full bg-[#E5462E] flex items-center justify-center animate-bounce-in">
+                <div className="ml-auto w-6 h-6 rounded-full bg-[var(--tomato)] flex items-center justify-center animate-bounce-in">
                   <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
@@ -67,7 +68,7 @@ export default function MotivationStep({ value, onNext }: Props) {
           onClick={() => selected && onNext(selected)}
           disabled={!selected}
           className="w-full py-4 rounded-2xl font-bold text-base text-white transition-all active:scale-[0.98] disabled:opacity-40"
-          style={{ background: selected ? "#1C1A17" : "#d4d0cc" }}
+          style={{ background: selected ? INK : "#d4d0cc" }}
         >
           Continue
         </button>

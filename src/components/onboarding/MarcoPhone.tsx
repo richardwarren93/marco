@@ -7,17 +7,9 @@
    (cookText/goal), the Table feed, and the Beli-style compare + taste profile. */
 
 import TomatoMascot from "@/components/gamification/TomatoMascot";
+import { BUTTER, COBALT, DISPLAY, HAND, INK, INK_SOFT, LAV, LIME, PAPER, PINK, SURFACE, TOMATO } from "@/lib/theme";
 
-const INK = "#171410";
-const PAPER = "#FBF7EE";
-const TOMATO = "#E5462E";
-const LIME = "#C4EE45";
-const PINK = "#FF4D9D";
-const BUTTER = "#FFD84D";
-const LAV = "#C9B8FF";
-const COBALT = "#2540E8";
-const DISP = '"Marker Felt", Georgia, serif';
-const HAND = '"Bradley Hand", "Segoe Script", "Snell Roundhand", cursive';
+const DISP = DISPLAY;
 const SANS = "system-ui, -apple-system, sans-serif";
 const MONO = "ui-monospace, monospace";
 const DOTS = "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)";
@@ -39,9 +31,9 @@ export default function MarcoPhone({ screen = "feed" }: { screen?: MarcoScreen }
   return (
     <div className="relative mx-auto h-full w-full" style={{ maxWidth: "100%" }}>
       <div aria-hidden className="absolute left-1/2 -translate-x-1/2" style={{ bottom: "-4%", width: "118%", height: "30%", background: "radial-gradient(ellipse at center, rgba(28,26,23,0.18) 0%, rgba(28,26,23,0) 70%)", filter: "blur(6px)" }} />
-      <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: 38, background: "#1C1A17", padding: 7, boxShadow: "0 22px 50px -12px rgba(28,26,23,0.45), 0 0 0 2px rgba(28,26,23,0.9)" }}>
-        <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: 31, background: "#E9E2D3" }}>
-          <div aria-hidden className="absolute left-1/2 -translate-x-1/2 z-20" style={{ top: 8, width: "30%", height: 15, background: "#1C1A17", borderRadius: 100 }} />
+      <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: 38, background: INK, padding: 7, boxShadow: "0 22px 50px -12px rgba(28,26,23,0.45), 0 0 0 2px rgba(28,26,23,0.9)" }}>
+        <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: 31, background: SURFACE }}>
+          <div aria-hidden className="absolute left-1/2 -translate-x-1/2 z-20" style={{ top: 8, width: "30%", height: 15, background: INK, borderRadius: 100 }} />
           <div key={screen} className="absolute inset-0" style={{ animation: "mp-in 0.4s ease both" }}>{body}</div>
         </div>
       </div>
@@ -56,7 +48,7 @@ function Tape({ style }: { style?: React.CSSProperties }) {
 function Squiggle({ w = 96 }: { w?: number }) {
   return <svg width={w} height="7" viewBox={`0 0 ${w} 7`} fill="none" aria-hidden style={{ marginTop: 2 }}><path d={`M2 4.5 C ${w * 0.17} 1, ${w * 0.31} 6, ${w * 0.48} 4 S ${w * 0.83} 1, ${w - 2} 4`} stroke={TOMATO} strokeWidth="2.2" strokeLinecap="round" /></svg>;
 }
-const dotBg = { background: "#E9E2D3", backgroundImage: DOTS, backgroundSize: "11px 11px" } as const;
+const dotBg = { background: SURFACE, backgroundImage: DOTS, backgroundSize: "11px 11px" } as const;
 
 /* ── The Table (feed) ────────────────────────────────────────────────────── */
 const SEATS = [
@@ -145,7 +137,7 @@ function PlanScreen() {
             <img src={img(d.img)} alt="" referrerPolicy="no-referrer" style={{ width: 24, height: 24, borderRadius: 6, objectFit: "cover", border: `1.5px solid ${INK}` }} />
             <div className="min-w-0 flex-1">
               <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 11, color: INK, lineHeight: 1.1 }}>{d.title}</div>
-              <div style={{ fontFamily: MONO, fontSize: 6.5, letterSpacing: "0.1em", color: "#4A4742", marginTop: 1 }}>{d.meal}</div>
+              <div style={{ fontFamily: MONO, fontSize: 6.5, letterSpacing: "0.1em", color: INK_SOFT, marginTop: 1 }}>{d.meal}</div>
             </div>
           </div>
         ))}
@@ -177,7 +169,7 @@ function GroceryScreen() {
                     {it.done && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={4} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4L19 7" /></svg>}
                   </span>
                   <span className="flex-1 truncate" style={{ fontFamily: SANS, fontSize: 10, color: it.done ? "#8A857C" : INK, textDecoration: it.done ? "line-through" : "none" }}>{it.name}</span>
-                  <span style={{ fontFamily: MONO, fontSize: 8, color: "#4A4742" }}>{it.qty}</span>
+                  <span style={{ fontFamily: MONO, fontSize: 8, color: INK_SOFT }}>{it.qty}</span>
                 </div>
               ))}
             </div>
@@ -202,7 +194,7 @@ function GoalScreen() {
           <div key={i} className="flex items-center justify-center" style={{ width: 30, height: 30, borderRadius: 99, border: `2px solid ${INK}`, background: i < cooked ? TOMATO : "transparent", color: PAPER, fontSize: 13, transform: `rotate(${i % 2 ? 4 : -4}deg)` }}>{i < cooked ? "🍳" : ""}</div>
         ))}
       </div>
-      <div style={{ fontFamily: SANS, fontSize: 10, color: "#4A4742", marginTop: 10 }}>one more to hit your goal 💪</div>
+      <div style={{ fontFamily: SANS, fontSize: 10, color: INK_SOFT, marginTop: 10 }}>one more to hit your goal 💪</div>
       {/* the cook that just landed */}
       <div style={{ width: 120, marginTop: 12 }}>
         <MiniPolaroid photo="/onboarding/recipes/shrimp scampi.jpg" title="Shrimp Scampi" note="logged by text ✓" h={54} rot={1.6} />
@@ -291,12 +283,12 @@ function TextScreen({ variant }: { variant: "save" | "plan" | "cook" }) {
     <div className="flex h-full w-full flex-col" style={{ background: "#FFFFFF", paddingTop: 26 }}>
       <div className="flex flex-col items-center px-3 pb-1.5" style={{ borderBottom: "1px solid rgba(28,26,23,0.08)" }}>
         <div className="flex items-center" style={{ height: 32 }}>
-          <span className="flex items-center justify-center" style={{ width: 30, height: 30, borderRadius: 99, background: "#6B5BD2", color: "#FFFDF7", fontFamily: SANS, fontSize: 12, fontWeight: 600, border: "2px solid #FFFFFF", zIndex: 1 }}>S</span>
+          <span className="flex items-center justify-center" style={{ width: 30, height: 30, borderRadius: 99, background: "#6B5BD2", color: PAPER, fontFamily: SANS, fontSize: 12, fontWeight: 600, border: "2px solid #FFFFFF", zIndex: 1 }}>S</span>
           <span className="flex items-center justify-center overflow-hidden" style={{ width: 32, height: 32, borderRadius: 99, background: LIME, border: "2px solid #FFFFFF", marginLeft: -10, zIndex: 2 }}>
             <TomatoMascot state="thriving" size={25} />
           </span>
         </div>
-        <span style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, color: "#1C1A17", marginTop: 2 }}>Sam &amp; Marco ›</span>
+        <span style={{ fontFamily: SANS, fontSize: 10.5, fontWeight: 600, color: INK, marginTop: 2 }}>Sam &amp; Marco ›</span>
       </div>
       <div className="flex flex-1 flex-col justify-end overflow-hidden px-2.5 pb-1.5 pt-1.5" style={{ gap: 3 }}>
         {thread.map((r, i) => {
@@ -312,10 +304,10 @@ function TextScreen({ variant }: { variant: "save" | "plan" | "cook" }) {
                   <div style={{ borderRadius: 13, overflow: "hidden", border: "1px solid rgba(28,26,23,0.12)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={img(r.photo)} alt="" referrerPolicy="no-referrer" style={{ width: 118, height: 86, objectFit: "cover", display: "block" }} />
-                    {r.text && <div style={{ background: me ? BLUE : "#E9E9EB", color: me ? "#fff" : "#1C1A17", fontFamily: SANS, fontSize: 10, padding: "4px 8px" }}>{r.text}</div>}
+                    {r.text && <div style={{ background: me ? BLUE : "#E9E9EB", color: me ? "#fff" : INK, fontFamily: SANS, fontSize: 10, padding: "4px 8px" }}>{r.text}</div>}
                   </div>
                 ) : (
-                  <span style={{ display: "inline-block", background: me ? BLUE : "#E9E9EB", color: me ? "#FFFFFF" : "#1C1A17", borderRadius: 15, padding: "5px 9px", fontFamily: SANS, fontSize: 10.5, lineHeight: 1.28, wordBreak: "break-word" }}>{r.text}</span>
+                  <span style={{ display: "inline-block", background: me ? BLUE : "#E9E9EB", color: me ? "#FFFFFF" : INK, borderRadius: 15, padding: "5px 9px", fontFamily: SANS, fontSize: 10.5, lineHeight: 1.28, wordBreak: "break-word" }}>{r.text}</span>
                 )}
               </div>
             </div>
