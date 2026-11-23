@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { scrollIntoViewAboveKeyboard } from "@/lib/keyboard-scroll";
+import { CREAM_WARM, INK, INK_MUTED, TOMATO } from "@/lib/theme";
 
 interface RecipeNoteData {
   private_note: string;
@@ -77,17 +78,14 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-[var(--ink)]">My Notes</h3>
-        <div className="flex items-center gap-1">
-          {lastSaved && (
-            <span className="text-[10px] text-gray-400 mr-2">{lastSaved}</span>
-          )}
-          <span className="text-[10px] text-gray-400">private</span>
-          <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="flex items-center justify-end gap-1 mb-3">
+        {lastSaved && (
+          <span className="text-[10px] mr-2" style={{ color: INK_MUTED }}>{lastSaved}</span>
+        )}
+        <span className="text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>private</span>
+        <svg className="w-3 h-3" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-          </svg>
-        </div>
+        </svg>
       </div>
 
       {/* Rating */}
@@ -102,9 +100,8 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
                 onMouseEnter={() => setHovering(star)}
                 onMouseLeave={() => setHovering(0)}
                 disabled={saving}
-                className={`text-xl transition-colors ${
-                  filled ? "text-[var(--tomato)]" : "text-gray-200"
-                } hover:text-[var(--tomato)] disabled:opacity-50`}
+                className="text-xl transition-colors disabled:opacity-50"
+                style={{ color: filled ? TOMATO : INK, opacity: filled ? 1 : 0.18 }}
               >
                 &#9733;
               </button>
@@ -112,7 +109,7 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
           })}
         </div>
         {rating > 0 && (
-          <span className="text-xs text-gray-400 font-medium">{rating}/5</span>
+          <span className="text-xs font-medium" style={{ color: INK_MUTED }}>{rating}/5</span>
         )}
       </div>
 
@@ -123,7 +120,8 @@ export default function MyNotesCard({ recipeId }: { recipeId: string }) {
         onFocus={(e) => scrollIntoViewAboveKeyboard(e.target)}
         placeholder="Add notes, tips, modifications..."
         rows={3}
-        className="w-full px-4 py-3 bg-[var(--cream)] border border-gray-100 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:ring-1 focus:ring-gray-200 focus:border-gray-200 outline-none resize-none"
+        className="w-full px-4 py-3 text-sm outline-none resize-none placeholder:text-[var(--ink-muted)]"
+        style={{ background: CREAM_WARM, color: INK, border: `2px solid ${INK}`, borderRadius: 12 }}
       />
     </div>
   );
