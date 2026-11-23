@@ -1,11 +1,12 @@
 "use client";
 
-/* The shell every /profile/* sub-page wears: the Kitchen layer's dotted
- * paper, the shared back header, and one container with dock clearance.
+/* The shell a back-navigable sub-page wears: the Kitchen layer's dotted paper,
+ * the shared back header, and one container with dock clearance.
  *
- * All eight sub-pages had their own copy of this — identical except for the
- * title — and all eight set a flat `CREAM` background while the rest of the
- * app moved to the dotted surface in October. One shell, one surface. */
+ * It started as the eight /profile/* pages, which each had their own copy of
+ * this — identical except for the title, and all eight setting a flat `CREAM`
+ * background while the rest of the app moved to the dotted surface in October.
+ * /collections now wears it too. One shell, one surface. */
 
 import type { ReactNode } from "react";
 import PageHeader from "@/components/layout/PageHeader";

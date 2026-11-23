@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import CollectionCard from "@/components/collections/CollectionCard";
 import CreateCollectionForm from "@/components/collections/CreateCollectionForm";
+import SubPageShell from "@/components/layout/SubPageShell";
 import type { Collection } from "@/types";
 import { CollectionsIcon } from "@/components/icons/HandDrawnIcons";
-import { CREAM, INK, INK_MUTED } from "@/lib/theme";
+import { DISPLAY, INK, INK_MUTED, INK_SOFT, PAPER, TOMATO } from "@/lib/theme";
 
 export default function CollectionsPage() {
-  const router = useRouter();
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -32,77 +31,71 @@ export default function CollectionsPage() {
   }, []);
 
   return (
-    <div
-      className="max-w-2xl mx-auto px-4 space-y-5 animate-fade-slide-up"
-      style={{
-        background: CREAM,
-        minHeight: "100vh",
-        paddingTop: "max(env(safe-area-inset-top, 0px), 20px)",
-        paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)",
-      }}
-    >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => router.back()}
-            className="w-8 h-8 rounded-full flex items-center justify-center transition-colors -ml-1"
-            style={{ background: "rgba(0,0,0,0.05)" }}
-          >
-            <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-3xl marco-h1 flex items-center gap-2" style={{ color: INK }}>
-              <CollectionsIcon className="w-6 h-6 text-orange-600" /> Collections
-            </h1>
-            <p className="text-xs mt-0.5" style={{ color: INK_MUTED }}>Organize your saved recipes</p>
-          </div>
-        </div>
+    <SubPageShell
+      title="Collections"
+      right={
         <button
-          onClick={() => setShowForm(!showForm)}
-          className="bg-orange-600 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-orange-700 transition-colors shadow-sm"
+          onClick={() => setShowForm((v) => !v)}
+          className="px-3.5 py-1.5 active:scale-95 transition-transform"
+          style={{
+            background: showForm ? PAPER : TOMATO,
+            color: showForm ? INK : PAPER,
+            fontFamily: DISPLAY,
+            fontWeight: 700,
+            fontSize: 13,
+            border: `2px solid ${INK}`,
+            borderRadius: 99,
+            boxShadow: `2px 2px 0 ${INK}`,
+          }}
         >
           {showForm ? "Cancel" : "+ New"}
         </button>
-      </div>
-
-      {showForm && (
-        <div>
-          <CreateCollectionForm
-            onCreated={() => {
-              setShowForm(false);
-              fetchCollections();
-            }}
-          />
-        </div>
-      )}
+      }
+    >
+      {showForm && <CreateCollectionForm onCreated={() => { setShowForm(false); fetchCollections(); }} />}
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-48 skeleton-warm rounded-3xl" />
+        <div className="grid grid-cols-2 gap-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="h-48 skeleton-warm" style={{ borderRadius: 16, border: `2.5px solid ${INK}` }} />
           ))}
         </div>
       ) : collections.length === 0 ? (
-        <div className="text-center py-16 rounded-3xl" style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-          <div className="flex justify-center mb-3" style={{ color: "#d4c9be" }}><CollectionsIcon className="w-12 h-12" /></div>
-          <p style={{ color: INK_MUTED }}>No collections yet</p>
+        <div
+          className="text-center py-14 px-6"
+          style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
+        >
+          <div className="flex justify-center mb-3" style={{ color: INK_MUTED }}>
+            <CollectionsIcon className="w-11 h-11" />
+          </div>
+          <p style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 16 }}>No collections yet</p>
+          <p className="text-[13px] mt-1.5" style={{ color: INK_SOFT }}>
+            Group your saved recipes however you like.
+          </p>
           <button
             onClick={() => setShowForm(true)}
-            className="text-orange-600 hover:text-orange-700 font-medium text-sm mt-2"
+            className="mt-4 px-4 py-2 active:scale-95 transition-transform"
+            style={{
+              background: TOMATO,
+              color: PAPER,
+              fontFamily: DISPLAY,
+              fontWeight: 700,
+              fontSize: 13.5,
+              border: `2.5px solid ${INK}`,
+              borderRadius: 99,
+              boxShadow: `3px 3px 0 ${INK}`,
+            }}
           >
-            Create your first collection →
+            Create your first one
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {collections.map((collection) => (
             <CollectionCard key={collection.id} collection={collection} />
           ))}
         </div>
       )}
-    </div>
+    </SubPageShell>
   );
 }
