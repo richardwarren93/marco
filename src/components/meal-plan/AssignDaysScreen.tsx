@@ -3,11 +3,11 @@
 import { useState, useMemo } from "react";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
-import { TOMATO } from "@/lib/theme";
+import { CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
 const ACCENT = TOMATO;
-const ACCENT_LIGHT = "#fff7ed";
+const ACCENT_LIGHT = LIME;
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
@@ -162,21 +162,21 @@ export default function AssignDaysScreen({
   }
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "#f6f6f4" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: CREAM_WARM }}>
       {/* Header */}
-      <div className="px-4 pt-5 pb-4 border-b sticky top-0 z-10" style={{ background: "#f6f6f4", borderColor: "#eaeae8" }}>
+      <div className="px-4 pt-5 pb-4 border-b sticky top-0 z-10" style={{ background: CREAM_WARM, borderColor: INK, borderBottomWidth: 2 }}>
         <div className="max-w-2xl mx-auto">
           <button
             onClick={onBack}
             className="w-8 h-8 flex items-center justify-center rounded-full mb-4 active:scale-90 transition-transform"
-            style={{ background: "white", color: "#888", boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
+            style={{ background: "white", color: INK_SOFT, boxShadow: "0 1px 4px rgba(0,0,0,0.06)" }}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h1 className="text-xl font-bold tracking-tight" style={{ color: "#1a1a1a" }}>Place on calendar</h1>
-          <p className="text-sm mt-0.5" style={{ color: "#888" }}>Choose days and meal types for each recipe</p>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: INK }}>Place on calendar</h1>
+          <p className="text-sm mt-0.5" style={{ color: INK_SOFT }}>Choose days and meal types for each recipe</p>
         </div>
       </div>
 
@@ -190,28 +190,31 @@ export default function AssignDaysScreen({
           return (
             <div
               key={recipe.id}
-              className="bg-white rounded-2xl overflow-hidden"
+              className="overflow-hidden"
               style={{
-                boxShadow: "0 1px 8px rgba(0,0,0,0.06)",
+                background: PAPER,
+                borderRadius: 16,
+                border: `2.5px solid ${INK}`,
+                boxShadow: `4px 5px 0 ${INK}`,
                 animation: `cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) ${i * 60}ms both`,
               }}
             >
               {/* Recipe info */}
               <div className="flex items-center gap-3 p-3.5 pb-0">
-                <div className="w-11 h-11 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ background: "#f3f3f1" }}>
+                <div className="w-11 h-11 rounded-xl flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ background: CREAM_WARM }}>
                   {recipe.image_url
                     ? <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="44px" /></div>
                     : <span className="text-lg">🍳</span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold line-clamp-1" style={{ color: "#1a1a1a" }}>{recipe.title}</p>
-                  {totalTime > 0 && <p className="text-xs mt-0.5" style={{ color: "#888" }}>{totalTime} min</p>}
+                  <p className="text-sm font-semibold line-clamp-1" style={{ color: INK }}>{recipe.title}</p>
+                  {totalTime > 0 && <p className="text-xs mt-0.5" style={{ color: INK_SOFT }}>{totalTime} min</p>}
                 </div>
               </div>
 
               {/* Days */}
               <div className="px-3.5 pt-3 pb-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#bbb" }}>Days</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: INK_MUTED }}>Days</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {weekDates.map(({ label, dayNum, iso }) => {
                     const selected = a.dates.includes(iso);
@@ -220,7 +223,7 @@ export default function AssignDaysScreen({
                         key={iso}
                         onClick={() => toggleDay(recipe.id, iso)}
                         className="flex flex-col items-center px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95 min-w-[40px]"
-                        style={selected ? { background: "#1a1a1a", color: "white" } : { background: "#f3f3f1", color: "#888" }}
+                        style={selected ? { background: INK, color: PAPER } : { background: CREAM_WARM, color: INK_SOFT }}
                       >
                         <span className="text-[10px] font-semibold">{label}</span>
                         <span className="text-sm font-bold leading-tight">{dayNum}</span>
@@ -232,7 +235,7 @@ export default function AssignDaysScreen({
 
               {/* Meal types */}
               <div className="px-3.5 pt-2 pb-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: "#bbb" }}>Meal type</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-2" style={{ color: INK_MUTED }}>Meal type</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {MEAL_TYPES.map((mt) => {
                     const selected = a.mealTypes.includes(mt);
@@ -241,7 +244,7 @@ export default function AssignDaysScreen({
                         key={mt}
                         onClick={() => toggleMealType(recipe.id, mt)}
                         className="px-2.5 py-1 rounded-xl text-xs font-bold transition-all active:scale-95"
-                        style={selected ? { background: ACCENT, color: "white" } : { background: "#f3f3f1", color: "#888" }}
+                        style={selected ? { background: ACCENT, color: "white" } : { background: CREAM_WARM, color: INK_SOFT }}
                       >
                         {MEAL_LABELS[mt]}
                       </button>
@@ -252,11 +255,11 @@ export default function AssignDaysScreen({
 
               {/* Servings */}
               <div className="px-3.5 pt-2 pb-3.5 flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#bbb" }}>Servings</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: INK_MUTED }}>Servings</p>
                 <div className="flex items-center gap-3">
-                  <button onClick={() => changeServings(recipe.id, -1)} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90" style={{ background: "#f3f3f1", color: "#1a1a1a" }}>−</button>
-                  <span className="text-sm font-bold w-4 text-center" style={{ color: "#1a1a1a" }}>{a.servings}</span>
-                  <button onClick={() => changeServings(recipe.id, 1)} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90" style={{ background: "#f3f3f1", color: "#1a1a1a" }}>+</button>
+                  <button onClick={() => changeServings(recipe.id, -1)} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90" style={{ background: CREAM_WARM, color: INK }}>−</button>
+                  <span className="text-sm font-bold w-4 text-center" style={{ color: INK }}>{a.servings}</span>
+                  <button onClick={() => changeServings(recipe.id, 1)} className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm transition-all active:scale-90" style={{ background: CREAM_WARM, color: INK }}>+</button>
                 </div>
               </div>
             </div>
@@ -271,7 +274,7 @@ export default function AssignDaysScreen({
           onClick={handleSchedulePress}
           disabled={readyCount === 0 || saving}
           className="w-full py-4 text-white rounded-2xl font-bold text-base active:scale-[0.98] transition-all disabled:opacity-40 flex items-center justify-center gap-2"
-          style={{ background: "#1a1a1a", boxShadow: "0 4px 20px rgba(0,0,0,0.18)" }}
+          style={{ background: INK, boxShadow: "0 4px 20px rgba(0,0,0,0.18)" }}
         >
           {saving ? (
             <>
@@ -296,34 +299,34 @@ export default function AssignDaysScreen({
       {/* Conflict modal */}
       {showConflictModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center px-4"
           style={{ background: "rgba(0,0,0,0.35)" }}
           onClick={() => setShowConflictModal(false)}
         >
           <div
-            className="w-full max-w-sm bg-white rounded-3xl overflow-hidden relative"
-            style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)", animation: "fadeSlideUp 0.3s ease both" }}
+            className="w-full max-w-sm overflow-hidden relative"
+            style={{ background: PAPER, borderRadius: 20, border: `2.5px solid ${INK}`, boxShadow: `5px 6px 0 ${INK}`, animation: "fadeSlideUp 0.3s ease both" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* X close button */}
             <button
               onClick={() => setShowConflictModal(false)}
-              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
+              className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center active:bg-black/5 transition-colors z-10"
             >
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-4 h-4" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
 
             {/* Header */}
             <div className="px-5 pt-5 pb-3 pr-12">
-              <div className="w-10 h-10 rounded-2xl flex items-center justify-center mb-3" style={{ background: "#f3f3f1" }}>
-                <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="w-10 h-10 flex items-center justify-center mb-3" style={{ background: LIME, borderRadius: 12, border: `2px solid ${INK}` }}>
+                <svg className="w-5 h-5" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <h2 className="text-base font-bold" style={{ color: "#1a1a1a" }}>Some meals already exist</h2>
-              <p className="text-sm mt-1" style={{ color: "#888" }}>
+              <h2 className="text-base" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>Some meals already exist</h2>
+              <p className="text-sm mt-1" style={{ color: INK_SOFT }}>
                 Choose how to handle the conflicts below.
               </p>
             </div>
@@ -331,17 +334,17 @@ export default function AssignDaysScreen({
             {/* Conflict list */}
             <div className="px-5 pb-3 space-y-2 max-h-48 overflow-y-auto">
               {conflicts.map((c, i) => (
-                <div key={i} className="rounded-xl px-3 py-2.5" style={{ background: "#f6f6f4" }}>
-                  <p className="text-xs font-semibold" style={{ color: "#1a1a1a" }}>
+                <div key={i} className="rounded-xl px-3 py-2.5" style={{ background: CREAM_WARM }}>
+                  <p className="text-xs font-semibold" style={{ color: INK }}>
                     {formatDate(c.date)} · {MEAL_LABELS[c.mealType]}
                     {c.existingMeals.length > 1 && (
-                      <span className="text-gray-400 font-normal"> ({c.existingMeals.length} meals)</span>
+                      <span className="font-normal" style={{ color: INK_MUTED }}> ({c.existingMeals.length} meals)</span>
                     )}
                   </p>
                   {c.existingMeals.map((m, j) => (
-                    <p key={j} className="text-xs mt-0.5" style={{ color: "#888" }}>
+                    <p key={j} className="text-xs mt-0.5" style={{ color: INK_SOFT }}>
                       {c.existingMeals.length > 1 ? `${j + 1}. ` : "Already has: "}
-                      <span style={{ color: "#1a1a1a" }}>{m.title}</span>
+                      <span style={{ color: INK }}>{m.title}</span>
                     </p>
                   ))}
                 </div>
@@ -363,16 +366,16 @@ export default function AssignDaysScreen({
                     await new Promise((r) => setTimeout(r, 300));
                     await save(pendingAssignments);
                   }}
-                  className="w-full py-3 rounded-2xl font-semibold text-sm text-white transition-all active:scale-95"
-                  style={{ background: TOMATO }}
+                  className="w-full py-3 text-sm active:scale-95 transition-transform"
+                  style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 3px 0 ${INK}` }}
                 >
                   Replace existing meals
                 </button>
               )}
               <button
                 onClick={async () => { setShowConflictModal(false); await save(pendingAssignments); }}
-                className="w-full py-3 rounded-2xl font-semibold text-sm transition-all active:scale-95"
-                style={{ background: "#f3f3f1", color: "#1a1a1a" }}
+                className="w-full py-3 text-sm active:scale-95 transition-transform"
+                style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 3px 0 ${INK}` }}
               >
                 Add anyway
               </button>

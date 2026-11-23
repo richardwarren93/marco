@@ -27,15 +27,15 @@ import CoordinationView from "./CoordinationView";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { GroceryIcon } from "@/components/icons/HandDrawnIcons";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
-import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
+import { BUTTER, CREAM, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const ACCENT = TOMATO;          // Marco tomato — the app's primary
 const BG = "transparent"; // the dotted cream shows through from ScheduleScreen
-const SURFACE = "#ffffff";
+const SURFACE = PAPER;
 const TEXT_1 = INK;          // ink
-const TEXT_2 = "#888";
-const BORDER = "#e8e8e5";
+const TEXT_2 = INK_SOFT;
+const BORDER = INK;
 // An ink "border" via box-shadow — rings every surface card in the app's
 // beautiful-chaos language without touching each call site.
 const CARD_SHADOW = "0 0 0 2px #171410, 0 8px 20px rgba(23,20,16,0.13)";
@@ -90,10 +90,10 @@ function MealRow({
     <SwipeToDelete onDelete={() => onRemove(plan.id)}>
       <div
         onClick={onTap}
-        className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-gray-50/40"
+        className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-black/5"
         style={{ background: SURFACE, opacity: done ? 0.5 : 1 }}
       >
-        <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#f0f0ee" }}>
+        <div className="w-9 h-9 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: CREAM_WARM, border: `1.5px solid ${INK}` }}>
           {plan.recipe?.image_url
             ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" style={done ? { filter: "grayscale(0.6)" } : undefined} />
             : <MealTypeIcon type={plan.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />}
@@ -102,7 +102,7 @@ function MealRow({
           <p
             className="text-[13px] font-semibold line-clamp-1"
             style={{
-              color: plan.owner_name ? "#888" : TEXT_1,
+              color: plan.owner_name ? INK_SOFT : TEXT_1,
               textDecoration: done ? "line-through" : "none",
               textDecorationColor: "var(--tomato, #E5462E)",
               textDecorationThickness: "1.5px",
@@ -111,7 +111,7 @@ function MealRow({
           >
             {plan.recipe?.title || "Untitled"}
           </p>
-          <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b8" }}>
+          <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: INK_MUTED }}>
             {plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type}
           </p>
         </div>
@@ -132,22 +132,22 @@ function MealRow({
     <SwipeToDelete onDelete={() => onRemove(plan.id)}>
       <div
         onClick={onTap}
-        className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-gray-50/30"
+        className="group relative w-full flex items-center gap-3 px-4 py-2.5 cursor-pointer text-left active:bg-black/5"
         style={{ background: SURFACE }}
       >
         <div
           className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
-          style={{ background: "#eeecea" }}
+          style={{ background: CREAM_WARM, border: `1.5px solid ${INK}` }}
         >
           {plan.recipe?.image_url
             ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" />
             : <MealTypeIcon type={plan.meal_type} className="w-7 h-7 opacity-50" strokeWidth={1.6} />}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13.5px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>
+          <p className="text-[13.5px] font-semibold line-clamp-2 leading-snug" style={{ color: plan.owner_name ? INK_SOFT : TEXT_1 }}>
             {plan.recipe?.title || "Untitled"}
           </p>
-          <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
+          <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: INK_MUTED }}>
             {(() => {
               const base = plan.owner_name ? `${plan.meal_type} · ${plan.owner_name}` : plan.meal_type;
               const t = (plan.recipe?.prep_time_minutes ?? 0) + (plan.recipe?.cook_time_minutes ?? 0);
@@ -187,9 +187,11 @@ function MealAction({
       onClick={onClick}
       className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[12.5px] font-semibold transition-all active:scale-95"
       style={{
-        background: danger ? "rgba(229,70,46,0.05)" : "rgba(28,26,23,0.04)",
-        color: danger ? TOMATO : INK_SOFT,
-        border: danger ? "1px solid rgba(229,70,46,0.20)" : "1px solid rgba(28,26,23,0.08)",
+        background: PAPER,
+        color: danger ? TOMATO : INK,
+        fontFamily: DISPLAY,
+        border: `2px solid ${INK}`,
+        boxShadow: `2px 2px 0 ${INK}`,
       }}
     >
       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -206,21 +208,21 @@ function MealVisual({ plan, isPast = false, dragging = false }: { plan: MealPlan
   return (
     <div
       className="w-full flex items-center gap-3 p-2 rounded-xl"
-      style={{ background: dragging ? "#ffffff" : "var(--cream, #F5EEE2)", boxShadow: dragging ? "0 12px 30px rgba(20,12,5,0.24)" : undefined }}
+      style={{ background: dragging ? PAPER : CREAM, border: `2px solid ${INK}`, boxShadow: dragging ? `4px 5px 0 ${INK}` : undefined }}
     >
-      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: "#eeecea" }}>
+      <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: CREAM_WARM, border: `1.5px solid ${INK}` }}>
         {plan.recipe?.image_url
           ? <img src={plan.recipe.image_url} alt={plan.recipe?.title || ""} className="w-full h-full object-cover" style={isPast ? { filter: "grayscale(0.6)" } : undefined} />
           : <MealTypeIcon type={plan.meal_type} className="w-6 h-6 opacity-50" strokeWidth={1.6} />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13.5px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? "#888" : TEXT_1 }}>{plan.recipe?.title || "Untitled"}</p>
-        <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: "#b8b8b6" }}>
+        <p className="text-[13.5px] font-semibold line-clamp-1" style={{ color: plan.owner_name ? INK_SOFT : TEXT_1 }}>{plan.recipe?.title || "Untitled"}</p>
+        <p className="text-[11px] mt-0.5 capitalize font-medium" style={{ color: INK_MUTED }}>
           {t > 0 ? `${t} min · ${plan.meal_type}` : plan.meal_type}{plan.owner_name ? ` · ${plan.owner_name}` : ""}
         </p>
       </div>
       {!plan.owner_name && (
-        <span className="flex-shrink-0 pr-0.5" style={{ color: "#d0cabf" }} aria-hidden>
+        <span className="flex-shrink-0 pr-0.5" style={{ color: INK_MUTED }} aria-hidden>
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="9" cy="6" r="1.4" /><circle cx="15" cy="6" r="1.4" />
             <circle cx="9" cy="12" r="1.4" /><circle cx="15" cy="12" r="1.4" />
@@ -838,9 +840,9 @@ export default function MealPlanListView({
               <button
                 onClick={() => openAddSheet(selectedDate)}
                 className={`flex items-center justify-center gap-2 py-1.5 rounded-xl text-[13px] font-medium transition-colors active:scale-[0.98] touch-manipulation ${selectedPlans.length === 0 ? "px-5" : "w-full"}`}
-                style={{ background: "#eeecea", color: "#333" }}
+                style={{ background: CREAM_WARM, color: INK, border: `2px solid ${INK}` }}
               >
-                <svg className="w-3.5 h-3.5" style={{ color: "#aaa" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-3.5 h-3.5" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
                 Add meal
@@ -1166,7 +1168,7 @@ export default function MealPlanListView({
                   </span>
                   <span
                     className="w-6 h-6 rounded-full flex items-center justify-center"
-                    style={{ background: fullyPlanned ? "rgba(22,163,74,0.12)" : "rgba(28,26,23,0.05)", color: fullyPlanned ? "#16a34a" : TEXT_2 }}
+                    style={{ background: fullyPlanned ? LIME : "rgba(28,26,23,0.05)", color: fullyPlanned ? INK : TEXT_2 }}
                   >
                     <svg className={`w-3.5 h-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1282,8 +1284,8 @@ export default function MealPlanListView({
             <div className="relative">
               <button
                 onClick={() => setViewDropdownOpen((v) => !v)}
-                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
-                style={{ color: viewDropdownOpen ? TOMATO : "#888", background: viewDropdownOpen ? "#ebebea" : "transparent" }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-black/5"
+                style={{ color: viewDropdownOpen ? TOMATO : INK_SOFT, background: viewDropdownOpen ? CREAM_WARM : "transparent" }}
                 aria-label="Switch view"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1294,13 +1296,13 @@ export default function MealPlanListView({
               {viewDropdownOpen && (
                 <div
                   className="absolute right-0 top-full mt-1 rounded-xl overflow-hidden z-20"
-                  style={{ background: "white", boxShadow: "0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)", minWidth: 110 }}
+                  style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, minWidth: 110 }}
                 >
                   {(["daily", "weekly"] as const).map((mode) => (
                     <button
                       key={mode}
                       onClick={() => { setViewMode(mode); setViewDropdownOpen(false); }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium transition-colors hover:bg-gray-50 active:bg-gray-100"
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-[13px] font-medium transition-colors hover:bg-black/[0.04] active:bg-black/5"
                       style={{ color: viewMode === mode ? ACCENT : TEXT_1 }}
                     >
                       {mode === "daily" ? (
@@ -1359,7 +1361,7 @@ export default function MealPlanListView({
               >
                 <span
                   className="text-[9px] font-semibold tracking-wide"
-                  style={{ color: isSelected ? ACCENT : isToday ? INK : "#c0c0be" }}
+                  style={{ color: isSelected ? ACCENT : isToday ? INK : INK_MUTED }}
                 >
                   {abbr.slice(0, 3)}
                 </span>
@@ -1376,7 +1378,7 @@ export default function MealPlanListView({
                 >
                   <span
                     className="text-[14px] font-semibold"
-                    style={{ color: isSelected ? "white" : isToday ? ACCENT : "#888" }}
+                    style={{ color: isSelected ? PAPER : isToday ? ACCENT : INK_SOFT }}
                   >
                     {num}
                   </span>

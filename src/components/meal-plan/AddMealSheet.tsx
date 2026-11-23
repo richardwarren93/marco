@@ -38,11 +38,12 @@ function RecipeRow({
       onClick={onClick}
       className={`w-full flex items-center gap-2.5 rounded-xl text-left transition-colors border ${
         compact ? "px-2.5 py-1.5" : "px-3 py-2.5"
-      } ${isSelected ? "border-[var(--tomato)]/30" : "border-transparent hover:bg-gray-100"} ${dimmed ? "opacity-55" : ""}`}
-      style={isSelected ? { background: ACCENT_LIGHT } : { background: "#f5f5f3" }}
+      } ${isSelected ? "" : "hover:bg-black/5"} ${dimmed ? "opacity-55" : ""}`}
+      style={{ background: isSelected ? LIME : CREAM_WARM, borderColor: isSelected ? INK : "transparent", borderWidth: 2 }}
     >
       <div
-        className={`rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center ${compact ? "w-7 h-7" : "w-9 h-9"}`}
+        className={`rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center ${compact ? "w-7 h-7" : "w-9 h-9"}`}
+        style={{ background: PAPER, border: `2px solid ${INK}` }}
       >
         {recipe.image_url ? (
           <div className="relative w-full h-full"><Image src={recipe.image_url} alt={recipe.title} fill className="object-cover" sizes="36px" /></div>
@@ -50,13 +51,20 @@ function RecipeRow({
           <span className={compact ? "text-xs" : "text-sm"}><MealTypeIcon type={recipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} /></span>
         )}
       </div>
-      <span className={`font-medium text-gray-800 line-clamp-1 flex-1 ${compact ? "text-xs" : "text-sm"}`}>
+      <span className={`font-medium line-clamp-1 flex-1 ${compact ? "text-xs" : "text-sm"}`} style={{ color: INK }}>
         {recipe.title}
       </span>
       {badge && (
-        <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${
-          badge === "Scheduled" ? "bg-gray-100 text-gray-400" : "text-[var(--tomato)]"
-        }`} style={badge !== "Scheduled" ? { background: ACCENT_LIGHT } : {}}>
+        <span
+          className="text-[10px] px-1.5 py-0.5 rounded-full flex-shrink-0"
+          style={{
+            background: badge === "Scheduled" ? CREAM_WARM : LIME,
+            color: badge === "Scheduled" ? INK_MUTED : INK,
+            fontFamily: DISPLAY,
+            fontWeight: 700,
+            border: `1.5px solid ${INK}`,
+          }}
+        >
           {badge}
         </span>
       )}
@@ -569,7 +577,7 @@ export default function AddMealSheet({
             <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>Servings</p>
             <div className="flex items-center gap-3">
               <button onClick={() => setServings((s) => Math.max(1, s - 1))} className="w-7 h-7 rounded-full flex items-center justify-center text-sm active:scale-90 transition-transform" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}` }}>−</button>
-              <span className="text-sm font-semibold text-gray-900 w-4 text-center">{servings}</span>
+              <span className="text-sm w-4 text-center" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{servings}</span>
               <button onClick={() => setServings((s) => s + 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-sm active:scale-90 transition-transform" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}` }}>+</button>
             </div>
           </div>
@@ -577,8 +585,8 @@ export default function AddMealSheet({
 
         {/* Footer */}
         <div
-          className="px-4 pt-3 pb-3 border-t border-gray-100 flex-shrink-0"
-          style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
+          className="px-4 pt-3 pb-3 flex-shrink-0"
+          style={{ borderTop: `2px solid ${INK}`, paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
         >
           {/* Primary CTA */}
           <button

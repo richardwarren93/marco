@@ -2,7 +2,14 @@
 
 import type { Recipe, Ingredient } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
-import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
+import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, MUSTARD, PAPER, PINK, TOMATO, TOMATO_DARK } from "@/lib/theme";
+
+const MEAL_STICKER: Record<string, string> = {
+  breakfast: BUTTER,
+  lunch: LIME,
+  dinner: MUSTARD,
+  snack: PINK,
+};
 
 export default function RecipeDetailSheet({
   isOpen,
@@ -68,12 +75,17 @@ export default function RecipeDetailSheet({
           {/* Stats row */}
           <div className="flex items-center gap-3 flex-wrap">
             {recipe.meal_type && (
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full capitalize ${
-                recipe.meal_type === "breakfast" ? "bg-amber-50 text-amber-700" :
-                recipe.meal_type === "lunch" ? "bg-green-50 text-green-700" :
-                recipe.meal_type === "dinner" ? "bg-violet-50 text-violet-700" :
-                "bg-orange-50 text-orange-700"
-              }`}>
+              <span
+                className="text-xs px-2.5 py-1 capitalize"
+                style={{
+                  background: MEAL_STICKER[recipe.meal_type] ?? BUTTER,
+                  color: INK,
+                  fontFamily: DISPLAY,
+                  fontWeight: 700,
+                  border: `2px solid ${INK}`,
+                  borderRadius: 99,
+                }}
+              >
                 {recipe.meal_type}
               </span>
             )}
@@ -139,10 +151,10 @@ export default function RecipeDetailSheet({
             <ol className="space-y-4">
               {steps.map((step, i) => (
                 <li key={i} className="flex gap-3">
-                  <span className="w-6 h-6 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                  <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 mt-0.5" style={{ background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700 }}>
                     {i + 1}
                   </span>
-                  <p className="text-sm text-gray-700 leading-relaxed flex-1">{step}</p>
+                  <p className="text-sm leading-relaxed flex-1" style={{ color: INK_SOFT }}>{step}</p>
                 </li>
               ))}
             </ol>

@@ -231,9 +231,9 @@ function MealPlanInner() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 rounded w-40" />
-          <div className="h-24 bg-gray-200 rounded-2xl" />
-          <div className="h-64 bg-gray-200 rounded-2xl" />
+          <div className="h-8 w-40 skeleton-warm" style={{ borderRadius: 8 }} />
+          <div className="h-24 skeleton-warm" style={{ borderRadius: 16 }} />
+          <div className="h-64 skeleton-warm" style={{ borderRadius: 16 }} />
         </div>
       </div>
     );

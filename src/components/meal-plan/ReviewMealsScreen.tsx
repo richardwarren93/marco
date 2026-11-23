@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { Recipe } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
-import { CREAM, INK, INK_MUTED, TOMATO } from "@/lib/theme";
+import { CREAM, CREAM_WARM, INK, INK_MUTED, PAPER, TOMATO } from "@/lib/theme";
 
 const MEAL_ORDER = ["breakfast", "lunch", "dinner", "snack"] as const;
 
@@ -88,11 +88,11 @@ export default function ReviewMealsScreen({
                   return (
                     <div
                       key={recipe.id}
-                      className="bg-white rounded-3xl p-3 flex items-center gap-3"
-                      style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.06)", animation: `fadeSlideUp 0.35s ease ${i * 40}ms both` }}
+                      className="p-3 flex items-center gap-3"
+                      style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}`, animation: `fadeSlideUp 0.35s ease ${i * 40}ms both` }}
                     >
                       {/* Thumbnail */}
-                      <div className="w-14 h-14 rounded-2xl flex-shrink-0 overflow-hidden bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+                      <div className="w-14 h-14 flex-shrink-0 overflow-hidden flex items-center justify-center" style={{ background: CREAM_WARM, borderRadius: 14, border: `2px solid ${INK}` }}>
                         {recipe.image_url ? (
                           <img
                             src={recipe.image_url}

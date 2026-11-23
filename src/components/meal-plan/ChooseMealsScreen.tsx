@@ -213,7 +213,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         {props.mode === "build" && (
           <div className="relative">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-orange-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: TOMATO }}
               viewBox="0 0 24 24"
               fill="currentColor"
             >
@@ -224,13 +224,13 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={activeTab === "all" ? "Search all recipes…" : `Search ${TAB_LABELS[activeTab].toLowerCase()} recipes…`}
-              className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none"
-              style={{ background: "white", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", color: INK }}
+              className="w-full pl-9 pr-3 py-2.5 text-sm outline-none"
+              style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 12 }}
             />
             {search && (
               <button
                 onClick={() => handleSearchChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: INK_MUTED }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -257,13 +257,13 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search recipes…"
-              className="w-full pl-9 pr-3 py-2.5 rounded-2xl text-sm outline-none"
-              style={{ background: "white", boxShadow: "0 1px 6px rgba(0,0,0,0.06)", color: INK }}
+              className="w-full pl-9 pr-3 py-2.5 text-sm outline-none"
+              style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 12 }}
             />
             {search && (
               <button
                 onClick={() => handleSearchChange("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute right-3 top-1/2 -translate-y-1/2" style={{ color: INK_MUTED }}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -280,7 +280,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               <button
                 key={pill}
                 onClick={() => handleSearchChange(pill)}
-                className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors border border-orange-100"
+                className="flex-shrink-0 px-3 py-1 text-xs active:scale-95 transition-transform" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 99, boxShadow: `2px 2px 0 ${INK}` }}
               >
                 {pill}
               </button>
@@ -295,17 +295,17 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         {/* AI search label (build mode) */}
         {props.mode === "build" && aiResults !== null && (
           <div className="flex items-center gap-2 mb-3">
-            <svg className="w-3.5 h-3.5 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
+            <svg className="w-3.5 h-3.5" style={{ color: TOMATO }} viewBox="0 0 24 24" fill="currentColor">
               <path d="M12 2l2.09 6.26L20 10l-5.91 1.74L12 18l-2.09-6.26L4 10l5.91-1.74L12 2z" />
             </svg>
-            <span className="text-xs font-medium text-orange-500">
+            <span className="text-xs font-medium" style={{ color: INK }}>
               {aiResults.length > 0
                 ? `AI found ${aiResults.length} match${aiResults.length !== 1 ? "es" : ""} in your recipes`
                 : "No matches found in your recipes"}
             </span>
             <button
               onClick={() => handleSearchChange("")}
-              className="ml-auto text-xs text-gray-400 hover:text-gray-600"
+              className="ml-auto text-xs" style={{ color: INK_MUTED }}
             >
               Clear
             </button>
@@ -320,13 +320,13 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                 <span className="w-2.5 h-2.5 rounded-full animate-bounce" style={{ background: TOMATO, animationDelay: "150ms" }} />
                 <span className="w-2.5 h-2.5 rounded-full animate-bounce" style={{ background: TOMATO, animationDelay: "300ms" }} />
               </div>
-              <p className="text-sm font-medium text-gray-500">Simmering… Hold tight</p>
-              <p className="text-xs text-gray-300">Searching your recipe library with AI</p>
+              <p className="text-sm" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>Simmering… Hold tight</p>
+              <p className="text-xs" style={{ color: INK_MUTED }}>Searching your recipe library with AI</p>
             </div>
           </div>
         ) : displayRecipes.length === 0 ? (
           <div className="text-center py-16 space-y-3">
-            <p className="text-gray-400 text-sm">
+            <p className="text-sm" style={{ color: INK_SOFT }}>
               {search
                 ? aiResults !== null
                   ? `No saved recipes match "${search}"`
@@ -347,8 +347,8 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
               return (
                 <div
                   key={recipe.id}
-                  className="relative bg-white rounded-3xl overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
-                  style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)", animation: `cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) both` }}
+                  className="relative overflow-hidden cursor-pointer active:scale-[0.97] transition-transform duration-150"
+                  style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}`, animation: `cardPop 0.4s cubic-bezier(0.34,1.2,0.64,1) both` }}
                   onClick={async () => {
                     if (props.mode === "browse") {
                       setBrowsing(recipe.id);
@@ -363,7 +363,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                   }}
                 >
                   {/* Image */}
-                  <div className="relative h-32 sm:h-40 lg:h-44 bg-gradient-to-br from-orange-50 to-amber-50 flex items-center justify-center">
+                  <div className="relative h-32 sm:h-40 lg:h-44 flex items-center justify-center" style={{ background: CREAM_WARM, borderBottom: `2.5px solid ${INK}` }}>
                     {recipe.image_url ? (
                       <img
                         src={recipe.image_url}
@@ -384,11 +384,14 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                           e.stopPropagation();
                           props.onToggle(recipe.id);
                         }}
-                        className={`absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center shadow-md transition-all z-10 ${
-                          isSelected
-                            ? "bg-orange-500 text-white"
-                            : "bg-white/90 text-gray-700 hover:bg-white"
-                        }`}
+                        className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center transition-transform z-10"
+                        style={{
+                          background: isSelected ? LIME : PAPER,
+                          color: INK,
+                          border: `2px solid ${INK}`,
+                          boxShadow: isSelected ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+                          transform: isSelected ? "translate(1px, 1px)" : undefined,
+                        }}
                       >
                         {isSelected ? (
                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -404,7 +407,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
 
                     {/* Browse mode: assigning spinner */}
                     {props.mode === "browse" && isAssigning && (
-                      <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ background: "rgba(251,247,238,0.75)" }}>
                         <div className="w-6 h-6 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}

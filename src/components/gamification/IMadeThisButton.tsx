@@ -6,6 +6,7 @@ import PhotoUpload from "@/components/social/PhotoUpload";
 import { useToast } from "@/components/ui/Toast";
 import { CookCelebration } from "./celebrations";
 import type { TomatoHealthState } from "@/lib/gamification";
+import { DISPLAY, INK, INK_SOFT, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 /** Show a "🍅 +N" earn toast and refresh any header balance, when an award fired. */
 function surfaceEarn(showToast: ReturnType<typeof useToast>["showToast"], data: { awarded?: boolean; tomatoesEarned?: number; tomatoBalance?: number }) {
@@ -138,12 +139,20 @@ export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made 
                   ? "bg-[var(--teal,#0F4C5C)]/10 text-[var(--teal-deep,#082E38)] border border-[var(--teal,#0F4C5C)]/30"
                   : "bg-[var(--ink)]/5 text-[var(--ink)]/60 hover:bg-[var(--ink)]/10 border border-[var(--ink)]/10"
               }`
-            : `w-full py-3 px-4 rounded-2xl text-sm ${
-                justCooked
-                  ? "bg-[var(--teal,#0F4C5C)]/10 text-[var(--teal-deep,#082E38)] border-2 border-[var(--teal,#0F4C5C)]/30"
-                  : "bg-[var(--tomato,#E5462E)] text-white hover:bg-[var(--tomato-dark,#B8331E)] shadow-sm hover:shadow-md"
-              }`
+            : "w-full py-3 px-4 text-sm"
         } ${loading ? "opacity-70" : ""}`}
+        style={
+          variant === "pill"
+            ? undefined
+            : {
+                background: justCooked ? LIME : TOMATO,
+                color: justCooked ? INK : PAPER,
+                fontFamily: DISPLAY,
+                border: `2.5px solid ${INK}`,
+                borderRadius: 14,
+                boxShadow: `3px 3px 0 ${INK}`,
+              }
+        }
       >
         {justCooked ? (
           <>
@@ -162,7 +171,7 @@ export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made 
       {justCooked && cookingLogId && !showPhotoUpload && !photoPosted && (
         <button
           onClick={() => setShowPhotoUpload(true)}
-          className="w-full mt-2 py-2 text-sm text-[var(--tomato,#E5462E)] hover:text-[var(--tomato-dark,#B8331E)] font-medium hover:bg-orange-50 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+          className="w-full mt-2 py-2 text-sm font-medium rounded-xl transition-colors flex items-center justify-center gap-1.5 active:bg-black/5" style={{ color: TOMATO }}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -173,7 +182,7 @@ export default function IMadeThisButton({ recipeId, mealPlanId, label = "I Made 
       )}
 
       {photoPosted && (
-        <p className="mt-2 text-center text-xs text-green-600 font-medium">
+        <p className="mt-2 text-center text-xs font-medium" style={{ color: INK_SOFT }}>
           Photo saved!
         </p>
       )}
