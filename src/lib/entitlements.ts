@@ -10,10 +10,21 @@
 export type Tier = "free" | "plus";
 
 // ── Master switch ───────────────────────────────────────────────────────────
-// Phase 1 ships with enforcement OFF so existing free users are not retroactively
-// capped before Plus is purchasable. Phase 2 (RevenueCat) flips this to true the
-// same release that makes the trial buyable. Gate helpers no-op while false.
-export const ENFORCE_ENTITLEMENTS = true;
+// Enforcement stays OFF until Plus is actually purchasable. Gate helpers no-op
+// while false.
+//
+// It was switched on in 6d50714 (2026-09-01, "enable paywall + entitlement
+// enforcement (go live)") on the assumption that the buying half shipped in the
+// same release. It did not: as of 2026-11-23 nothing renders PlusPaywallScreen,
+// PlusHookScreen, PlusCompareScreen or TrialReminderScreen, nothing handles the
+// `plus_required` 403, and RevenueCat is configured without a purchase flow —
+// only "Restore purchases". So every user who reached 25 saved recipes was told
+// to upgrade to something they had no way to buy, and simply could not save
+// another recipe.
+//
+// Before setting this to true again, check all three: a reachable paywall, a
+// client that catches `plus_required`, and a working purchase.
+export const ENFORCE_ENTITLEMENTS = false;
 
 export interface TierLimits {
   /** Max recipes a user can save. */
