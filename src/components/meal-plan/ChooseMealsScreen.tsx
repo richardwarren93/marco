@@ -6,7 +6,7 @@ import type { Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import RecipeDetailSheet from "./RecipeDetailSheet";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
-import { CREAM, INK, INK_MUTED } from "@/lib/theme";
+import { BUTTER, CREAM, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 const MEAL_TABS = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealTab = (typeof MEAL_TABS)[number];
@@ -244,7 +244,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
         {props.mode === "browse" && (
           <div className="relative">
             <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: INK_MUTED }}
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -316,9 +316,9 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
           <div className="text-center py-20">
             <div className="inline-flex flex-col items-center gap-3">
               <div className="flex gap-1.5">
-                <span className="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2.5 h-2.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                <span className="w-2.5 h-2.5 rounded-full animate-bounce" style={{ background: TOMATO, animationDelay: "0ms" }} />
+                <span className="w-2.5 h-2.5 rounded-full animate-bounce" style={{ background: TOMATO, animationDelay: "150ms" }} />
+                <span className="w-2.5 h-2.5 rounded-full animate-bounce" style={{ background: TOMATO, animationDelay: "300ms" }} />
               </div>
               <p className="text-sm font-medium text-gray-500">Simmering… Hold tight</p>
               <p className="text-xs text-gray-300">Searching your recipe library with AI</p>

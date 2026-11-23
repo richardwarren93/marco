@@ -5,6 +5,7 @@ import MotionSheet, { useLastDefined } from "@/components/ui/MotionSheet";
 import type { MealPlan } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import IMadeThisButton from "@/components/gamification/IMadeThisButton";
+import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 export default function RecipePreviewSheet({
   isOpen,
@@ -41,7 +42,7 @@ export default function RecipePreviewSheet({
     <MotionSheet open={isOpen && !!planProp} onClose={onClose} label={recipe?.title || "Meal"} z={60} scrim="rgba(0,0,0,0.5)" showHandle={false} className="bg-white w-full rounded-t-3xl shadow-2xl sm:max-w-lg sm:rounded-2xl">
         {/* Handle + delete */}
         <div className="relative flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: INK, opacity: 0.25 }} />
           {onDelete && (
             <button
               onClick={onDelete}

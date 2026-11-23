@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { MealPlan, Recipe } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealType = (typeof MEAL_TYPES)[number];
@@ -74,17 +75,17 @@ export default function EditMealSheet({
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
       <div
-        className="bg-white w-full rounded-t-3xl max-h-[88vh] flex flex-col shadow-xl sm:max-w-lg sm:rounded-2xl"
+        className="w-full max-h-[88vh] flex flex-col sm:max-w-lg" style={{ background: PAPER, borderTopLeftRadius: 22, borderTopRightRadius: 22, borderTop: `2.5px solid ${INK}`, borderLeft: `2.5px solid ${INK}`, borderRight: `2.5px solid ${INK}` }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: INK, opacity: 0.25 }} />
         </div>
 
         {/* Header */}
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-          <h3 className="font-bold text-gray-900 text-base">Edit meal</h3>
+        <div className="px-4 py-3 flex items-center justify-between flex-shrink-0" style={{ borderBottom: `2.5px solid ${INK}` }}>
+          <h3 style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>Edit meal</h3>
           <Link
             href={`/recipes/${plan.recipe_id}`}
             className="text-xs font-semibold text-orange-500 hover:text-orange-600"
@@ -98,7 +99,7 @@ export default function EditMealSheet({
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
           {/* Meal type */}
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] mb-2" style={{ color: INK_MUTED, fontWeight: 700 }}>
               Meal type
             </p>
             <div className="flex gap-1.5">
@@ -120,20 +121,20 @@ export default function EditMealSheet({
 
           {/* Servings */}
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] mb-2" style={{ color: INK_MUTED, fontWeight: 700 }}>
               Servings
             </p>
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setServings((s) => Math.max(1, s - 1))}
-                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xl font-bold text-gray-700 hover:bg-gray-200 transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}` }}
               >
                 −
               </button>
-              <span className="text-xl font-bold text-gray-900 w-6 text-center">{servings}</span>
+              <span className="w-6 text-center" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 21 }}>{servings}</span>
               <button
                 onClick={() => setServings((s) => s + 1)}
-                className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-xl font-bold text-gray-700 hover:bg-gray-200 transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-xl active:scale-90 transition-transform" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}` }}
               >
                 +
               </button>
@@ -142,14 +143,14 @@ export default function EditMealSheet({
 
           {/* Recipe */}
           <div>
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+            <p className="text-[10px] uppercase tracking-[0.16em] mb-2" style={{ color: INK_MUTED, fontWeight: 700 }}>
               Recipe
             </p>
 
             {/* Current selection */}
             {selectedRecipe && (
-              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-xl mb-2">
-                <div className="w-9 h-9 rounded-lg overflow-hidden bg-white flex-shrink-0 flex items-center justify-center">
+              <div className="flex items-center gap-3 p-3 mb-2" style={{ background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12 }}>
+                <div className="w-9 h-9 overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: PAPER, borderRadius: 9, border: `2px solid ${INK}` }}>
                   {selectedRecipe.image_url ? (
                     <div className="relative w-full h-full"><Image src={selectedRecipe.image_url} alt={selectedRecipe.title} fill className="object-cover" sizes="36px" /></div>
                   ) : (
@@ -177,10 +178,10 @@ export default function EditMealSheet({
               value={recipeSearch}
               onChange={(e) => setRecipeSearch(e.target.value)}
               placeholder="Search to change recipe…"
-              className="w-full px-3 py-2.5 bg-gray-100 rounded-xl text-sm outline-none focus:bg-gray-200 transition-colors"
+              className="w-full px-3 py-2.5 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
             />
             {recipeResults.length > 0 && (
-              <div className="mt-1 border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-50 bg-white shadow-sm">
+              <div className="mt-1 overflow-hidden" style={{ background: PAPER, borderRadius: 12, border: `2px solid ${INK}` }}>
                 {recipeResults.map((r) => (
                   <button
                     key={r.id}
