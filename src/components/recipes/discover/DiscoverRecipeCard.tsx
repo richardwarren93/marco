@@ -2,7 +2,7 @@
 
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import TomatoFlourish from "@/components/brand/TomatoFlourish";
-import { INK, INK_SOFT, MUSTARD } from "@/lib/theme";
+import { CREAM_WARM, INK, INK_MUTED, INK_SOFT, MUSTARD, PAPER, TOMATO } from "@/lib/theme";
 
 /**
  * Light Discover card — the redesigned Discover surface (image on top, text
@@ -58,13 +58,14 @@ export default function DiscoverRecipeCard({
       onClick={onTap}
       className="relative rounded-2xl overflow-hidden cursor-pointer select-none active:scale-[0.98] transition-transform duration-200"
       style={{
-        background: "#FFFFFF",
-        boxShadow: "0 2px 12px rgba(20,12,5,0.07)",
+        background: PAPER,
+        border: `2.5px solid ${INK}`,
+        boxShadow: `4px 5px 0 ${INK}`,
         animation: `cardPop 0.4s ease ${index * 40}ms both`,
       }}
     >
       {/* ── Image ─────────────────────────────────────────────── */}
-      <div className="relative w-full" style={{ aspectRatio: "4 / 3", background: "#eeece8" }}>
+      <div className="relative w-full" style={{ aspectRatio: "4 / 3", background: CREAM_WARM, borderBottom: `2.5px solid ${INK}` }}>
         {image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -93,13 +94,13 @@ export default function DiscoverRecipeCard({
             onClick={(e) => { e.stopPropagation(); onSave(); }}
             disabled={isSaving}
             aria-label={isSaved ? "Saved" : "Save recipe"}
-            className="w-7 h-7 flex items-center justify-center rounded-full backdrop-blur-md transition-all active:scale-90"
-            style={{ background: isSaved ? "var(--tomato, #E5462E)" : "rgba(255,255,255,0.85)" }}
+            className="w-7 h-7 flex items-center justify-center rounded-full transition-transform active:scale-90"
+            style={{ background: isSaved ? TOMATO : PAPER, border: `2px solid ${INK}` }}
           >
             {isSaving ? (
-              <div className="w-3 h-3 border-[1.5px] rounded-full animate-spin" style={{ borderColor: isSaved ? "#fff" : INK, borderTopColor: "transparent" }} />
+              <div className="w-3 h-3 border-[1.5px] rounded-full animate-spin" style={{ borderColor: isSaved ? PAPER : INK, borderTopColor: "transparent" }} />
             ) : (
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill={isSaved ? "#fff" : "none"} stroke={isSaved ? "#fff" : INK} strokeWidth={2}>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill={isSaved ? PAPER : "none"} stroke={isSaved ? PAPER : INK} strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
               </svg>
             )}
@@ -108,8 +109,8 @@ export default function DiscoverRecipeCard({
             <button
               onClick={(e) => { e.stopPropagation(); onAddToCollection(); }}
               aria-label="Add to collection"
-              className="w-7 h-7 flex items-center justify-center rounded-full backdrop-blur-md transition-all active:scale-90"
-              style={{ background: "rgba(255,255,255,0.85)" }}
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-transform active:scale-90"
+              style={{ background: PAPER, border: `2px solid ${INK}` }}
             >
               <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke={INK} strokeWidth={2.4}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -161,7 +162,7 @@ export default function DiscoverRecipeCard({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={savedByAvatar} alt={firstName} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 ) : (
-                  <span style={{ fontSize: "9px", fontWeight: 700, color: "#fff" }}>
+                  <span style={{ fontSize: "9px", fontWeight: 700, color: PAPER }}>
                     {firstName.charAt(0).toUpperCase()}
                   </span>
                 )}
@@ -184,13 +185,13 @@ export default function DiscoverRecipeCard({
                 {rating.average.toFixed(1)}
               </span>
               {rating.count > 1 && (
-                <span style={{ fontSize: "10.5px", color: "#a8a29a" }}>({rating.count})</span>
+                <span style={{ fontSize: "10.5px", color: INK_MUTED }}>({rating.count})</span>
               )}
             </>
           ) : (
             <span
               className="px-1.5 py-0.5 rounded-full"
-              style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", background: "var(--cream-warm, #EFE5D2)", color: INK_SOFT }}
+              style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", background: CREAM_WARM, color: INK_SOFT, border: `1.5px solid ${INK}` }}
             >
               New
             </span>

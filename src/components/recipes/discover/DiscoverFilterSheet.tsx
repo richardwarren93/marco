@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { INK, TOMATO } from "@/lib/theme";
+import { DISPLAY, INK, INK_MUTED, PAPER, TOMATO } from "@/lib/theme";
 
 export interface DiscoverFilters {
   mealTypes: string[];
@@ -64,9 +64,13 @@ export default function DiscoverFilterSheet({
       onClick={onClick}
       className="px-3.5 py-2 rounded-full text-[13px] font-medium transition-all active:scale-95"
       style={{
-        background: active ? ACCENT : "#F2EEE6",
-        color: active ? "#fff" : INK,
-        boxShadow: active ? "0 1px 6px rgba(229,70,46,0.28)" : "none",
+        background: active ? ACCENT : PAPER,
+        color: active ? PAPER : INK,
+        fontFamily: DISPLAY,
+        fontWeight: 700,
+        border: `2px solid ${INK}`,
+        boxShadow: active ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+        transform: active ? "translate(1px, 1px)" : undefined,
       }}
     >
       {label}
@@ -75,13 +79,17 @@ export default function DiscoverFilterSheet({
 
   return (
     <>
-      <div className="fixed inset-0 z-[55]" style={{ background: "rgba(0,0,0,0.28)" }} onClick={onClose} />
+      <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.28)" }} onClick={onClose} />
       <div
-        className="fixed left-0 right-0 bottom-0 z-[56] rounded-t-3xl"
+        className="fixed left-0 right-0 bottom-0 z-[61]"
         style={{
-          background: "#FBF7EF",
+          background: PAPER,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          borderTop: `2.5px solid ${INK}`,
+          borderLeft: `2.5px solid ${INK}`,
+          borderRight: `2.5px solid ${INK}`,
           paddingBottom: "calc(var(--safe-bottom, 0px) + 16px)",
-          boxShadow: "0 -12px 40px rgba(20,12,5,0.18)",
           animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both",
           maxHeight: "85vh",
           overflowY: "auto",
@@ -89,7 +97,7 @@ export default function DiscoverFilterSheet({
       >
         <div className="mx-auto max-w-md px-5 pt-3">
           {/* Grabber */}
-          <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
+          <div className="mx-auto mb-3 rounded-full" style={{ width: 40, height: 4, background: INK, opacity: 0.25 }} />
 
           {/* Header */}
           <div className="flex items-center justify-between mb-5">
@@ -102,7 +110,7 @@ export default function DiscoverFilterSheet({
           </div>
 
           {/* Meal type */}
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2.5" style={{ color: "#8a847a" }}>Meal type</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2.5" style={{ color: INK_MUTED }}>Meal type</p>
           <div className="flex flex-wrap gap-2 mb-6">
             {MEAL_TYPES.map((m) => (
               <Pill key={m.key} label={m.label} active={value.mealTypes.includes(m.key)} onClick={() => onChange({ ...value, mealTypes: toggle(value.mealTypes, m.key) })} />
@@ -110,7 +118,7 @@ export default function DiscoverFilterSheet({
           </div>
 
           {/* Dietary */}
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2.5" style={{ color: "#8a847a" }}>Dietary</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] mb-2.5" style={{ color: INK_MUTED }}>Dietary</p>
           <div className="flex flex-wrap gap-2 mb-6">
             {DIETARY.map((d) => (
               <Pill key={d.key} label={d.label} active={value.dietary.includes(d.key)} onClick={() => onChange({ ...value, dietary: toggle(value.dietary, d.key) })} />
@@ -119,7 +127,7 @@ export default function DiscoverFilterSheet({
 
           {/* Time */}
           <div className="flex items-center justify-between mb-2.5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: "#8a847a" }}>Time</p>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em]" style={{ color: INK_MUTED }}>Time</p>
             <span className="text-[12px] font-semibold" style={{ color: INK }}>{timeLabel}</span>
           </div>
           <input
@@ -132,7 +140,7 @@ export default function DiscoverFilterSheet({
             className="w-full mb-1"
             style={{ accentColor: ACCENT }}
           />
-          <div className="flex justify-between text-[10px] mb-7" style={{ color: "#a8a29a" }}>
+          <div className="flex justify-between text-[10px] mb-7" style={{ color: INK_MUTED }}>
             <span>Any</span>
             <span>60 min</span>
           </div>
