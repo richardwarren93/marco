@@ -6,7 +6,7 @@ import { TIER_COLORS, CATEGORY_LABELS } from "@/lib/badges";
 // Celebration pieces (BadgeIcon, Confetti, Sparkles, AchievementModal) live in
 // the shared celebrations module — BadgeChecker and the cook flow use them too.
 import { BadgeIcon } from "./celebrations";
-import { MUSTARD, TEAL, TOMATO } from "@/lib/theme";
+import { INK, MUSTARD, PAPER, TEAL, TOMATO } from "@/lib/theme";
 
 // ─── Rarity colors for earned badges — Marco palette ────────────────────────
 // Bronze → tomato (primary punch) | Silver → teal (anchor) | Gold → mustard (energy)
@@ -100,7 +100,7 @@ function BadgeTile({ item, onClick, size = "normal" }: { item: BadgeProgress; on
 function BadgeDetailModal({ badge, onClose }: { badge: BadgeProgress; onClose: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center px-6" onClick={onClose}>
-      <div className="bg-white rounded-2xl p-5 max-w-xs w-full animate-pop-in text-center" onClick={(e) => e.stopPropagation()}>
+      <div className="p-5 max-w-xs w-full animate-pop-in text-center" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }} onClick={(e) => e.stopPropagation()}>
         <div className={`w-20 h-20 rounded-2xl mx-auto flex items-center justify-center mb-3 border-2 ${
           badge.earned
             ? `${TIER_COLORS[badge.badge.tier].bg} ${TIER_COLORS[badge.badge.tier].border}`
@@ -337,7 +337,7 @@ export default function BadgesCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-5 animate-pulse" style={{ boxShadow: "0 2px 20px rgba(234,88,12,0.06)" }}>
+      <div className="p-5 animate-pulse" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
         <div className="h-5 bg-gray-100 rounded w-28 mb-4" />
         <div className="grid grid-cols-4 gap-3">
           {[...Array(12)].map((_, i) => (
@@ -361,7 +361,7 @@ export default function BadgesCard() {
 
   return (
     <>
-      <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 2px 20px rgba(229,70,46,0.06)" }}>
+      <div className="overflow-hidden" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
         {/* Header — Marco voice: Fraunces title, mono progress label */}
         <div className="px-4 pt-4 pb-2">
           <div className="flex items-center justify-between mb-2">

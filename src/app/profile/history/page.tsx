@@ -2,9 +2,9 @@
 
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
-import PageHeader from "@/components/layout/PageHeader";
+import SubPageShell from "@/components/layout/SubPageShell";
 import { useToast } from "@/components/ui/Toast";
-import { CREAM, INK, INK_MUTED, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
+import { INK, INK_MUTED, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 /* Cooking history — every week gets its own section showing what you made
    (moved here from the profile hub's "Last week's cooking" card). Weeks are
@@ -30,8 +30,9 @@ interface HistoryData {
 
 const CARD_STYLE = {
   background: PAPER,
-  border: "1px solid rgba(28,26,23,0.08)",
-  boxShadow: "0 2px 12px rgba(28,26,23,0.05)",
+  border: `2.5px solid ${INK}`,
+  boxShadow: `4px 5px 0 ${INK}`,
+  borderRadius: 16,
 } as const;
 
 function fmtUTC(d: Date, opts: Intl.DateTimeFormatOptions): string {
@@ -94,10 +95,7 @@ export default function CookingHistoryPage() {
   let lastMonthShown = "";
 
   return (
-    <div className="min-h-screen" style={{ background: CREAM }}>
-      <PageHeader back title="Cooking history" />
-
-      <div className="max-w-lg mx-auto px-4 pt-1" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
+    <SubPageShell title="Cooking history">
         {isLoading ? (
           <div className="space-y-3">
             <div className="h-8 skeleton-warm rounded-xl w-40" />
@@ -198,7 +196,6 @@ export default function CookingHistoryPage() {
             );
           })
         )}
-      </div>
-    </div>
+    </SubPageShell>
   );
 }

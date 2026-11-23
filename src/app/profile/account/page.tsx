@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useProfile } from "@/lib/hooks/use-data";
-import PageHeader from "@/components/layout/PageHeader";
+import SubPageShell from "@/components/layout/SubPageShell";
 import RestorePurchasesButton from "@/components/purchases/RestorePurchasesButton";
-import { CREAM, INK, INK_MUTED, PAPER, TOMATO } from "@/lib/theme";
+import { BUTTER, CREAM, INK, INK_MUTED, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 /* Account — the one-time/dangerous stuff, moved off the profile hub: guest
    email upgrade, restore purchases (App Store requirement), log out, and
@@ -60,13 +60,10 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: CREAM }}>
-      <PageHeader back title="Account" />
-
-      <div className="max-w-lg mx-auto px-4 pt-1" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
+    <SubPageShell title="Account">
         {/* ── Who you are ── */}
         {!isGuest && (
-          <div className="p-4 rounded-2xl" style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.08)" }}>
+          <div className="p-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Signed in as</p>
             <p className="text-sm font-semibold mt-1 truncate" style={{ color: INK }}>{email || profile?.display_name || "—"}</p>
           </div>
@@ -74,7 +71,7 @@ export default function AccountPage() {
 
         {/* ── Guest upgrade ── */}
         {isGuest && !showUpgrade && !upgradeSent && (
-          <div className="p-4 rounded-2xl flex items-start gap-3" style={{ background: "#fff4ec", border: "1px solid #fcd9bd" }}>
+          <div className="p-4 flex items-start gap-3" style={{ background: BUTTER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             <span className="text-2xl flex-shrink-0">🔒</span>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold" style={{ color: INK }}>Secure your account</p>
@@ -93,7 +90,7 @@ export default function AccountPage() {
         )}
 
         {isGuest && showUpgrade && !upgradeSent && (
-          <div className="p-4 rounded-2xl" style={{ background: "white", boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="p-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             <div className="flex items-center justify-between mb-3">
               <p className="text-sm font-bold" style={{ color: INK }}>Secure your account</p>
               <button onClick={() => setShowUpgrade(false)} className="text-gray-400 text-sm" aria-label="Close">✕</button>
@@ -132,7 +129,7 @@ export default function AccountPage() {
         )}
 
         {isGuest && upgradeSent && (
-          <div className="p-4 rounded-2xl" style={{ background: "#ecfdf5", border: "1px solid #a7f3d0" }}>
+          <div className="p-4" style={{ background: LIME, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             <p className="text-sm font-bold" style={{ color: "#065f46" }}>📬 Check your email!</p>
             <p className="text-xs mt-1 leading-relaxed" style={{ color: "#065f46" }}>
               We sent a confirmation link to <strong>{upgradeEmail}</strong>. Click it to finish securing your account.
@@ -175,7 +172,6 @@ export default function AccountPage() {
             </button>
           </div>
         )}
-      </div>
 
       {showDelete && (
         <div
@@ -258,6 +254,6 @@ export default function AccountPage() {
           </div>
         </div>
       )}
-    </div>
+    </SubPageShell>
   );
 }

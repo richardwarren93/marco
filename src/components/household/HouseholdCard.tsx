@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Household } from "@/types";
+import { INK, PAPER } from "@/lib/theme";
 
 export default function HouseholdCard() {
   const [household, setHousehold] = useState<Household | null>(null);
@@ -131,7 +132,7 @@ export default function HouseholdCard() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm p-5 animate-pulse">
+      <div className="p-5 animate-pulse" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
         <div className="h-5 bg-gray-200 rounded w-32 mb-3" />
         <div className="h-12 bg-gray-200 rounded" />
       </div>
@@ -141,7 +142,7 @@ export default function HouseholdCard() {
   // Has a household — show it
   if (household) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+      <div className="overflow-hidden" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
         <div className="px-5 py-4 border-b border-gray-100">
           <div className="flex items-center justify-between">
             <h3 className="font-bold flex items-center gap-2" style={{ color: "var(--ink, #171410)" }}>
@@ -232,7 +233,7 @@ export default function HouseholdCard() {
 
   // No household — show create/join options
   return (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div className="overflow-hidden" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
       <div className="px-5 py-4 border-b border-gray-100">
         <h3 className="font-bold flex items-center gap-2" style={{ color: "var(--ink, #171410)" }}>
           <svg className="w-4 h-4" style={{ color: "var(--tomato, #E5462E)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

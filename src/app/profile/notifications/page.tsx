@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PageHeader from "@/components/layout/PageHeader";
-import { CREAM, INK, PAPER, TOMATO } from "@/lib/theme";
+import SubPageShell from "@/components/layout/SubPageShell";
+import { INK, PAPER, TOMATO } from "@/lib/theme";
 
 /* Notifications — permission status + enable. Mirrors the onboarding
    NotificationsStep request logic: Capacitor push on native, the Notification
@@ -72,13 +72,11 @@ export default function NotificationsPage() {
   const c = perm ? COPY[perm] : null;
 
   return (
-    <div className="min-h-screen" style={{ background: CREAM }}>
-      <PageHeader back title="Notifications" />
-      <div className="max-w-lg mx-auto px-4 pt-1" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
+    <SubPageShell title="Notifications">
         {c && (
           <div
-            className="rounded-2xl p-5 text-center"
-            style={{ background: PAPER, border: "1px solid rgba(28,26,23,0.08)", boxShadow: "0 2px 12px rgba(28,26,23,0.05)" }}
+            className="p-5 text-center"
+            style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
           >
             <span className="text-4xl block mb-3">{c.icon}</span>
             <p className="font-semibold text-[15.5px]" style={{ color: INK }}>{c.title}</p>
@@ -98,7 +96,6 @@ export default function NotificationsPage() {
             )}
           </div>
         )}
-      </div>
-    </div>
+    </SubPageShell>
   );
 }
