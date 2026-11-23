@@ -5,6 +5,64 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
+import {
+  BUTTER,
+  DISPLAY,
+  INK,
+  INK_MUTED,
+  INK_SOFT,
+  LAV,
+  LIME,
+  MUSTARD,
+  PAPER,
+  SURFACE_DOTS,
+  TOMATO,
+  TOMATO_DARK,
+} from "@/lib/theme";
+
+/* The page a stranger lands on from a shared friend code, so it is the first
+ * Marco surface a lot of people see. It used to be grey text on a grey page.
+ *
+ * The dock renders here (/add is not in DOCK_HIDDEN_ON), so the card is
+ * centred in the space above it rather than in the whole viewport. */
+
+const STICKERS = [BUTTER, LIME, LAV, MUSTARD];
+
+function stickerFor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash << 5) - hash + name.charCodeAt(i);
+    hash |= 0;
+  }
+  return STICKERS[Math.abs(hash) % STICKERS.length];
+}
+
+const SHELL = {
+  ...SURFACE_DOTS,
+  minHeight: "100dvh",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  paddingBottom: 130,
+} as const;
+
+const CARD = {
+  background: PAPER,
+  borderRadius: 20,
+  border: `2.5px solid ${INK}`,
+  boxShadow: `5px 6px 0 ${INK}`,
+} as const;
+
+const PRIMARY = {
+  background: TOMATO,
+  color: PAPER,
+  fontFamily: DISPLAY,
+  fontWeight: 700,
+  fontSize: 15,
+  border: `2.5px solid ${INK}`,
+  borderRadius: 12,
+  boxShadow: `3px 3px 0 ${INK}`,
+} as const;
 
 export default function AddFriendPage() {
   const params = useParams();
@@ -67,27 +125,28 @@ export default function AddFriendPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-pulse text-gray-400">Loading...</div>
+      <div style={SHELL}>
+        <div className="w-7 h-7 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   if (notFound) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-sm mx-auto px-4">
-          <div className="text-6xl mb-4">🤷</div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">
+      <div style={SHELL}>
+        <div className="w-full max-w-sm mx-4 p-7 text-center" style={CARD}>
+          <div className="text-5xl mb-3">🤷</div>
+          <h1 className="mb-2" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 21 }}>
             Code not found
           </h1>
-          <p className="text-gray-600 text-sm mb-6">
-            The friend code &quot;{code}&quot; doesn&apos;t match any Marco
-            user. Double-check the code and try again.
+          <p className="text-sm mb-6 leading-relaxed" style={{ color: INK_SOFT }}>
+            The friend code &quot;{code}&quot; doesn&apos;t match anyone on Marco. Worth
+            checking it for a stray character.
           </p>
           <Link
             href={user ? "/friends" : "/"}
-            className="text-orange-600 hover:text-orange-700 font-medium text-sm"
+            className="inline-block px-5 py-2.5 active:scale-95 transition-transform"
+            style={{ ...PRIMARY, background: PAPER, color: INK }}
           >
             {user ? "Go to Friends" : "Go to Marco"}
           </Link>
@@ -96,29 +155,48 @@ export default function AddFriendPage() {
     );
   }
 
+  const name = friendName || "?";
+  const initials =
+    name
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center max-w-sm mx-auto px-4">
-        <div className="w-20 h-20 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-2xl mx-auto mb-4">
-          {friendName
-            ?.split(" ")
-            .map((w) => w[0])
-            .join("")
-            .slice(0, 2)
-            .toUpperCase() || "?"}
+    <div style={SHELL}>
+      <div className="w-full max-w-sm mx-4 p-7 text-center" style={CARD}>
+        <div
+          className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
+          style={{
+            background: stickerFor(name),
+            color: INK,
+            border: `2.5px solid ${INK}`,
+            fontFamily: DISPLAY,
+            fontWeight: 700,
+            fontSize: 26,
+          }}
+        >
+          {initials}
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">{friendName}</h1>
-        <p className="text-sm text-gray-500 mb-6">wants to connect on Marco</p>
+
+        <h1 className="mb-1" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 24, lineHeight: 1.15 }}>
+          {friendName}
+        </h1>
+        <p className="text-sm mb-6" style={{ color: INK_SOFT }}>wants to cook with you on Marco</p>
 
         {user ? (
           <>
             {result?.type === "success" ? (
               <div className="space-y-4">
-                <p className="text-green-600 font-medium">{result.message}</p>
-                <Link
-                  href="/friends"
-                  className="inline-block px-6 py-2 bg-orange-600 text-white rounded-lg font-medium hover:bg-orange-700"
+                <p
+                  className="px-3 py-2 text-sm"
+                  style={{ background: LIME, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10 }}
                 >
+                  {result.message}
+                </p>
+                <Link href="/friends" className="inline-block px-6 py-2.5 active:scale-95 transition-transform" style={PRIMARY}>
                   Go to Friends
                 </Link>
               </div>
@@ -127,12 +205,17 @@ export default function AddFriendPage() {
                 <button
                   onClick={handleSendRequest}
                   disabled={sending}
-                  className="w-full px-6 py-3 bg-orange-600 text-white rounded-xl font-medium hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                  className="w-full px-6 py-3 flex items-center justify-center active:scale-[0.98] transition-transform disabled:opacity-50"
+                  style={PRIMARY}
                 >
-                  {sending ? "Sending..." : "Send Friend Request"}
+                  {sending ? (
+                    <div className="w-4 h-4 border-2 border-[var(--paper)] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    "Send friend request"
+                  )}
                 </button>
                 {result?.type === "error" && (
-                  <p className="text-red-600 text-sm">{result.message}</p>
+                  <p className="text-sm" style={{ color: TOMATO_DARK }}>{result.message}</p>
                 )}
               </div>
             )}
@@ -141,18 +224,24 @@ export default function AddFriendPage() {
           <div className="space-y-3">
             <Link
               href={`/auth/signup?returnTo=/add/${code}`}
-              className="block w-full px-6 py-3 bg-orange-600 text-white rounded-xl font-medium hover:bg-orange-700 transition-colors"
+              className="block w-full px-6 py-3 active:scale-[0.98] transition-transform"
+              style={PRIMARY}
             >
               Sign up to connect
             </Link>
             <Link
               href={`/auth/login?returnTo=/add/${code}`}
-              className="block text-sm text-gray-600 hover:text-gray-900"
+              className="block text-sm"
+              style={{ color: INK_SOFT }}
             >
-              Already have an account? Log in
+              Already have an account? <span style={{ color: TOMATO, fontWeight: 600 }}>Log in</span>
             </Link>
           </div>
         )}
+
+        <p className="mt-6 text-[11px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>
+          {code}
+        </p>
       </div>
     </div>
   );
