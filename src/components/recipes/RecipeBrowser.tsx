@@ -9,7 +9,7 @@ import SharedRecipeCard from "./SharedRecipeCard";
 import RecipeFilterSheet, { type RecipeFilters, recipeFilterCount } from "./RecipeFilterSheet";
 import { CollectionsIcon, SearchIcon } from "@/components/icons/HandDrawnIcons";
 import { MealIcon } from "@/components/icons/MealIcons";
-import { BUTTER, COBALT, DISPLAY, HAND, INK, LAV, LIME, PAPER, PINK, TOMATO } from "@/lib/theme";
+import { BUTTER, COBALT, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, LAV, LIME, PAPER, PINK, TOMATO } from "@/lib/theme";
 
 const ACCENT = TOMATO;
 
@@ -250,7 +250,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
           <div className="flex items-center gap-2 px-4 pt-4 pb-2">
             <button
               onClick={props.onBack}
-              className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0 -ml-1"
+              className="w-8 h-8 flex items-center justify-center rounded-full active:bg-black/5 transition-colors flex-shrink-0 -ml-1" style={{ color: INK_MUTED }}
             >
               <svg
                 className="w-5 h-5"
@@ -262,7 +262,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <h1 className="text-lg font-bold text-gray-900">Browse recipes</h1>
+            <h1 className="text-lg" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>Browse recipes</h1>
           </div>
         )}
 
@@ -270,7 +270,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
         <div className="px-4 pt-3 pb-2.5">
           <div className="flex items-center gap-2">
             <div className="flex-1 flex items-center gap-2 rounded-full px-3.5 h-11" style={{ background: PAPER, border: "2px solid #171410" }}>
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#a8a29a" strokeWidth={2}>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke={INK_MUTED} strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
               </svg>
               <input
@@ -284,7 +284,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               />
               {search && (
                 <button onClick={() => setSearch("")} aria-label="Clear search" className="flex-shrink-0">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="#a8a29a" strokeWidth={2}>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke={INK_MUTED} strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -296,7 +296,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               className="relative w-11 h-11 flex items-center justify-center rounded-full active:scale-95 transition-transform flex-shrink-0"
               style={{ background: filterCount > 0 ? ACCENT : PAPER, border: "2px solid #171410" }}
             >
-              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={filterCount > 0 ? "#fff" : INK} strokeWidth={2}>
+              <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={filterCount > 0 ? PAPER : INK} strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h18M6 12h12M10 19h4" />
               </svg>
               {filterCount > 0 && (
@@ -332,7 +332,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
             {[...Array(8)].map((_, i) => (
               <div key={i} className="rounded-3xl overflow-hidden" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.07)" }}>
                 <div className="h-36 sm:h-44 skeleton-warm" />
-                <div className="bg-white px-3 pt-2.5 pb-3 space-y-2">
+                <div className="px-3 pt-2.5 pb-3 space-y-2" style={{ background: PAPER }}>
                   <div className="h-3 skeleton-warm rounded-full w-4/5" />
                   <div className="h-3 skeleton-warm rounded-full w-2/5" />
                 </div>
@@ -356,7 +356,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
               </button>
             )}
             {!hasFilters && props.mode === "library" && (
-              <Link href="/recipes/new" style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 16, color: PAPER, background: TOMATO, border: "2.5px solid #171410", borderRadius: 12, padding: "12px 20px", boxShadow: "0 8px 18px rgba(229,70,46,0.28)" }}>
+              <Link href="/recipes/new" style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 16, color: PAPER, background: TOMATO, border: `2.5px solid ${INK}`, borderRadius: 12, padding: "12px 20px", boxShadow: `3px 3px 0 ${INK}` }}>
                 Save a recipe →
               </Link>
             )}
@@ -438,7 +438,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                   >
                     <div
                       className="relative w-full rounded-2xl overflow-hidden"
-                      style={{ aspectRatio: "1 / 1", background: "var(--cream-warm, #EFE5D2)", boxShadow: "0 2px 10px rgba(20,12,5,0.08)" }}
+                      style={{ aspectRatio: "1 / 1", background: CREAM_WARM, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
                     >
                       {displayRecipes[0]?.image_url ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -468,7 +468,7 @@ export default function RecipeBrowser(props: RecipeBrowserProps) {
                       >
                         <div
                           className="relative w-full rounded-2xl overflow-hidden"
-                          style={{ aspectRatio: "1 / 1", background: "var(--cream-warm, #EFE5D2)", boxShadow: "0 2px 10px rgba(20,12,5,0.08)" }}
+                          style={{ aspectRatio: "1 / 1", background: CREAM_WARM, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
                         >
                           {img ? (
                             // eslint-disable-next-line @next/next/no-img-element
