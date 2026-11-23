@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Collection } from "@/types";
+import { CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 interface Props {
   recipeId: string;
@@ -142,87 +143,130 @@ export default function AddToCollectionModal({ recipeId, isOpen, onClose }: Prop
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Add to Collection</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">
-            &times;
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md"
+        style={{ background: PAPER, borderRadius: 20, border: `2.5px solid ${INK}`, boxShadow: `5px 6px 0 ${INK}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: `2.5px solid ${INK}` }}>
+          <h2 style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>Add to collection</h2>
+          <button onClick={onClose} aria-label="Close" className="p-1" style={{ color: INK_MUTED }}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
         {error && (
-          <p className="text-red-500 text-sm mb-3">{error}</p>
-        )}
-
-        {loading ? (
-          <p className="text-gray-500 text-sm">Loading collections...</p>
-        ) : collections.length === 0 ? (
-          <p className="text-gray-500 text-sm mb-4">No collections yet. Create one below.</p>
-        ) : (
-          <div className="space-y-2 max-h-60 overflow-y-auto mb-4">
-            {collections.map((collection) => {
-              const isInCollection = addedIds.has(collection.id) || alreadyInIds.has(collection.id);
-              const isProcessing = addingId === collection.id;
-
-              return (
-                <div
-                  key={collection.id}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{collection.name}</p>
-                    {collection.description && (
-                      <p className="text-xs text-gray-500 line-clamp-1">{collection.description}</p>
-                    )}
-                  </div>
-                  {isInCollection ? (
-                    <button
-                      onClick={() => handleRemove(collection.id)}
-                      disabled={isProcessing}
-                      className="text-sm px-3 py-1 rounded-lg font-medium bg-green-100 text-green-700 hover:bg-red-100 hover:text-red-600 transition-colors disabled:opacity-50 group"
-                    >
-                      {isProcessing ? (
-                        "..."
-                      ) : (
-                        <>
-                          <span className="group-hover:hidden">Added</span>
-                          <span className="hidden group-hover:inline">Remove</span>
-                        </>
-                      )}
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleAdd(collection.id)}
-                      disabled={isProcessing}
-                      className="text-sm px-3 py-1 rounded-lg font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 transition-colors disabled:opacity-50"
-                    >
-                      {isProcessing ? "Adding..." : "Add"}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+          <div className="px-5 py-2.5 text-[12.5px]" style={{ background: "rgba(229,70,46,0.12)", color: TOMATO_DARK, borderBottom: `2px solid ${INK}` }}>
+            {error}
           </div>
         )}
 
-        <div className="border-t border-gray-200 pt-4">
-          <p className="text-xs text-gray-500 mb-2">New Collection</p>
+        <div className="px-5 py-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="w-5 h-5 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : collections.length === 0 ? (
+            <p className="text-sm py-2" style={{ color: INK_SOFT }}>
+              No collections yet. Make your first one below.
+            </p>
+          ) : (
+            <div className="space-y-1.5 max-h-60 overflow-y-auto overscroll-contain -mx-1 px-1">
+              {collections.map((collection) => {
+                const isInCollection = addedIds.has(collection.id) || alreadyInIds.has(collection.id);
+                const isProcessing = addingId === collection.id;
+
+                return (
+                  <div key={collection.id} className="flex items-center justify-between gap-3 py-1">
+                    <div className="min-w-0">
+                      <p className="truncate" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 14 }}>
+                        {collection.name}
+                      </p>
+                      {collection.description && (
+                        <p className="text-xs line-clamp-1" style={{ color: INK_SOFT }}>{collection.description}</p>
+                      )}
+                    </div>
+                    {/* One toggle, pressed in when the recipe is in the collection.
+                        It used to be a button labelled "Added" that swapped to
+                        "Remove" on hover — so on a phone, where nothing hovers,
+                        the label never stopped saying "Added" and tapping it
+                        silently removed the recipe. */}
+                    <button
+                      onClick={() => (isInCollection ? handleRemove(collection.id) : handleAdd(collection.id))}
+                      disabled={isProcessing}
+                      aria-pressed={isInCollection}
+                      className="flex-shrink-0 flex items-center justify-center text-xs px-3 py-1.5 active:scale-95 transition-transform disabled:opacity-60"
+                      style={{
+                        background: isInCollection ? LIME : PAPER,
+                        color: INK,
+                        fontFamily: DISPLAY,
+                        fontWeight: 700,
+                        border: `2px solid ${INK}`,
+                        borderRadius: 99,
+                        boxShadow: isInCollection ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+                        transform: isInCollection ? "translate(1px, 1px)" : undefined,
+                        minWidth: 62,
+                        minHeight: 28,
+                      }}
+                    >
+                      {isProcessing ? (
+                        <div className="w-3 h-3 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
+                      ) : isInCollection ? (
+                        "Added"
+                      ) : (
+                        "Add"
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="px-5 py-4" style={{ borderTop: `2px solid ${INK}` }}>
+          <p className="text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>
+            New collection
+          </p>
           <form onSubmit={handleCreate} className="flex gap-2">
             <input
               type="text"
-              placeholder="Collection name"
+              placeholder="e.g. Weeknight dinners"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+              className="flex-1 min-w-0 px-3.5 py-2.5 text-sm outline-none"
+              style={{ background: CREAM_WARM, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
+              onFocus={(e) => { e.currentTarget.style.background = PAPER; }}
+              onBlur={(e) => { e.currentTarget.style.background = CREAM_WARM; }}
             />
             <button
               type="submit"
               disabled={creating || !newName.trim()}
-              className="bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50"
+              className="flex-shrink-0 flex items-center justify-center px-4 py-2.5 active:scale-95 transition-transform disabled:opacity-50"
+              style={{
+                background: TOMATO,
+                color: PAPER,
+                fontFamily: DISPLAY,
+                fontWeight: 700,
+                fontSize: 13.5,
+                border: `2.5px solid ${INK}`,
+                borderRadius: 10,
+                boxShadow: `3px 3px 0 ${INK}`,
+                minWidth: 76,
+              }}
             >
-              {creating ? "..." : "Create"}
+              {creating ? (
+                <div className="w-3.5 h-3.5 border-2 border-[var(--paper)] border-t-transparent rounded-full animate-spin" />
+              ) : (
+                "Create"
+              )}
             </button>
           </form>
         </div>
