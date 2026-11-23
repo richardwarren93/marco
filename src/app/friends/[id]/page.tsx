@@ -5,7 +5,8 @@ import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import DiscoverRecipeCard from "@/components/recipes/discover/DiscoverRecipeCard";
 import { useDiscoverSave } from "@/components/recipes/discover/useDiscoverSave";
-import { CREAM, INK, INK_SOFT } from "@/lib/theme";
+import KitchenSurface from "@/components/layout/KitchenSurface";
+import { DISPLAY, INK, INK_SOFT, PAPER } from "@/lib/theme";
 
 interface FriendRecipe {
   id: string;
@@ -48,7 +49,7 @@ export default function FriendRecipesPage() {
   const name = friend?.display_name || "Friend";
 
   return (
-    <div className="min-h-screen" style={{ background: CREAM }}>
+    <KitchenSurface>
       {/* Header */}
       <div
         className="flex items-center gap-2 px-3 pb-2 max-w-2xl mx-auto"
@@ -65,7 +66,7 @@ export default function FriendRecipesPage() {
         </button>
         <span
           className="flex items-center justify-center rounded-full overflow-hidden flex-shrink-0"
-          style={{ width: 36, height: 36, background: "linear-gradient(135deg,#E8A33D,#E5462E)", color: "#fff", fontWeight: 700, fontSize: 12 }}
+          style={{ width: 36, height: 36, background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 13, border: `2px solid ${INK}` }}
         >
           {friend?.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -75,19 +76,19 @@ export default function FriendRecipesPage() {
           )}
         </span>
         <div className="min-w-0">
-          <h1 className="text-xl marco-h1 truncate" style={{ color: INK }}>{name}&apos;s recipes</h1>
+          <h1 className="truncate" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 21, letterSpacing: "-0.02em" }}>{name}&apos;s recipes</h1>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 pt-2" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
+      <div className="max-w-2xl mx-auto px-4 pt-2">
         {isLoading ? (
           <div className="grid grid-cols-2 gap-3">
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="h-52 skeleton-warm rounded-2xl" />
+              <div key={i} className="h-52 skeleton-warm" style={{ borderRadius: 16, border: `2.5px solid ${INK}` }} />
             ))}
           </div>
         ) : recipes.length === 0 ? (
-          <div className="text-center py-16 rounded-2xl" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.05)" }}>
+          <div className="text-center py-16 px-6" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             <p className="text-[14px]" style={{ color: INK_SOFT }}>{name} hasn&apos;t saved any recipes yet.</p>
           </div>
         ) : (
@@ -123,6 +124,6 @@ export default function FriendRecipesPage() {
           </div>
         )}
       </div>
-    </div>
+    </KitchenSurface>
   );
 }
