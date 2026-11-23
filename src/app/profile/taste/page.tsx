@@ -8,7 +8,7 @@ import DinnerRankingStep from "@/components/onboarding/DinnerRankingStep";
 import { computeFlavorScores, computeCuisineScores } from "@/lib/tasteInference";
 import { useToast } from "@/components/ui/Toast";
 import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes";
-import { INK, INK_SOFT, MUSTARD, PAPER, TEAL, TOMATO } from "@/lib/theme";
+import { COBALT, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, MUSTARD, MUSTARD_SOFT, PAPER, PINK, TEAL, TOMATO } from "@/lib/theme";
 
 /* Taste DNA — promoted from a profile card to its own page. Canonical data is
    /api/taste-profile (the self-refreshing 5-dim profile). "Retune my taste"
@@ -28,9 +28,9 @@ interface TasteData {
 const DIMENSIONS = [
   { key: "savory" as const, label: "Savory", color: TOMATO },
   { key: "sweet" as const, label: "Sweet", color: MUSTARD },
-  { key: "spicy" as const, label: "Spicy", color: "#c2410c" },
+  { key: "spicy" as const, label: "Spicy", color: PINK },
   { key: "tangy" as const, label: "Tangy", color: TEAL },
-  { key: "richness" as const, label: "Rich", color: "#b45309" },
+  { key: "richness" as const, label: "Rich", color: COBALT },
 ];
 
 const CARD = {
@@ -134,7 +134,7 @@ export default function TasteDnaPage() {
           <div className="text-center py-14 rounded-2xl px-6" style={CARD}>
             <span className="text-4xl block mb-3">🧬</span>
             <p className="font-semibold text-[15px]" style={{ color: INK }}>No Taste DNA yet</p>
-            <p className="text-[13px] mt-1.5" style={{ color: "#6B655C" }}>
+            <p className="text-[13px] mt-1.5" style={{ color: INK_SOFT }}>
               Rank a few dinners and we&apos;ll map your taste.
             </p>
           </div>
@@ -146,7 +146,7 @@ export default function TasteDnaPage() {
                 <p className="mt-1.5 mb-1" style={{ fontFamily: "var(--font-display, Georgia, serif)", fontVariationSettings: '"opsz" 40, "wght" 600', fontSize: "20px", color: INK }}>
                   {data.chef.name}
                 </p>
-                <p className="text-[12.5px] leading-snug" style={{ color: "#6B655C" }}>{data.chef.description}</p>
+                <p className="text-[12.5px] leading-snug" style={{ color: INK_SOFT }}>{data.chef.description}</p>
               </div>
             )}
 
@@ -159,9 +159,9 @@ export default function TasteDnaPage() {
                     <div key={dim.key}>
                       <div className="flex items-baseline justify-between">
                         <span className="text-[12px] font-medium" style={{ color: INK }}>{dim.label}</span>
-                        <span className="text-[11px] tabular-nums" style={{ color: "#9b938a" }}>{Math.round(scores![dim.key] ?? 0)}</span>
+                        <span className="text-[11px] tabular-nums" style={{ color: INK_MUTED }}>{Math.round(scores![dim.key] ?? 0)}</span>
                       </div>
-                      <div className="h-2.5 rounded-full overflow-hidden mt-1" style={{ background: "#efede8" }}>
+                      <div className="h-2.5 rounded-full overflow-hidden mt-1" style={{ background: CREAM_WARM, border: `1.5px solid ${INK}` }}>
                         <div className="h-full rounded-full animate-bar-fill" style={{ width: `${Math.max(scores![dim.key] ?? 0, 4)}%`, background: dim.color }} />
                       </div>
                     </div>
@@ -174,7 +174,7 @@ export default function TasteDnaPage() {
                 <p className="mb-2.5" style={EYEBROW}>Top cuisines</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {data!.cuisines!.map((c) => (
-                    <span key={c.id} className="text-[12px] font-semibold px-3 py-1.5 rounded-full" style={{ background: "#f3f2ef", color: INK }}>
+                    <span key={c.id} className="text-[12px] font-semibold px-3 py-1.5 rounded-full" style={{ background: PAPER, color: INK, border: `1.5px solid ${INK}` }}>
                       {c.flag} {c.label}
                     </span>
                   ))}
@@ -211,9 +211,9 @@ export default function TasteDnaPage() {
                 <div className="space-y-2">
                   {data!.signatureMeals!.map((m, i) => (
                     <div key={m.title} className="flex items-center gap-2.5">
-                      <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[10px]" style={{ background: i === 0 ? TOMATO : i === 1 ? "#f07828" : "#f5a05c", color: "white" }}>{i + 1}</span>
+                      <span className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 font-black text-[10px]" style={{ background: i === 0 ? TOMATO : i === 1 ? MUSTARD : MUSTARD_SOFT, color: i === 0 ? PAPER : INK, border: `1.5px solid ${INK}` }}>{i + 1}</span>
                       <span className="text-[13px] font-semibold flex-1 truncate" style={{ color: INK }}>{m.title}</span>
-                      <span className="text-[11.5px] tabular-nums" style={{ color: "#9b938a" }}>{m.count}×</span>
+                      <span className="text-[11.5px] tabular-nums" style={{ color: INK_MUTED }}>{m.count}×</span>
                     </div>
                   ))}
                 </div>
@@ -227,12 +227,12 @@ export default function TasteDnaPage() {
             <button
               onClick={() => setRetuning(true)}
               disabled={saving}
-              className="w-full py-3.5 rounded-2xl font-semibold text-[14.5px] text-white active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: TOMATO }}
+              className="w-full py-3.5 text-[14.5px] active:scale-[0.98] transition-transform disabled:opacity-60"
+              style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `3px 3px 0 ${INK}` }}
             >
               {saving ? "Saving your retune…" : hasData ? "🧬 Retune my taste" : "🧬 Build my Taste DNA"}
             </button>
-            <p className="text-center mt-2 text-[11.5px]" style={{ color: "#9b938a" }}>
+            <p className="text-center mt-2 text-[11.5px]" style={{ color: INK_MUTED }}>
               Re-run the ranking — your DNA sharpens as you cook
             </p>
           </div>
