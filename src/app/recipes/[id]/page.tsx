@@ -787,7 +787,7 @@ export default function RecipeDetailPage() {
           <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[13.5px]" style={{ color: "var(--ink-soft, #4A4742)" }}>
             <span className="inline-flex items-center" aria-label={ratingCount > 0 ? `${ratingAvg} out of 5` : "No ratings yet"}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <svg key={n} className="w-4 h-4" viewBox="0 0 24 24" fill={Math.round(ratingAvg) >= n ? MUSTARD : "none"} stroke={Math.round(ratingAvg) >= n ? MUSTARD : "#d9d0c2"} strokeWidth={1.4}>
+                <svg key={n} className="w-4 h-4" viewBox="0 0 24 24" fill={Math.round(ratingAvg) >= n ? MUSTARD : "none"} stroke={Math.round(ratingAvg) >= n ? MUSTARD : INK_MUTED} strokeWidth={1.4}>
                   <path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" />
                 </svg>
               ))}
@@ -826,7 +826,7 @@ export default function RecipeDetailPage() {
             <button
               onClick={() => setShowAddMealSheet(true)}
               className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl text-left active:scale-[0.98] transition-transform"
-              style={{ background: TOMATO, color: "#fff", boxShadow: "0 2px 12px rgba(229,70,46,0.25)" }}
+              style={{ background: TOMATO, color: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `3px 3px 0 ${INK}` }}
             >
               <svg className="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><rect x="3" y="4" width="18" height="17" rx="2" /><path strokeLinecap="round" strokeLinejoin="round" d="M3 9h18M8 2v4M16 2v4M9 14l2 2 4-4" /></svg>
               <span className="min-w-0">
@@ -837,12 +837,12 @@ export default function RecipeDetailPage() {
             <button
               onClick={() => setShowMarcoChat(true)}
               className="flex items-center gap-2.5 px-3.5 py-3 rounded-2xl text-left active:scale-[0.98] transition-transform"
-              style={{ background: "#fff", border: "1.5px solid rgba(229,70,46,0.45)" }}
+              style={{ background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `3px 3px 0 ${INK}` }}
             >
               <svg className="w-6 h-6 flex-shrink-0" style={{ color: TOMATO }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10M9 21v-3m6 3v-3M6 18h12a4 4 0 00.5-7.97 6 6 0 00-11.9-.5A3.5 3.5 0 006 18z" /></svg>
               <span className="min-w-0">
                 <span className="block text-[14px] font-bold leading-tight" style={{ color: INK }}>Start cooking</span>
-                <span className="block text-[11px] leading-tight mt-0.5" style={{ color: "#6B655C" }}>One step at a time</span>
+                <span className="block text-[11px] leading-tight mt-0.5" style={{ color: INK_SOFT }}>One step at a time</span>
               </span>
             </button>
           </div>
@@ -854,7 +854,7 @@ export default function RecipeDetailPage() {
             <h3 className="text-[16px] font-bold" style={{ color: INK }}>Ingredients</h3>
             {originalServings && (
               <div className="flex items-center gap-2">
-                <span className="text-[13px]" style={{ color: "#6B655C" }}>Scale</span>
+                <span className="text-[13px]" style={{ color: INK_SOFT }}>Scale</span>
                 <div className="flex items-center gap-2.5">
                       <button
                         onClick={() => changeServings(-1)}
@@ -943,7 +943,7 @@ export default function RecipeDetailPage() {
             </span>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-bold" style={{ color: INK }}>Instructions</p>
-              <p className="text-[12.5px]" style={{ color: "#6B655C" }}>{steps.length} {steps.length === 1 ? "step" : "steps"}{totalTime > 0 ? ` · About ${totalTime} minutes` : ""}</p>
+              <p className="text-[12.5px]" style={{ color: INK_SOFT }}>{steps.length} {steps.length === 1 ? "step" : "steps"}{totalTime > 0 ? ` · About ${totalTime} minutes` : ""}</p>
             </div>
             {recipe.image_url && (
               <img src={recipe.image_url} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" />
@@ -957,7 +957,7 @@ export default function RecipeDetailPage() {
         {hasMacros && (
           <div className="p-4 mb-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             <h3 className="text-[16px] font-bold mb-3" style={{ color: INK }}>
-              Nutrition <span className="text-[13px] font-normal" style={{ color: "#6B655C" }}>per serving</span>
+              Nutrition <span className="text-[13px] font-normal" style={{ color: INK_SOFT }}>per serving</span>
             </h3>
             <div className="grid grid-cols-4 divide-x" style={{ borderColor: "rgba(28,26,23,0.06)" }}>
               {[
@@ -969,11 +969,11 @@ export default function RecipeDetailPage() {
                 <div key={m.label} className="flex flex-col items-center gap-1 px-1">
                   <svg className="w-5 h-5" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><path d={m.icon} /></svg>
                   <span className="text-[18px] font-bold" style={{ color: INK }}>{m.v != null ? `${Math.round(m.v * ratio)}${m.unit}` : "—"}</span>
-                  <span className="text-[11px]" style={{ color: "#8a847a" }}>{m.label}</span>
+                  <span className="text-[11px]" style={{ color: INK_MUTED }}>{m.label}</span>
                 </div>
               ))}
             </div>
-            <p className="mt-3 text-[11px]" style={{ color: "#a8a29a" }}>Percent Daily Values (DV) are based on a 2,000 calorie diet.</p>
+            <p className="mt-3 text-[11px]" style={{ color: INK_MUTED }}>Percent Daily Values (DV) are based on a 2,000 calorie diet.</p>
           </div>
         )}
 
@@ -1041,7 +1041,7 @@ export default function RecipeDetailPage() {
             className="w-full p-3 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
             style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
           >
-            <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{ background: "#eeece8" }}>
+            <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{ background: CREAM_WARM }}>
               {recipe.image_url && <img src={recipe.image_url} alt="" className="w-full h-full object-cover" />}
               <span className="absolute inset-0 flex items-center justify-center">
                 <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PAPER, border: `2px solid ${INK}` }}>
@@ -1051,11 +1051,11 @@ export default function RecipeDetailPage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[14px] font-bold" style={{ color: INK }}>Original recipe</p>
-              <p className="text-[12px] capitalize" style={{ color: "#6B655C" }}>
+              <p className="text-[12px] capitalize" style={{ color: INK_SOFT }}>
                 {recipe.source_platform && recipe.source_platform !== "other" ? recipe.source_platform : "View original"}
               </p>
             </div>
-            <svg className="w-5 h-5 flex-shrink-0" style={{ color: "#6B655C" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
+            <svg className="w-5 h-5 flex-shrink-0" style={{ color: INK_SOFT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" /></svg>
           </button>
         )}
 
@@ -1068,9 +1068,9 @@ export default function RecipeDetailPage() {
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill={ratingCount > 0 ? MUSTARD : "none"} stroke={MUSTARD} strokeWidth={1.5}><path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" /></svg>
             <div className="min-w-0 flex-1">
               <p className="text-[14px] font-bold" style={{ color: INK }}>Reviews</p>
-              <p className="text-[12px]" style={{ color: "#6B655C" }}>{ratingCount > 0 ? `${ratingAvg.toFixed(1)} (${ratingCount})` : "Rate this recipe"}</p>
+              <p className="text-[12px]" style={{ color: INK_SOFT }}>{ratingCount > 0 ? `${ratingAvg.toFixed(1)} (${ratingCount})` : "Rate this recipe"}</p>
             </div>
-            <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#c5beb2" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+            <svg className="w-4 h-4 flex-shrink-0" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
           </button>
           {!isPublicView && (
             <button
@@ -1080,9 +1080,9 @@ export default function RecipeDetailPage() {
               <svg className="w-5 h-5 flex-shrink-0" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4m3 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-bold" style={{ color: INK }}>My Notes</p>
-                <p className="text-[12px] line-clamp-1" style={{ color: "#6B655C" }}>Add your notes, tips, or modifications</p>
+                <p className="text-[12px] line-clamp-1" style={{ color: INK_SOFT }}>Add your notes, tips, or modifications</p>
               </div>
-              <svg className="w-4 h-4 flex-shrink-0" style={{ color: "#c5beb2" }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+              <svg className="w-4 h-4 flex-shrink-0" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
             </button>
           )}
         </div>
@@ -1180,7 +1180,7 @@ export default function RecipeDetailPage() {
               }}
               disabled={alreadySaved || savingPublic}
               className="w-full active:scale-[0.98] transition-transform disabled:opacity-60"
-              style={{ background: alreadySaved ? "#94a394" : TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: "2.5px solid #171410", boxShadow: alreadySaved ? "none" : "0 10px 24px rgba(229,70,46,0.32)" }}
+              style={{ background: alreadySaved ? LIME : TOMATO, color: alreadySaved ? INK : PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 18, padding: "15px 0", borderRadius: 14, border: `2.5px solid ${INK}`, boxShadow: alreadySaved ? "none" : `3px 3px 0 ${INK}` }}
             >
               {alreadySaved ? "✓ In your kitchen" : savingPublic ? "Saving…" : "Save to my kitchen →"}
             </button>
@@ -1251,7 +1251,7 @@ export default function RecipeDetailPage() {
           <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setShowStepsModal(false)} />
           <div
             className="fixed left-0 right-0 bottom-0 z-[61] rounded-t-3xl"
-            style={{ background: "#FBF7EF", maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 20px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
+            style={{ background: PAPER, maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 20px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
           >
             <div className="max-w-3xl mx-auto px-5 pt-3">
               <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
@@ -1265,7 +1265,7 @@ export default function RecipeDetailPage() {
                 {steps.map((step, i) => (
                   <li key={i} className="flex gap-3.5">
                     <span className="w-7 h-7 rounded-full text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5" style={{ background: "var(--tomato, #E5462E)" }}>{i + 1}</span>
-                    <p className="text-[14px] leading-relaxed flex-1 pt-0.5" style={{ color: "#3a3530" }}>{step}</p>
+                    <p className="text-[14px] leading-relaxed flex-1 pt-0.5" style={{ color: INK_SOFT }}>{step}</p>
                   </li>
                 ))}
               </ol>
@@ -1289,14 +1289,14 @@ export default function RecipeDetailPage() {
           <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setShowRatingSheet(false)} />
           <div
             className="fixed left-0 right-0 bottom-0 z-[61] rounded-t-3xl"
-            style={{ background: "#FBF7EF", paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
+            style={{ background: PAPER, paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
           >
             <div className="max-w-md mx-auto px-5 pt-3">
               <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
               <h3 className="mb-1" style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: INK }}>
                 {ratingCount > 0 ? `${ratingAvg.toFixed(1)} · ${ratingCount} ${ratingCount === 1 ? "rating" : "ratings"}` : "Be the first to rate"}
               </h3>
-              <p className="text-[13px] mb-4" style={{ color: "#6B655C" }}>Tap a star to rate this recipe.</p>
+              <p className="text-[13px] mb-4" style={{ color: INK_SOFT }}>Tap a star to rate this recipe.</p>
               <RecipeRating recipeId={recipe.id} />
               <button onClick={() => setShowRatingSheet(false)} className="w-full mt-6 py-3.5 rounded-2xl font-semibold text-[14px] text-white active:scale-[0.98] transition-all" style={{ background: INK }}>Done</button>
             </div>
@@ -1310,7 +1310,7 @@ export default function RecipeDetailPage() {
           <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setShowNotesSheet(false)} />
           <div
             className="fixed left-0 right-0 bottom-0 z-[61] rounded-t-3xl"
-            style={{ background: "#FBF7EF", maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
+            style={{ background: PAPER, maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
           >
             <div className="max-w-md mx-auto px-5 pt-3">
               <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
