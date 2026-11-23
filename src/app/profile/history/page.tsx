@@ -4,7 +4,7 @@ import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
 import SubPageShell from "@/components/layout/SubPageShell";
 import { useToast } from "@/components/ui/Toast";
-import { INK, INK_MUTED, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
+import { CREAM_WARM, INK, INK_MUTED, INK_SOFT, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 /* Cooking history — every week gets its own section showing what you made
    (moved here from the profile hub's "Last week's cooking" card). Weeks are
@@ -106,7 +106,7 @@ export default function CookingHistoryPage() {
           <div className="text-center py-14 rounded-2xl px-6" style={CARD_STYLE}>
             <span className="text-4xl block mb-3">🍳</span>
             <p className="font-semibold text-[15px]" style={{ color: INK }}>No cooks logged yet</p>
-            <p className="text-[13px] mt-1.5" style={{ color: "#6B655C" }}>
+            <p className="text-[13px] mt-1.5" style={{ color: INK_SOFT }}>
               Confirm meals with &ldquo;Cooked it&rdquo; and every week will show up here.
             </p>
           </div>
@@ -163,7 +163,7 @@ export default function CookingHistoryPage() {
                   </div>
 
                   {/* Stats line */}
-                  <p className="px-4 pb-2.5 text-[11.5px]" style={{ color: "#8a8378" }}>
+                  <p className="px-4 pb-2.5 text-[11.5px]" style={{ color: INK_MUTED }}>
                     {week.totalCooks} {week.totalCooks === 1 ? "meal" : "meals"} · {distinct} {distinct === 1 ? "recipe" : "recipes"}
                     {week.tomatoesEarned > 0 && (
                       <span style={{ color: TOMATO_DARK, fontWeight: 600 }}> · +{week.tomatoesEarned} 🍅</span>
@@ -174,7 +174,7 @@ export default function CookingHistoryPage() {
                   <div className="flex gap-2.5 overflow-x-auto px-4 pb-4 scrollbar-hide">
                     {week.recipes.map((r) => (
                       <div key={r.id} className="flex-shrink-0" style={{ width: 76 }}>
-                        <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "1 / 1", background: "#E5D5B0" }}>
+                        <div className="relative w-full overflow-hidden rounded-xl" style={{ aspectRatio: "1 / 1", background: CREAM_WARM }}>
                           {r.image_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={r.image_url} alt={r.title} referrerPolicy="no-referrer" className="absolute inset-0 w-full h-full object-cover" />

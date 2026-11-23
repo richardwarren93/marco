@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, PAPER, TOMATO } from "@/lib/theme";
 
 interface PhotoUploadProps {
   onUploaded: (imageUrl: string, caption: string) => void;
@@ -57,11 +58,11 @@ export default function PhotoUpload({ onUploaded, onCancel }: PhotoUploadProps) 
   }
 
   return (
-    <div className="mt-3 bg-gray-50 rounded-xl p-3 animate-slide-up">
+    <div className="mt-3 p-3 animate-slide-up" style={{ background: CREAM_WARM, borderRadius: 12, border: `2px solid ${INK}` }}>
       {!preview ? (
         <button
           onClick={() => fileRef.current?.click()}
-          className="w-full py-6 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 text-sm hover:border-orange-300 hover:text-orange-500 transition-colors"
+          className="w-full py-6 text-sm active:scale-[0.99] transition-transform" style={{ background: PAPER, color: INK_SOFT, border: `2px dashed ${INK}`, borderRadius: 12 }}
         >
           📸 Tap to add a photo
         </button>
@@ -89,7 +90,7 @@ export default function PhotoUpload({ onUploaded, onCancel }: PhotoUploadProps) 
             onChange={(e) => setCaption(e.target.value)}
             placeholder="Add a caption..."
             rows={2}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 resize-none"
+            className="w-full px-3 py-2 text-sm outline-none resize-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
           />
         </div>
       )}
@@ -109,14 +110,14 @@ export default function PhotoUpload({ onUploaded, onCancel }: PhotoUploadProps) 
           <button
             onClick={handleUpload}
             disabled={uploading}
-            className="flex-1 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50"
+            className="flex-1 py-2 text-sm active:scale-[0.98] transition-transform disabled:opacity-50" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
           >
             {uploading ? "Saving..." : "Save Photo"}
           </button>
         )}
         <button
           onClick={onCancel}
-          className="px-4 py-2 text-gray-500 text-sm hover:text-gray-700"
+          className="px-4 py-2 text-sm" style={{ color: INK_MUTED }}
         >
           Skip
         </button>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import SubPageShell from "@/components/layout/SubPageShell";
-import { INK, PAPER, TOMATO } from "@/lib/theme";
+import { INK, INK_MUTED, INK_SOFT, PAPER, TOMATO } from "@/lib/theme";
 
 /* Notifications — permission status + enable. Mirrors the onboarding
    NotificationsStep request logic: Capacitor push on native, the Notification
@@ -80,7 +80,7 @@ export default function NotificationsPage() {
           >
             <span className="text-4xl block mb-3">{c.icon}</span>
             <p className="font-semibold text-[15.5px]" style={{ color: INK }}>{c.title}</p>
-            <p className="text-[13px] mt-1.5 leading-relaxed max-w-xs mx-auto" style={{ color: "#6B655C" }}>{c.body}</p>
+            <p className="text-[13px] mt-1.5 leading-relaxed max-w-xs mx-auto" style={{ color: INK_SOFT }}>{c.body}</p>
             {perm === "prompt" && (
               <button
                 onClick={handleEnable}
@@ -92,7 +92,7 @@ export default function NotificationsPage() {
               </button>
             )}
             {perm === "granted" && (
-              <p className="mt-4 text-[11.5px]" style={{ color: "#9b938a" }}>Turn off anytime in your device settings.</p>
+              <p className="mt-4 text-[11.5px]" style={{ color: INK_MUTED }}>Turn off anytime in your device settings.</p>
             )}
           </div>
         )}

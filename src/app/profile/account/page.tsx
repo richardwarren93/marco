@@ -132,8 +132,8 @@ export default function AccountPage() {
 
         {isGuest && upgradeSent && (
           <div className="p-4" style={{ background: LIME, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
-            <p className="text-sm font-bold" style={{ color: "#065f46" }}>📬 Check your email!</p>
-            <p className="text-xs mt-1 leading-relaxed" style={{ color: "#065f46" }}>
+            <p className="text-sm font-bold" style={{ color: INK }}>📬 Check your email!</p>
+            <p className="text-xs mt-1 leading-relaxed" style={{ color: INK_SOFT }}>
               We sent a confirmation link to <strong>{upgradeEmail}</strong>. Click it to finish securing your account.
             </p>
           </div>

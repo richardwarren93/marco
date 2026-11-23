@@ -6,7 +6,7 @@ import { TIER_COLORS, CATEGORY_LABELS } from "@/lib/badges";
 // Celebration pieces (BadgeIcon, Confetti, Sparkles, AchievementModal) live in
 // the shared celebrations module — BadgeChecker and the cook flow use them too.
 import { BadgeIcon } from "./celebrations";
-import { INK, MUSTARD, PAPER, TEAL, TOMATO } from "@/lib/theme";
+import { DISPLAY, INK, INK_MUTED, INK_SOFT, MUSTARD, PAPER, TEAL, TOMATO } from "@/lib/theme";
 
 // ─── Rarity colors for earned badges — Marco palette ────────────────────────
 // Bronze → tomato (primary punch) | Silver → teal (anchor) | Gold → mustard (energy)
@@ -86,10 +86,10 @@ function BadgeTile({ item, onClick, size = "normal" }: { item: BadgeProgress; on
       {/* Tier indicator — Marco palette dot */}
       {item.earned && (
         <div
-          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full border-2 border-white shadow-sm flex items-center justify-center"
-          style={{ background: rarity.dotBg }}
+          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full flex items-center justify-center"
+          style={{ background: rarity.dotBg, border: `1.5px solid ${INK}` }}
         >
-          <span className="text-[7px] text-white font-bold">{rarity.dotMark}</span>
+          <span className="text-[7px] font-bold" style={{ color: PAPER }}>{rarity.dotMark}</span>
         </div>
       )}
     </button>
@@ -104,7 +104,7 @@ function BadgeDetailModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
         <div className={`w-20 h-20 rounded-2xl mx-auto flex items-center justify-center mb-3 border-2 ${
           badge.earned
             ? `${TIER_COLORS[badge.badge.tier].bg} ${TIER_COLORS[badge.badge.tier].border}`
-            : "bg-gray-50 border-gray-200"
+            : "border-transparent"
         }`}>
           <BadgeIcon
             badge={badge.badge}
@@ -170,7 +170,7 @@ function BadgeDetailModal({ badge, onClose }: { badge: BadgeProgress; onClose: (
           </p>
         )}
 
-        <button onClick={onClose} className="mt-4 text-sm text-gray-400 hover:text-gray-600 font-medium">
+        <button onClick={onClose} className="mt-4 text-sm font-medium" style={{ color: INK_MUTED }}>
           Close
         </button>
       </div>
@@ -206,12 +206,12 @@ function AllBadgesModal({
     <>
       <div className="fixed inset-0 bg-black/50 z-[60] flex items-end sm:items-center sm:justify-center" onClick={onClose}>
         <div
-          className="bg-white w-full rounded-t-3xl sm:rounded-3xl sm:max-w-md max-h-[88dvh] flex flex-col animate-slide-up"
+          className="w-full sm:max-w-md max-h-[88dvh] flex flex-col animate-slide-up" style={{ background: PAPER, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTop: `2.5px solid ${INK}`, borderLeft: `2.5px solid ${INK}`, borderRight: `2.5px solid ${INK}` }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Handle */}
           <div className="flex justify-center pt-3 pb-1 flex-shrink-0 sm:hidden">
-            <div className="w-10 h-1 rounded-full bg-gray-200" />
+            <div className="w-10 h-1 rounded-full" style={{ background: INK, opacity: 0.25 }} />
           </div>
 
           {/* Header */}
@@ -276,7 +276,7 @@ function AllBadgesModal({
                       letterSpacing: "0.1em",
                       textTransform: "uppercase",
                       background: isActive ? "var(--tomato, #E5462E)" : "var(--cream-warm, #EFE5D2)",
-                      color: isActive ? "#fff" : "var(--ink-soft, #4A4742)",
+                      color: isActive ? PAPER : INK_SOFT,
                     }}
                   >
                     {cat === "all" ? "All" : CATEGORY_LABELS[cat]}
@@ -338,10 +338,10 @@ export default function BadgesCard() {
   if (loading) {
     return (
       <div className="p-5 animate-pulse" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
-        <div className="h-5 bg-gray-100 rounded w-28 mb-4" />
+        <div className="h-5 w-28 mb-4 skeleton-warm" style={{ borderRadius: 8 }} />
         <div className="grid grid-cols-4 gap-3">
           {[...Array(12)].map((_, i) => (
-            <div key={i} className="w-full aspect-square bg-gray-50 rounded-2xl" />
+            <div key={i} className="w-full aspect-square skeleton-warm" style={{ borderRadius: 16 }} />
           ))}
         </div>
       </div>
@@ -413,8 +413,7 @@ export default function BadgesCard() {
         <div className="px-4 pb-4 pt-1">
           <button
             onClick={() => setShowAll(true)}
-            className="w-full py-2.5 text-white text-sm font-medium rounded-xl transition-colors active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm hover:opacity-95"
-            style={{ background: "var(--tomato, #E5462E)" }}
+            className="w-full py-2.5 text-sm active:scale-[0.98] transition-transform flex items-center justify-center gap-2" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 3px 0 ${INK}` }}
           >
             View all badges
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

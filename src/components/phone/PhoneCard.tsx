@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useProfile } from "@/lib/hooks/use-data";
 import type { UserProfile } from "@/types";
-import { INK, INK_MUTED, PAPER, TOMATO } from "@/lib/theme";
+import { CREAM_WARM, DISPLAY, INK, INK_MUTED, MONO, PAPER, TOMATO } from "@/lib/theme";
 
 type Mode = "view" | "enter_phone" | "enter_code";
 
@@ -97,7 +97,7 @@ export default function PhoneCard() {
           <button
             onClick={handleUnlink}
             disabled={unlinking}
-            className="text-xs font-semibold text-gray-400 active:scale-95 transition-transform"
+            className="text-xs font-semibold active:scale-95 transition-transform" style={{ color: TOMATO }}
           >
             {unlinking ? "…" : "Unlink"}
           </button>
@@ -107,8 +107,8 @@ export default function PhoneCard() {
       {!verified && mode === "view" && (
         <button
           onClick={() => { setMode("enter_phone"); setError(""); setInfo(""); }}
-          className="mt-3 px-4 py-2 rounded-full text-xs font-bold text-white active:scale-95 transition-all"
-          style={{ background: TOMATO }}
+          className="mt-3 px-4 py-2 rounded-full text-xs active:scale-95 transition-transform"
+          style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
         >
           Verify your number
         </button>
@@ -124,7 +124,7 @@ export default function PhoneCard() {
             required
             placeholder="(555) 123-4567"
             autoFocus
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all"
+            className="w-full px-3 py-2.5 text-sm outline-none" style={{ background: CREAM_WARM, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
           />
           <p className="text-[11px] leading-relaxed" style={{ color: INK_MUTED }}>
             By tapping &quot;Send code&quot; you agree to receive transactional and conversational SMS from Marco
@@ -136,16 +136,16 @@ export default function PhoneCard() {
             <button
               type="submit"
               disabled={busy}
-              className="flex-1 py-2 rounded-xl font-bold text-sm text-white active:scale-[0.98] disabled:opacity-50 transition-all"
-              style={{ background: TOMATO }}
+              className="flex-1 py-2 text-sm active:scale-[0.98] disabled:opacity-50 transition-transform"
+              style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
             >
               {busy ? "Sending…" : "Send code"}
             </button>
             <button
               type="button"
               onClick={() => setMode("view")}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600"
-              style={{ background: "#eeecea" }}
+              className="px-4 py-2 text-sm active:scale-95 transition-transform"
+              style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
             >
               Cancel
             </button>
@@ -167,22 +167,22 @@ export default function PhoneCard() {
             required
             autoFocus
             placeholder="6-digit code"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-300 bg-gray-50 focus:bg-white transition-all tracking-widest text-center"
+            className="w-full px-3 py-2.5 text-sm outline-none tracking-widest text-center" style={{ background: CREAM_WARM, color: INK, border: `2px solid ${INK}`, borderRadius: 10, fontFamily: MONO }}
           />
           <div className="flex gap-2">
             <button
               type="submit"
               disabled={busy || code.length < 4}
-              className="flex-1 py-2 rounded-xl font-bold text-sm text-white active:scale-[0.98] disabled:opacity-50 transition-all"
-              style={{ background: TOMATO }}
+              className="flex-1 py-2 text-sm active:scale-[0.98] disabled:opacity-50 transition-transform"
+              style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
             >
               {busy ? "Verifying…" : "Verify"}
             </button>
             <button
               type="button"
               onClick={() => { setMode("enter_phone"); setCode(""); }}
-              className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-600"
-              style={{ background: "#eeecea" }}
+              className="px-4 py-2 text-sm active:scale-95 transition-transform"
+              style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
             >
               Back
             </button>
