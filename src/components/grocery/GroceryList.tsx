@@ -10,7 +10,7 @@ import SharedRecipeCard from "@/components/recipes/SharedRecipeCard";
 import AddItemSheet from "./AddItemSheet";
 import EditItemSheet from "./EditItemSheet";
 import OrderOnlineSheet from "./OrderOnlineSheet";
-import { DISPLAY, HAND, INK, INK_MUTED, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
+import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, SURFACE, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 // ─── Category config ──────────────────────────────────────────────────────────
 const CATEGORY_CONFIG: Record<string, { label: string; emoji: string }> = {
@@ -562,7 +562,7 @@ export default function GroceryList() {
           <div className="flex items-center gap-1">
             <button
               onClick={() => navigateWeek(-7)}
-              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-black/5"
               style={{ color: "#888" }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -572,7 +572,7 @@ export default function GroceryList() {
             <span className="text-base whitespace-nowrap" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
             <button
               onClick={() => navigateWeek(7)}
-              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-black/5"
               style={{ color: "#888" }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -584,7 +584,7 @@ export default function GroceryList() {
             <div className="relative">
               <button
                 onClick={() => setRangePickerOpen((v) => !v)}
-                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-gray-100"
+                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-black/5"
                 style={{ color: rangePickerOpen ? TOMATO : "#888", background: rangePickerOpen ? "#ebebea" : "transparent" }}
                 aria-label="Select date range"
               >
@@ -598,8 +598,8 @@ export default function GroceryList() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setRangePickerOpen(false)} />
                   <div
-                    className="absolute right-0 top-full mt-1 w-56 bg-white rounded-xl overflow-hidden z-50 py-1"
-                    style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.12), 0 0 0 1px rgba(0,0,0,0.06)" }}
+                    className="absolute right-0 top-full mt-1.5 w-56 overflow-hidden z-50 py-1"
+                    style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
                   >
                     {(["this_week", "next_week", "custom"] as RangePreset[]).map((preset) => (
                       <button
@@ -610,8 +610,8 @@ export default function GroceryList() {
                         }}
                         className={`w-full text-left px-4 py-2.5 text-sm transition-colors ${
                           rangePreset === preset
-                            ? "text-orange-600 bg-orange-50 font-medium"
-                            : "text-gray-700 hover:bg-gray-50"
+                            ? "font-bold"
+                            : "active:bg-black/5"
                         }`}
                       >
                         {preset === "this_week" ? "This week" : preset === "next_week" ? "Next week" : "Custom range"}
@@ -619,9 +619,9 @@ export default function GroceryList() {
                     ))}
 
                     {rangePreset === "custom" && (
-                      <div className="px-4 pb-3 pt-1 border-t border-gray-100 space-y-2">
+                      <div className="px-4 pb-3 pt-1 space-y-2" style={{ borderTop: `1.5px solid ${INK}` }}>
                         <div>
-                          <label className="block text-[11px] text-gray-400 mb-1">From</label>
+                          <label className="block text-[10px] uppercase tracking-[0.14em] mb-1" style={{ color: INK_MUTED, fontWeight: 700 }}>From</label>
                           <input
                             type="date"
                             value={customRange.start}
@@ -629,22 +629,22 @@ export default function GroceryList() {
                               const start = e.target.value;
                               setCustomRange((r) => ({ start, end: r.end < start ? addDays(start, 6) : r.end }));
                             }}
-                            className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
+                            className="w-full text-xs px-2.5 py-1.5 outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 9 }}
                           />
                         </div>
                         <div>
-                          <label className="block text-[11px] text-gray-400 mb-1">To</label>
+                          <label className="block text-[10px] uppercase tracking-[0.14em] mb-1" style={{ color: INK_MUTED, fontWeight: 700 }}>To</label>
                           <input
                             type="date"
                             value={customRange.end}
                             min={customRange.start}
                             onChange={(e) => setCustomRange((r) => ({ ...r, end: e.target.value }))}
-                            className="w-full text-xs px-2.5 py-1.5 border border-gray-200 rounded-lg bg-gray-50 outline-none focus:ring-1 focus:ring-orange-300"
+                            className="w-full text-xs px-2.5 py-1.5 outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 9 }}
                           />
                         </div>
                         <button
                           onClick={() => setRangePickerOpen(false)}
-                          className="w-full text-xs font-medium text-white bg-orange-500 rounded-lg py-1.5"
+                          className="w-full text-xs py-1.5 active:scale-95 transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 9 }}
                         >
                           Apply
                         </button>
@@ -679,7 +679,7 @@ export default function GroceryList() {
       <div className="max-w-3xl mx-auto">
 
       {error && (
-        <div className="mx-4 mt-3 px-4 py-2.5 bg-red-50 border border-red-100 rounded-xl text-sm text-red-600">
+        <div className="mx-4 mt-3 px-4 py-2.5 text-sm" style={{ background: "rgba(229,70,46,0.12)", color: TOMATO_DARK, border: `2px solid ${INK}`, borderRadius: 12 }}>
           {error}
         </div>
       )}
@@ -825,22 +825,22 @@ export default function GroceryList() {
         const annualSavings = costSummary.annual_cashback;
         const progressPct = Math.min((thisRunSavings / annualSavings) * 100, 100);
         return (
-          <div className="mx-4 mt-3 mb-2 p-4 rounded-2xl bg-white border border-gray-100" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+          <div className="mx-4 mt-3 mb-2 p-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             {/* Estimated cost */}
             <div className="flex items-baseline justify-between mb-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">This week&apos;s groceries</p>
-              <p className="text-base font-bold text-gray-900 tabular-nums">
+              <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>This week&apos;s groceries</p>
+              <p className="tabular-nums" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>
                 ${Math.round(costSummary.total_low)}&ndash;${Math.round(costSummary.total_high)}
               </p>
             </div>
 
             {/* Savings — this run on left, annual on right */}
             <div className="flex items-baseline justify-between mb-1.5">
-              <p className="text-xs font-semibold text-green-500 tabular-nums">
+              <p className="text-xs tabular-nums" style={{ color: INK_SOFT, fontWeight: 700 }}>
                 +${thisRunSavings.toFixed(2)} this run
               </p>
-              <p className="text-sm font-bold text-green-600">
-                ${Math.round(annualSavings).toLocaleString()}<span className="text-xs font-semibold text-green-500">/year</span>
+              <p className="text-sm" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>
+                ${Math.round(annualSavings).toLocaleString()}<span className="text-xs" style={{ color: INK_SOFT, fontWeight: 700 }}>/year</span>
               </p>
             </div>
 
@@ -854,14 +854,14 @@ export default function GroceryList() {
                 }}
               />
             </div>
-            <p className="text-[10px] text-gray-400 mt-1.5">Earn back on every grocery run &middot; Updates as you plan</p>
+            <p className="text-[10px] mt-1.5" style={{ color: INK_MUTED }}>Earn back on every grocery run &middot; Updates as you plan</p>
           </div>
         );
       })()}
       {costLoading && toBuyItems.length > 0 && !costSummary && (
-        <div className="mx-4 mt-3 mb-2 p-3.5 rounded-2xl bg-white border border-gray-100 flex items-center justify-center gap-2" style={{ boxShadow: "0 2px 12px rgba(0,0,0,0.04)" }}>
+        <div className="mx-4 mt-3 mb-2 p-3.5 flex items-center justify-center gap-2" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
           <div className="w-3.5 h-3.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-gray-400 font-medium">Calculating cost...</span>
+          <span className="text-xs font-medium" style={{ color: INK_MUTED }}>Calculating cost…</span>
         </div>
       )}
 
@@ -870,7 +870,7 @@ export default function GroceryList() {
         <div className="mx-4 mt-3 space-y-3">
           {[1, 2, 3].map((n) => (
             <div key={n} className="rounded-3xl overflow-hidden" style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-              <div className="p-4 bg-white">
+              <div className="p-4" style={{ background: PAPER }}>
                 <div className="h-2.5 w-20 skeleton-warm rounded-full mb-4" />
                 <div className="space-y-3">
                   {[1, 2].map((m) => (
@@ -962,7 +962,7 @@ export default function GroceryList() {
                     <span
                       role="button"
                       onClick={(e) => { e.stopPropagation(); setAddSheetOpen(true); }}
-                      className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-full active:bg-black/5 transition-colors"
                       style={{ color: "var(--ink-soft, #4A4742)" }}
                     >
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1001,8 +1001,8 @@ export default function GroceryList() {
           {/* Cost estimate result */}
           {costEstimate && (
             <div
-              className="bg-white rounded-3xl overflow-hidden"
-              style={{ boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
+              className="overflow-hidden"
+              style={{ background: PAPER, borderRadius: 20, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
             >
               <div className="px-4 pt-4 pb-2">
                 <div className="flex items-center justify-between">
@@ -1011,7 +1011,7 @@ export default function GroceryList() {
                   </h3>
                   <button
                     onClick={() => setCostEstimate(null)}
-                    className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+                    className="w-6 h-6 flex items-center justify-center rounded-full active:bg-black/5 transition-colors"
                     style={{ color: "#c0b8b0" }}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -1020,15 +1020,15 @@ export default function GroceryList() {
                   </button>
                 </div>
                 <div className="flex items-baseline gap-1 mt-2">
-                  <span className="text-2xl font-bold text-gray-800">
+                  <span style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 26 }}>
                     ${costEstimate.total_low.toFixed(0)}
                   </span>
-                  <span className="text-lg text-gray-400 font-medium">
+                  <span className="text-lg font-medium" style={{ color: INK_MUTED }}>
                     &ndash; ${costEstimate.total_high.toFixed(0)}
                   </span>
                 </div>
                 {costEstimate.notes && (
-                  <p className="text-[11px] text-gray-400 mt-1">{costEstimate.notes}</p>
+                  <p className="text-[11px] mt-1" style={{ color: INK_MUTED }}>{costEstimate.notes}</p>
                 )}
               </div>
               <div className="px-4 pb-2 pt-1">
@@ -1038,10 +1038,10 @@ export default function GroceryList() {
                     className="flex items-center justify-between py-1.5"
                     style={idx < costEstimate.items.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
                   >
-                    <span className="text-[13px] text-gray-600 capitalize truncate flex-1 min-w-0 mr-2">
+                    <span className="text-[13px] capitalize truncate flex-1 min-w-0 mr-2" style={{ color: INK_SOFT }}>
                       {ci.name}
                     </span>
-                    <span className="text-[12px] text-gray-400 flex-shrink-0 tabular-nums">
+                    <span className="text-[12px] flex-shrink-0 tabular-nums" style={{ color: INK_MUTED }}>
                       ${ci.estimate_low.toFixed(2)} &ndash; ${ci.estimate_high.toFixed(2)}
                     </span>
                   </div>
@@ -1053,10 +1053,10 @@ export default function GroceryList() {
                   className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl"
                   style={{ background: "#f5f3f0" }}
                 >
-                  <svg className="w-4.5 h-4.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={INK_MUTED} strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
                   </svg>
-                  <span className="text-sm font-medium text-gray-400">Online ordering coming soon</span>
+                  <span className="text-sm font-medium" style={{ color: INK_MUTED }}>Online ordering coming soon</span>
                 </div>
               </div>
             </div>
@@ -1071,7 +1071,7 @@ export default function GroceryList() {
       {generating && (
         <div className="mx-4 mt-3 flex items-center justify-center gap-2 py-4">
           <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-medium text-gray-500">Updating list\u2026</p>
+          <p className="text-xs font-medium" style={{ color: INK_SOFT }}>Updating list…</p>
         </div>
       )}
 

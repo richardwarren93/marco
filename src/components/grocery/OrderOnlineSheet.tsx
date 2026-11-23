@@ -2,31 +2,28 @@
 
 import { useState, useMemo } from "react";
 import type { GroceryItem as GroceryItemType } from "@/types";
+import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 // ─── Category config (mirrored from GroceryList) ────────────────────────────
-const CATEGORY_CONFIG: Record<string, { label: string; color: string }> = {
-  produce:   { label: "Fresh Produce",        color: "text-green-600" },
-  protein:   { label: "Meat & Protein",       color: "text-red-600" },
-  dairy:     { label: "Dairy, Eggs & Fridge",  color: "text-blue-600" },
-  pantry:    { label: "Pantry Staples",        color: "text-amber-700" },
-  canned:    { label: "Pantry Staples",        color: "text-amber-700" },
-  spices:    { label: "Condiments & Sauces",   color: "text-orange-600" },
-  spice:     { label: "Condiments & Sauces",   color: "text-orange-600" },
-  condiment: { label: "Condiments & Sauces",   color: "text-orange-600" },
-  frozen:    { label: "Frozen",               color: "text-cyan-600" },
-  bakery:    { label: "Bakery & Bread",        color: "text-yellow-700" },
-  grain:     { label: "Pasta, Grains & Legumes", color: "text-yellow-700" },
-  other:     { label: "Other",                color: "text-gray-600" },
+const CATEGORY_CONFIG: Record<string, { label: string }> = {
+  produce:   { label: "Fresh Produce" },
+  protein:   { label: "Meat & Protein" },
+  dairy:     { label: "Dairy, Eggs & Fridge" },
+  pantry:    { label: "Pantry Staples" },
+  canned:    { label: "Pantry Staples" },
+  spices:    { label: "Condiments & Sauces" },
+  spice:     { label: "Condiments & Sauces" },
+  condiment: { label: "Condiments & Sauces" },
+  frozen:    { label: "Frozen" },
+  bakery:    { label: "Bakery & Bread" },
+  grain:     { label: "Pasta, Grains & Legumes" },
+  other:     { label: "Other" },
 };
 
 const CATEGORY_SORT = ["produce", "protein", "dairy", "pantry", "canned", "spices", "spice", "condiment", "frozen", "bakery", "grain", "other"];
 
 function catLabel(cat: string | null) {
   return CATEGORY_CONFIG[cat || "other"]?.label || "Other";
-}
-
-function catColor(cat: string | null) {
-  return CATEGORY_CONFIG[cat || "other"]?.color || "text-gray-600";
 }
 
 function catSort(cat: string | null) {
@@ -264,27 +261,27 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
   return (
     // z-[60] to overlay above bottom tab bar (z-50)
     // Full-screen takeover on mobile to avoid iOS Safari bottom bar clipping
-    <div className="fixed inset-0 z-[60] flex flex-col bg-white sm:inset-4 sm:rounded-2xl sm:shadow-2xl sm:max-w-2xl sm:mx-auto sm:my-auto sm:max-h-[90vh]">
+    <div className="fixed inset-0 z-[60] flex flex-col sm:inset-4 sm:max-w-2xl sm:mx-auto sm:my-auto sm:max-h-[90vh]" style={{ background: PAPER }}>
       {/* No backdrop — full screen page */}
 
         {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-100 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 pt-5 pb-3 flex-shrink-0" style={{ borderBottom: `2.5px solid ${INK}` }}>
           <button
             onClick={step === "store" ? () => setStep("select") : onClose}
-            className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
           >
-            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h2 className="text-base font-bold text-gray-900">
+          <h2 style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>
             {step === "select" ? "Select items" : "Choose store"}
           </h2>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
           >
-            <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -297,11 +294,12 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
               {/* Select all */}
               <button
                 onClick={toggleAll}
-                className="flex items-center gap-2.5 mb-3 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2.5 mb-3 text-sm font-medium transition-colors" style={{ color: INK_SOFT }}
               >
-                <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
-                  allSelected ? "bg-orange-500 border-orange-500" : "border-gray-300"
-                }`}>
+                <div
+                  className="w-5 h-5 flex items-center justify-center transition-all"
+                  style={{ background: allSelected ? TOMATO : PAPER, border: `2px solid ${INK}`, borderRadius: 6, opacity: allSelected ? 1 : 0.5 }}
+                >
                   {allSelected && (
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -315,7 +313,7 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
               <div className="space-y-4">
                 {grouped.map(([cat, catItems]) => (
                   <div key={cat}>
-                    <h3 className={`text-xs font-bold uppercase tracking-wider mb-2 ${catColor(cat)}`}>
+                    <h3 className="text-[10px] uppercase tracking-[0.16em] mb-2" style={{ color: INK_MUTED, fontWeight: 700 }}>
                       {catLabel(cat)}
                     </h3>
                     <div className="space-y-1">
@@ -334,13 +332,13 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
                               isSelected ? "bg-gray-50" : "bg-white opacity-50"
                             }`}
                           >
-                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-lg flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-lg flex-shrink-0" style={{ background: CREAM_WARM, border: `2px solid ${INK}` }}>
                               {emoji || "🛒"}
                             </div>
                             <div className="flex-1 text-left">
-                              <p className="text-sm font-medium text-gray-900">{displayName}</p>
+                              <p className="text-sm" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{displayName}</p>
                               {(displayAmount || displayUnit) && (
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs" style={{ color: INK_SOFT }}>
                                   {[displayAmount, displayUnit].filter(Boolean).join(" ")}
                                 </p>
                               )}
@@ -364,11 +362,11 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
             </div>
 
             {/* Next button — sticky at bottom with generous padding for iOS */}
-            <div className="px-5 pt-4 pb-8 border-t border-gray-100 flex-shrink-0 bg-white">
+            <div className="px-5 pt-4 pb-8 flex-shrink-0" style={{ background: PAPER, borderTop: `2.5px solid ${INK}` }}>
               <button
                 onClick={() => setStep("store")}
                 disabled={selectedCount === 0}
-                className="w-full py-3.5 bg-orange-500 text-white font-bold text-sm rounded-2xl hover:bg-orange-600 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed shadow-sm"
+                className="w-full py-3.5 text-sm active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `4px 4px 0 ${INK}` }}
               >
                 Next ({selectedCount} item{selectedCount !== 1 ? "s" : ""})
               </button>
@@ -419,13 +417,13 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
                             Coming soon!
                           </span>
                         ) : isSelected ? (
-                          <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
+                          <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ background: TOMATO, border: `2px solid ${INK}` }}>
                             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
                         ) : (
-                          <div className="w-6 h-6 rounded-full border-2 border-gray-300" />
+                          <div className="w-6 h-6 rounded-full" style={{ border: `2px solid ${INK}`, opacity: 0.35 }} />
                         )}
                       </div>
                     </button>
@@ -434,22 +432,22 @@ export default function OrderOnlineSheet({ isOpen, onClose, items }: Props) {
               </div>
 
               {/* Info note */}
-              <div className="mt-5 px-4 py-3 bg-gray-50 rounded-xl">
-                <p className="text-xs text-gray-500 text-center">
+              <div className="mt-5 px-4 py-3" style={{ background: CREAM_WARM, border: `2px solid ${INK}`, borderRadius: 12 }}>
+                <p className="text-xs text-center" style={{ color: INK_SOFT }}>
                   Your grocery list will be copied to clipboard so you can easily paste it in the store app.
                 </p>
               </div>
 
-              <p className="text-center text-sm text-gray-400 mt-4">
+              <p className="text-center text-sm mt-4" style={{ color: INK_MUTED }}>
                 Don&apos;t see your store?{" "}
-                <a href="mailto:support@marco-app.com" className="text-orange-500 font-medium hover:underline">
+                <a href="mailto:support@marco-app.com" className="font-semibold underline" style={{ color: TOMATO }}>
                   Tell us here.
                 </a>
               </p>
             </div>
 
             {/* Continue button — generous padding for iOS */}
-            <div className="px-5 pt-4 pb-8 border-t border-gray-100 flex-shrink-0 bg-white">
+            <div className="px-5 pt-4 pb-8 flex-shrink-0" style={{ background: PAPER, borderTop: `2.5px solid ${INK}` }}>
               <button
                 onClick={handleContinueToStore}
                 disabled={!STORES.find((s) => s.id === selectedStore)?.available || loading}
