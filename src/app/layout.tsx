@@ -3,8 +3,7 @@ import { Geist, Fraunces, Caveat } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import AppMain from "@/components/layout/AppMain";
-import MarcoDock from "@/components/layout/MarcoDock";
-import MarcoGuide from "@/components/guide/MarcoGuide";
+import AppChrome from "@/components/layout/AppChrome";
 import Providers from "@/components/ui/Providers";
 import { CREAM } from "@/lib/theme";
 
@@ -95,8 +94,7 @@ export default function RootLayout({
         `}</Script>
 <Providers>
         <AppMain>{children}</AppMain>
-        <MarcoDock />
-        <MarcoGuide />
+        <AppChrome />
 </Providers>
       </body>
     </html>
