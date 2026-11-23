@@ -9,7 +9,7 @@
 // Reduced Motion is honoured globally by <MotionConfig reducedMotion="user">.
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion, useDragControls } from "motion/react";
+import { AnimatePresence, motion, MotionConfig, useDragControls } from "motion/react";
 import { SPRING_SHEET } from "@/lib/motion";
 import { INK, PAPER } from "@/lib/theme";
 
@@ -53,6 +53,8 @@ export default function MotionSheet({
   }, [open, dismissable, onClose]);
 
   return (
+    // Reduce Motion lives with the animations now, not in Providers.
+    <MotionConfig reducedMotion="user">
     <AnimatePresence onExitComplete={() => { opener.current?.focus?.({ preventScroll: true }); opener.current = null; }}>
       {open && (
         <motion.div
@@ -102,6 +104,7 @@ export default function MotionSheet({
         </motion.div>
       )}
     </AnimatePresence>
+    </MotionConfig>
   );
 }
 

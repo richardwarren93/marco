@@ -1,7 +1,6 @@
 "use client";
 
 import { SWRConfig, mutate } from "swr";
-import { MotionConfig } from "motion/react";
 import type { AuthChangeEvent, Session } from "@supabase/supabase-js";
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -29,16 +28,16 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         fetcher: (url: string) => fetch(url).then((r) => r.json()),
       }}
     >
-      {/* Every Motion animation honours the phone's Reduce Motion setting. */}
-      <MotionConfig reducedMotion="user">
-        <ToastProvider>
-          <BadgeChecker />
-          <PendingInvites />
-          <PushNotificationManager />
-          <PurchasesManager />
-          {children}
-        </ToastProvider>
-      </MotionConfig>
+      {/* Reduce Motion is honoured by the MotionConfig that now sits with the
+          animations themselves (ToastLayer, AppChromeInner) — keeping it here
+          meant importing motion into every route that never animates. */}
+      <ToastProvider>
+        <BadgeChecker />
+        <PendingInvites />
+        <PushNotificationManager />
+        <PurchasesManager />
+        {children}
+      </ToastProvider>
     </SWRConfig>
   );
 }
