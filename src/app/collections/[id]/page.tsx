@@ -571,7 +571,7 @@ function AddRecipesSheet({
   const hasAdded = addedIds.size > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col">
+    <div className="fixed inset-0 z-[60] flex flex-col">
       <div className="absolute inset-0 bg-black/50" onClick={hasAdded ? onAdded : onClose} />
       <div className="relative mt-auto bg-white rounded-t-2xl shadow-xl max-h-[85vh] flex flex-col animate-slide-up">
         {/* Header */}
