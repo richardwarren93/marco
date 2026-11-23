@@ -27,7 +27,7 @@ import CoordinationView from "./CoordinationView";
 import SwipeToDelete from "@/components/ui/SwipeToDelete";
 import { GroceryIcon } from "@/components/icons/HandDrawnIcons";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
-import { DISPLAY, HAND, INK, INK_SOFT, LIME, PAPER, TOMATO } from "@/lib/theme";
+import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 // ─── Theme ────────────────────────────────────────────────────────────────────
 const ACCENT = TOMATO;          // Marco tomato — the app's primary
@@ -1258,7 +1258,7 @@ export default function MealPlanListView({
           <div className="flex items-center gap-1">
             <button
               onClick={() => changeWeek(addDays(weekStart, -7))}
-              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-black/5"
               style={{ color: TEXT_2 }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -1268,7 +1268,7 @@ export default function MealPlanListView({
             <span className="text-base whitespace-nowrap" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, letterSpacing: "-0.01em" }}>{weekLabel}</span>
             <button
               onClick={() => changeWeek(addDays(weekStart, 7))}
-              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-gray-100"
+              className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-black/5"
               style={{ color: TEXT_2 }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>

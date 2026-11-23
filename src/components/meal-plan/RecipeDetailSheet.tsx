@@ -2,6 +2,7 @@
 
 import type { Recipe, Ingredient } from "@/types";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
+import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 export default function RecipeDetailSheet({
   isOpen,
@@ -27,7 +28,7 @@ export default function RecipeDetailSheet({
       {/* Hero image */}
       <div className="relative flex-shrink-0">
         {recipe.image_url ? (
-          <div className="h-56 sm:h-72 bg-gray-100 relative">
+          <div className="h-56 sm:h-72 relative" style={{ background: CREAM_WARM }}>
             <img
               src={recipe.image_url}
               alt={recipe.title}
@@ -44,9 +45,9 @@ export default function RecipeDetailSheet({
         {/* Back button */}
         <button
           onClick={onClose}
-          className="absolute top-4 left-4 w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors z-10"
+          className="absolute top-4 left-4 w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform z-10" style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
         >
-          <svg className="w-4.5 h-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <svg className="w-4.5 h-4.5" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -55,13 +56,13 @@ export default function RecipeDetailSheet({
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto px-4 pb-8 -mt-4">
         {/* Title card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-3">
-          <h1 className="text-xl font-bold text-gray-900 leading-tight">
+        <div className="p-4 space-y-3" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+          <h1 style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 21, lineHeight: 1.15 }}>
             {recipe.title}
           </h1>
 
           {recipe.description && (
-            <p className="text-sm text-gray-500 leading-relaxed">{recipe.description}</p>
+            <p className="text-sm leading-relaxed" style={{ color: INK_SOFT }}>{recipe.description}</p>
           )}
 
           {/* Stats row */}
@@ -77,7 +78,7 @@ export default function RecipeDetailSheet({
               </span>
             )}
             {totalTime > 0 && (
-              <span className="text-xs text-gray-500 flex items-center gap-1">
+              <span className="text-xs flex items-center gap-1" style={{ color: INK_SOFT }}>
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -87,7 +88,7 @@ export default function RecipeDetailSheet({
               </span>
             )}
             {recipe.servings && (
-              <span className="text-xs text-gray-500">
+              <span className="text-xs" style={{ color: INK_SOFT }}>
                 👤 {recipe.servings} servings
               </span>
             )}
@@ -99,7 +100,7 @@ export default function RecipeDetailSheet({
               {(recipe.tags || []).map((tag) => (
                 <span
                   key={tag}
-                  className="px-2.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-[11px] font-medium"
+                  className="px-2.5 py-0.5 text-[11px]" style={{ background: PAPER, color: INK, fontWeight: 600, border: `1.5px solid ${INK}`, borderRadius: 99 }}
                 >
                   {tag}
                 </span>
@@ -110,18 +111,18 @@ export default function RecipeDetailSheet({
 
         {/* Ingredients */}
         {ingredients.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mt-3">
-            <h2 className="text-sm font-bold text-gray-900 mb-3">Ingredients</h2>
+          <div className="p-4 mt-3" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+            <h2 className="mb-3" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 15 }}>Ingredients</h2>
             <ul className="space-y-2.5">
               {ingredients.map((ing, i) => (
                 <li key={i} className="flex items-baseline gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-orange-400 flex-shrink-0 mt-1.5" />
-                  <span className="text-sm text-gray-800">
+                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: TOMATO }} />
+                  <span className="text-sm" style={{ color: INK }}>
                     {ing.amount && (
                       <span className="font-semibold">{ing.amount} </span>
                     )}
                     {ing.unit && (
-                      <span className="text-gray-500">{ing.unit} </span>
+                      <span style={{ color: INK_SOFT }}>{ing.unit} </span>
                     )}
                     {ing.name}
                   </span>
@@ -133,8 +134,8 @@ export default function RecipeDetailSheet({
 
         {/* Steps */}
         {steps.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mt-3">
-            <h2 className="text-sm font-bold text-gray-900 mb-3">Steps</h2>
+          <div className="p-4 mt-3" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+            <h2 className="mb-3" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 15 }}>Steps</h2>
             <ol className="space-y-4">
               {steps.map((step, i) => (
                 <li key={i} className="flex gap-3">

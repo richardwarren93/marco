@@ -8,7 +8,7 @@ import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import { useToast } from "@/components/ui/Toast";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import TomatoFlourish from "@/components/brand/TomatoFlourish";
-import { INK, INK_MUTED, TOMATO } from "@/lib/theme";
+import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 // ─── Theme ─────────────────────────────────────────────────────────────────────
 const ACCENT = TOMATO;
@@ -71,7 +71,7 @@ function RecipeRow({
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+    <p className="text-[10px] uppercase tracking-[0.16em] mb-1" style={{ color: INK_MUTED, fontWeight: 700 }}>
       {children}
     </p>
   );
@@ -332,22 +332,21 @@ export default function AddMealSheet({
     return (
       <div className="fixed inset-0 bg-black/40 z-[60]" onClick={exitSearchMode}>
         <div
-          className="fixed left-0 right-0 bg-white flex flex-col shadow-xl overflow-hidden sm:max-w-lg sm:mx-auto sm:rounded-2xl"
-          style={sheetStyle}
+          className="fixed left-0 right-0 flex flex-col overflow-hidden sm:max-w-lg sm:mx-auto" style={{ background: PAPER, borderTop: `2.5px solid ${INK}`, ...(sheetStyle) }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="flex items-center gap-2 px-4 pt-4 pb-2 flex-shrink-0">
-            <button onClick={exitSearchMode} className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors flex-shrink-0">
-              <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <button onClick={exitSearchMode} className="w-8 h-8 flex items-center justify-center rounded-full active:bg-black/5 transition-colors flex-shrink-0">
+              <svg className="w-5 h-5" style={{ color: INK_SOFT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div className="flex gap-1.5 flex-1 min-w-0">
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-gray-600 truncate" style={{ background: "#f0f0ee" }}>
+              <span className="inline-flex items-center px-2.5 py-1 text-xs truncate" style={{ background: PAPER, color: INK, fontWeight: 600, border: `1.5px solid ${INK}`, borderRadius: 99 }}>
                 {mealTypeLabel}
               </span>
-              <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-gray-600" style={{ background: "#f0f0ee" }}>
+              <span className="inline-flex items-center px-2.5 py-1 text-xs" style={{ background: PAPER, color: INK, fontWeight: 600, border: `1.5px solid ${INK}`, borderRadius: 99 }}>
                 {selectedDateLabel}
               </span>
             </div>
@@ -356,7 +355,7 @@ export default function AddMealSheet({
           {/* Search input */}
           <div className="px-4 pb-2 flex-shrink-0">
             <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
@@ -365,13 +364,12 @@ export default function AddMealSheet({
                 value={recipeSearch}
                 onChange={(e) => setRecipeSearch(e.target.value)}
                 placeholder="Search your recipes…"
-                className="w-full pl-9 pr-3 py-2.5 rounded-xl text-sm outline-none focus:ring-2 focus:bg-white transition-all"
-                style={{ background: "#f3f3f1" }}
+                className="w-full pl-9 pr-3 py-2.5 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
                 autoComplete="off"
                 autoFocus
               />
               {recipeSearch && (
-                <button onClick={() => setRecipeSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full bg-gray-300 hover:bg-gray-400 transition-colors">
+                <button onClick={() => setRecipeSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center rounded-full active:scale-90 transition-transform" style={{ background: INK, opacity: 0.45 }}>
                   <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
@@ -391,7 +389,7 @@ export default function AddMealSheet({
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-sm text-gray-400">No recipes match &ldquo;{query}&rdquo;</p>
+                  <p className="text-sm" style={{ color: INK_MUTED }}>No recipes match &ldquo;{query}&rdquo;</p>
                 </div>
               )
             ) : (
@@ -451,12 +449,12 @@ export default function AddMealSheet({
     <div className="fixed inset-0 bg-black/40 z-[60] flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
       <div
         ref={sheetRef}
-        className="bg-white w-full rounded-t-3xl max-h-[88dvh] flex flex-col shadow-xl sm:max-w-lg sm:rounded-2xl"
+        className="w-full max-h-[88dvh] flex flex-col sm:max-w-lg" style={{ background: PAPER, borderTopLeftRadius: 22, borderTopRightRadius: 22, borderTop: `2.5px solid ${INK}`, borderLeft: `2.5px solid ${INK}`, borderRight: `2.5px solid ${INK}` }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: INK, opacity: 0.25 }} />
         </div>
 
         {/* Body */}
@@ -464,18 +462,23 @@ export default function AddMealSheet({
 
           {/* Meal type */}
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Meal type</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>Meal type</p>
             <div className="flex gap-1.5">
               {MEAL_TYPES.map((mt) => (
                 <button
                   key={mt}
                   onClick={() => toggleMealType(mt)}
-                  className="flex-1 py-1.5 rounded-full text-xs font-semibold capitalize transition-colors border"
-                  style={
-                    selectedMealTypes.has(mt)
-                      ? { background: INK, color: "white", borderColor: INK }
-                      : { background: "#f3f3f1", color: "#888", borderColor: "#f3f3f1" }
-                  }
+                  className="flex-1 py-1.5 text-xs capitalize active:scale-95 transition-transform"
+                  style={{
+                    background: selectedMealTypes.has(mt) ? INK : PAPER,
+                    color: selectedMealTypes.has(mt) ? PAPER : INK,
+                    fontFamily: DISPLAY,
+                    fontWeight: 700,
+                    border: `2px solid ${INK}`,
+                    borderRadius: 99,
+                    boxShadow: selectedMealTypes.has(mt) ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+                    transform: selectedMealTypes.has(mt) ? "translate(1px, 1px)" : undefined,
+                  }}
                 >
                   {mt}
                 </button>
@@ -486,26 +489,26 @@ export default function AddMealSheet({
           {/* When */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">When</p>
+              <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>When</p>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setWeekOffset((o) => Math.max(0, o - 1))}
                   disabled={weekOffset === 0}
                   aria-label="Previous week"
-                  className="w-6 h-6 rounded-full flex items-center justify-center disabled:opacity-30 hover:bg-gray-100 transition-colors"
+                  className="w-6 h-6 rounded-full flex items-center justify-center disabled:opacity-30 active:bg-black/5 transition-colors"
                 >
-                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg className="w-3.5 h-3.5" style={{ color: INK_SOFT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
-                <span className="text-[11px] font-semibold text-gray-700 tabular-nums min-w-[88px] text-center">{weekRangeLabel}</span>
+                <span className="text-[11px] tabular-nums min-w-[88px] text-center" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{weekRangeLabel}</span>
                 <button
                   onClick={() => setWeekOffset((o) => Math.min(1, o + 1))}
                   disabled={weekOffset === 1}
                   aria-label="Next week"
-                  className="w-6 h-6 rounded-full flex items-center justify-center disabled:opacity-30 hover:bg-gray-100 transition-colors"
+                  className="w-6 h-6 rounded-full flex items-center justify-center disabled:opacity-30 active:bg-black/5 transition-colors"
                 >
-                  <svg className="w-3.5 h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg className="w-3.5 h-3.5" style={{ color: INK_SOFT }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                   </svg>
                 </button>
@@ -518,12 +521,15 @@ export default function AddMealSheet({
                   <button
                     key={key}
                     onClick={() => toggleDate(key)}
-                    className="flex-1 flex flex-col items-center py-1.5 rounded-xl transition-colors"
-                    style={
-                      isSelected
-                        ? { background: INK, color: "white" }
-                        : { background: "#f3f3f1", color: "#888" }
-                    }
+                    className="flex-1 flex flex-col items-center py-1.5 active:scale-95 transition-transform"
+                    style={{
+                      background: isSelected ? INK : PAPER,
+                      color: isSelected ? PAPER : INK,
+                      border: `2px solid ${INK}`,
+                      borderRadius: 10,
+                      boxShadow: isSelected ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+                      transform: isSelected ? "translate(1px, 1px)" : undefined,
+                    }}
                   >
                     <span className="text-[10px] font-medium">{dayAbbr}</span>
                     <span className="text-sm font-bold mt-0.5">{dayNum}</span>
@@ -535,7 +541,7 @@ export default function AddMealSheet({
 
           {/* Recipe selector */}
           <div>
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Recipe</p>
+            <p className="text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>Recipe</p>
             {selectedRecipe ? (
               <div className="space-y-1.5">
                 <RecipeRow recipe={selectedRecipe} isSelected onClick={() => setSelectedRecipeId(null)} />
@@ -547,24 +553,24 @@ export default function AddMealSheet({
                 </button>
               </div>
             ) : (
-              <button onClick={enterSearchMode} className="w-full flex items-center gap-3 px-3 py-3 rounded-xl border border-dashed transition-colors" style={{ background: "#f7f7f5", borderColor: "#e0e0de" }}>
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "#eee" }}>
-                  <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <button onClick={enterSearchMode} className="w-full flex items-center gap-3 px-3 py-3 active:scale-[0.99] transition-transform" style={{ background: PAPER, border: `2px dashed ${INK}`, borderRadius: 12 }}>
+                <div className="w-9 h-9 flex items-center justify-center flex-shrink-0" style={{ background: CREAM_WARM, borderRadius: 9, border: `2px solid ${INK}` }}>
+                  <svg className="w-4 h-4" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
-                <span className="text-sm text-gray-400 font-medium">Search your recipes…</span>
+                <span className="text-sm font-medium" style={{ color: INK_SOFT }}>Search your recipes…</span>
               </button>
             )}
           </div>
 
           {/* Servings */}
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Servings</p>
+            <p className="text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>Servings</p>
             <div className="flex items-center gap-3">
-              <button onClick={() => setServings((s) => Math.max(1, s - 1))} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors">−</button>
+              <button onClick={() => setServings((s) => Math.max(1, s - 1))} className="w-7 h-7 rounded-full flex items-center justify-center text-sm active:scale-90 transition-transform" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}` }}>−</button>
               <span className="text-sm font-semibold text-gray-900 w-4 text-center">{servings}</span>
-              <button onClick={() => setServings((s) => s + 1)} className="w-7 h-7 rounded-full bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-600 hover:bg-gray-200 transition-colors">+</button>
+              <button onClick={() => setServings((s) => s + 1)} className="w-7 h-7 rounded-full flex items-center justify-center text-sm active:scale-90 transition-transform" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}` }}>+</button>
             </div>
           </div>
         </div>
