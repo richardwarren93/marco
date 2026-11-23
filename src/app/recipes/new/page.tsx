@@ -5,9 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import RecipeForm from "@/components/recipes/RecipeForm";
 import ExtractBackButton from "@/components/recipes/ExtractBackButton";
 import type { Ingredient } from "@/types";
-import { TOMATO } from "@/lib/theme";
+import { DISPLAY, INK, INK_SOFT, PAPER, SURFACE_DOTS, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
-const SAFE_TOP = { paddingTop: "max(env(safe-area-inset-top, 0px), 12px)" } as const;
+const SAFE_TOP = { ...SURFACE_DOTS, minHeight: "100dvh", paddingTop: "max(env(safe-area-inset-top, 0px), 12px)" } as const;
 
 interface ExtractedRecipe {
   title?: string;
@@ -123,21 +123,22 @@ function NewRecipeInner() {
     return (
       <div className="max-w-2xl mx-auto px-4 pb-6" style={SAFE_TOP}>
         <ExtractBackButton />
-        <h1 className="text-xl font-bold text-gray-900 mb-1">Paste a recipe</h1>
-        <p className="text-sm text-gray-500 mb-5">Paste any recipe text and we&apos;ll extract it automatically.</p>
+        <h1 className="mb-1" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em" }}>Paste a recipe</h1>
+        <p className="text-sm mb-5" style={{ color: INK_SOFT }}>Paste any recipe text and we&apos;ll extract it automatically.</p>
         <textarea
           value={pastedText}
           onChange={(e) => setPastedText(e.target.value)}
           placeholder="Paste recipe text here…"
           rows={10}
-          className="w-full border border-gray-200 rounded-2xl p-4 text-sm text-gray-800 resize-none focus:outline-none focus:ring-2 focus:ring-orange-400/40"
+          className="w-full p-4 text-sm resize-none outline-none"
+          style={{ background: PAPER, color: INK, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `3px 4px 0 ${INK}` }}
         />
-        {extractError && <p className="text-sm text-red-500 mt-2">{extractError}</p>}
+        {extractError && <p className="text-sm mt-2 font-semibold" style={{ color: TOMATO_DARK }}>{extractError}</p>}
         <button
           onClick={handleTextExtract}
           disabled={extracting || !pastedText.trim()}
-          className="mt-4 w-full py-3 rounded-2xl text-sm font-semibold text-white transition-all active:scale-[0.98] disabled:opacity-50"
-          style={{ background: TOMATO }}
+          className="mt-4 w-full py-3 text-sm active:scale-[0.98] transition-transform disabled:opacity-50"
+          style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `4px 4px 0 ${INK}` }}
         >
           {extracting ? "Extracting…" : "Extract Recipe"}
         </button>
@@ -151,11 +152,11 @@ function NewRecipeInner() {
   // a bare spinner so the user always has a way out.
   if (isExtracted && !extractedRecipe) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="flex flex-col items-center gap-4 py-16 text-gray-500">
+      <div className="max-w-4xl mx-auto px-4 py-6" style={{ ...SURFACE_DOTS, minHeight: "100dvh" }}>
+        <div className="flex flex-col items-center gap-4 py-16" style={{ color: INK_SOFT }}>
           {!hydrated ? (
             <>
-              <div className="w-10 h-10 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-10 h-10 rounded-full animate-spin" style={{ border: `2.5px solid ${INK}`, borderTopColor: "transparent" }} />
               <p className="text-sm">Loading your recipe…</p>
             </>
           ) : (
