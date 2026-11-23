@@ -4,7 +4,7 @@
  *
  * It replaces six components that did the same job slightly differently:
  * ChaosHeader (/recipes), KitchenLayerHeader (/meal-plan, /grocery),
- * SubPageHeader (8 × /profile/*), MobileHeader (/friends, /profile, /tonight),
+ * SubPageHeader (8 × /profile/*), MobileHeader (/friends, /profile),
  * plus the hand-rolled copies inside /kitchen and /friends-stack. They
  * disagreed on title size, ink (#171410 vs #1C1A17), typeface (Marker Felt vs
  * Fraunces), avatar treatment and safe-area padding, so moving between two

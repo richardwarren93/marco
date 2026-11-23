@@ -59,7 +59,7 @@ export async function middleware(request: NextRequest) {
   // Every signed-in surface. Keep this in sync with config.matcher below —
   // a path listed here but not matched is never checked, and a path matched
   // but not listed here is matched for nothing.
-  const protectedPaths = ["/tonight", "/recipes", "/discover", "/meal-plan", "/collections", "/friends", "/friends-stack", "/profile", "/grocery", "/kitchen", "/crew", "/potluck", "/i-cooked", "/create"];
+  const protectedPaths = ["/recipes", "/discover", "/meal-plan", "/collections", "/friends", "/friends-stack", "/profile", "/grocery", "/kitchen", "/crew", "/potluck", "/i-cooked", "/create"];
   const isProtected = protectedPaths.some((p) => pathname.startsWith(p));
   const isOnboarding = pathname.startsWith("/onboarding");
 
@@ -86,7 +86,7 @@ export const config = {
   /* `/kitchen/:path*` already matches the bare `/kitchen`: the `*` makes the
      whole trailing group optional. Check it yourself against the compiled
      regexp in .next/server/middleware-manifest.json before "fixing" this list
-     — an earlier version listed "/tonight" in both forms, which made it look
+     — an earlier version listed a route in both forms, which made it look
      like both were needed, and they are not.
 
      Heads up when testing this: under `next dev` on a machine where Next has
@@ -96,7 +96,6 @@ export const config = {
      its API calls into 401s. That is a local dev artifact, not this file.
      Verify guards against `next build && next start`, where they work. */
   matcher: [
-    "/tonight/:path*",
     "/recipes/:path*",
     "/discover/:path*",
     "/meal-plan/:path*",
