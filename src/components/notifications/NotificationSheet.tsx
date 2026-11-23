@@ -3,7 +3,20 @@
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import type { AppNotification } from "@/types";
-import { INK, INK_MUTED } from "@/lib/theme";
+import { BUTTER, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LAV, LIME, MUSTARD, PAPER, TOMATO } from "@/lib/theme";
+
+/* Only the light half of the palette — these sit behind INK initials. Same
+   rule and same hash as the household members list. */
+const STICKERS = [BUTTER, LIME, LAV, MUSTARD];
+
+function stickerFor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash << 5) - hash + name.charCodeAt(i);
+    hash |= 0;
+  }
+  return STICKERS[Math.abs(hash) % STICKERS.length];
+}
 
 interface SuggestedUser {
   user_id: string;
@@ -48,17 +61,23 @@ function Avatar({
   avatar?: string | null;
   size?: number;
 }) {
-  const cls = `w-${size} h-${size} rounded-full flex-shrink-0`;
+  const px = size * 4;
+  const box = { width: px, height: px, borderRadius: 99, flexShrink: 0 } as const;
   if (avatar) {
-    return <Image src={avatar} alt={name || ""} width={size * 4} height={size * 4} className={`${cls} object-cover`} />;
+    return <Image src={avatar} alt={name || ""} width={px} height={px} className="object-cover" style={{ ...box, border: `2px solid ${INK}` }} />;
   }
   const initials = name ? name.slice(0, 2).toUpperCase() : "?";
   return (
     <div
-      className={`${cls} flex items-center justify-center text-white font-bold`}
+      className="flex items-center justify-center"
       style={{
-        background: "linear-gradient(135deg, #f97316, #fb923c)",
-        fontSize: size <= 8 ? "10px" : "12px",
+        ...box,
+        background: stickerFor(name || "?"),
+        color: INK,
+        border: `2px solid ${INK}`,
+        fontFamily: DISPLAY,
+        fontWeight: 700,
+        fontSize: size <= 8 ? 10 : 12,
       }}
     >
       {initials}
@@ -180,27 +199,32 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
     return (
       <div
         key={n.id}
-        className={`flex items-start gap-3 px-4 py-3.5 ${!n.read ? "bg-orange-50/60" : "bg-white"}`}
+        className="flex items-start gap-3 px-4 py-3.5"
+        style={{ background: !n.read ? "rgba(255,216,77,0.35)" : PAPER }}
       >
         <Avatar name={n.actor_name} avatar={n.actor_avatar} size={10} />
         <div className="flex-1 min-w-0">
-          <p className="text-sm text-gray-800 leading-snug">{notificationText(n)}</p>
-          <p className="text-xs text-gray-400 mt-0.5">{timeAgo(n.created_at)}</p>
+          <p className="text-sm leading-snug" style={{ color: INK }}>{notificationText(n)}</p>
+          <p className="text-xs mt-0.5" style={{ color: INK_MUTED }}>{timeAgo(n.created_at)}</p>
           {n.type === "friend_request" && !resolved && (
             <div className="flex gap-2 mt-2.5">
               <button
                 onClick={() => handleFriendRespond(n, "accept")}
                 disabled={respondingId === n.id}
-                className="px-4 py-1.5 rounded-full text-xs font-bold text-white active:scale-95 transition-all disabled:opacity-50"
-                style={{ background: INK }}
+                className="px-4 py-1.5 text-xs flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                style={{ background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 99, boxShadow: `2px 2px 0 ${INK}`, minWidth: 72, minHeight: 28 }}
               >
-                {respondingId === n.id ? "..." : "Accept"}
+                {respondingId === n.id ? (
+                  <div className="w-3 h-3 border-2 border-[var(--paper)] border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  "Accept"
+                )}
               </button>
               <button
                 onClick={() => handleFriendRespond(n, "decline")}
                 disabled={respondingId === n.id}
-                className="px-4 py-1.5 rounded-full text-xs font-bold text-gray-600 active:scale-95 transition-all disabled:opacity-50"
-                style={{ background: "#f5f0eb" }}
+                className="px-4 py-1.5 text-xs active:scale-95 transition-transform disabled:opacity-50"
+                style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 99, boxShadow: `2px 2px 0 ${INK}` }}
               >
                 Decline
               </button>
@@ -209,14 +233,14 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
           {n.type === "friend_request" && resolved && (
             <p
               className="text-xs font-semibold mt-1.5"
-              style={{ color: resolved === "accept" ? "#16a34a" : "#9ca3af" }}
+              style={{ color: resolved === "accept" ? INK : INK_MUTED }}
             >
               {resolved === "accept" ? "✓ Accepted" : "Declined"}
             </p>
           )}
         </div>
         {!n.read && (
-          <div className="w-2 h-2 rounded-full bg-orange-500 flex-shrink-0 mt-1.5" />
+          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0 mt-1.5" style={{ background: TOMATO, border: `1.5px solid ${INK}` }} />
         )}
       </div>
     );
@@ -229,34 +253,40 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
 
       {/* Sheet */}
       <div
-        className="fixed sm:absolute bottom-0 left-0 right-0 z-[70] bg-white rounded-t-3xl shadow-2xl sm:bottom-auto sm:top-full sm:mt-2 sm:right-0 sm:left-auto sm:w-80 sm:rounded-2xl overflow-hidden"
+        className="fixed sm:absolute bottom-0 left-0 right-0 z-[70] sm:bottom-auto sm:top-full sm:mt-2 sm:right-0 sm:left-auto sm:w-80 overflow-hidden"
         style={{
+          background: PAPER,
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          borderTop: `2.5px solid ${INK}`,
+          borderLeft: `2.5px solid ${INK}`,
+          borderRight: `2.5px solid ${INK}`,
           maxHeight: "85vh",
           animation: "fadeSlideUp 0.28s cubic-bezier(0.34,1.2,0.64,1) both",
         }}
       >
         {/* Handle (mobile) */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-10 h-1 bg-gray-200 rounded-full" />
+          <div className="w-10 h-1 rounded-full" style={{ background: INK, opacity: 0.25 }} />
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-3 pb-3 border-b border-gray-100 flex-shrink-0">
-          <h2 className="text-base font-black" style={{ color: INK }}>
+        <div className="flex items-center justify-between px-4 pt-3 pb-3 flex-shrink-0" style={{ borderBottom: `2.5px solid ${INK}` }}>
+          <h2 className="text-base" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>
             Notifications
           </h2>
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors"
+            className="w-8 h-8 flex items-center justify-center rounded-full active:bg-black/5 transition-colors"
           >
-            <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-4 h-4" style={{ color: INK_MUTED }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto" style={{ maxHeight: "calc(85vh - 64px)" }}>
+        <div className="overflow-y-auto" style={{ maxHeight: "calc(85vh - 64px)", paddingBottom: "max(8px, env(safe-area-inset-bottom, 8px))" }}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="w-6 h-6 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
@@ -268,20 +298,20 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                 <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
                   <div
                     className="w-12 h-12 rounded-full flex items-center justify-center mb-3"
-                    style={{ background: "#f5f0eb" }}
+                    style={{ background: LIME, border: `2px solid ${INK}` }}
                   >
                     <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke={INK_MUTED} strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
                     </svg>
                   </div>
-                  <p className="text-sm font-bold text-gray-700">All caught up!</p>
-                  <p className="text-xs text-gray-400 mt-0.5">No notifications yet</p>
+                  <p className="text-sm" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>All caught up!</p>
+                  <p className="text-xs mt-0.5" style={{ color: INK_SOFT }}>No notifications yet</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-50">
+                <div className="divide-y divide-[rgba(23,20,16,0.12)]">
                   {todayItems.length > 0 && (
                     <>
-                      <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                      <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>
                         Today
                       </p>
                       {todayItems.map(renderNotification)}
@@ -289,7 +319,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                   )}
                   {earlierItems.length > 0 && (
                     <>
-                      <p className="px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                      <p className="px-4 pt-3 pb-1 text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>
                         Earlier
                       </p>
                       {earlierItems.map(renderNotification)}
@@ -300,11 +330,11 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
 
               {/* ── Suggested members ─────────────────────────────────── */}
               {visibleSuggested.length > 0 && (
-                <div className="border-t border-gray-100 mt-1">
-                  <p className="px-4 pt-4 pb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <div className="mt-1" style={{ borderTop: `2px solid ${INK}` }}>
+                  <p className="px-4 pt-4 pb-2 text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>
                     Suggested members
                   </p>
-                  <div className="divide-y divide-gray-50 pb-4">
+                  <div className="divide-y divide-[rgba(23,20,16,0.12)] pb-4">
                     {visibleSuggested.map((profile) => {
                       const isPending = pendingIds.has(profile.user_id);
                       const inProgress = befriendingInProgress === profile.user_id;
@@ -315,15 +345,15 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                         >
                           <Avatar name={profile.display_name} avatar={profile.avatar_url} size={10} />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 truncate">
+                            <p className="text-sm truncate" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>
                               {profile.display_name}
                             </p>
                           </div>
                           <div className="flex items-center gap-1.5 flex-shrink-0">
                             {isPending ? (
                               <span
-                                className="px-4 py-1.5 rounded-full text-xs font-bold border"
-                                style={{ borderColor: "#e5e7eb", color: "#6b7280" }}
+                                className="px-4 py-1.5 text-xs"
+                                style={{ background: CREAM_WARM, color: INK_SOFT, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 99 }}
                               >
                                 Pending
                               </span>
@@ -331,10 +361,14 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                               <button
                                 onClick={() => handleBefriend(profile)}
                                 disabled={inProgress}
-                                className="px-4 py-1.5 rounded-full text-xs font-bold text-white active:scale-95 transition-all disabled:opacity-50"
-                                style={{ background: INK }}
+                                className="px-4 py-1.5 text-xs flex items-center justify-center active:scale-95 transition-transform disabled:opacity-50"
+                                style={{ background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 99, boxShadow: `2px 2px 0 ${INK}`, minWidth: 82, minHeight: 28 }}
                               >
-                                {inProgress ? "..." : "Befriend"}
+                                {inProgress ? (
+                                  <div className="w-3 h-3 border-2 border-[var(--paper)] border-t-transparent rounded-full animate-spin" />
+                                ) : (
+                                  "Befriend"
+                                )}
                               </button>
                             )}
                             {!isPending && (
@@ -344,7 +378,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
                                     (prev) => new Set([...prev, profile.user_id])
                                   )
                                 }
-                                className="w-7 h-7 flex items-center justify-center rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                                className="w-7 h-7 flex items-center justify-center rounded-full active:bg-black/5 transition-colors" style={{ color: INK_MUTED }}
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
