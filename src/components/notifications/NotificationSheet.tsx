@@ -259,7 +259,7 @@ export default function NotificationSheet({ isOpen, onClose, onUnreadChange }: P
         <div className="overflow-y-auto" style={{ maxHeight: "calc(85vh - 64px)" }}>
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="w-6 h-6 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+              <div className="w-6 h-6 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : (
             <>

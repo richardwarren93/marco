@@ -686,7 +686,7 @@ function AddRecipesSheet({
                       }}
                     >
                       {addingId === recipe.id ? (
-                        <div className="w-3 h-3 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3 h-3 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
                       ) : alreadyIn ? (
                         "Added"
                       ) : (
