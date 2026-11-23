@@ -6,7 +6,7 @@ import type { Recipe } from "@/types";
 import { recipeMatchesQuery } from "@/lib/recipeSearch";
 import RecipeDetailSheet from "./RecipeDetailSheet";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
-import { BUTTER, CREAM, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
+import { BUTTER, CREAM, CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 const MEAL_TABS = ["breakfast", "lunch", "dinner", "snack"] as const;
 type MealTab = (typeof MEAL_TABS)[number];
@@ -405,7 +405,7 @@ export default function ChooseMealsScreen(props: ChooseMealsScreenProps) {
                     {/* Browse mode: assigning spinner */}
                     {props.mode === "browse" && isAssigning && (
                       <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                        <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-6 h-6 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
                   </div>

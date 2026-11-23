@@ -860,7 +860,7 @@ export default function GroceryList() {
       })()}
       {costLoading && toBuyItems.length > 0 && !costSummary && (
         <div className="mx-4 mt-3 mb-2 p-3.5 flex items-center justify-center gap-2" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
-          <div className="w-3.5 h-3.5 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-3.5 h-3.5 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs font-medium" style={{ color: INK_MUTED }}>Calculating cost…</span>
         </div>
       )}
@@ -1070,7 +1070,7 @@ export default function GroceryList() {
       {/* Generating indicator — inline, non-blocking */}
       {generating && (
         <div className="mx-4 mt-3 flex items-center justify-center gap-2 py-4">
-          <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-[var(--ink)] border-t-transparent rounded-full animate-spin" />
           <p className="text-xs font-medium" style={{ color: INK_SOFT }}>Updating list…</p>
         </div>
       )}
