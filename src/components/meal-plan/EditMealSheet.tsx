@@ -73,7 +73,7 @@ export default function EditMealSheet({
   if (!isOpen || !plan) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 bg-black/40 z-[60] flex items-end sm:items-center sm:justify-center sm:p-4" onClick={onClose}>
       <div
         className="w-full max-h-[88vh] flex flex-col sm:max-w-lg" style={{ background: PAPER, borderTopLeftRadius: 22, borderTopRightRadius: 22, borderTop: `2.5px solid ${INK}`, borderLeft: `2.5px solid ${INK}`, borderRight: `2.5px solid ${INK}` }}
         onClick={(e) => e.stopPropagation()}
@@ -88,7 +88,7 @@ export default function EditMealSheet({
           <h3 style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>Edit meal</h3>
           <Link
             href={`/recipes/${plan.recipe_id}`}
-            className="text-xs font-semibold text-orange-500 hover:text-orange-600"
+            className="text-xs font-semibold" style={{ color: TOMATO }}
             onClick={onClose}
           >
             View recipe →
@@ -107,11 +107,17 @@ export default function EditMealSheet({
                 <button
                   key={mt}
                   onClick={() => setMealType(mt)}
-                  className={`flex-1 py-2 rounded-full text-xs font-semibold capitalize transition-colors ${
-                    mealType === mt
-                      ? "bg-gray-900 text-white"
-                      : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                  }`}
+                  className="flex-1 py-2 text-xs capitalize active:scale-95 transition-transform"
+                  style={{
+                    background: mealType === mt ? INK : PAPER,
+                    color: mealType === mt ? PAPER : INK,
+                    fontFamily: DISPLAY,
+                    fontWeight: 700,
+                    border: `2px solid ${INK}`,
+                    borderRadius: 99,
+                    boxShadow: mealType === mt ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+                    transform: mealType === mt ? "translate(1px, 1px)" : undefined,
+                  }}
                 >
                   {mt}
                 </button>
@@ -157,11 +163,12 @@ export default function EditMealSheet({
                     <MealTypeIcon type={selectedRecipe.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
                   )}
                 </div>
-                <p className="text-sm font-semibold text-orange-800 flex-1 line-clamp-1">
+                <p className="text-sm flex-1 line-clamp-1" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>
                   {selectedRecipe.title}
                 </p>
                 <svg
-                  className="w-4 h-4 text-orange-500 flex-shrink-0"
+                  className="w-4 h-4 flex-shrink-0"
+                  style={{ color: INK }}
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -189,23 +196,23 @@ export default function EditMealSheet({
                       setRecipeId(r.id);
                       setRecipeSearch("");
                     }}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
-                      r.id === recipeId ? "bg-orange-50" : "hover:bg-gray-50"
-                    }`}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors hover:bg-black/[0.04]"
+                    style={{ background: r.id === recipeId ? LIME : "transparent" }}
                   >
-                    <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 flex items-center justify-center" style={{ background: PAPER, border: `2px solid ${INK}` }}>
                       {r.image_url ? (
                         <div className="relative w-full h-full"><Image src={r.image_url} alt={r.title} fill className="object-cover" sizes="32px" /></div>
                       ) : (
                         <MealTypeIcon type={r.meal_type} className="w-4 h-4 opacity-60" strokeWidth={1.8} />
                       )}
                     </div>
-                    <span className="text-sm font-medium text-gray-800 line-clamp-1 flex-1">
+                    <span className="text-sm font-medium line-clamp-1 flex-1" style={{ color: INK }}>
                       {r.title}
                     </span>
                     {r.id === recipeId && (
                       <svg
-                        className="w-4 h-4 text-orange-500 flex-shrink-0"
+                        className="w-4 h-4 flex-shrink-0"
+                        style={{ color: INK }}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -222,11 +229,11 @@ export default function EditMealSheet({
         </div>
 
         {/* Save */}
-        <div className="px-4 py-3 border-t border-gray-100 flex-shrink-0">
+        <div className="px-4 py-3 flex-shrink-0" style={{ borderTop: `2px solid ${INK}` }}>
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-3.5 bg-orange-500 text-white rounded-xl font-semibold text-sm hover:bg-orange-600 active:scale-[0.98] transition-all disabled:opacity-50"
+            className="w-full py-3.5 text-sm active:scale-[0.98] transition-transform disabled:opacity-50" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 3px 0 ${INK}` }}
           >
             {saving ? "Saving…" : "Save changes"}
           </button>
