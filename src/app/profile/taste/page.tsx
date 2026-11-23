@@ -3,12 +3,12 @@
 import { useState } from "react";
 import useSWR from "swr";
 import { apiFetcher } from "@/lib/hooks/use-data";
-import PageHeader from "@/components/layout/PageHeader";
+import SubPageShell from "@/components/layout/SubPageShell";
 import DinnerRankingStep from "@/components/onboarding/DinnerRankingStep";
 import { computeFlavorScores, computeCuisineScores } from "@/lib/tasteInference";
 import { useToast } from "@/components/ui/Toast";
 import type { RankingRecipe } from "@/components/onboarding/data/ranking-recipes";
-import { CREAM, INK, INK_SOFT, MUSTARD, PAPER, TEAL, TOMATO } from "@/lib/theme";
+import { INK, INK_SOFT, MUSTARD, PAPER, TEAL, TOMATO } from "@/lib/theme";
 
 /* Taste DNA — promoted from a profile card to its own page. Canonical data is
    /api/taste-profile (the self-refreshing 5-dim profile). "Retune my taste"
@@ -35,8 +35,9 @@ const DIMENSIONS = [
 
 const CARD = {
   background: PAPER,
-  border: "1px solid rgba(28,26,23,0.08)",
-  boxShadow: "0 2px 12px rgba(28,26,23,0.05)",
+  border: `2.5px solid ${INK}`,
+  boxShadow: `4px 5px 0 ${INK}`,
+  borderRadius: 16,
 } as const;
 
 const EYEBROW = {
@@ -108,10 +109,9 @@ export default function TasteDnaPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: CREAM }}>
-      <PageHeader back
-        title="Taste DNA"
-        right={
+    <SubPageShell
+      title="Taste DNA"
+      right={
           hasData ? (
             <button
               onClick={handleShare}
@@ -124,9 +124,7 @@ export default function TasteDnaPage() {
             </button>
           ) : undefined
         }
-      />
-
-      <div className="max-w-lg mx-auto px-4 pt-1 space-y-3" style={{ paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}>
+    >
         {isLoading ? (
           <>
             <div className="h-24 skeleton-warm rounded-2xl" />
@@ -239,7 +237,6 @@ export default function TasteDnaPage() {
             </p>
           </div>
         )}
-      </div>
-    </div>
+    </SubPageShell>
   );
 }

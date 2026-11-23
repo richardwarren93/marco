@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { mutate as swrMutate } from "swr";
 import { DIETARY_FILTERS, type DietaryFilterId } from "@/lib/cook/dietary";
+import { INK, PAPER } from "@/lib/theme";
 
 /**
  * Profile-level dietary toggles (Phase 2). Multi-select chips backed by
@@ -64,10 +65,12 @@ export default function DietaryFiltersCard() {
 
   return (
     <div
-      className="rounded-2xl p-4"
+      className="p-4"
       style={{
-        background: "#ffffff",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)",
+        background: PAPER,
+        borderRadius: 16,
+        border: `2.5px solid ${INK}`,
+        boxShadow: `4px 5px 0 ${INK}`,
       }}
     >
       <div className="flex items-baseline justify-between mb-1">

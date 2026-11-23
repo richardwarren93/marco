@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useProfile } from "@/lib/hooks/use-data";
 import type { UserProfile } from "@/types";
-import { INK, INK_MUTED, TOMATO } from "@/lib/theme";
+import { INK, INK_MUTED, PAPER, TOMATO } from "@/lib/theme";
 
 type Mode = "view" | "enter_phone" | "enter_code";
 
@@ -83,7 +83,7 @@ export default function PhoneCard() {
   }
 
   return (
-    <div className="bg-white rounded-2xl p-4" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
+    <div className="p-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-bold" style={{ color: INK }}>Text Marco</p>

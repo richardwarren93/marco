@@ -10,7 +10,8 @@ import { useRecipes, useCollections, useProfile, apiFetcher } from "@/lib/hooks/
 import type { TomatoHealthState } from "@/lib/gamification";
 import PageHeader from "@/components/layout/PageHeader";
 import { TastePreviewCard, BadgesPreviewCard } from "@/components/profile/PreviewCards";
-import { CREAM, INK, INK_MUTED, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
+import KitchenSurface from "@/components/layout/KitchenSurface";
+import { BUTTER, DISPLAY, HAND, INK, INK_MUTED, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 /* Profile hub — identity + living stats up top, features as visual tiles
    (Taste DNA, Badges, Tomatoes, Household), the weekly recap, and the one-time
@@ -32,15 +33,20 @@ interface HouseholdTile {
   household?: { name: string; members?: { display_name: string }[] } | null;
 }
 
+/* Paper with an ink edge and a hard offset shadow — the same card the
+   Kitchen, the Table and the sheets use. Profile was still wearing the July
+   design (white cards, blurred shadows, Tailwind greys) while the rest of the
+   app moved to this in October. */
 const TILE_STYLE = {
   background: PAPER,
-  border: "1px solid rgba(28,26,23,0.08)",
-  boxShadow: "0 1px 3px rgba(28,26,23,0.05)",
+  border: `2.5px solid ${INK}`,
+  boxShadow: `4px 5px 0 ${INK}`,
+  borderRadius: 16,
 } as const;
 
 function Chevron() {
   return (
-    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#b4ab9e" strokeWidth={2.5}>
+    <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke={INK} strokeWidth={2.5} style={{ opacity: 0.45 }}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
     </svg>
   );
@@ -152,10 +158,11 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="max-w-lg mx-auto" style={{ background: CREAM, minHeight: "100vh" }}>
-        <div className="h-36 rounded-b-[2rem] skeleton-warm" />
+      <KitchenSurface>
+        <div className="max-w-lg mx-auto">
+        <div className="h-28 skeleton-warm" style={{ borderBottom: `2.5px solid ${INK}` }} />
         <div className="px-5 -mt-10 space-y-4">
-          <div className="w-20 h-20 rounded-full skeleton-warm mx-auto ring-4 ring-[var(--cream)]" />
+          <div className="w-20 h-20 rounded-full skeleton-warm mx-auto" style={{ border: `2.5px solid ${INK}` }} />
           <div className="h-5 skeleton-warm rounded-2xl w-32 mx-auto" />
           <div className="grid grid-cols-2 gap-2.5">
             {[0, 1, 2, 3].map((i) => (
@@ -164,7 +171,8 @@ export default function ProfilePage() {
           </div>
           <div className="h-40 skeleton-warm rounded-2xl" />
         </div>
-      </div>
+        </div>
+      </KitchenSurface>
     );
   }
 
@@ -188,15 +196,16 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="max-w-lg mx-auto pb-8" style={{ background: CREAM, minHeight: "100vh" }}>
+    <KitchenSurface>
+      <div className="max-w-lg mx-auto">
       <PageHeader title="Profile" bell balance />
 
       {/* ── Guest banner — slim; the upgrade flow lives on the Account page ── */}
       {isGuest && (
         <Link
           href="/profile/account"
-          className="mx-4 mt-3 p-3.5 rounded-2xl flex items-center gap-3 active:scale-[0.99] transition-transform"
-          style={{ background: "#fff4ec", border: "1px solid #fcd9bd" }}
+          className="mx-4 mt-3 p-3.5 flex items-center gap-3 active:scale-[0.99] transition-transform"
+          style={{ background: BUTTER, border: `2.5px solid ${INK}`, borderRadius: 16, boxShadow: `3px 4px 0 ${INK}` }}
         >
           <span className="text-xl flex-shrink-0">🔒</span>
           <div className="flex-1 min-w-0">
@@ -209,21 +218,24 @@ export default function ProfilePage() {
 
       {/* ── Banner + Avatar ── */}
       <div className="relative">
+        {/* A lime band instead of the stock photo banner — the same sticker
+            green the dock uses for "you are here". */}
         <div
-          className="h-40 sm:h-48 bg-cover bg-center"
-          style={{ backgroundImage: "url('/default-banner.webp')" }}
+          className="h-28 sm:h-32"
+          style={{ background: LIME, borderTop: `2.5px solid ${INK}`, borderBottom: `2.5px solid ${INK}` }}
         />
 
         <div className="absolute left-1/2 -translate-x-1/2 -bottom-10 z-10">
           <button
             onClick={() => avatarInputRef.current?.click()}
             disabled={uploadingAvatar}
-            className="relative w-20 h-20 rounded-full ring-4 ring-[var(--cream)] shadow-xl group"
+            className="relative w-20 h-20 rounded-full group"
+            style={{ border: `2.5px solid ${INK}`, boxShadow: `3px 4px 0 ${INK}`, background: PAPER, transform: "rotate(-3deg)" }}
           >
             {profile?.avatar_url ? (
               <Image src={profile.avatar_url} alt={profile.display_name} width={80} height={80} className="w-20 h-20 rounded-full object-cover" />
             ) : (
-              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white flex items-center justify-center font-bold text-2xl">
+              <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 26 }}>
                 {initials}
               </div>
             )}
@@ -248,14 +260,15 @@ export default function ProfilePage() {
               type="text"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full max-w-[260px] px-3 py-2.5 border border-gray-200 rounded-xl text-center text-xl font-black tracking-tight focus:ring-2 focus:ring-orange-300 focus:border-transparent outline-none mx-auto block bg-white"
+              className="w-full max-w-[260px] px-3 py-2.5 text-center text-xl outline-none mx-auto block"
+              style={{ background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 12, fontFamily: DISPLAY, fontWeight: 700, color: INK }}
               autoFocus
             />
             <div className="flex items-center justify-center gap-2">
-              <button onClick={handleSave} disabled={saving} className="px-5 py-2 rounded-full text-sm font-bold text-white active:scale-95 transition-all" style={{ background: TOMATO }}>
+              <button onClick={handleSave} disabled={saving} className="px-5 py-2 active:scale-95 transition-all" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 14, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `2px 3px 0 ${INK}` }}>
                 {saving ? "Saving..." : "Save"}
               </button>
-              <button onClick={() => { setEditing(false); setDisplayName(profile?.display_name || ""); }} className="px-5 py-2 rounded-full text-sm font-semibold text-gray-600 active:scale-95 transition-all" style={{ background: "#eeecea" }}>
+              <button onClick={() => { setEditing(false); setDisplayName(profile?.display_name || ""); }} className="px-5 py-2 active:scale-95 transition-all" style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 14, border: `2.5px solid ${INK}`, borderRadius: 12 }}>
                 Cancel
               </button>
             </div>
@@ -265,10 +278,10 @@ export default function ProfilePage() {
             onClick={() => setEditing(true)}
             className="inline-flex items-center gap-2 active:scale-[0.98] transition-transform"
           >
-            <h1 className="text-[22px] font-black tracking-tight" style={{ color: INK, letterSpacing: "-0.02em" }}>
+            <h1 className="text-[22px]" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, letterSpacing: "-0.02em" }}>
               {profile?.display_name}
             </h1>
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: "#c0b8af" }}>
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ color: INK, opacity: 0.45 }}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
             </svg>
           </button>
@@ -278,8 +291,8 @@ export default function ProfilePage() {
           <div className="pt-2">
             <Link
               href="/tomatoes"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-bold active:scale-95 transition-transform"
-              style={{ background: "rgba(229,70,46,0.1)", color: TOMATO_DARK }}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12px] active:scale-95 transition-transform"
+              style={{ background: PAPER, color: INK, fontFamily: HAND, fontSize: 14, border: `2px solid ${INK}`, borderRadius: 99, boxShadow: `2px 2px 0 ${INK}`, transform: "rotate(-1.5deg)" }}
             >
               {streak > 0 ? <>🔥 {streak}-day streak</> : <>🍅 {tomatoes.balance ?? 0}</>}
               {streak > 0 && <span style={{ opacity: 0.7 }}>· 🍅 {tomatoes.balance ?? 0}</span>}
@@ -289,38 +302,41 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Stats — single card, horizontal divisions ── */}
-      <div className="mx-4 mt-3 bg-white rounded-2xl overflow-hidden" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}>
+      <div className="mx-4 mt-3 overflow-hidden" style={TILE_STYLE}>
         <div className="grid grid-cols-4">
           <Link
             href="/recipes"
-            className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
+            className="flex flex-col items-center gap-1 py-4 active:bg-black/[0.04] transition-colors"
+            style={{ borderRight: `2px solid ${INK}` }}
           >
-            <span className="text-3xl marco-h1" style={{ color: INK }}>{stats.recipes}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Recipes</span>
+            <span className="text-3xl" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{stats.recipes}</span>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: INK, opacity: 0.6, fontFamily: "var(--font-mono)" }}>Recipes</span>
           </Link>
 
           <Link
             href="/collections"
-            className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
+            className="flex flex-col items-center gap-1 py-4 active:bg-black/[0.04] transition-colors"
+            style={{ borderRight: `2px solid ${INK}` }}
           >
-            <span className="text-3xl marco-h1" style={{ color: INK }}>{stats.collections}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Collections</span>
+            <span className="text-3xl" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{stats.collections}</span>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: INK, opacity: 0.6, fontFamily: "var(--font-mono)" }}>Collections</span>
           </Link>
 
           <Link
             href="/friends"
-            className="flex flex-col items-center gap-1 py-4 border-r border-gray-100 active:bg-gray-50 transition-colors"
+            className="flex flex-col items-center gap-1 py-4 active:bg-black/[0.04] transition-colors"
+            style={{ borderRight: `2px solid ${INK}` }}
           >
-            <span className="text-3xl marco-h1" style={{ color: INK }}>{stats.friends}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Friends</span>
+            <span className="text-3xl" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{stats.friends}</span>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: INK, opacity: 0.6, fontFamily: "var(--font-mono)" }}>Friends</span>
           </Link>
 
           <button
             onClick={() => setShowGoalPicker(!showGoalPicker)}
-            className="relative flex flex-col items-center gap-1 py-4 active:bg-gray-50 transition-colors"
+            className="relative flex flex-col items-center gap-1 py-4 active:bg-black/[0.04] transition-colors"
           >
-            <span className="text-3xl marco-h1" style={{ color: INK }}>{goalTarget || "–"}</span>
-            <span className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: INK_MUTED }}>Per Week</span>
+            <span className="text-3xl" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{goalTarget || "–"}</span>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: INK, opacity: 0.6, fontFamily: "var(--font-mono)" }}>Per Week</span>
           </button>
         </div>
 
@@ -328,20 +344,24 @@ export default function ProfilePage() {
         {showGoalPicker && (
           <>
             <div className="fixed inset-0 z-20" onClick={() => setShowGoalPicker(false)} />
-            <div className="relative z-30 border-t border-gray-100 p-3 animate-pop-in">
-              <p className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider text-center mb-2">Meals per week goal</p>
+            <div className="relative z-30 p-3 animate-pop-in" style={{ borderTop: `2px solid ${INK}` }}>
+              <p className="text-[10px] uppercase tracking-wider text-center mb-2" style={{ color: INK, opacity: 0.6, fontFamily: "var(--font-mono)" }}>Meals per week goal</p>
               <div className="grid grid-cols-7 gap-1.5">
                 {[1, 2, 3, 4, 5, 6, 7].map((n) => (
                   <button
                     key={n}
                     onClick={() => handleGoalSelect(n)}
                     disabled={savingGoal}
-                    className={`w-full aspect-square rounded-xl text-sm font-bold transition-all active:scale-90 ${
-                      n === goalTarget
-                        ? "text-white shadow-sm"
-                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                    }`}
-                    style={n === goalTarget ? { background: TOMATO } : undefined}
+                    className="w-full aspect-square text-sm transition-all active:scale-90"
+                    style={{
+                      background: n === goalTarget ? TOMATO : PAPER,
+                      color: n === goalTarget ? PAPER : INK,
+                      border: `2px solid ${INK}`,
+                      borderRadius: 10,
+                      fontFamily: DISPLAY,
+                      fontWeight: 700,
+                      boxShadow: n === goalTarget ? `2px 2px 0 ${INK}` : undefined,
+                    }}
                   >
                     {n}
                   </button>
@@ -359,7 +379,7 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Settings menu ── */}
-      <div className="mx-4 mt-4 rounded-2xl overflow-hidden" style={TILE_STYLE}>
+      <div className="mx-4 mt-4 overflow-hidden" style={TILE_STYLE}>
         {[
           { href: "/profile/history", icon: "📖", label: "Cooking history", hint: undefined as string | undefined },
           { href: "/profile/household", icon: "🏠", label: "Household", hint: household?.name as string | undefined },
@@ -372,15 +392,16 @@ export default function ProfilePage() {
             key={row.href}
             href={row.href}
             className="flex items-center gap-3 px-4 py-3.5 active:bg-black/[0.03] transition-colors"
-            style={i < arr.length - 1 ? { borderBottom: "1px solid rgba(28,26,23,0.06)" } : undefined}
+            style={i < arr.length - 1 ? { borderBottom: `2px solid ${INK}1f` } : undefined}
           >
             <span className="text-[16px] flex-shrink-0" aria-hidden>{row.icon}</span>
-            <span className="text-[13.5px] font-medium flex-1" style={{ color: INK }}>{row.label}</span>
-            {row.hint && <span className="text-[11px] flex-shrink-0" style={{ color: "#8a8378" }}>{row.hint}</span>}
+            <span className="text-[13.5px] flex-1" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>{row.label}</span>
+            {row.hint && <span className="text-[12px] flex-shrink-0" style={{ color: INK, opacity: 0.55, fontFamily: HAND }}>{row.hint}</span>}
             <Chevron />
           </Link>
         ))}
       </div>
-    </div>
+      </div>
+    </KitchenSurface>
   );
 }

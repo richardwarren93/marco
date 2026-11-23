@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { INK, PAPER } from "@/lib/theme";
 
 /**
  * Profile-level food allergies. Backed by /api/user/allergies (the same
@@ -77,8 +78,8 @@ export default function AllergiesCard() {
 
   return (
     <div
-      className="rounded-2xl p-4"
-      style={{ background: "#ffffff", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 0 0 1px rgba(0,0,0,0.05)" }}
+      className="p-4"
+      style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
     >
       <div className="flex items-baseline justify-between mb-1">
         <h3 className="text-[15px] font-semibold" style={{ color: "var(--ink, #171410)" }}>

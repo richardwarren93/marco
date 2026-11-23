@@ -9,6 +9,7 @@ import { useState } from "react";
 import { restorePurchases } from "@/lib/purchases";
 import { invalidateEntitlement } from "@/lib/useEntitlement";
 import { useToast } from "@/components/ui/Toast";
+import { DISPLAY, INK, PAPER } from "@/lib/theme";
 
 export default function RestorePurchasesButton() {
   const { showToast } = useToast();
@@ -38,8 +39,8 @@ export default function RestorePurchasesButton() {
     <button
       onClick={handleRestore}
       disabled={busy}
-      className="w-full py-3 rounded-2xl text-sm font-medium transition-colors active:scale-[0.98] disabled:opacity-60"
-      style={{ color: "rgba(28,26,23,0.55)", background: "rgba(28,26,23,0.04)" }}
+      className="w-full py-3 active:scale-[0.98] transition-transform disabled:opacity-60"
+      style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 14, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 4px 0 ${INK}` }}
     >
       {busy ? "Restoring…" : "Restore purchases"}
     </button>

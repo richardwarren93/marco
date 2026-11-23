@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { INK, INK_SOFT, PAPER } from "@/lib/theme";
+import { BUTTER, INK, INK_SOFT, PAPER } from "@/lib/theme";
 
 /* Profile hub feature cards — simple, in-style, and each background is a real
    preview of what's inside: the Taste DNA card renders your flavor profile as
@@ -9,12 +9,13 @@ import { INK, INK_SOFT, PAPER } from "@/lib/theme";
 
 const CARD_STYLE = {
   background: PAPER,
-  border: "1px solid rgba(28,26,23,0.1)",
-  boxShadow: "0 2px 12px rgba(28,26,23,0.05)",
+  border: "2.5px solid " + INK,
+  boxShadow: "4px 5px 0 " + INK,
+  borderRadius: 16,
 } as const;
 
 const TITLE_STYLE = {
-  fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)",
+  fontFamily: "var(--font-chaos)",
   fontVariationSettings: '"opsz" 40, "SOFT" 100, "wght" 600',
   fontSize: "16px",
   letterSpacing: "-0.01em",
@@ -85,7 +86,7 @@ export function TastePreviewCard({ scores }: { scores: Scores | null }) {
   }
 
   return (
-    <Link href="/profile/taste" className="flex flex-col rounded-2xl p-4 active:scale-[0.98] transition-transform" style={CARD_STYLE}>
+    <Link href="/profile/taste" className="flex flex-col p-4 active:scale-[0.98] transition-transform" style={CARD_STYLE}>
       <p style={TITLE_STYLE}>Taste DNA</p>
       <div className="flex-1 flex items-center justify-center py-1.5">
         {hasData ? (
@@ -96,7 +97,7 @@ export function TastePreviewCard({ scores }: { scores: Scores | null }) {
       </div>
       <p
         className="mb-2"
-        style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12px", lineHeight: 1.4, color: INK_SOFT }}
+        style={{ fontFamily: "var(--font-hand)", fontSize: "13px", lineHeight: 1.35, color: INK_SOFT }}
       >
         {sentence ?? "Rank a few dinners and we'll map your taste."}
       </p>
@@ -111,7 +112,7 @@ export function BadgesPreviewCard({ earned, total, icons }: { earned?: number; t
   const slots = Array.from({ length: 6 }, (_, i) => icons[i] ?? null);
 
   return (
-    <Link href="/profile/badges" className="flex flex-col rounded-2xl p-4 active:scale-[0.98] transition-transform" style={CARD_STYLE}>
+    <Link href="/profile/badges" className="flex flex-col p-4 active:scale-[0.98] transition-transform" style={CARD_STYLE}>
       <p style={TITLE_STYLE}>Badges</p>
       <div className="flex-1 flex items-center justify-center py-1.5">
         <div className="grid grid-cols-3 gap-1.5">
@@ -120,20 +121,20 @@ export function BadgesPreviewCard({ earned, total, icons }: { earned?: number; t
               <span
                 key={i}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-[15px]"
-                style={{ background: "rgba(232,163,61,0.16)", border: "1px solid rgba(232,163,61,0.4)" }}
+                style={{ background: BUTTER, border: "2px solid " + INK }}
                 aria-hidden
               >
                 {icon}
               </span>
             ) : (
-              <span key={i} className="w-8 h-8 rounded-full" style={{ border: "1.5px dashed rgba(28,26,23,0.14)" }} aria-hidden />
+              <span key={i} className="w-8 h-8 rounded-full" style={{ border: "2px dashed " + INK + "33" }} aria-hidden />
             ),
           )}
         </div>
       </div>
       <p
         className="mb-2"
-        style={{ fontFamily: "var(--font-display, Georgia, serif)", fontStyle: "italic", fontSize: "12px", lineHeight: 1.4, color: INK_SOFT }}
+        style={{ fontFamily: "var(--font-hand)", fontSize: "13px", lineHeight: 1.35, color: INK_SOFT }}
       >
         {hasData ? `${earned ?? 0} of ${total} earned — keep cooking.` : "Cook, save, and share to earn your first."}
       </p>
