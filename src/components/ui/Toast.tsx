@@ -1,26 +1,21 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "motion/react";
-import { SPRING_STICKER } from "@/lib/motion";
-import { BUTTER, DISPLAY, INK, LIME, PAPER, TOMATO } from "@/lib/theme";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import type { ToastItem, ToastVariant } from "./ToastLayer";
+
+/* State and context only — deliberately no `motion` import.
+ *
+ * ToastProvider is mounted by the root layout, so anything it imports ships
+ * on every route. The animated stack lives in ToastLayer and arrives the
+ * first time there is actually a toast to show. */
+const ToastLayer = dynamic(() => import("./ToastLayer"), { ssr: false });
 
 // ─── Types ───────────────────────────────────────────────────────────────────
-type ToastVariant = "success" | "badge" | "info";
-
 interface ToastAction {
   label: string;
   onClick: () => void;
-}
-
-interface Toast {
-  id: number;
-  message: string;
-  icon?: string;
-  variant: ToastVariant;
-  duration: number;
-  exiting?: boolean;
-  action?: ToastAction;
 }
 
 interface ToastOptions {
@@ -40,7 +35,7 @@ let nextId = 0;
 
 // ─── Provider ────────────────────────────────────────────────────────────────
 export function ToastProvider({ children }: { children: React.ReactNode }) {
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const timers = useRef<Map<number, NodeJS.Timeout>>(new Map());
 
   const removeToast = useCallback((id: number) => {
@@ -55,7 +50,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       const id = nextId++;
       // Toasts with actions get more time (5s) so user can read + tap
       const defaultDuration = options?.action ? 5000 : 3000;
-      const toast: Toast = {
+      const toast: ToastItem = {
         id,
         message,
         icon: options?.icon,
@@ -84,42 +79,31 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  /* Warm the animation chunk once the page is idle. Without this the first
+     toast of a session waits for the chunk to arrive before it can appear —
+     about a second, measured — which is the wrong behaviour for something
+     whose whole job is to confirm an action immediately.
+
+     Not on the signed-out and full-screen flows: nothing there raises a
+     toast, and those are exactly the screens where a first-time visitor on
+     cellular is paying for every byte. */
+  const pathname = usePathname() || "";
+  const mayToast = !["/auth", "/connect", "/onboarding", "/join", "/login"].some((p) => pathname.startsWith(p));
+  useEffect(() => {
+    if (!mayToast) return;
+    const warm = () => { void import("./ToastLayer"); };
+    const w = window as typeof window & { requestIdleCallback?: (cb: () => void) => number };
+    if (typeof w.requestIdleCallback === "function") w.requestIdleCallback(warm);
+    else setTimeout(warm, 2000);
+  }, [mayToast]);
+
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
 
-      {/* Toasts — stickers that slap on above the dock, then peel away */}
-      <div className="fixed left-1/2 -translate-x-1/2 z-[100] flex flex-col-reverse items-center gap-2.5 pointer-events-none w-[calc(100%-2rem)] max-w-sm" style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 104px)" }} aria-live="polite">
-        <AnimatePresence initial={false}>
-          {toasts.filter((t) => !t.exiting).map((toast, i) => (
-            <motion.div
-              key={toast.id}
-              layout
-              initial={{ opacity: 0, y: 24, scale: 0.9, rotate: 0 }}
-              animate={{ opacity: 1, y: 0, scale: 1, rotate: i % 2 ? 1 : -1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.94, transition: { duration: 0.16 } }}
-              transition={SPRING_STICKER}
-              onClick={toast.action ? undefined : () => removeToast(toast.id)}
-              className="pointer-events-auto w-full flex items-center gap-3"
-              style={{ background: toast.variant === "badge" ? BUTTER : PAPER, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "11px 14px", boxShadow: `3px 4px 0 ${INK}`, color: INK }}
-            >
-              <span className="text-base flex-shrink-0" aria-hidden>{toast.icon ?? <DefaultIcon variant={toast.variant} />}</span>
-              <span className="flex-1 leading-snug line-clamp-2" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14.5 }}>
-                {toast.message}
-              </span>
-              {toast.action && (
-                <button
-                  onClick={() => { toast.action!.onClick(); removeToast(toast.id); }}
-                  className="whitespace-nowrap ml-1 active:scale-95 transition-transform touch-manipulation"
-                  style={{ minHeight: 44, minWidth: 44, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: DISP, fontWeight: 700, fontSize: 14, color: PAPER, background: TOMATO, border: `2px solid ${INK}`, borderRadius: 11, padding: "0 12px" }}
-                >
-                  {toast.action.label}
-                </button>
-              )}
-            </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+      {/* Mounted while any toast exists — including one that is on its way
+          out, so AnimatePresence still gets to play the exit. */}
+      {toasts.length > 0 && <ToastLayer toasts={toasts} onDismiss={removeToast} />}
     </ToastContext.Provider>
   );
 }
@@ -131,20 +115,4 @@ export function useToast(): ToastContextValue {
     return { showToast: () => {} };
   }
   return ctx;
-}
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
-const DISP = DISPLAY;
-
-function DefaultIcon({ variant }: { variant: ToastVariant }) {
-  if (variant === "badge") return <span className="text-lg">🏆</span>;
-  return (
-    <span className="flex items-center justify-center" style={{ width: 26, height: 26, borderRadius: 99, background: variant === "success" ? LIME : BUTTER, border: `2px solid ${INK}` }}>
-      <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke={INK} strokeWidth={3}>
-        {variant === "success"
-          ? <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          : <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 4h.01" />}
-      </svg>
-    </span>
-  );
 }

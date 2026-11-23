@@ -5,13 +5,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signInWithApple } from "@/lib/appleAuth";
-import OnboardingTour from "@/components/onboarding/OnboardingTour";
+import dynamic from "next/dynamic";
 import { INK_SOFT } from "@/lib/theme";
 import {
   INK, PAPER, TOMATO, LIME, BUTTER, DISP, HAND, SANS,
   AuthShell, Wordmark, Squiggle, Sticker, Highlight, MascotCard,
   inkBtn, tomatoBtn, paperBtn, inputStyle,
 } from "@/components/auth/AuthChrome";
+
+// The tour (and the phone mockup inside it, ~48 KB of source plus two full
+// recipe photos) only renders after someone taps "Get started". Loading it
+// with the landing screen made every first visit pay for a screen most
+// visitors never reach.
+const OnboardingTour = dynamic(() => import("@/components/onboarding/OnboardingTour"), { ssr: false });
 
 export default function SignupPage() {
   const [mode, setMode] = useState<"welcome" | "tour" | "choose" | "email">("welcome");

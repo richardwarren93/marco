@@ -12,7 +12,10 @@ const DOTS = "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)";
 // sign in. Everything else (allergies, taste, household, action quests) is
 // captured by the ongoing in-app guide once you land in your kitchen.
 const PANELS: { screens: MarcoScreen[]; title: string; sub: string }[] = [
-  { screens: ["save"], title: "Save from anywhere — even group chats", sub: "React to any recipe link or food photo in a group chat and Marco saves it to your Kitchen." },
+  // Marco left group chats on 2026-11-22; this used to promise saving by
+  // reacting in one, which would now be a lie on the first screen a new user
+  // ever sees.
+  { screens: ["save"], title: "Save it by texting it", sub: "Send Marco a recipe link — from Instagram, TikTok, anywhere — and it lands in your Kitchen." },
   { screens: ["planText", "plan", "grocery"], title: "Plan meals & groceries, by text", sub: "Tell Marco what you're thinking and your week fills in — the plan and the grocery list, in sync with your household." },
   { screens: ["cookText", "goal"], title: "Actually cook — don't just save", sub: "Text Marco when you cook and watch your goal fill up. Recipes are for cooking, not hoarding." },
   { screens: ["feed"], title: "Inspired by friends, not strangers", sub: "Your family and close friends each get a table — cook from what your people actually make." },

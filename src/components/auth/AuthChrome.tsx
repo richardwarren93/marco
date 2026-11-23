@@ -6,6 +6,7 @@
 // washi tape, tilted food polaroids, scribbles, sticker badges and the winking
 // tomato. Pages compose <AuthShell> + these primitives.
 
+import Image from "next/image";
 import TomatoMascot from "@/components/gamification/TomatoMascot";
 
 // The palette and the faces live in src/lib/theme.ts. These re-exports keep
@@ -50,11 +51,19 @@ export function Tape({ color = BUTTER, w = 120, rot = -8, style }: { color?: str
 }
 
 // A little hand-labelled food polaroid.
+//
+// These are decoration, 80–120 CSS px wide, and they used to be raw <img>
+// tags pointing straight at the source JPEG — so the landing page downloaded
+// 155 KB of mapo tofu to paint a 92 px square. next/image serves them at the
+// size they actually render, as AVIF where the browser takes it.
 export function Polaroid({ src, caption, rot = -5, w = 118, captionColor = INK, style }: { src: string; caption?: string; rot?: number; w?: number; captionColor?: string; style?: React.CSSProperties }) {
+  const inner = Math.round((w - 12) * 2); // padding off, then 2x for retina
   return (
     <div aria-hidden style={{ position: "absolute", width: w, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 8, padding: 6, paddingBottom: caption ? 2 : 6, transform: `rotate(${rot}deg)`, boxShadow: `4px 6px 0 ${INK}`, ...style }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" referrerPolicy="no-referrer" style={{ width: "100%", aspectRatio: "1/1", objectFit: "cover", borderRadius: 4, border: `1.5px solid ${INK}`, display: "block" }} />
+      {/* eager: these sit at the page edges and several are partly off-canvas,
+          so next/image's default lazy loading never fired for them and the
+          frames stayed empty. They are a few KB each — just load them. */}
+      <Image src={src} alt="" width={inner} height={inner} sizes={`${w}px`} loading="eager" style={{ width: "100%", height: "auto", aspectRatio: "1/1", objectFit: "cover", borderRadius: 4, border: `1.5px solid ${INK}`, display: "block" }} />
       {caption && <div style={{ fontFamily: HAND, fontSize: 14, color: captionColor, textAlign: "center", marginTop: 3, lineHeight: 1.1 }}>{caption}</div>}
     </div>
   );

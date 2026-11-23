@@ -64,7 +64,6 @@ export async function GET() {
     linked,
     notifications: g.notifications === true,
   };
-  // Which group chats Marco is in — the checkmarks persist.
   // epoch: the client scopes its per-device step skips to it, so a reset also
   // forgets skips made before it.
   return NextResponse.json({ done, uid, epoch: resetAt }, { headers: { "Cache-Control": "private, no-store" } });
