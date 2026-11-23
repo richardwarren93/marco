@@ -11,6 +11,7 @@ import { scrollIntoViewAboveKeyboard } from "@/lib/keyboard-scroll";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import { ClockIcon, CookingPotIcon, ProfileIcon } from "@/components/icons/HandDrawnIcons";
 import ExtractBackButton from "@/components/recipes/ExtractBackButton";
+import { CREAM_WARM, DISPLAY, INK, INK_MUTED, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 type Step = "url" | "extracting" | "preview" | "editing" | "saving";
 
@@ -227,19 +228,19 @@ export default function RecipeForm({
               onChange={(e) => setUrl(e.target.value)}
               required
               placeholder="Paste recipe URL…"
-              className="w-full px-4 py-3.5 rounded-2xl outline-none transition-all text-sm"
+              className="w-full px-4 py-3.5 outline-none transition-all text-sm"
               style={{
-                background: "var(--cream-warm, #EFE5D2)",
-                color: "var(--ink, #171410)",
-                border: "1px solid transparent",
+                background: CREAM_WARM,
+                color: INK,
+                border: `2.5px solid ${INK}`,
+                borderRadius: 14,
+                boxShadow: `3px 4px 0 ${INK}`,
               }}
               onFocus={(e) => {
-                e.currentTarget.style.background = "#ffffff";
-                e.currentTarget.style.borderColor = "var(--tomato, #E5462E)";
+                e.currentTarget.style.background = PAPER;
               }}
               onBlur={(e) => {
-                e.currentTarget.style.background = "var(--cream-warm, #EFE5D2)";
-                e.currentTarget.style.borderColor = "transparent";
+                e.currentTarget.style.background = CREAM_WARM;
               }}
             />
             <div
@@ -291,8 +292,8 @@ export default function RecipeForm({
           <button
             type="submit"
             disabled={!url.trim()}
-            className="w-full py-3.5 text-white rounded-2xl active:scale-[0.98] disabled:opacity-40 font-semibold text-sm transition-all"
-            style={{ background: "var(--tomato, #E5462E)" }}
+            className="w-full py-3.5 active:scale-[0.98] disabled:opacity-40 text-sm transition-transform"
+            style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `4px 4px 0 ${INK}` }}
           >
             Extract Recipe
           </button>
@@ -369,10 +370,17 @@ export default function RecipeForm({
                       key={mt}
                       type="button"
                       onClick={() => setMealType(mt)}
-                      className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold capitalize transition-all ${isActive ? "scale-105" : ""}`}
-                      style={isActive
-                        ? { background: "var(--tomato, #E5462E)", color: "#ffffff" }
-                        : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
+                      className="flex items-center gap-1.5 px-3 py-1 text-xs capitalize active:scale-95 transition-transform"
+                      style={{
+                        background: isActive ? TOMATO : PAPER,
+                        color: isActive ? PAPER : INK,
+                        fontFamily: DISPLAY,
+                        fontWeight: 700,
+                        border: `2px solid ${INK}`,
+                        borderRadius: 99,
+                        boxShadow: isActive ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+                        transform: isActive ? "translate(1px, 1px)" : undefined,
+                      }}
                     >
                       <MealTypeIcon type={mt} className="w-3.5 h-3.5" strokeWidth={1.8} />
                       {mt}
@@ -452,8 +460,8 @@ export default function RecipeForm({
             <button
               onClick={handleSave}
               disabled={step === "saving" || !title}
-              className="w-full py-3.5 text-white rounded-2xl active:scale-[0.98] disabled:opacity-50 font-semibold text-sm transition-all flex items-center justify-center gap-2"
-              style={{ background: "var(--tomato, #E5462E)" }}
+              className="w-full py-3.5 active:scale-[0.98] disabled:opacity-50 text-sm transition-transform flex items-center justify-center gap-2"
+              style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 14, boxShadow: `4px 4px 0 ${INK}` }}
             >
               {step === "saving" ? (
                 <>
@@ -480,10 +488,10 @@ export default function RecipeForm({
       {step === "editing" && (
         <div className="space-y-5 animate-slide-up">
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">
+            <div className="p-3 text-sm" style={{ background: "rgba(229,70,46,0.12)", color: TOMATO_DARK, border: `2px solid ${INK}`, borderRadius: 12 }}>
               {error}
               {duplicateRecipeId && (
-                <Link href={`/recipes/${duplicateRecipeId}`} className="block mt-1 text-orange-600 font-medium hover:underline">
+                <Link href={`/recipes/${duplicateRecipeId}`} className="block mt-1 font-semibold underline" style={{ color: TOMATO }}>
                   View saved recipe →
                 </Link>
               )}
@@ -493,7 +501,7 @@ export default function RecipeForm({
           {/* Compact image + title header */}
           <div className="flex items-center gap-3">
             {imageUrl && (
-              <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 relative">
+              <div className="w-14 h-14 overflow-hidden flex-shrink-0 relative" style={{ background: CREAM_WARM, borderRadius: 12, border: `2px solid ${INK}` }}>
                 <Image src={imageUrl} alt={title} fill className="object-cover" sizes="56px" />
               </div>
             )}
@@ -501,7 +509,8 @@ export default function RecipeForm({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="flex-1 text-lg font-bold text-gray-900 bg-transparent outline-none border-b border-transparent focus:border-orange-300 transition-colors"
+              className="flex-1 bg-transparent outline-none transition-colors"
+            style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 19, borderBottom: `2px solid ${INK}` }}
               placeholder="Recipe title"
             />
           </div>
@@ -529,10 +538,17 @@ export default function RecipeForm({
                     key={mt}
                     type="button"
                     onClick={() => setMealType(mt)}
-                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full text-xs font-semibold capitalize transition-all"
-                    style={isActive
-                      ? { background: "var(--tomato, #E5462E)", color: "#ffffff" }
-                      : { background: "var(--cream-warm, #EFE5D2)", color: "var(--ink-soft, #4A4742)" }}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 text-xs capitalize active:scale-95 transition-transform"
+                    style={{
+                      background: isActive ? TOMATO : PAPER,
+                      color: isActive ? PAPER : INK,
+                      fontFamily: DISPLAY,
+                      fontWeight: 700,
+                      border: `2px solid ${INK}`,
+                      borderRadius: 99,
+                      boxShadow: isActive ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`,
+                      transform: isActive ? "translate(1px, 1px)" : undefined,
+                    }}
                   >
                     <MealTypeIcon type={mt} className="w-3.5 h-3.5" strokeWidth={1.8} />
                     {mt}
@@ -544,14 +560,14 @@ export default function RecipeForm({
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>
               Description
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50 focus:bg-white transition-all"
+              className="w-full px-3 py-2.5 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
             />
           </div>
 
@@ -563,14 +579,14 @@ export default function RecipeForm({
               { label: "Cook (min)", value: cookTime, setter: setCookTime },
             ].map((field) => (
               <div key={field.label}>
-                <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+                <label className="block text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>
                   {field.label}
                 </label>
                 <input
                   type="number"
                   value={field.value}
                   onChange={(e) => field.setter(e.target.value)}
-                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50 focus:bg-white transition-all"
+                  className="w-full px-3 py-2.5 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
                 />
               </div>
             ))}
@@ -589,25 +605,25 @@ export default function RecipeForm({
                     placeholder="Amt"
                     value={ing.amount}
                     onChange={(e) => updateIngredient(i, "amount", e.target.value)}
-                    className="w-16 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50"
+                    className="w-16 px-2 py-2 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 9 }}
                   />
                   <input
                     placeholder="Unit"
                     list="unit-options"
                     value={ing.unit}
                     onChange={(e) => updateIngredient(i, "unit", e.target.value)}
-                    className="w-16 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50"
+                    className="w-20 px-2 py-2 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 9 }}
                   />
                   <input
                     placeholder="Ingredient"
                     value={ing.name}
                     onChange={(e) => updateIngredient(i, "name", e.target.value)}
-                    className="flex-1 px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50"
+                    className="flex-1 px-2 py-2 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 9 }}
                   />
                   <button
                     type="button"
                     onClick={() => removeIngredient(i)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0"
+                    className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-transform flex-shrink-0" style={{ color: INK_MUTED }}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -634,19 +650,19 @@ export default function RecipeForm({
             <div className="space-y-2">
               {steps.map((s, i) => (
                 <div key={i} className="flex gap-2 items-start">
-                  <span className="text-xs font-bold text-orange-400 mt-2.5 w-5 text-right flex-shrink-0">
+                  <span className="text-xs mt-2.5 w-5 text-right flex-shrink-0" style={{ color: TOMATO, fontFamily: DISPLAY, fontWeight: 700 }}>
                     {i + 1}
                   </span>
                   <textarea
                     value={s}
                     onChange={(e) => updateStep(i, e.target.value)}
                     rows={2}
-                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50"
+                    className="flex-1 px-3 py-2 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 9 }}
                   />
                   <button
                     type="button"
                     onClick={() => removeStep(i)}
-                    className="w-7 h-7 flex items-center justify-center rounded-full text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors flex-shrink-0 mt-1"
+                    className="w-7 h-7 flex items-center justify-center rounded-full active:scale-90 transition-transform flex-shrink-0 mt-1" style={{ color: INK_MUTED }}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -659,7 +675,7 @@ export default function RecipeForm({
 
           {/* Tags */}
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>
               Tags
             </label>
             <input
@@ -668,13 +684,13 @@ export default function RecipeForm({
               onChange={(e) => setTags(e.target.value)}
               onFocus={(e) => scrollIntoViewAboveKeyboard(e.target)}
               placeholder="e.g. vegan, quick, dessert"
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50 focus:bg-white transition-all"
+              className="w-full px-3 py-2.5 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
             />
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+            <label className="block text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>
               Notes
             </label>
             <textarea
@@ -683,7 +699,7 @@ export default function RecipeForm({
               onFocus={(e) => scrollIntoViewAboveKeyboard(e.target)}
               rows={2}
               placeholder="Personal notes, tips..."
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-orange-200 bg-gray-50 focus:bg-white transition-all"
+              className="w-full px-3 py-2.5 text-sm outline-none" style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10 }}
             />
           </div>
 
@@ -691,15 +707,16 @@ export default function RecipeForm({
           <div className="flex gap-3 pt-1 pb-2">
             <button
               onClick={() => { setError(""); setStep("preview"); }}
-              className="flex-1 py-3 border border-gray-200 rounded-2xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              className="flex-1 py-3 text-sm active:scale-[0.98] transition-transform"
+              style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 3px 0 ${INK}` }}
             >
               Back
             </button>
             <button
               onClick={handleSave}
               disabled={!title}
-              className="flex-1 py-3 text-white rounded-2xl text-sm font-semibold active:scale-[0.98] disabled:opacity-40 transition-all"
-              style={{ background: "var(--tomato, #E5462E)" }}
+              className="flex-1 py-3 text-sm active:scale-[0.98] disabled:opacity-40 transition-transform"
+              style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 3px 0 ${INK}` }}
             >
               {isEditing ? "Update" : "Save Recipe"}
             </button>
@@ -728,13 +745,14 @@ function EditSection({
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          {title} <span className="text-gray-300">({count})</span>
+        <label className="text-[10px] uppercase tracking-[0.16em]" style={{ color: INK_MUTED, fontWeight: 700 }}>
+          {title} <span style={{ opacity: 0.6 }}>({count})</span>
         </label>
         <button
           type="button"
           onClick={onAdd}
-          className="text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+          className="text-[11px] px-2 py-0.5 active:scale-95 transition-transform"
+          style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `1.5px solid ${INK}`, borderRadius: 99 }}
         >
           + Add
         </button>

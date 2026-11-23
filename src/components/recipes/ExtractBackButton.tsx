@@ -5,6 +5,7 @@
 // safe-area top inset so the button clears the status bar/notch.
 
 import { useRouter } from "next/navigation";
+import { INK, PAPER } from "@/lib/theme";
 
 export default function ExtractBackButton({
   onClick,
@@ -24,7 +25,7 @@ export default function ExtractBackButton({
     >
       <span
         className="flex items-center justify-center rounded-full"
-        style={{ width: 40, height: 40, background: "var(--cream-warm, #EFE5D2)" }}
+        style={{ width: 40, height: 40, background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
