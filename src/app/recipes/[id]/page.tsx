@@ -1254,7 +1254,7 @@ export default function RecipeDetailPage() {
             style={{ background: PAPER, maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 20px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
           >
             <div className="max-w-3xl mx-auto px-5 pt-3">
-              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
+              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: INK, opacity: 0.25 }} />
               <div className="flex items-center justify-between mb-5">
                 <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 22, color: INK }}>Instructions</h3>
                 <button onClick={() => setShowStepsModal(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.05)" }}>
@@ -1292,7 +1292,7 @@ export default function RecipeDetailPage() {
             style={{ background: PAPER, paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
           >
             <div className="max-w-md mx-auto px-5 pt-3">
-              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
+              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: INK, opacity: 0.25 }} />
               <h3 className="mb-1" style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: INK }}>
                 {ratingCount > 0 ? `${ratingAvg.toFixed(1)} · ${ratingCount} ${ratingCount === 1 ? "rating" : "ratings"}` : "Be the first to rate"}
               </h3>
@@ -1309,14 +1309,14 @@ export default function RecipeDetailPage() {
         <>
           <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,0.3)" }} onClick={() => setShowNotesSheet(false)} />
           <div
-            className="fixed left-0 right-0 bottom-0 z-[61] rounded-t-3xl"
-            style={{ background: PAPER, maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", boxShadow: "0 -12px 40px rgba(20,12,5,0.18)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
+            className="fixed left-0 right-0 bottom-0 z-[61]"
+            style={{ background: PAPER, borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTop: `2.5px solid ${INK}`, borderLeft: `2.5px solid ${INK}`, borderRight: `2.5px solid ${INK}`, maxHeight: "88vh", overflowY: "auto", paddingBottom: "calc(var(--safe-bottom, 0px) + 24px)", animation: "sheetUp 0.24s cubic-bezier(0.34,1.1,0.64,1) both" }}
           >
             <div className="max-w-md mx-auto px-5 pt-3">
-              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: "rgba(28,26,23,0.15)" }} />
+              <div className="mx-auto mb-4 rounded-full" style={{ width: 40, height: 4, background: INK, opacity: 0.25 }} />
               <div className="flex items-center justify-between mb-4">
                 <h3 style={{ fontFamily: "var(--font-display, 'Fraunces', Georgia, serif)", fontVariationSettings: '"opsz" 60, "wght" 600', fontSize: 20, color: INK }}>My Notes</h3>
-                <button onClick={() => setShowNotesSheet(false)} className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(0,0,0,0.05)" }}>
+                <button onClick={() => setShowNotesSheet(false)} className="w-8 h-8 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}>
                   <svg className="w-4 h-4" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
