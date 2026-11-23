@@ -56,10 +56,14 @@ export default function PageHeader({
 }) {
   const router = useRouter();
   const hasBack = Boolean(back);
+  // With a handwritten line under it the title block is taller than the bell
+  // and the avatar, so bottom-aligning the three reads right. With no subtitle
+  // the title is SHORTER than the 42px avatar and sagged below it; centre it.
+  const align = subtitle ? "items-end" : "items-center";
 
   return (
     <div
-      className="flex items-end gap-2 px-4 max-w-lg mx-auto"
+      className={`flex ${align} gap-2 px-4 max-w-lg mx-auto`}
       style={{ paddingTop: "calc(env(safe-area-inset-top, 0px) + 14px)", paddingBottom: 8 }}
     >
       {hasBack && (

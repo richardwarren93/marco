@@ -35,7 +35,6 @@ const localISO = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).pad
 // Encode spaces etc. without double-encoding URLs that are already escaped
 // (CDN paths like w_2560%2Cc_limit).
 const safeSrc = (u: string) => { try { return encodeURI(decodeURI(u)); } catch { return u.replace(/ /g, "%20"); } };
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 function timeAgo(iso: string): string {
   const s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
   if (s < 3600) return `${Math.max(1, Math.floor(s / 60))}m`;
@@ -58,21 +57,17 @@ export default function KitchenHub() {
   const { data: hh } = useSWR<HouseholdData>("/api/household", fetcher, { revalidateOnFocus: false });
   // A fresh refreshInterval identity after each send makes SWR re-arm its poll
   // (it only re-reads the function when the option changes).
-  // The guide's state, read here only for the viewer's own id (so the
-  // household line can say who ELSE is in it).
-  const { data: quests } = useSWR<{ uid?: string }>("/api/quests", fetcher, { revalidateOnFocus: false });
 
   return (
     <div className="min-h-[100dvh]" style={{ background: SURFACE, backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK }}>
       <div className="mx-auto w-full max-w-lg px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 16px)", paddingBottom: 130 }}>
         <PageHeader
           title={data ? `${data.name}'s kitchen` : "Your kitchen"}
-          subtitle={data ? `${plural(data.recipeCount, "recipe", "recipes")} · ${plural(data.cookCount, "cook", "cooks")}` : "make yourself at home"}
           avatar
           bell
         />
 
-        <People hh={hh} uid={quests?.uid} guideActive={guideActive} />
+        <People hh={hh} guideActive={guideActive} />
 
         {/* recipes, discover, plan & shop — one tap away, same control everywhere */}
         <KitchenTabs />
@@ -246,29 +241,20 @@ function TopCooks({ ranked, hideEmpty }: { ranked: RankedItem[]; hideEmpty: bool
 }
 
 // ── Your people ──────────────────────────────────────────────────────────────
-// A shared household shows as a lime tag. Below it, the Household / Family /
-// Friends group-chat card, persistent until Marco is in all three chats (the
-// server's checkmarks — "sent, waiting for Marco" doesn't count).
-function People({ hh, uid, guideActive }: { hh: HouseholdData | undefined; uid: string | undefined; guideActive: boolean }) {
+// Only the nudge: when you have a household but nobody has joined it, your
+// invite code sits here. Once somebody IS in it, this says nothing — who you
+// share with belongs on the household card, not under the page title.
+function People({ hh, guideActive }: { hh: HouseholdData | undefined; guideActive: boolean }) {
   const [copied, setCopied] = useState(false);
   if (!hh || guideActive) return null; // still loading, or the guide is driving
   const members = hh.household?.members ?? [];
   const shared = members.length >= 2;
   const waitingCode = hh.household && !shared ? hh.household.invite_code : null;
+  if (!waitingCode) return null;
   return (
-    <div style={{ marginTop: 12 }}>
-      {shared && (
-        <div className="flex items-center gap-2" style={{ background: LIME, border: `2px solid ${INK}`, borderRadius: 12, padding: "8px 12px" }}>
-          <span style={{ fontSize: 14, flexShrink: 0 }} aria-hidden>🍅</span>
-          <span className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>shared with {members.filter((m) => m.user_id !== uid).map((m) => m.profile?.display_name || "your housemate").join(" & ")}</span>
-        </div>
-      )}
-      {waitingCode && (
-        <div className="flex items-center gap-2" style={{ marginTop: 8, padding: "0 4px" }}>
-          <span className="min-w-0 flex-1" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.8 }}>waiting for your household — share your code</span>
-          <button onClick={() => { navigator.clipboard?.writeText(waitingCode).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }} aria-label={`Copy household code ${waitingCode}`} className="flex-shrink-0 active:scale-95 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, borderRadius: 9, padding: "6px 12px", minHeight: 44, fontFamily: "ui-monospace, monospace", fontWeight: 700, fontSize: 13, color: INK }}>{copied ? "copied!" : waitingCode}</button>
-        </div>
-      )}
+    <div className="flex items-center gap-2" style={{ marginTop: 12, padding: "0 4px" }}>
+      <span className="min-w-0 flex-1" style={{ fontFamily: HAND, fontSize: 14, color: INK, opacity: 0.8 }}>waiting for your household — share your code</span>
+      <button onClick={() => { navigator.clipboard?.writeText(waitingCode).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }).catch(() => {}); }} aria-label={`Copy household code ${waitingCode}`} className="flex-shrink-0 active:scale-95 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, borderRadius: 9, padding: "6px 12px", minHeight: 44, fontFamily: "ui-monospace, monospace", fontWeight: 700, fontSize: 13, color: INK }}>{copied ? "copied!" : waitingCode}</button>
     </div>
   );
 }
