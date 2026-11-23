@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Collection } from "@/types";
+import { CREAM_WARM, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, MONO, PAPER, TOMATO } from "@/lib/theme";
 
 interface Props {
   collection: Collection;
@@ -50,51 +51,93 @@ export default function ShareCollectionModal({ collection, isOpen, onClose }: Pr
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Share Collection</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl">
-            &times;
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4"
+      style={{ background: "rgba(0,0,0,0.45)" }}
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md"
+        style={{ background: PAPER, borderRadius: 20, border: `2.5px solid ${INK}`, boxShadow: `5px 6px 0 ${INK}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-3.5" style={{ borderBottom: `2.5px solid ${INK}` }}>
+          <h2 style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>Share collection</h2>
+          <button onClick={onClose} aria-label="Close" className="p-1" style={{ color: INK_MUTED }}>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
-        <div className="mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-900">Public Link</p>
-              <p className="text-xs text-gray-500">Anyone with the link can view this collection</p>
+        <div className="px-5 py-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0">
+              <p style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 14 }}>Public link</p>
+              <p className="text-xs" style={{ color: INK_SOFT }}>Anyone with the link can view this collection</p>
             </div>
+            {/* The app's first switch in this language, so it is built from the
+                same parts as everything else: ink edge, hard shadow, lime for
+                on. The knob carries its own edge so it reads as a sticker
+                sitting in the track rather than a dot printed on it. */}
             <button
               onClick={handleTogglePublic}
               disabled={toggling}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                isPublic ? "bg-orange-600" : "bg-gray-300"
-              }`}
+              role="switch"
+              aria-checked={isPublic}
+              aria-label="Public link"
+              className="relative flex-shrink-0 inline-flex items-center transition-colors disabled:opacity-60"
+              style={{
+                width: 52,
+                height: 30,
+                borderRadius: 99,
+                background: isPublic ? LIME : CREAM_WARM,
+                border: `2.5px solid ${INK}`,
+                boxShadow: `2px 2px 0 ${INK}`,
+              }}
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  isPublic ? "translate-x-6" : "translate-x-1"
-                }`}
+                className="inline-block transition-transform"
+                style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 99,
+                  background: PAPER,
+                  border: `2px solid ${INK}`,
+                  transform: isPublic ? "translateX(25px)" : "translateX(4px)",
+                }}
               />
             </button>
           </div>
         </div>
 
         {isPublic && (
-          <div className="mb-4">
-            <label className="text-xs text-gray-500 mb-1 block">Share link</label>
+          <div className="px-5 py-4" style={{ borderTop: `2px solid ${INK}` }}>
+            <p className="text-[10px] uppercase tracking-[0.16em] mb-1.5" style={{ color: INK_MUTED, fontWeight: 700 }}>
+              Share link
+            </p>
             <div className="flex gap-2">
               <input
                 type="text"
                 readOnly
                 value={shareUrl}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm bg-gray-50 text-gray-700"
+                aria-label="Share link"
+                className="flex-1 min-w-0 px-3.5 py-2.5 outline-none"
+                style={{ background: CREAM_WARM, color: INK_SOFT, border: `2px solid ${INK}`, borderRadius: 10, fontFamily: MONO, fontSize: 12 }}
               />
               <button
                 onClick={handleCopy}
-                className="bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700"
+                className="flex-shrink-0 px-4 py-2.5 active:scale-95 transition-transform"
+                style={{
+                  background: TOMATO,
+                  color: PAPER,
+                  fontFamily: DISPLAY,
+                  fontWeight: 700,
+                  fontSize: 13.5,
+                  border: `2.5px solid ${INK}`,
+                  borderRadius: 10,
+                  boxShadow: `3px 3px 0 ${INK}`,
+                }}
               >
                 {copied ? "Copied!" : "Copy"}
               </button>
