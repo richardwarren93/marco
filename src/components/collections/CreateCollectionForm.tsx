@@ -1,6 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { DISPLAY, INK, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
+
+/* New-collection form. Besides the reskin this fixes a layout bug: the inputs
+ * carried no width class, so in the stacked mobile layout they sized to the
+ * browser default instead of the column. */
+
+const FIELD = {
+  background: PAPER,
+  color: INK,
+  border: `2px solid ${INK}`,
+  borderRadius: 12,
+} as const;
 
 export default function CreateCollectionForm({ onCreated }: { onCreated: () => void }) {
   const [name, setName] = useState("");
@@ -38,13 +50,18 @@ export default function CreateCollectionForm({ onCreated }: { onCreated: () => v
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-2 items-start">
+    <form
+      onSubmit={handleSubmit}
+      className="p-3 space-y-2"
+      style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
+    >
       <input
         type="text"
         placeholder="Collection name"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+        className="w-full px-3 py-2.5 outline-none text-sm"
+        style={FIELD}
         required
       />
       <input
@@ -52,16 +69,31 @@ export default function CreateCollectionForm({ onCreated }: { onCreated: () => v
         placeholder="Description (optional)"
         value={description}
         onChange={(e) => setDescription(e.target.value)}
-        className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none text-sm"
+        className="w-full px-3 py-2.5 outline-none text-sm"
+        style={FIELD}
       />
       <button
         type="submit"
         disabled={saving || !name.trim()}
-        className="bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50"
+        className="w-full py-2.5 active:scale-[0.98] transition-transform disabled:opacity-50"
+        style={{
+          background: TOMATO,
+          color: PAPER,
+          fontFamily: DISPLAY,
+          fontWeight: 700,
+          fontSize: 14,
+          border: `2.5px solid ${INK}`,
+          borderRadius: 12,
+          boxShadow: `3px 4px 0 ${INK}`,
+        }}
       >
-        {saving ? "Creating..." : "Create"}
+        {saving ? "Creating…" : "Create"}
       </button>
-      {error && <p className="text-red-500 text-xs">{error}</p>}
+      {error && (
+        <p className="text-[12px] px-1" style={{ color: TOMATO_DARK, fontWeight: 600 }}>
+          {error}
+        </p>
+      )}
     </form>
   );
 }

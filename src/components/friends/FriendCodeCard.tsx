@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { BUTTER, DISPLAY, INK, MONO, PAPER, TOMATO } from "@/lib/theme";
 
 interface FriendCodeCardProps {
   friendCode: string;
-  displayName: string;
 }
 
-export default function FriendCodeCard({
-  friendCode,
-  displayName,
-}: FriendCodeCardProps) {
+export default function FriendCodeCard({ friendCode }: FriendCodeCardProps) {
   const [copied, setCopied] = useState(false);
 
   const shareUrl =
@@ -45,25 +42,47 @@ export default function FriendCodeCard({
     }
   }
 
+  const BTN = {
+    fontFamily: DISPLAY,
+    fontWeight: 700,
+    fontSize: 13.5,
+    border: `2.5px solid ${INK}`,
+    borderRadius: 10,
+    boxShadow: `3px 3px 0 ${INK}`,
+  } as const;
+
   return (
-    <div className="bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 rounded-2xl p-6 text-center">
-      <p className="text-sm text-gray-600 mb-1">Your friend code</p>
-      <p className="text-3xl font-bold text-orange-600 tracking-widest mb-1">
+    <div
+      className="p-5 text-center"
+      style={{ background: BUTTER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
+    >
+      <p className="text-[11px] uppercase tracking-[0.18em]" style={{ color: INK, opacity: 0.65, fontWeight: 700 }}>
+        Your friend code
+      </p>
+      <p
+        className="my-2"
+        style={{ fontFamily: MONO, fontSize: 26, fontWeight: 700, letterSpacing: "0.12em", color: INK }}
+      >
         {friendCode}
       </p>
-      <p className="text-xs text-gray-500 mb-4">
-        Share this code so {displayName}&apos;s friends can find you
+      {/* Was: "so {displayName}'s friends can find you" — shown to the owner of
+          the code, so it told Richard to share it with Richard's friends to
+          find Richard. */}
+      <p className="text-[12.5px] mb-4" style={{ color: INK, opacity: 0.7 }}>
+        Share it and friends can add you straight away
       </p>
-      <div className="flex gap-3 justify-center">
+      <div className="flex gap-2.5 justify-center">
         <button
           onClick={handleCopy}
-          className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+          className="px-4 py-2 active:scale-95 transition-transform"
+          style={{ ...BTN, background: PAPER, color: INK }}
         >
-          {copied ? "Copied!" : "Copy Code"}
+          {copied ? "Copied!" : "Copy code"}
         </button>
         <button
           onClick={handleShare}
-          className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors"
+          className="px-4 py-2 active:scale-95 transition-transform"
+          style={{ ...BTN, background: TOMATO, color: PAPER }}
         >
           Share
         </button>

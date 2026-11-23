@@ -8,7 +8,8 @@ import FriendCodeCard from "@/components/friends/FriendCodeCard";
 import AddFriendForm from "@/components/friends/AddFriendForm";
 import FriendsCookingRow from "@/components/friends/FriendsCookingRow";
 import { FriendsIcon } from "@/components/icons/HandDrawnIcons";
-import { CREAM, INK, INK_SOFT, TOMATO } from "@/lib/theme";
+import KitchenSurface from "@/components/layout/KitchenSurface";
+import { BUTTER, DISPLAY, INK, INK_MUTED, INK_SOFT, LIME, PAPER, TOMATO } from "@/lib/theme";
 
 type FriendItem = Friendship & { recipe_count?: number };
 
@@ -108,24 +109,21 @@ export default function FriendsPage() {
 
   if (loading) {
     return (
-      <>
+      <KitchenSurface>
         {header}
         <div className="max-w-2xl mx-auto px-4 pt-4 space-y-4">
-          <div className="h-12 skeleton-warm rounded-2xl" />
-          <div className="h-28 skeleton-warm rounded-2xl" />
-          <div className="h-48 skeleton-warm rounded-2xl" />
+          <div className="h-12 skeleton-warm" style={{ borderRadius: 16, border: `2.5px solid ${INK}` }} />
+          <div className="h-28 skeleton-warm" style={{ borderRadius: 16, border: `2.5px solid ${INK}` }} />
+          <div className="h-48 skeleton-warm" style={{ borderRadius: 16, border: `2.5px solid ${INK}` }} />
         </div>
-      </>
+      </KitchenSurface>
     );
   }
 
   return (
-    <>
+    <KitchenSurface>
       {header}
-      <div
-        className="max-w-2xl mx-auto px-4 pt-3 space-y-6 animate-fade-slide-up"
-        style={{ background: CREAM, paddingBottom: "calc(var(--safe-bottom, 0px) + 7rem)" }}
-      >
+      <div className="max-w-2xl mx-auto px-4 pt-3 space-y-6 animate-fade-slide-up">
         {/* Tab toggle */}
         <div className="grid grid-cols-2 gap-2.5">
           {(["my", "add"] as const).map((t) => {
@@ -134,12 +132,16 @@ export default function FriendsPage() {
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className="flex items-center justify-center gap-2 py-3 rounded-2xl font-semibold text-[14px] transition-colors"
+                className="flex items-center justify-center gap-2 py-3 text-[14px] transition-transform"
                 style={{
-                  background: on ? "rgba(229,70,46,0.1)" : "#fff",
-                  color: on ? TOMATO : INK,
-                  border: on ? `1px solid ${TOMATO}` : "1px solid rgba(28,26,23,0.08)",
-                  boxShadow: on ? "none" : "0 1px 6px rgba(20,12,5,0.05)",
+                  background: on ? BUTTER : PAPER,
+                  color: INK,
+                  fontFamily: DISPLAY,
+                  fontWeight: 700,
+                  border: `2.5px solid ${INK}`,
+                  borderRadius: 12,
+                  boxShadow: on ? `1px 2px 0 ${INK}` : `3px 4px 0 ${INK}`,
+                  transform: on ? "translate(2px, 2px)" : undefined,
                 }}
               >
                 {t === "my" ? (
@@ -161,8 +163,8 @@ export default function FriendsPage() {
         {tab === "my" ? (
           <>
             {/* Search */}
-            <div className="flex items-center gap-2 rounded-2xl px-3.5 h-12" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.05)" }}>
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="#a8a29a" strokeWidth={2}>
+            <div className="flex items-center gap-2 px-3.5 h-12" style={{ background: PAPER, borderRadius: 14, border: `2.5px solid ${INK}`, boxShadow: `3px 4px 0 ${INK}` }}>
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke={INK_MUTED} strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
               </svg>
               <input
@@ -177,7 +179,7 @@ export default function FriendsPage() {
             {/* Your friends */}
             <section>
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-base font-bold" style={{ color: INK }}>
+                <h2 style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>
                   Your friends{friends.length > 0 ? ` (${friends.length})` : ""}
                 </h2>
                 {filteredFriends.length > 8 && (
@@ -194,12 +196,12 @@ export default function FriendsPage() {
                 )}
               </div>
               {filteredFriends.length === 0 ? (
-                <div className="text-center py-10 rounded-2xl" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.05)" }}>
-                  <div className="flex justify-center mb-2.5" style={{ color: "#d4c9be" }}><FriendsIcon className="w-10 h-10" /></div>
+                <div className="text-center py-10" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+                  <div className="flex justify-center mb-2.5" style={{ color: INK_MUTED }}><FriendsIcon className="w-10 h-10" /></div>
                   <p className="text-[14px]" style={{ color: INK_SOFT }}>{search ? "No friends match." : "No friends yet"}</p>
                   {!search && (
-                    <button onClick={() => setTab("add")} className="mt-2 text-[13px] font-semibold" style={{ color: TOMATO }}>
-                      Add a friend →
+                    <button onClick={() => setTab("add")} className="mt-3 px-4 py-2 active:scale-95 transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 13, border: `2.5px solid ${INK}`, borderRadius: 99, boxShadow: `3px 3px 0 ${INK}` }}>
+                      Add a friend
                     </button>
                   )}
                 </div>
@@ -212,13 +214,13 @@ export default function FriendsPage() {
                       <Link
                         key={f.id}
                         href={p?.user_id ? `/friends/${p.user_id}` : "/discover"}
-                        className="rounded-2xl px-1.5 py-3 flex flex-col items-center text-center active:scale-[0.97] transition-transform"
-                        style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.06)" }}
+                        className="px-1.5 py-3 flex flex-col items-center text-center active:scale-[0.97] transition-transform"
+                        style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
                       >
                         <div className="relative mb-1.5">
                           <span
                             className="flex items-center justify-center rounded-full overflow-hidden"
-                            style={{ width: 46, height: 46, background: "linear-gradient(135deg,#E8A33D,#E5462E)", color: "#fff", fontWeight: 700, fontSize: 14 }}
+                            style={{ width: 46, height: 46, background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 15, border: `2px solid ${INK}` }}
                           >
                             {p?.avatar_url ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -227,9 +229,9 @@ export default function FriendsPage() {
                               initials(name)
                             )}
                           </span>
-                          <span className="absolute bottom-0 right-0 rounded-full" style={{ width: 11, height: 11, background: "#22c55e", border: "2px solid #fff" }} />
+                          <span className="absolute bottom-0 right-0 rounded-full" style={{ width: 12, height: 12, background: LIME, border: `2px solid ${INK}` }} />
                         </div>
-                        <p className="font-bold text-[11.5px] leading-tight truncate w-full" style={{ color: INK }}>{name}</p>
+                        <p className="text-[11.5px] line-clamp-2 w-full" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, lineHeight: 1.1 }}>{name}</p>
                         <p className="text-[9.5px] mt-0.5" style={{ color: INK_SOFT, opacity: 0.6 }}>
                           {f.recipe_count ?? 0} saved
                         </p>
@@ -246,7 +248,7 @@ export default function FriendsPage() {
             {/* Pending invitations — incoming (accept/ignore) + outgoing (cancel) */}
             {(incoming.length + outgoing.length) > 0 && (
               <section>
-                <h2 className="text-base font-bold mb-3" style={{ color: INK }}>
+                <h2 className="mb-3" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>
                   Pending invitations ({incoming.length + outgoing.length})
                 </h2>
                 <div className="space-y-2">
@@ -254,8 +256,8 @@ export default function FriendsPage() {
                     const p = req.profile ?? null;
                     const name = p?.display_name || "Someone";
                     return (
-                      <div key={req.id} className="flex items-center gap-3 rounded-2xl px-3 py-3" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.05)" }}>
-                        <span className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden" style={{ width: 40, height: 40, background: "rgba(229,70,46,0.12)", color: TOMATO, fontWeight: 700, fontSize: 13 }}>
+                      <div key={req.id} className="flex items-center gap-3 px-3 py-3" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+                        <span className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden" style={{ width: 40, height: 40, background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 14 }}>
                           {p?.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={p.avatar_url} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
@@ -268,16 +270,16 @@ export default function FriendsPage() {
                         <button
                           onClick={() => respond(req.id, "decline")}
                           disabled={responding === req.id}
-                          className="px-3.5 py-2 rounded-xl text-[13px] font-semibold disabled:opacity-50"
-                          style={{ background: "#fff", color: INK, border: "1px solid rgba(28,26,23,0.14)" }}
+                          className="px-3.5 py-2 text-[13px] active:scale-95 transition-transform disabled:opacity-50"
+                          style={{ background: PAPER, color: INK, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
                         >
                           Ignore
                         </button>
                         <button
                           onClick={() => respond(req.id, "accept")}
                           disabled={responding === req.id}
-                          className="px-4 py-2 rounded-xl text-[13px] font-semibold text-white disabled:opacity-50"
-                          style={{ background: TOMATO }}
+                          className="px-4 py-2 text-[13px] active:scale-95 transition-transform disabled:opacity-50"
+                          style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
                         >
                           Accept
                         </button>
@@ -288,8 +290,8 @@ export default function FriendsPage() {
                     const p = req.profile ?? null;
                     const name = p?.display_name || "Someone";
                     return (
-                      <div key={req.id} className="flex items-center gap-3 rounded-2xl px-3 py-3" style={{ background: "#fff", boxShadow: "0 1px 8px rgba(20,12,5,0.05)" }}>
-                        <span className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden" style={{ width: 40, height: 40, background: "rgba(229,70,46,0.12)", color: TOMATO, fontWeight: 700, fontSize: 13 }}>
+                      <div key={req.id} className="flex items-center gap-3 px-3 py-3" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+                        <span className="flex items-center justify-center rounded-full flex-shrink-0 overflow-hidden" style={{ width: 40, height: 40, background: INK, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 14 }}>
                           {p?.avatar_url ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={p.avatar_url} alt={name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
@@ -302,8 +304,8 @@ export default function FriendsPage() {
                         <button
                           onClick={() => cancelRequest(req.id)}
                           disabled={responding === req.id}
-                          className="px-3.5 py-2 rounded-xl text-[13px] font-semibold disabled:opacity-50"
-                          style={{ background: "#fff", color: INK_SOFT, border: "1px solid rgba(28,26,23,0.14)" }}
+                          className="px-3.5 py-2 text-[13px] active:scale-95 transition-transform disabled:opacity-50"
+                          style={{ background: PAPER, color: INK_SOFT, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, borderRadius: 10, boxShadow: `2px 2px 0 ${INK}` }}
                         >
                           Cancel
                         </button>
@@ -315,16 +317,18 @@ export default function FriendsPage() {
             )}
 
             {/* Invite banner */}
-            <div className="flex items-center gap-3 rounded-2xl px-4 py-4" style={{ background: "rgba(229,70,46,0.08)", border: "1px solid rgba(229,70,46,0.18)" }}>
-              <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 40, height: 40, background: "rgba(229,70,46,0.14)", color: TOMATO }}>
+            <div className="px-4 py-4" style={{ background: BUTTER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+              <div className="flex items-center gap-3">
+              <span className="flex items-center justify-center rounded-full flex-shrink-0" style={{ width: 40, height: 40, background: PAPER, color: INK, border: `2px solid ${INK}` }}>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zM19 8v6M22 11h-6" /></svg>
               </span>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-[14px]" style={{ color: TOMATO }}>Invite friends to Marco</p>
-                <p className="text-[12.5px]" style={{ color: INK_SOFT, opacity: 0.85 }}>Share your code so friends can find and add you.</p>
+                <p className="text-[15px]" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700 }}>Invite friends to Marco</p>
+                <p className="text-[12.5px]" style={{ color: INK, opacity: 0.7 }}>Share your code so friends can find and add you.</p>
+                </div>
               </div>
-              <button onClick={shareCode} className="px-4 py-2.5 rounded-xl text-[13px] font-semibold text-white flex-shrink-0 active:scale-95 transition-transform" style={{ background: TOMATO }}>
-                Share Code
+              <button onClick={shareCode} className="w-full mt-3 py-2.5 text-[13.5px] active:scale-[0.98] transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 10, boxShadow: `3px 3px 0 ${INK}` }}>
+                Share code
               </button>
             </div>
           </>
@@ -332,16 +336,16 @@ export default function FriendsPage() {
           /* ── Add Friends tab ─────────────────────────────────────── */
           <>
             {profile && (
-              <FriendCodeCard friendCode={profile.friend_code} displayName={profile.display_name} />
+              <FriendCodeCard friendCode={profile.friend_code} />
             )}
 
-            <div className="rounded-2xl p-5" style={{ background: "white", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}>
-              <h2 className="text-base font-bold mb-3" style={{ color: INK }}>Add a Friend</h2>
+            <div className="p-5" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+              <h2 className="mb-3" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 17 }}>Add a friend</h2>
               <AddFriendForm onRequestSent={loadAll} />
             </div>
           </>
         )}
       </div>
-    </>
+    </KitchenSurface>
   );
 }

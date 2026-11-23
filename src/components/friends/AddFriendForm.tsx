@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DISPLAY, INK, MONO, PAPER, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 interface AddFriendFormProps {
   onRequestSent: () => void;
@@ -55,7 +56,8 @@ export default function AddFriendForm({ onRequestSent }: AddFriendFormProps) {
       <div>
         <label
           htmlFor="friend-code"
-          className="block text-sm font-medium text-gray-700 mb-1"
+          className="block text-[12.5px] mb-1.5"
+          style={{ color: INK, fontWeight: 600 }}
         >
           Enter a friend code
         </label>
@@ -66,20 +68,22 @@ export default function AddFriendForm({ onRequestSent }: AddFriendFormProps) {
             value={code}
             onChange={(e) => handleCodeChange(e.target.value)}
             placeholder="MARCO-XXXX"
-            className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono tracking-wider"
+            className="flex-1 min-w-0 px-3 py-2.5 text-sm outline-none"
+            style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10, fontFamily: MONO, letterSpacing: "0.08em" }}
             maxLength={10}
           />
           <button
             type="submit"
             disabled={loading || code.length < 4}
-            className="px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+            className="px-4 py-2 whitespace-nowrap active:scale-95 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, fontSize: 13.5, border: `2.5px solid ${INK}`, borderRadius: 10, boxShadow: `2px 3px 0 ${INK}` }}
           >
             {loading ? "Sending..." : "Add Friend"}
           </button>
         </div>
       </div>
-      {error && <p className="text-red-600 text-sm">{error}</p>}
-      {success && <p className="text-green-600 text-sm">{success}</p>}
+      {error && <p className="text-[13px]" style={{ color: TOMATO_DARK, fontWeight: 600 }}>{error}</p>}
+      {success && <p className="text-[13px]" style={{ color: INK, fontWeight: 600 }}>{success}</p>}
     </form>
   );
 }
