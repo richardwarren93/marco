@@ -563,7 +563,7 @@ export default function GroceryList() {
             <button
               onClick={() => navigateWeek(-7)}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-black/5"
-              style={{ color: "#888" }}
+              style={{ color: INK_SOFT }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -573,7 +573,7 @@ export default function GroceryList() {
             <button
               onClick={() => navigateWeek(7)}
               className="w-7 h-7 flex items-center justify-center rounded-full transition-colors active:bg-black/5"
-              style={{ color: "#888" }}
+              style={{ color: INK_SOFT }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -585,7 +585,7 @@ export default function GroceryList() {
               <button
                 onClick={() => setRangePickerOpen((v) => !v)}
                 className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors active:bg-black/5"
-                style={{ color: rangePickerOpen ? TOMATO : "#888", background: rangePickerOpen ? "#ebebea" : "transparent" }}
+                style={{ color: rangePickerOpen ? TOMATO : INK_SOFT, background: rangePickerOpen ? CREAM_WARM : "transparent" }}
                 aria-label="Select date range"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -806,8 +806,8 @@ export default function GroceryList() {
           {toBuyCount > 0 && (
             <button
               onClick={() => setOrderOnlineOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-semibold shadow-sm active:scale-[0.97] transition-transform"
-              style={{ background: "var(--tomato, #E5462E)" }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs active:scale-[0.97] transition-transform"
+              style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.3 2.3c-.6.6-.2 1.7.7 1.7H17M17 17a2 2 0 100 4 2 2 0 000-4zM9 19a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -845,12 +845,12 @@ export default function GroceryList() {
             </div>
 
             {/* Progress bar */}
-            <div className="w-full h-2 rounded-full bg-green-100 overflow-hidden">
+            <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: CREAM_WARM, border: `1.5px solid ${INK}` }}>
               <div
                 className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
                   width: `${progressPct}%`,
-                  background: "linear-gradient(90deg, #22c55e, #16a34a)",
+                  background: LIME,
                 }}
               />
             </div>
@@ -1012,7 +1012,7 @@ export default function GroceryList() {
                   <button
                     onClick={() => setCostEstimate(null)}
                     className="w-6 h-6 flex items-center justify-center rounded-full active:bg-black/5 transition-colors"
-                    style={{ color: "#c0b8b0" }}
+                    style={{ color: INK_MUTED }}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -1036,7 +1036,7 @@ export default function GroceryList() {
                   <div
                     key={idx}
                     className="flex items-center justify-between py-1.5"
-                    style={idx < costEstimate.items.length - 1 ? { borderBottom: "1px solid #f5f3f0" } : undefined}
+                    style={idx < costEstimate.items.length - 1 ? { borderBottom: "1.5px solid rgba(23,20,16,0.12)" } : undefined}
                   >
                     <span className="text-[13px] capitalize truncate flex-1 min-w-0 mr-2" style={{ color: INK_SOFT }}>
                       {ci.name}
@@ -1051,7 +1051,7 @@ export default function GroceryList() {
               <div className="px-4 pb-4 pt-2">
                 <div
                   className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl"
-                  style={{ background: "#f5f3f0" }}
+                  style={{ background: CREAM_WARM }}
                 >
                   <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={INK_MUTED} strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 2.1-4.684 2.924-7.138a60.114 60.114 0 00-16.536-1.84M7.5 14.25L5.106 5.272M6 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zm12.75 0a.75.75 0 11-1.5 0 .75.75 0 011.5 0z" />
