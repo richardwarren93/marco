@@ -15,7 +15,7 @@ import RecipeRating from "@/components/recipes/RecipeRating";
 import { useToast } from "@/components/ui/Toast";
 import { MealTypeIcon } from "@/components/icons/MealIcons";
 import CookCard from "@/components/social/CookCard";
-import { CREAM, DISPLAY, HAND, INK, LIME, MUSTARD, PAPER, TOMATO } from "@/lib/theme";
+import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, MUSTARD, PAPER, SURFACE_DOTS, TOMATO, TOMATO_DARK } from "@/lib/theme";
 
 // One entry in a recipe's lineage — a cook posted from it (photo + variation).
 interface LineageCook {
@@ -28,10 +28,11 @@ interface LineageCook {
 function Accordion({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
+    <div className="overflow-hidden" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between px-5 py-4 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+        className="w-full flex items-center justify-between px-5 py-4 text-sm active:bg-black/5 transition-colors"
+        style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 15 }}
       >
         {title}
         <svg
@@ -287,7 +288,10 @@ function tagIconPath(tag: string): string {
 
 function TagChip({ tag }: { tag: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12.5px] font-medium" style={{ background: "#F2EEE6", color: "var(--ink, #171410)" }}>
+    <span
+      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[12.5px] font-medium"
+      style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 99, boxShadow: `2px 2px 0 ${INK}` }}
+    >
       <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
         <path d={tagIconPath(tag)} />
       </svg>
@@ -520,7 +524,7 @@ export default function RecipeDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20" style={{ backgroundColor: CREAM }}>
+      <div className="flex items-center justify-center py-20" style={SURFACE_DOTS}>
         <div className="w-8 h-8 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -528,7 +532,7 @@ export default function RecipeDetailPage() {
 
   if (!recipe) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 space-y-3" style={{ backgroundColor: CREAM }}>
+      <div className="flex flex-col items-center justify-center py-20 space-y-3" style={SURFACE_DOTS}>
         <p className="text-[var(--ink-muted)]">Recipe not found</p>
         <Link href="/recipes" className="text-[var(--tomato)] text-sm font-medium hover:underline">
           Back to recipes
@@ -539,7 +543,7 @@ export default function RecipeDetailPage() {
 
   if (editing) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-6" style={{ backgroundColor: CREAM, minHeight: "100vh" }}>
+      <div className="max-w-3xl mx-auto px-4 py-6" style={{ ...SURFACE_DOTS, minHeight: "100vh" }}>
         <RecipeForm
           recipe={recipe}
           onCancel={() => setEditing(false)}
@@ -619,14 +623,15 @@ export default function RecipeDetailPage() {
           <button
             type="button"
             onClick={() => setSubstituteIngredient(ing)}
-            className="text-[13.5px] text-gray-800 text-left py-1 transition-colors hover:bg-[rgba(229,70,46,0.04)] rounded-md -mx-1 px-1"
+            className="text-[13.5px] text-left py-1 transition-colors active:bg-[rgba(229,70,46,0.06)] rounded-md -mx-1 px-1"
+            style={{ color: INK }}
             aria-label={standingSub ? `Substitute ${effective.name} (was ${ing.name})` : `Substitute ${ing.name}`}
           >
             {displayAmount && (
               <span className={`font-semibold ${servingsChanged || wasConverted ? "text-[var(--tomato)]" : ""}`}>{displayAmount}{" "}</span>
             )}
             {displayUnit && (
-              <span className={`${wasConverted ? "text-[var(--tomato)] font-medium" : "text-gray-500"}`}>{displayUnit}{" "}</span>
+              <span style={{ color: wasConverted ? TOMATO : INK_SOFT, fontWeight: wasConverted ? 600 : 400 }}>{displayUnit}{" "}</span>
             )}
             {effective.name}
           </button>
@@ -658,11 +663,11 @@ export default function RecipeDetailPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: CREAM }}>
+    <div className="min-h-screen" style={SURFACE_DOTS}>
       {/* ── 1. Hero Image ──────────────────────────────────────────────── */}
       <div className="relative max-w-3xl mx-auto">
         {recipe.image_url ? (
-          <div className="h-56 sm:h-72 bg-gray-100 relative">
+          <div className="h-56 sm:h-72 relative" style={{ background: CREAM_WARM }}>
             <img
               src={recipe.image_url}
               alt={recipe.title}
@@ -706,9 +711,9 @@ export default function RecipeDetailPage() {
                 router.back();
               }
             }}
-            className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
           >
-            <svg className="w-4.5 h-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={INK} strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
             </svg>
           </button>
@@ -718,9 +723,9 @@ export default function RecipeDetailPage() {
               <button
                 onClick={() => setShowAddToCollection(true)}
                 aria-label="Add to collection"
-                className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
               >
-                <svg className="w-4.5 h-4.5 text-gray-700" fill={recipeCollections.length > 0 ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4.5 h-4.5" fill={recipeCollections.length > 0 ? INK : "none"} viewBox="0 0 24 24" stroke={INK} strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                 </svg>
               </button>
@@ -730,23 +735,23 @@ export default function RecipeDetailPage() {
               <button
                 onClick={() => setShowMore(!showMore)}
                 aria-label="More"
-                className="w-9 h-9 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white transition-colors"
+                className="w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-transform" style={{ background: PAPER, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
               >
-                <svg className="w-4.5 h-4.5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke={INK} strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
                 </svg>
               </button>
               {showMore && (
                 <>
                   <div className="fixed inset-0 z-20" onClick={() => setShowMore(false)} />
-                  <div className="absolute right-0 top-full mt-1 bg-white rounded-xl shadow-lg border border-gray-100 z-30 py-1 min-w-[180px] animate-pop-in text-sm">
-                    <button onClick={() => { setShowMore(false); setEditing(true); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">Edit recipe</button>
-                    <button onClick={() => { setShowMore(false); cameraFileRef.current?.click(); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">Add a cook photo</button>
-                    <button onClick={() => { setShowMore(false); setShowShareWithFriends(true); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">Share with friends</button>
+                  <div className="absolute right-0 top-full mt-1.5 z-30 py-1 min-w-[190px] animate-pop-in text-sm" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
+                    <button onClick={() => { setShowMore(false); setEditing(true); }} className="w-full text-left px-4 py-2.5 active:bg-black/5 transition-colors" style={{ color: INK, fontWeight: 600 }}>Edit recipe</button>
+                    <button onClick={() => { setShowMore(false); cameraFileRef.current?.click(); }} className="w-full text-left px-4 py-2.5 active:bg-black/5 transition-colors" style={{ color: INK, fontWeight: 600 }}>Add a cook photo</button>
+                    <button onClick={() => { setShowMore(false); setShowShareWithFriends(true); }} className="w-full text-left px-4 py-2.5 active:bg-black/5 transition-colors" style={{ color: INK, fontWeight: 600 }}>Share with friends</button>
                     {recipe.source_url && (
-                      <button onClick={() => { setShowMore(false); window.open(recipe.source_url!, "_blank"); }} className="w-full text-left px-4 py-2.5 text-gray-700 hover:bg-gray-50 transition-colors">View source</button>
+                      <button onClick={() => { setShowMore(false); window.open(recipe.source_url!, "_blank"); }} className="w-full text-left px-4 py-2.5 active:bg-black/5 transition-colors" style={{ color: INK, fontWeight: 600 }}>View source</button>
                     )}
-                    <button onClick={() => { setShowMore(false); handleDelete(); }} disabled={deleting} className="w-full text-left px-4 py-2.5 text-red-500 hover:bg-red-50 transition-colors">{deleting ? "Deleting…" : "Delete recipe"}</button>
+                    <button onClick={() => { setShowMore(false); handleDelete(); }} disabled={deleting} className="w-full text-left px-4 py-2.5 active:bg-black/5 transition-colors" style={{ color: TOMATO_DARK, fontWeight: 700 }}>{deleting ? "Deleting…" : "Delete recipe"}</button>
                   </div>
                 </>
               )}
@@ -844,7 +849,7 @@ export default function RecipeDetailPage() {
         )}
 
         {/* ── Ingredients ────────────────────────────────────────────── */}
-        <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+        <div className="p-4 mb-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-[16px] font-bold" style={{ color: INK }}>Ingredients</h3>
             {originalServings && (
@@ -853,18 +858,20 @@ export default function RecipeDetailPage() {
                 <div className="flex items-center gap-2.5">
                       <button
                         onClick={() => changeServings(-1)}
-                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[var(--tomato)]/40 hover:text-[var(--tomato)] active:scale-95 transition-all"
+                        className="w-7 h-7 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                        style={{ background: PAPER, color: INK, border: `2px solid ${INK}` }}
                       >
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" d="M5 12h14" />
                         </svg>
                       </button>
-                      <span className={`text-sm font-bold w-5 text-center tabular-nums ${servingsChanged ? "text-[var(--tomato)]" : "text-gray-900"}`}>
+                      <span className="text-sm w-5 text-center tabular-nums" style={{ color: servingsChanged ? TOMATO : INK, fontFamily: DISPLAY, fontWeight: 700 }}>
                         {currentServings}
                       </span>
                       <button
                         onClick={() => changeServings(1)}
-                        className="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:border-[var(--tomato)]/40 hover:text-[var(--tomato)] active:scale-95 transition-all"
+                        className="w-7 h-7 rounded-full flex items-center justify-center active:scale-90 transition-transform"
+                        style={{ background: PAPER, color: INK, border: `2px solid ${INK}` }}
                       >
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" d="M12 5v14m-7-7h14" />
@@ -873,7 +880,8 @@ export default function RecipeDetailPage() {
                       {servingsChanged && (
                         <button
                           onClick={resetServings}
-                          className="text-[10px] text-[var(--ink-muted)] hover:text-gray-600 font-medium ml-1 transition-colors"
+                          className="text-[10px] font-medium ml-1 transition-colors"
+                          style={{ color: INK_MUTED }}
                         >
                           Reset
                         </button>
@@ -885,8 +893,8 @@ export default function RecipeDetailPage() {
 
           {/* Meal plan prompt */}
                 {showMealPlanPrompt && servingsChanged && (
-                  <div className="mb-5 p-3 bg-orange-50 rounded-xl border border-orange-100 animate-slide-up">
-                    <p className="text-xs text-orange-700 font-medium mb-2">
+                  <div className="mb-5 p-3 animate-slide-up" style={{ background: BUTTER, borderRadius: 12, border: `2px solid ${INK}` }}>
+                    <p className="text-xs font-semibold mb-2" style={{ color: INK }}>
                       Adjusted to {currentServings} servings — add to your meal plan?
                     </p>
                     <div className="flex gap-2">
@@ -898,7 +906,8 @@ export default function RecipeDetailPage() {
                       </button>
                       <button
                         onClick={() => setShowMealPlanPrompt(false)}
-                        className="px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 font-medium transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium transition-colors"
+                        style={{ color: INK_SOFT }}
                       >
                         Skip
                       </button>
@@ -926,7 +935,8 @@ export default function RecipeDetailPage() {
         {steps.length > 0 && (
           <button
             onClick={() => setShowStepsModal(true)}
-            className="w-full bg-white rounded-2xl shadow-sm p-4 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+            className="w-full p-4 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+            style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
           >
             <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "var(--cream-warm, #EFE5D2)", color: INK }}>
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7}><path strokeLinecap="round" strokeLinejoin="round" d="M4 5a2 2 0 012-2h6v16H6a2 2 0 00-2 2V5zM20 5a2 2 0 00-2-2h-6v16h6a2 2 0 012 2V5z" /></svg>
@@ -942,10 +952,10 @@ export default function RecipeDetailPage() {
           </button>
         )}
 
-        {hasMacros && <details className="mb-4 rounded-2xl bg-white p-4"><summary className="font-semibold cursor-pointer">Nutrition</summary>
+        {hasMacros && <details className="mb-4 p-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}><summary className="cursor-pointer" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 15 }}>Nutrition</summary>
         {/* ── Nutrition (per serving) ────────────────────────────────── */}
         {hasMacros && (
-          <div className="bg-white rounded-2xl shadow-sm p-4 mb-4">
+          <div className="p-4 mb-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}>
             <h3 className="text-[16px] font-bold mb-3" style={{ color: INK }}>
               Nutrition <span className="text-[13px] font-normal" style={{ color: "#6B655C" }}>per serving</span>
             </h3>
@@ -969,7 +979,7 @@ export default function RecipeDetailPage() {
 
         </details>}
         {/* ── The lineage — every cook of this recipe, same or tweaked ── */}
-        <details id="lineage" className="mb-4 rounded-2xl bg-white p-4" style={{ scrollMarginTop: 80 }}><summary className="font-semibold cursor-pointer mb-3">Cooks &amp; photos ({cookedCount})</summary><button onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)} className="mb-4 rounded-xl bg-[var(--tomato)] text-white px-4 py-2 font-semibold">Post your cook</button>
+        <details id="lineage" className="mb-4 p-4" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}`, scrollMarginTop: 80 }}><summary className="cursor-pointer mb-3" style={{ color: INK, fontFamily: DISPLAY, fontWeight: 700, fontSize: 15 }}>Cooks &amp; photos ({cookedCount})</summary><button onClick={() => router.push(`/i-cooked?recipe=${recipe.id}`)} className="mb-4 px-4 py-2 active:scale-95 transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISPLAY, fontWeight: 700, border: `2.5px solid ${INK}`, borderRadius: 12, boxShadow: `3px 3px 0 ${INK}` }}>Post your cook</button>
           <div className="flex items-baseline gap-2 mb-3">
             <h3 style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 22, color: INK }}>The lineage</h3>
             {cookedCount > 0 && <span style={{ fontFamily: HAND, fontSize: 16, color: TOMATO, transform: "rotate(-1.5deg)", display: "inline-block" }}>{cookedCount} {cookedCount === 1 ? "cook" : "cooks"}, same or tweaked</span>}
@@ -1028,12 +1038,13 @@ export default function RecipeDetailPage() {
         {recipe.source_url && (
           <button
             onClick={() => window.open(recipe.source_url!, "_blank")}
-            className="w-full bg-white rounded-2xl shadow-sm p-3 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+            className="w-full p-3 mb-4 flex items-center gap-3 text-left active:scale-[0.99] transition-transform"
+            style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
           >
             <div className="relative w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" style={{ background: "#eeece8" }}>
               {recipe.image_url && <img src={recipe.image_url} alt="" className="w-full h-full object-cover" />}
               <span className="absolute inset-0 flex items-center justify-center">
-                <span className="w-7 h-7 rounded-full bg-white/85 flex items-center justify-center">
+                <span className="w-7 h-7 rounded-full flex items-center justify-center" style={{ background: PAPER, border: `2px solid ${INK}` }}>
                   <svg className="w-3.5 h-3.5 ml-0.5" style={{ color: INK }} viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
                 </span>
               </span>
@@ -1052,7 +1063,7 @@ export default function RecipeDetailPage() {
         <div className={`grid ${isPublicView ? "grid-cols-1" : "grid-cols-2"} gap-3 mb-4`}>
           <button
             onClick={() => setShowRatingSheet(true)}
-            className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
+            className="p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
           >
             <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill={ratingCount > 0 ? MUSTARD : "none"} stroke={MUSTARD} strokeWidth={1.5}><path strokeLinejoin="round" d="M12 2l2.9 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 7.1-1.01L12 2z" /></svg>
             <div className="min-w-0 flex-1">
@@ -1064,7 +1075,7 @@ export default function RecipeDetailPage() {
           {!isPublicView && (
             <button
               onClick={() => setShowNotesSheet(true)}
-              className="bg-white rounded-2xl shadow-sm p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform"
+              className="p-4 flex items-center gap-2.5 text-left active:scale-[0.98] transition-transform" style={{ background: PAPER, borderRadius: 16, border: `2.5px solid ${INK}`, boxShadow: `4px 5px 0 ${INK}` }}
             >
               <svg className="w-5 h-5 flex-shrink-0" style={{ color: INK }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h4m3 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               <div className="min-w-0 flex-1">
