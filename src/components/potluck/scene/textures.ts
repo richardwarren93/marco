@@ -19,9 +19,9 @@ import { Graphics, Texture, type Renderer } from "pixi.js";
 
 export type TextureName =
   | "chair" | "chairBack"
-  | "plateEmpty" | "plateCovered" | "plateFood"
+  | "plateEmpty" | "cloche" | "plateFood"
   | "nameCard" | "glass" | "candle" | "flame"
-  | "spark";
+  | "spark" | "steam";
 
 const INK = 0x171410;
 const PAPER = 0xfbf7ee;
@@ -56,10 +56,10 @@ function draw(name: TextureName): Graphics {
       g.ellipse(0, 0, 21, 13).stroke({ width: 2, color: INK, alpha: 0.25 });
       return g;
     }
-    case "plateCovered": {
-      g.ellipse(0, 4, 30, 19);
-      inked(g, PAPER);
-      // the cloche
+    // The cloche is its OWN texture, not part of a "covered plate". A lid that
+    // cannot be lifted away from the plate under it is not a reveal, and the
+    // reveal is the moment the whole feature is built around.
+    case "cloche": {
       g.moveTo(-24, 3).arc(0, 3, 24, Math.PI, 0).closePath();
       inked(g, CREAM_WARM, 3);
       g.circle(0, -22, 4);
@@ -98,12 +98,22 @@ function draw(name: TextureName): Graphics {
       g.star(0, 0, 4, 7, 2.6).fill({ color: BUTTER });
       return g;
     }
+    // An ink curl, not a white puff. White steam over a cream tabletop is
+    // invisible — it was drawn, it rose, and nobody could see it. Everything
+    // else in Marco is an ink line on paper; so is this.
+    case "steam": {
+      g.moveTo(0, 14)
+        .bezierCurveTo(-9, 6, 9, 0, 0, -8)
+        .bezierCurveTo(-8, -14, 6, -18, 2, -24)
+        .stroke({ width: 3, color: INK, alpha: 0.55, cap: "round" });
+      return g;
+    }
   }
 }
 
 export type TextureBank = Record<TextureName, Texture>;
 
-const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "plateCovered", "plateFood", "nameCard", "glass", "candle", "flame", "spark"];
+const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam"];
 
 export function makeTextures(renderer: Renderer): TextureBank {
   const bank = {} as TextureBank;

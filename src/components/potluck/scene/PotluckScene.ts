@@ -49,7 +49,10 @@ export type SceneCallbacks = {
 };
 
 type SeatView = { root: Container; chairBack: Sprite; chair: Sprite; card: Container; label: Text; seat: SceneSeat };
-type DishView = { root: Container; plate: Sprite; dish: SceneDish };
+/* A dish is a plate, a lid and the food under it — three sprites, so the lid
+   can leave without the plate. A single "covered plate" texture cannot be
+   opened, and opening it is the point. */
+type DishView = { root: Container; plate: Sprite; food: Sprite; cloche: Sprite; dish: SceneDish };
 
 export class PotluckScene {
   readonly app: Application;
@@ -63,6 +66,11 @@ export class PotluckScene {
   private tweens = new Set<gsap.core.Tween>();
   private idle: gsap.core.Timeline | null = null;
   private destroyed = false;
+  /* Opening a potluck is not four people arriving. Everything present on the
+     first reconcile is simply placed; only what appears AFTER that animates in.
+     The spec is explicit — do not replay every historical animation. */
+  private primed = false;
+  private onArrival?: () => void;
 
   constructor(app: Application, cb: SceneCallbacks, reducedMotion: boolean) {
     this.app = app;
@@ -154,7 +162,11 @@ export class PotluckScene {
     }
 
     this.setStage(model.stage);
+    this.primed = true;
   }
+
+  /** Called when something arrives after first paint — the page buzzes. */
+  setArrivalSignal(fn: () => void) { this.onArrival = fn; }
 
   private addSeat(seat: SceneSeat, at: { x: number; y: number }): SeatView {
     const root = new Container();
@@ -198,17 +210,33 @@ export class PotluckScene {
     });
 
     this.layers.chairs.addChild(root);
-    if (!this.reduced) {
-      root.alpha = 0;
-      root.scale.set(0.82);
-      // A chair sliding in, not a fade — the spec is explicit about that.
-      this.track(gsap.to(root, { alpha: 1, duration: 0.2 }));
-      this.track(gsap.to(root.scale, { x: 1, y: 1, duration: 0.55, ease: "back.out(2)" }));
-    }
+    if (this.primed && !this.reduced) this.arrive(root, card, at);
+    else { card.scale.set(1.35); }
 
     const view: SeatView = { root, chairBack, chair, card, label, seat };
     this.seats.set(seat.id, view);
     return view;
+  }
+
+  /* A chair arriving: it slides IN toward the table from further out, then the
+     name card unfolds on top of it, then a small sparkle. Three beats rather
+     than one fade, because the spec asks for anticipation and overlap and
+     because a fade says nothing about where the chair came from. */
+  private arrive(root: Container, card: Container, at: { x: number; y: number }) {
+    const outward = 1.5;
+    root.position.set(at.x * outward, at.y * outward);
+    root.alpha = 0;
+    card.scale.set(1.35, 0);     // folded flat
+    card.alpha = 0;
+
+    const tl = gsap.timeline();
+    tl.to(root, { alpha: 1, duration: 0.14 }, 0)
+      .to(root, { x: at.x, y: at.y, duration: 0.58, ease: "back.out(1.4)" }, 0)
+      .to(card, { alpha: 1, duration: 0.12 }, 0.34)
+      .to(card.scale, { y: 1.35, duration: 0.42, ease: "back.out(2.6)" }, 0.34);
+    this.track(tl as unknown as gsap.core.Tween);
+    this.sparkle(at.x, at.y - 40, 4);
+    this.onArrival?.();
   }
 
   private updateSeat(view: SeatView, seat: SceneSeat, at: { x: number; y: number }) {
@@ -240,9 +268,15 @@ export class PotluckScene {
     root.position.set(at.x, at.y);
     root.zIndex = 1000 + at.y;
 
-    const plate = new Sprite(dish.cooked ? this.tex.plateFood : this.tex.plateCovered);
+    const plate = new Sprite(this.tex.plateEmpty);
     plate.anchor.set(0.5, 0.65);
-    root.addChild(plate);
+    const food = new Sprite(this.tex.plateFood);
+    food.anchor.set(0.5, 0.65);
+    food.visible = dish.cooked;
+    const cloche = new Sprite(this.tex.cloche);
+    cloche.anchor.set(0.5, 0.65);
+    cloche.visible = !dish.cooked;
+    root.addChild(plate, food, cloche);
 
     root.eventMode = "static";
     root.cursor = "pointer";
@@ -252,14 +286,20 @@ export class PotluckScene {
     root.on("pointertap", (e: FederatedPointerEvent) => { e.stopPropagation(); this.nudge(root); this.cb.onDishTap(dish.id); });
 
     this.layers.food.addChild(root);
-    if (!this.reduced) {
-      root.scale.set(0.5);
+    if (this.primed && !this.reduced) {
+      // Set down from above, with the squash of something with weight in it.
+      root.y = at.y - 70;
       root.alpha = 0;
-      this.track(gsap.to(root, { alpha: 1, duration: 0.18 }));
-      this.track(gsap.to(root.scale, { x: 1, y: 1, duration: 0.42, ease: "back.out(2.4)" }));
+      const tl = gsap.timeline();
+      tl.to(root, { alpha: 1, duration: 0.12 }, 0)
+        .to(root, { y: at.y, duration: 0.34, ease: "power2.in" }, 0)
+        .to(root.scale, { x: 1.18, y: 0.82, duration: 0.08 }, 0.34)
+        .to(root.scale, { x: 1, y: 1, duration: 0.42, ease: "elastic.out(1,0.45)" }, 0.42);
+      this.track(tl as unknown as gsap.core.Tween);
+      this.onArrival?.();
     }
 
-    const view: DishView = { root, plate, dish };
+    const view: DishView = { root, plate, food, cloche, dish };
     this.dishes.set(dish.id, view);
     return view;
   }
@@ -271,30 +311,78 @@ export class PotluckScene {
     if (view.root.x !== at.x || view.root.y !== at.y) {
       this.track(gsap.to(view.root, { x: at.x, y: at.y, duration: this.reduced ? 0 : 0.42, ease: "power3.out" }));
     }
-    if (dish.cooked !== wasCooked) {
-      view.plate.texture = dish.cooked ? this.tex.plateFood : this.tex.plateCovered;
-      if (dish.cooked) this.celebrate(view);
+    view.food.tint = PLATE_TINTS[hash(dish.id) % PLATE_TINTS.length];
+    if (dish.cooked && !wasCooked && this.primed && !this.reduced) {
+      this.reveal(view);
     } else {
-      view.plate.texture = dish.cooked ? this.tex.plateFood : this.tex.plateCovered;
+      view.food.visible = dish.cooked;
+      view.cloche.visible = !dish.cooked;
+      view.cloche.alpha = 1;
+      view.cloche.y = 0;
     }
-    view.plate.tint = dish.cooked ? PLATE_TINTS[hash(dish.id) % PLATE_TINTS.length] : 0xffffff;
   }
 
-  /** The lid coming off: the one moment the spec asks to feel like a reward. */
-  private celebrate(view: DishView) {
-    if (this.reduced) return;
-    const tl = gsap.timeline();
-    tl.to(view.root.scale, { x: 1.28, y: 1.28, duration: 0.22, ease: "back.out(3)" })
-      .to(view.root.scale, { x: 1, y: 1, duration: 0.5, ease: "elastic.out(1,0.5)" });
-    for (let i = 0; i < 6; i++) {
+  /* The lid coming off — the one moment the spec asks to feel like a reward,
+     and the only sequence here that is allowed to take most of a second.
+
+     Order matters: the dish rises BEFORE the lid leaves, so the lid looks
+     lifted rather than dropped through. Food appears under the lid while it is
+     still in the way, so it is uncovered rather than popped into existence. */
+  private reveal(view: DishView) {
+    view.root.zIndex = 9999;                    // above its neighbours while open
+    const tl = gsap.timeline({ onComplete: () => { view.root.zIndex = 1000 + view.root.y; } });
+
+    tl.to(view.root.scale, { x: 1.3, y: 1.3, duration: 0.22, ease: "back.out(3)" }, 0)
+      .add(() => { view.food.visible = true; view.food.alpha = 0; }, 0.14)
+      .to(view.food, { alpha: 1, duration: 0.2 }, 0.14)
+      .to(view.cloche, { y: -54, alpha: 0, duration: 0.42, ease: "power2.out" }, 0.18)
+      .to(view.cloche.scale, { x: 1.12, y: 1.12, duration: 0.42, ease: "power2.out" }, 0.18)
+      .add(() => { view.cloche.visible = false; view.cloche.y = 0; view.cloche.alpha = 1; view.cloche.scale.set(1); }, 0.62)
+      .to(view.root.scale, { x: 1, y: 1, duration: 0.55, ease: "elastic.out(1,0.5)" }, 0.52);
+
+    this.track(tl as unknown as gsap.core.Tween);
+    this.steam(view.root.x, view.root.y - 10);
+    this.sparkle(view.root.x, view.root.y - 16, 7);
+    this.onArrival?.();
+  }
+
+  /* Slow, drifting, randomised — not a jet.
+   *
+   * One timeline per wisp rather than three overlapping tweens. The first
+   * version faded IN and OUT with two concurrent gsap.to() calls on the same
+   * alpha; the later one won from the first frame, so every wisp rose at alpha
+   * zero. It was drawn, it moved, it was destroyed, and nobody ever saw it.
+   * Inside a timeline the two are sequenced and cannot fight. */
+  private steam(x: number, y: number) {
+    for (let i = 0; i < 7; i++) {
+      const s = new Sprite(this.tex.steam);
+      s.anchor.set(0.5);
+      s.position.set(x + (Math.random() - 0.5) * 22, y);
+      s.scale.set(0.8 + Math.random() * 0.5);
+      s.alpha = 0;
+      this.layers.effects.addChild(s);
+
+      const rise = 1.3 + Math.random() * 0.6;
+      const tl = gsap.timeline({ delay: i * 0.1, onComplete: () => s.destroy() });
+      tl.to(s, { alpha: 0.85, duration: 0.22 }, 0)
+        .to(s, { y: y - 70 - Math.random() * 40, x: s.x + (Math.random() - 0.5) * 40, duration: rise, ease: "sine.out" }, 0)
+        .to(s.scale, { x: s.scale.x * 1.35, y: s.scale.y * 1.35, duration: rise, ease: "sine.out" }, 0)
+        .to(s, { alpha: 0, duration: rise * 0.5 }, rise * 0.5);
+      this.track(tl as unknown as gsap.core.Tween);
+    }
+  }
+
+  private sparkle(x: number, y: number, n: number) {
+    for (let i = 0; i < n; i++) {
       const s = new Sprite(this.tex.spark);
       s.anchor.set(0.5);
-      s.position.set(view.root.x, view.root.y);
-      s.scale.set(0.6);
+      s.position.set(x, y);
+      s.scale.set(0.5 + Math.random() * 0.4);
       this.layers.effects.addChild(s);
-      const a = (Math.PI * 2 * i) / 6 + Math.random() * 0.4;
+      const a = (Math.PI * 2 * i) / n + Math.random() * 0.4;
       this.track(gsap.to(s, {
-        x: s.x + Math.cos(a) * 60, y: s.y + Math.sin(a) * 44, alpha: 0, duration: 0.7 + Math.random() * 0.3,
+        x: x + Math.cos(a) * (44 + Math.random() * 28), y: y + Math.sin(a) * (32 + Math.random() * 22),
+        alpha: 0, rotation: Math.random() * 2, duration: 0.6 + Math.random() * 0.35,
         ease: "power2.out", onComplete: () => s.destroy(),
       }));
     }

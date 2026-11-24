@@ -23,6 +23,7 @@ import RecipeSheet, { type SheetMode, type TakenBy } from "@/components/potluck/
 import PotluckStage from "@/components/potluck/scene/PotluckStage";
 import { buildModel, type SceneModel } from "@/components/potluck/scene/model";
 import { sharePotluckCard } from "@/components/potluck/shareCard";
+import { tap } from "@/lib/haptics";
 import { deadlineLabel, isServed, localISO } from "@/lib/potluck";
 import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
@@ -143,18 +144,15 @@ export default function PotluckRoom() {
       </div>
 
       {/* 3 — the table */}
-      {/* Fills the space between the header and the actions, and the camera
-          centres the table in it. Capping this at 62dvh was worse: the camera
-          is bound by WIDTH on a phone, so the table does not grow into extra
-          height — the space just moved below the buttons instead. */}
       <div style={{ flex: "1 1 auto", minHeight: 0, position: "relative" }}>
         {fallback
           ? <FallbackList model={model} onSeatTap={(sid) => setPicked({ kind: "seat", id: sid })} onDishTap={(did) => setPicked({ kind: "dish", id: did })} />
           : <PotluckStage
               model={model}
-              onSeatTap={(sid) => setPicked({ kind: "seat", id: sid })}
-              onDishTap={(did) => setPicked({ kind: "dish", id: did })}
-              onEmptyTap={() => router.push("/crew")}
+              focused={picked?.id ?? null}
+              onSeatTap={(sid) => { tap(); setPicked({ kind: "seat", id: sid }); }}
+              onDishTap={(did) => { tap(); setPicked({ kind: "dish", id: did }); }}
+              onEmptyTap={() => { tap("medium"); router.push("/crew"); }}
               onUnavailable={() => setFallback(true)}
             />}
       </div>
@@ -162,9 +160,7 @@ export default function PotluckRoom() {
       {message && <p role="status" style={{ textAlign: "center", fontFamily: HAND, fontSize: 14.5, color: TOMATO, padding: "0 16px" }}>{message}</p>}
 
       {/* 4 — three actions */}
-      {/* marginTop:auto, because the column can end up shorter than the
-          screen — without this the buttons float mid-page. */}
-      <div className="flex gap-2" style={{ marginTop: "auto", padding: "8px 14px calc(env(safe-area-inset-bottom,0px) + 12px)" }}>
+      <div className="flex gap-2" style={{ padding: "8px 14px calc(env(safe-area-inset-bottom,0px) + 12px)" }}>
         <Action label="Invite" onClick={() => router.push("/crew")} />
         <Action label="Bring food" primary disabled={served || !canClaim} onClick={() => setSheet({ kind: "add" })} />
         <Action label="Postcard" onClick={async () => {
