@@ -442,12 +442,25 @@ export default function RecipeDetailPage() {
     );
     router.push("/recipes");
 
-    // Your save of this recipe goes with it. Until
-    // migration-recipe-delete-cleanup.sql has run there is no foreign key to
-    // do this, so a deleted recipe stayed in your kitchen — which is what was
-    // reported. Done first: if the recipe delete fails we have removed a save
-    // of something still there, which the next save restores; the other order
-    // leaves a save of something gone, which nothing cleans up.
+    /* Un-save anything on the Table that came from this recipe.
+     *
+     * The previous attempt at this deleted saves by `recipe_id`, which fixed
+     * nothing: NOTHING in the app has ever written that column. Every save is
+     * made by saveCook() and is keyed on `cook_id`. So the bookmark on a
+     * "hot off the stove" card — which reads saves.cook_id — stayed lit after
+     * the recipe behind it was deleted, exactly as reported.
+     *
+     * The cook itself stays. It is somebody's post about something they
+     * actually made, and deleting your copy of the recipe is not grounds for
+     * removing it from their table. What goes is YOUR save of it, which is
+     * all RLS would let us touch anyway.
+     */
+    const { data: fromThisRecipe } = await supabase.from("cooks").select("id").eq("source_recipe_id", id);
+    const cookIds = ((fromThisRecipe ?? []) as { id: string }[]).map((c) => c.id);
+    if (cookIds.length > 0) await supabase.from("saves").delete().in("cook_id", cookIds);
+    // Kept for the column's own sake: nothing writes saves.recipe_id today,
+    // but the foreign key added by migration-recipe-delete-cleanup assumes
+    // anything that ever does is cleaned up here too.
     await supabase.from("saves").delete().eq("recipe_id", id);
 
     const { error: deleteError } = await supabase.from("recipes").delete().eq("id", id);
