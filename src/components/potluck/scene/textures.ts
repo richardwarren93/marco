@@ -1,205 +1,177 @@
-/* The placeholder art, drawn once and reused as textures.
+/* The sprite set, loaded rather than drawn.
  *
- * The spec asks for transparent sprites with a consistent perspective, grouped
- * into atlases, and explicitly allows temporary illustrated assets so long as
- * swapping them does not touch interaction logic. This is that seam: every
- * object in the scene asks this factory for a Texture by name and knows
- * nothing about where it came from. Replacing these with real PNGs means
- * changing `make()` and nothing else.
+ * This file used to BE the artwork: a switch statement of Graphics calls that
+ * produced ellipses and rounded rectangles. That was a greybox, and no amount
+ * of better circles would have fixed it, because a flat ellipse is not a table
+ * seen from anywhere.
  *
- * They are drawn rather than emoji on purpose — the spec rules emoji out as
- * final artwork, and a glyph cannot carry the ink outline and flat fills the
- * rest of Marco is built from.
+ * The art is now rendered in Blender through one fixed orthographic camera
+ * (tools/blender/potluck_assets.py) and loaded here. Two numbers travel with
+ * each sprite and they are what make the set usable:
  *
- * One Texture per kind, shared by every Sprite that uses it, which is the
- * atlas benefit without an atlas.
+ *   metres — how wide its frame is in the modelled room, so a candle and a
+ *            dining table can be sized against EACH OTHER rather than each
+ *            being stretched to fill its own frame.
+ *   anchor — where the object's own origin sits inside that frame, so a chair
+ *            can be placed by the spot it stands on instead of by eye.
+ *
+ * The one thing still drawn here is the contact shadow: a soft radial blob is
+ * cheaper as a gradient than as a render, and it needs to be tinted and
+ * squashed per object anyway.
  */
 
-import { Graphics, Texture, type Renderer } from "pixi.js";
+import { Assets, Graphics, Texture, type Renderer } from "pixi.js";
 
-export type TextureName =
-  | "chair" | "chairBack"
-  | "plateEmpty" | "cloche" | "plateFood"
-  | "nameCard" | "glass" | "candle" | "flame"
-  | "spark" | "steam"
-  | "body" | "head" | "eyes" | "blink" | "smile"
-  | "flowers" | "cutlery" | "heart"
-  | "bunting" | "confetti";
+export type SpriteName =
+  | "floor" | "rug" | "table" | "cloth" | "chair"
+  | "plate" | "cloche" | "food"
+  | "candle" | "plant" | "flowers"
+  /* Four people, not one person tinted four ways: a tint multiplies the whole
+     sprite, so recolouring one render gave a red guest with red skin and red
+     hair. See GUEST_LOOKS in tools/blender/potluck_assets.py. */
+  | "guest1" | "guest2" | "guest3" | "guest4";
+
+export const GUEST_SPRITES: SpriteName[] = ["guest1", "guest2", "guest3", "guest4"];
+
+/* What is still DRAWN, and why each one earns it.
+ *
+ * The spec's objection is to geometric shapes standing in for artwork — a
+ * flat ellipse pretending to be a table. None of these pretend to be an
+ * object in the room:
+ *
+ *   nameCard  UI, not furniture: a paper tag with a name typeset on it. It
+ *             has to take arbitrary text, so it cannot be a fixed render.
+ *   spark / steam / confetti / heart
+ *             particles, spawned by the dozen and tinted and scaled per
+ *             instance. A rendered sprite would be heavier and no truer.
+ *   shadow    a soft radial gradient, squashed and tinted per object.
+ */
+export type EffectName = "nameCard" | "spark" | "steam" | "confetti" | "heart" | "shadow";
+
+export type SpriteInfo = {
+  texture: Texture;
+  /** Width of the rendered frame, in metres of the modelled room. */
+  metres: number;
+  /** The object's own origin within the frame, 0..1 across and down. */
+  anchor: [number, number];
+};
+
+export type Basis = { right: [number, number, number]; up: [number, number, number] };
+
+export type SpriteBank = {
+  sprites: Record<SpriteName, SpriteInfo>;
+  /** The handful of things still drawn — see the note above. */
+  fx: Record<EffectName, Texture>;
+  /** The camera axes the set was rendered through. */
+  basis: Basis;
+};
+
+type Manifest = {
+  pixels: number;
+  right: [number, number, number];
+  up: [number, number, number];
+  sprites: Record<string, { metres: number; anchor: [number, number] }>;
+};
+
+const NAMES: SpriteName[] = [
+  "floor", "rug", "table", "cloth", "chair",
+  "plate", "cloche", "food", "candle", "plant", "flowers",
+  ...GUEST_SPRITES,
+];
 
 const INK = 0x171410;
 const PAPER = 0xfbf7ee;
-const CREAM_WARM = 0xefe5d2;
 const BUTTER = 0xffd84d;
-const WOOD = 0xc9a227;
+const PINK = 0xff4d9d;
 
-/** Flat fill, ink outline — the same two moves as everything else in the app. */
-function inked(g: Graphics, fill: number, width = 3) {
-  g.fill({ color: fill }).stroke({ width, color: INK, alignment: 0.5 });
-}
-
-function draw(name: TextureName): Graphics {
+function drawEffect(name: Exclude<EffectName, "shadow">): Graphics {
   const g = new Graphics();
   switch (name) {
-    case "chair": {
-      g.roundRect(-26, -18, 52, 36, 7);
-      inked(g, WOOD);
-      g.roundRect(-20, -12, 40, 10, 4).fill({ color: 0x000000, alpha: 0.08 });
-      return g;
-    }
-    case "chairBack": {
-      g.roundRect(-24, -34, 48, 30, 8);
-      inked(g, WOOD);
-      g.moveTo(-10, -30).lineTo(-10, -8).stroke({ width: 2.5, color: INK, alpha: 0.5 });
-      g.moveTo(10, -30).lineTo(10, -8).stroke({ width: 2.5, color: INK, alpha: 0.5 });
-      return g;
-    }
-    case "plateEmpty": {
-      g.ellipse(0, 0, 30, 20);
-      inked(g, PAPER);
-      g.ellipse(0, 0, 21, 13).stroke({ width: 2, color: INK, alpha: 0.25 });
-      return g;
-    }
-    // The cloche is its OWN texture, not part of a "covered plate". A lid that
-    // cannot be lifted away from the plate under it is not a reveal, and the
-    // reveal is the moment the whole feature is built around.
-    case "cloche": {
-      g.moveTo(-24, 3).arc(0, 3, 24, Math.PI, 0).closePath();
-      inked(g, CREAM_WARM, 3);
-      g.circle(0, -22, 4);
-      inked(g, CREAM_WARM, 2.5);
-      return g;
-    }
-    case "plateFood": {
-      g.ellipse(0, 0, 30, 20);
-      inked(g, PAPER);
-      g.ellipse(0, -1, 19, 12);
-      inked(g, BUTTER, 2.5);
-      return g;
-    }
-    case "nameCard": {
+    case "nameCard":
       g.moveTo(-28, 0).lineTo(28, 0).lineTo(26, -17).lineTo(-26, -17).closePath();
-      inked(g, PAPER, 2.5);
+      g.fill({ color: PAPER }).stroke({ width: 2.5, color: INK, alignment: 0.5 });
       g.moveTo(-16, -7).lineTo(16, -7).stroke({ width: 2, color: INK, alpha: 0.28 });
       return g;
-    }
-    case "glass": {
-      g.moveTo(-7, -16).lineTo(7, -16).lineTo(5, 6).lineTo(-5, 6).closePath();
-      inked(g, 0xdfeef2, 2.2);
-      return g;
-    }
-    case "candle": {
-      g.roundRect(-5, -20, 10, 26, 3);
-      inked(g, PAPER, 2.2);
-      return g;
-    }
-    case "flame": {
-      g.ellipse(0, 0, 4.5, 7).fill({ color: 0xffb020 });
-      g.ellipse(0, 1.5, 2.2, 3.6).fill({ color: 0xffe9a8 });
-      return g;
-    }
-    case "spark": {
+    case "spark":
       g.star(0, 0, 4, 7, 2.6).fill({ color: BUTTER });
       return g;
-    }
     // An ink curl, not a white puff. White steam over a cream tabletop is
-    // invisible — it was drawn, it rose, and nobody could see it. Everything
-    // else in Marco is an ink line on paper; so is this.
-    // ── the people ────────────────────────────────────────────────────────
-    // Tinted per seat, so one body texture dresses the whole table.
-    case "body": {
-      g.moveTo(-20, 26).bezierCurveTo(-22, -2, 22, -2, 20, 26).closePath();
-      inked(g, 0xffffff, 3);
-      return g;
-    }
-    case "head": {
-      g.circle(0, 0, 17);
-      inked(g, 0xf6d9bd, 3);
-      return g;
-    }
-    case "eyes": {
-      g.circle(-6, 0, 2.6).fill({ color: INK });
-      g.circle(6, 0, 2.6).fill({ color: INK });
-      return g;
-    }
-    // The same two eyes, shut. Swapping textures reads better at this size
-    // than squashing a sprite, which just makes two grey smears.
-    case "blink": {
-      g.moveTo(-9, 0).lineTo(-3, 0).stroke({ width: 2.6, color: INK, cap: "round" });
-      g.moveTo(3, 0).lineTo(9, 0).stroke({ width: 2.6, color: INK, cap: "round" });
-      return g;
-    }
-    case "smile": {
-      g.moveTo(-5, 0).quadraticCurveTo(0, 5, 5, 0).stroke({ width: 2.2, color: INK, cap: "round" });
-      return g;
-    }
-    // ── the table's furniture ─────────────────────────────────────────────
-    case "flowers": {
-      g.moveTo(0, 22).lineTo(0, 2).stroke({ width: 2.5, color: 0x5b7a3a });
-      g.moveTo(0, 14).lineTo(-7, 8).stroke({ width: 2, color: 0x5b7a3a });
-      g.moveTo(0, 10).lineTo(7, 4).stroke({ width: 2, color: 0x5b7a3a });
-      for (const [cx, cy, c] of [[0, -4, 0xff4d9d], [-8, 6, BUTTER], [8, 2, 0xc9b8ff]] as [number, number, number][]) {
-        g.circle(cx, cy, 5.5);
-        inked(g, c, 2.2);
-      }
-      return g;
-    }
-    // Strung across the room when the table is full. Drawn as one piece
-    // because a string of flags that has to be assembled per-render is three
-    // sprites and a loop for something nobody will look at twice.
-    case "bunting": {
-      g.moveTo(-120, 0).quadraticCurveTo(0, 26, 120, 0).stroke({ width: 3, color: INK });
-      const cols = [0xc4ee45, 0xffd84d, 0xff4d9d, 0xc9b8ff, 0xf2c77a];
-      for (let i = 0; i < 7; i++) {
-        const t = (i + 0.5) / 7;
-        const x = -120 + t * 240;
-        const y = 26 * 2 * t * (1 - t);
-        g.moveTo(x - 11, y).lineTo(x + 11, y).lineTo(x, y + 22).closePath();
-        inked(g, cols[i % cols.length], 2.2);
-      }
-      return g;
-    }
-    case "confetti": {
-      g.rect(-4, -7, 8, 14).fill({ color: 0xffffff });
-      return g;
-    }
-    case "heart": {
-      g.moveTo(0, 7)
-        .bezierCurveTo(-11, -1, -7, -11, 0, -5)
-        .bezierCurveTo(7, -11, 11, -1, 0, 7)
-        .closePath();
-      inked(g, 0xff4d9d, 2.4);
-      return g;
-    }
-    case "cutlery": {
-      g.moveTo(-2, -9).lineTo(-2, 9).stroke({ width: 2.4, color: INK, alpha: 0.5, cap: "round" });
-      g.moveTo(3, -9).lineTo(3, 9).stroke({ width: 2.4, color: INK, alpha: 0.5, cap: "round" });
-      return g;
-    }
-    case "steam": {
+    // invisible — it was drawn, it rose, and nobody could see it.
+    case "steam":
       g.moveTo(0, 14)
         .bezierCurveTo(-9, 6, 9, 0, 0, -8)
         .bezierCurveTo(-8, -14, 6, -18, 2, -24)
         .stroke({ width: 3, color: INK, alpha: 0.55, cap: "round" });
       return g;
-    }
+    case "confetti":
+      g.rect(-4, -7, 8, 14).fill({ color: 0xffffff });
+      return g;
+    case "heart":
+      g.moveTo(0, 7)
+        .bezierCurveTo(-11, -1, -7, -11, 0, -5)
+        .bezierCurveTo(7, -11, 11, -1, 0, 7)
+        .closePath();
+      g.fill({ color: PINK }).stroke({ width: 2.4, color: INK, alignment: 0.5 });
+      return g;
   }
 }
 
-export type TextureBank = Record<TextureName, Texture>;
+/** A soft dark blob. Drawn into a canvas because Graphics has no gradients. */
+function makeShadow(): Texture {
+  const size = 128;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return Texture.EMPTY;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgba(23,20,16,0.42)");
+  g.addColorStop(0.55, "rgba(23,20,16,0.20)");
+  g.addColorStop(1, "rgba(23,20,16,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return Texture.from(canvas);
+}
 
-const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam", "body", "head", "eyes", "blink", "smile", "flowers", "cutlery", "heart", "bunting", "confetti"];
+/* Loaded once per page. Pixi's Assets cache means a second potluck opens
+   instantly, and the browser cache means a second visit does too. */
+export async function loadSprites(renderer: Renderer, base = "/potluck"): Promise<SpriteBank> {
+  const manifest = (await fetch(`${base}/manifest.json`).then((r) => r.json())) as Manifest;
 
-export function makeTextures(renderer: Renderer): TextureBank {
-  const bank = {} as TextureBank;
-  for (const name of NAMES) {
-    const g = draw(name);
-    // Generated at 2x so the sprites stay crisp when the camera zooms in.
-    bank[name] = renderer.generateTexture({ target: g, resolution: 2, antialias: true });
+  const textures = await Promise.all(
+    NAMES.map((name) => Assets.load<Texture>(`${base}/${name}.png`)),
+  );
+
+  const sprites = {} as Record<SpriteName, SpriteInfo>;
+  NAMES.forEach((name, i) => {
+    const entry = manifest.sprites[name];
+    sprites[name] = {
+      texture: textures[i],
+      // A missing manifest entry would silently place a sprite at the wrong
+      // size and the wrong spot, which is hard to see and easy to blame on
+      // the art. Fall back to something obviously wrong instead.
+      metres: entry?.metres ?? 1,
+      anchor: entry?.anchor ?? [0.5, 0.5],
+    };
+  });
+
+  const fx = { shadow: makeShadow() } as Record<EffectName, Texture>;
+  for (const name of ["nameCard", "spark", "steam", "confetti", "heart"] as const) {
+    const g = drawEffect(name);
+    fx[name] = renderer.generateTexture(g);
     g.destroy();
   }
-  return bank;
+
+  return {
+    sprites,
+    fx,
+    basis: { right: manifest.right, up: manifest.up },
+  };
 }
 
-export function destroyTextures(bank: TextureBank) {
-  for (const name of NAMES) bank[name]?.destroy(true);
+export function destroySprites(bank: SpriteBank) {
+  for (const t of Object.values(bank.fx ?? {})) t?.destroy(true);
+  // The sprite textures belong to Pixi's Assets cache, which is shared with
+  // the next potluck opened in this session — destroying them here would make
+  // the second visit re-download everything.
 }

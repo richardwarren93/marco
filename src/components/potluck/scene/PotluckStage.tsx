@@ -61,9 +61,10 @@ export default function PotluckStage({ model, focused, flight, onApi, onSeatTap,
 
     (async () => {
       try {
-        const [{ Application }, { PotluckScene }] = await Promise.all([
+        const [{ Application }, { PotluckScene }, { loadSprites }] = await Promise.all([
           import("pixi.js"),
           import("./PotluckScene"),
+          import("./textures"),
         ]);
         if (cancelled) return;
 
@@ -82,12 +83,19 @@ export default function PotluckStage({ model, focused, flight, onApi, onSeatTap,
         });
         if (cancelled) { app.destroy(true, { children: true }); return; }
 
+        /* The art is fetched, not drawn, so the scene cannot be constructed
+           until it is here. A failed fetch falls through to the catch below
+           and the page shows its plain list instead of an empty room — the
+           same fallback a machine without WebGL gets. */
+        const bank = await loadSprites(app.renderer);
+        if (cancelled) { app.destroy(true, { children: true }); return; }
+
         el.appendChild(app.canvas);
         app.canvas.style.width = "100%";
         app.canvas.style.height = "100%";
         app.canvas.style.display = "block";
 
-        const s = new PotluckScene(app, {
+        const s = new PotluckScene(app, bank, {
           onSeatTap: (id) => onSeatTap(id),
           onDishTap: (id) => onDishTap(id),
           onEmptyTap: () => onEmptyTap(),

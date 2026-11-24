@@ -43,6 +43,20 @@ CAM_YAW = math.radians(45.0)
 CAM_DISTANCE = 12.0
 RES = 512
 
+# ── the ink line ────────────────────────────────────────────────────────────
+# Everything else in Marco is a flat fill with an ink outline. A render with no
+# linework reads as a 3D object pasted into a drawing — the perspective can be
+# perfect and the piece still looks borrowed. Freestyle draws the contour as
+# part of the render, so the line lands on the sprite's own alpha edge and
+# survives being scaled, tinted and layered like any other pixel.
+#
+# The thickness is given in METRES, not pixels, and converted per piece. Every
+# sprite is rendered at the same 512px but frames a different number of metres,
+# so a fixed pixel thickness would give a plate a fat marker outline and the
+# floor a hairline. One world width means one apparent width on screen, which
+# is the whole reason the manifest carries metres in the first place.
+LINE_M = 0.012
+
 # ── palette, matched to the app's own ───────────────────────────────────────
 def srgb(hex_str, alpha=1.0):
     """#RRGGBB → linear RGBA, because Blender works in linear light."""
@@ -92,6 +106,22 @@ def setup_scene():
 
     if scene.render.engine == "CYCLES":
         scene.cycles.samples = 64
+
+    scene.render.use_freestyle = True
+    scene.render.line_thickness_mode = "ABSOLUTE"
+    scene.render.line_thickness = 1.0
+    view_layer = scene.view_layers[0]
+    view_layer.use_freestyle = True
+    fs = view_layer.freestyle_settings
+    for existing in list(fs.linesets):
+        fs.linesets.remove(existing)
+    lineset = fs.linesets.new("Ink")
+    lineset.select_silhouette = True   # the outside edge
+    lineset.select_border = True       # and open edges, e.g. the bisected dome
+    lineset.select_crease = True       # and hard interior folds
+    lineset.select_edge_mark = False
+    lineset.linestyle.color = INK[:3]
+    lineset.linestyle.thickness = 2.0  # replaced per piece, see frame_on
 
     cam_data = bpy.data.cameras.new("PotluckCam")
     cam_data.type = "ORTHO"
@@ -144,7 +174,7 @@ def setup_scene():
     bg.inputs[1].default_value = 0.55
     scene.world = world
 
-    return cam
+    return cam, lineset.linestyle
 
 
 def mat(name, colour, roughness=0.75):
@@ -200,7 +230,11 @@ def build_rug():
     bpy.ops.mesh.primitive_cylinder_add(vertices=64, radius=1.55, depth=0.02, location=(0, 0, 0.012))
     rug = bpy.context.active_object
     rug.name = "Rug"
-    shade(rug, mat("RugWool", LAV, 0.95), bevel=0.006)
+    # Cream, not lavender. The guests are rendered in the sticker palette —
+    # butter, lavender, pink, lime — and a lavender rug swallowed the lavender
+    # guest whole. A pale neutral under everybody is what lets four pastels
+    # read as four people.
+    shade(rug, mat("RugWool", CREAM, 0.95), bevel=0.006)
     return [rug]
 
 
@@ -391,7 +425,23 @@ def facing(offset_out, offset_side, z):
             z)
 
 
-def build_guest():
+# Four people rather than one person tinted four ways.
+#
+# A Pixi tint multiplies the WHOLE sprite, so recolouring one render per seat
+# gave a red guest with red skin and red hair — six coloured statues round a
+# table. Rendering the variants means the skin and the eyes stay skin and eyes
+# and only the jumper changes, which is the difference between a cast and a
+# palette swap. Four, not six: it is four more files to download, and the
+# sticker palette this app uses elsewhere has four lights in it.
+GUEST_LOOKS = [
+    (LIME, "#5A3A24"),               # brown hair
+    (BUTTER, "#2E2A26"),             # black
+    (LAV, "#A85B2B"),                # auburn
+    (PINK, "#D9B169"),               # blonde
+]
+
+
+def build_guest(jumper=None, hair_hex="#5A3A24"):
     """Big head, small body, facing the camera.
 
     Still the weakest piece in the set, and the file should say so rather than
@@ -400,6 +450,8 @@ def build_guest():
     which lifts it from a chess pawn to a toy — but an illustrator would still
     beat it, and that gap is the honest limit of this pipeline.
     """
+    if jumper is None:
+        jumper = LIME
     HEAD_Z = 0.60
     HEAD_R = 0.185
 
@@ -415,13 +467,13 @@ def build_guest():
     hair = bpy.context.active_object
     hair.name = "Hair"
     hair.scale = (1.0, 1.0, 0.78)
-    shade(hair, mat("Hair", srgb("#5A3A24"), 0.85), bevel=0.0)
+    shade(hair, mat("Hair", srgb(hair_hex), 0.85), bevel=0.0)
 
     bpy.ops.mesh.primitive_cone_add(vertices=32, radius1=0.175, radius2=0.115, depth=0.36,
                                     location=(0, 0, 0.235))
     body = bpy.context.active_object
     body.name = "Body"
-    shade(body, mat("Jumper", LIME, 0.85), bevel=0.012)
+    shade(body, mat("Jumper", jumper, 0.85), bevel=0.012)
 
     parts = [head, hair, body]
 
@@ -433,7 +485,7 @@ def build_guest():
         arm = bpy.context.active_object
         arm.name = f"Arm{i}"
         arm.rotation_euler = (math.radians(14) * FACE_Y * side, math.radians(-14) * FACE_X * side, 0)
-        shade(arm, mat(f"Arm{i}Mat", LIME, 0.85), bevel=0.01)
+        shade(arm, mat(f"Arm{i}Mat", jumper, 0.85), bevel=0.01)
         parts.append(arm)
 
     # Shoes.
@@ -492,8 +544,12 @@ PIECES = {
     "candle": build_candle,
     "plant": build_plant,
     "flowers": build_flowers,
-    "guest": build_guest,
 }
+
+# default=look is the usual late-binding guard: without it every lambda would
+# close over the LAST look in the list and render four identical guests.
+for _i, _look in enumerate(GUEST_LOOKS):
+    PIECES[f"guest{_i + 1}"] = (lambda look=_look: build_guest(look[0], look[1]))
 
 
 def clear_startup_scene():
@@ -563,40 +619,63 @@ def frame_on(objs, cam):
         CAM_DISTANCE * math.cos(CAM_PITCH),
     ))
     cam.location = base + right * (mid_r - base.dot(right)) + up * (mid_u - base.dot(up))
-    return span
+
+    # Where the object's OWN origin sits inside the frame, 0..1 across and
+    # down. Every builder here puts its piece on the world origin with z=0 at
+    # the floor, so this is the point that should land on the spot where the
+    # thing stands. Without it the renderer would be back to nudging each
+    # sprite by eye, which is the hand-tuning this pipeline exists to end.
+    anchor_u = 0.5 + (0.0 - mid_r) / span
+    anchor_v = 0.5 - (0.0 - mid_u) / span
+    return span, anchor_u, anchor_v
 
 
-def render_piece(name, builder, cam, col):
+def render_piece(name, builder, cam, col, linestyle):
     objs = builder()
     for obj in objs:
         for c in list(obj.users_collection):
             c.objects.unlink(obj)
         col.objects.link(obj)
 
-    span = frame_on(objs, cam)
+    span, anchor_u, anchor_v = frame_on(objs, cam)
+
+    # span metres across 512 pixels, so this is LINE_M wide in the room.
+    linestyle.thickness = max(0.8, LINE_M * RES / span)
     bpy.context.scene.render.filepath = os.path.join(OUT, f"{name}.png")
     bpy.ops.render.render(write_still=True)
 
     for obj in objs:
         bpy.data.objects.remove(obj, do_unlink=True)
-    return span
+    return span, anchor_u, anchor_v
 
 
 def main():
     os.makedirs(OUT, exist_ok=True)
     clear_startup_scene()
-    cam = setup_scene()
+    cam, linestyle = setup_scene()
     col = wipe()
+    # The camera's right and up vectors, so the renderer projects the ground
+    # plane with EXACTLY the transform these sprites were drawn through
+    # instead of approximating it with a squashed circle.
+    right = (-math.sin(CAM_YAW), math.cos(CAM_YAW), 0.0)
+    up = (-math.cos(CAM_YAW) * math.cos(CAM_PITCH),
+          -math.sin(CAM_YAW) * math.cos(CAM_PITCH),
+          math.sin(CAM_PITCH))
     manifest = {
         "pixels": RES,
         "pitch_deg": round(math.degrees(CAM_PITCH), 3),
         "yaw_deg": round(math.degrees(CAM_YAW), 3),
+        "right": [round(v, 6) for v in right],
+        "up": [round(v, 6) for v in up],
         "sprites": {},
     }
     for name, builder in PIECES.items():
-        span = render_piece(name, builder, cam, col)
-        manifest["sprites"][name] = {"metres": round(span, 4)}
-        print(f"rendered {name} ({span:.3f}m across)")
+        span, au, av = render_piece(name, builder, cam, col, linestyle)
+        manifest["sprites"][name] = {
+            "metres": round(span, 4),
+            "anchor": [round(au, 4), round(av, 4)],
+        }
+        print(f"rendered {name} ({span:.3f}m across, anchor {au:.3f},{av:.3f})")
     with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as fh:
         json.dump(manifest, fh, indent=2)
     print(f"done -> {OUT}")
