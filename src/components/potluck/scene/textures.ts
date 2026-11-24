@@ -23,7 +23,8 @@ export type TextureName =
   | "nameCard" | "glass" | "candle" | "flame"
   | "spark" | "steam"
   | "body" | "head" | "eyes" | "blink" | "smile"
-  | "flowers" | "cutlery" | "heart";
+  | "flowers" | "cutlery" | "heart"
+  | "bunting" | "confetti";
 
 const INK = 0x171410;
 const PAPER = 0xfbf7ee;
@@ -142,6 +143,25 @@ function draw(name: TextureName): Graphics {
       }
       return g;
     }
+    // Strung across the room when the table is full. Drawn as one piece
+    // because a string of flags that has to be assembled per-render is three
+    // sprites and a loop for something nobody will look at twice.
+    case "bunting": {
+      g.moveTo(-120, 0).quadraticCurveTo(0, 26, 120, 0).stroke({ width: 3, color: INK });
+      const cols = [0xc4ee45, 0xffd84d, 0xff4d9d, 0xc9b8ff, 0xf2c77a];
+      for (let i = 0; i < 7; i++) {
+        const t = (i + 0.5) / 7;
+        const x = -120 + t * 240;
+        const y = 26 * 2 * t * (1 - t);
+        g.moveTo(x - 11, y).lineTo(x + 11, y).lineTo(x, y + 22).closePath();
+        inked(g, cols[i % cols.length], 2.2);
+      }
+      return g;
+    }
+    case "confetti": {
+      g.rect(-4, -7, 8, 14).fill({ color: 0xffffff });
+      return g;
+    }
     case "heart": {
       g.moveTo(0, 7)
         .bezierCurveTo(-11, -1, -7, -11, 0, -5)
@@ -167,7 +187,7 @@ function draw(name: TextureName): Graphics {
 
 export type TextureBank = Record<TextureName, Texture>;
 
-const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam", "body", "head", "eyes", "blink", "smile", "flowers", "cutlery", "heart"];
+const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam", "body", "head", "eyes", "blink", "smile", "flowers", "cutlery", "heart", "bunting", "confetti"];
 
 export function makeTextures(renderer: Renderer): TextureBank {
   const bank = {} as TextureBank;

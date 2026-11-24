@@ -50,6 +50,12 @@ export type CardInput = {
   /** e.g. "3 coming · 1 cooked" — the same line the card shows on screen. */
   status: string;
   open: boolean;
+  /* A photograph of the real scene, when the card is being made from the room
+     rather than from the list. Drawing the actual table — its guests, its
+     bunting, its seasonal cloth — beats re-drawing an approximation of it, and
+     it is only possible because nothing in that scene is cross-origin. The
+     drawn version below stays for the list card, which has no scene. */
+  scene?: HTMLCanvasElement | null;
 };
 
 export function drawCard(canvas: HTMLCanvasElement, input: CardInput) {
@@ -84,6 +90,20 @@ export function drawCard(canvas: HTMLCanvasElement, input: CardInput) {
   ctx.fillStyle = TOMATO;
   ctx.font = `44px ${hand}`;
   ctx.fillText(ellipsize(ctx, `${input.tableName} · ${input.status}`, cw - 120), W / 2, 296);
+
+  // The real table, if we were handed one.
+  if (input.scene && input.scene.width > 0) {
+    const box = { x: cx + 36, y: 350, w: cw - 72, h: 560 };
+    const r = Math.min(box.w / input.scene.width, box.h / input.scene.height);
+    const dw = input.scene.width * r, dh = input.scene.height * r;
+    ctx.drawImage(input.scene, box.x + (box.w - dw) / 2, box.y + (box.h - dh) / 2, dw, dh);
+    drawLegend(ctx, input, cx, cw, disp);
+    ctx.textAlign = "center";
+    ctx.fillStyle = TOMATO;
+    ctx.font = `700 34px ${disp}`;
+    ctx.fillText("marco", W / 2, H - 112);
+    return;
+  }
 
   // the table
   const TCX = W / 2, TCY = 740, TR = 300, RING = 246;
@@ -135,7 +155,17 @@ export function drawCard(canvas: HTMLCanvasElement, input: CardInput) {
   ctx.font = `700 34px ${disp}`;
   ctx.fillText(input.plates.length === 1 ? "DISH" : "DISHES", TCX, TCY + 64);
 
-  // who is bringing what, two columns, up to eight
+  drawLegend(ctx, input, cx, cw, disp);
+
+  // wordmark
+  ctx.textAlign = "center";
+  ctx.fillStyle = TOMATO;
+  ctx.font = `700 34px ${disp}`;
+  ctx.fillText("marco", W / 2, H - 112);
+}
+
+/** Who brought what, two columns, up to eight. */
+function drawLegend(ctx: CanvasRenderingContext2D, input: CardInput, cx: number, cw: number, disp: string) {
   ctx.textAlign = "left";
   const list = input.plates.slice(0, 8);
   list.forEach((p, i) => {
@@ -155,12 +185,6 @@ export function drawCard(canvas: HTMLCanvasElement, input: CardInput) {
     const label = ellipsize(ctx, p.label, Math.max(60, room - ctx.measureText(tail).width));
     ctx.fillText(label + tail, x + 32, y);
   });
-
-  // wordmark
-  ctx.textAlign = "center";
-  ctx.fillStyle = TOMATO;
-  ctx.font = `700 34px ${disp}`;
-  ctx.fillText("marco", W / 2, H - 112);
 }
 
 async function toBlob(canvas: HTMLCanvasElement): Promise<Blob | null> {

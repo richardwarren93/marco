@@ -13,7 +13,7 @@
  * with it.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
@@ -56,6 +56,7 @@ export default function PotluckRoom() {
   const [picked, setPicked] = useState<{ kind: "seat" | "dish"; id: string } | null>(null);
   const [fallback, setFallback] = useState(false);
   const [flight, setFlight] = useState<{ id: string; from: string; to: string } | null>(null);
+  const sceneApi = useRef<{ snapshot: () => HTMLCanvasElement | null } | null>(null);
 
   const p = data?.potlucks?.[0];
   const myId = data?.userId ?? "";
@@ -168,6 +169,7 @@ export default function PotluckRoom() {
               model={model}
               focused={picked?.id ?? null}
               flight={flight}
+              onApi={(api) => { sceneApi.current = api; }}
               onSeatTap={(sid) => { tap(); setPicked({ kind: "seat", id: sid }); }}
               onDishTap={(did) => { tap(); setPicked({ kind: "dish", id: did }); }}
               onEmptyTap={() => { tap("medium"); router.push("/crew"); }}
@@ -186,6 +188,8 @@ export default function PotluckRoom() {
             theme: p.theme, tableName: crew?.crew.name ?? "your table",
             plates: model.dishes.map((d) => ({ id: d.id, label: d.title, who: d.who, cooked: d.cooked })),
             status: `${model.dishCount} coming · ${model.cookedCount} cooked`, open: !served,
+            // The postcard is a picture of THIS table, not a drawing of one.
+            scene: sceneApi.current?.snapshot() ?? null,
           });
           if (r === "downloaded") setMessage("Postcard saved to your downloads.");
           if (r === "failed") setMessage("Could not make the postcard.");
