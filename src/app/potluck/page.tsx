@@ -22,6 +22,8 @@ import type { Crew } from "@/lib/social";
 import { useRecipes } from "@/lib/hooks/use-data";
 import PageHeader from "@/components/layout/PageHeader";
 import RecipeSheet, { type SheetMode, type TakenBy } from "@/components/potluck/RecipeSheet";
+import PotluckTable, { type TablePlate } from "@/components/potluck/PotluckTable";
+import { sharePotluckCard } from "@/components/potluck/shareCard";
 import { deadlineLabel, isServed, localISO } from "@/lib/potluck";
 import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
@@ -258,6 +260,15 @@ function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, 
   const mine = p.submissions.filter((s) => s.user_id === myId);
   const alsoOn = p.submissions.filter((s) => s.user_id !== myId && extraOf(s.id).co_user_id === myId);
   const spare = myCooks.filter((c) => c.crew_id === p.crew_id);
+  const status = summary(dishes, cooked, served, extrasReady);
+  // One plate per dish, in the order they were brought. The table and the
+  // shareable card read the same list, so they can never disagree.
+  const plates: TablePlate[] = p.submissions.map((s) => ({
+    id: s.id,
+    label: s.cook?.title || extraOf(s.id).claimed_title || "a dish",
+    who: s.user_id === myId ? "you" : s.cook?.author_name || nameOf(s.user_id),
+    cooked: !!s.cook,
+  }));
 
   return (
     <section style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: "16px 14px", boxShadow: `4px 5px 0 ${INK}` }}>
@@ -270,8 +281,14 @@ function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, 
         </span>
       </div>
       <div style={{ fontFamily: HAND, fontSize: 15, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 6 }}>
-        {tableName} · {summary(dishes, cooked, served, extrasReady)}
+        {tableName} · {status}
       </div>
+
+      <div style={{ margin: "10px auto 0", maxWidth: 260 }}>
+        <PotluckTable plates={plates} open={!served} centre={cooked === dishes && dishes > 0 ? "ON THE TABLE" : "COMING"} />
+      </div>
+
+      <ShareTable theme={p.theme} tableName={tableName} plates={plates} status={status} open={!served} />
 
       {dishes > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
@@ -440,6 +457,30 @@ function YourDishes({ mine, alsoOn, extraOf, crewId, cooks, canClaim, members, b
           + bring something else
         </button>
       )}
+    </div>
+  );
+}
+
+/* Sharing a table is sending a picture of it, not a link — a potluck lives
+   inside a crew, and there is no public page for one to point at. */
+function ShareTable({ theme, tableName, plates, status, open }: { theme: string; tableName: string; plates: TablePlate[]; status: string; open: boolean }) {
+  const [state, setState] = useState<"" | "working" | "saved" | "failed">("");
+  if (plates.length === 0) return null;
+  return (
+    <div style={{ textAlign: "center", marginTop: 2 }}>
+      <button
+        onClick={async () => {
+          setState("working");
+          const r = await sharePotluckCard({ theme, tableName, plates, status, open });
+          setState(r === "downloaded" ? "saved" : r === "failed" ? "failed" : "");
+        }}
+        className="active:scale-[0.97] transition-transform"
+        style={{ background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 13, padding: "0 16px", minHeight: 40, borderRadius: 99, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
+      >
+        {state === "working" ? "drawing…" : "📸 Share the table"}
+      </button>
+      {state === "saved" && <div style={{ fontFamily: HAND, fontSize: 13.5, color: INK_SOFT, marginTop: 5 }}>saved to your downloads</div>}
+      {state === "failed" && <div role="alert" style={{ fontFamily: HAND, fontSize: 13.5, color: TOMATO, marginTop: 5 }}>couldn&rsquo;t make the card</div>}
     </div>
   );
 }
