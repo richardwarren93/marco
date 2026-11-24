@@ -23,6 +23,7 @@ const PAPER = 0xfbf7ee;
 const LIME = 0xc4ee45;
 const BUTTER = 0xffd84d;
 const PLATE_TINTS = [0xc4ee45, 0xffd84d, 0xc9b8ff, 0xf2c77a, 0xff4d9d];
+const GUEST_TINTS = [0xc4ee45, 0xffd84d, 0xc9b8ff, 0xff4d9d, 0xf2c77a, 0x9ad7e8];
 
 /** The world is authored at a fixed size; the camera fits it to the viewport. */
 const WORLD_W = 900;
@@ -48,7 +49,8 @@ export type SceneCallbacks = {
   onEmptyTap: () => void;
 };
 
-type SeatView = { root: Container; chairBack: Sprite; chair: Sprite; card: Container; label: Text; seat: SceneSeat };
+type Guest = { root: Container; eyes: Sprite; blink: Sprite };
+type SeatView = { root: Container; chairBack: Sprite; chair: Sprite; guest: Guest; card: Container; label: Text; seat: SceneSeat };
 /* A dish is a plate, a lid and the food under it — three sprites, so the lid
    can leave without the plate. A single "covered plate" texture cannot be
    opened, and opening it is the point. */
@@ -65,6 +67,9 @@ export class PotluckScene {
   private reduced: boolean;
   private tweens = new Set<gsap.core.Tween>();
   private idle: gsap.core.Timeline | null = null;
+  private blinkTimers = new Set<ReturnType<typeof setTimeout>>();
+  private lastSeatCount = -1;
+  private relaySettings = false;
   private destroyed = false;
   /* Opening a potluck is not four people arriving. Everything present on the
      first reconcile is simply placed; only what appears AFTER that animates in.
@@ -82,6 +87,7 @@ export class PotluckScene {
     for (const name of ["environment", "shadows", "chairs", "table", "settings", "food", "characters", "decorations", "effects", "indicators"]) {
       const c = new Container();
       c.sortableChildren = name === "food" || name === "chairs" || name === "characters";
+      // (characters are depth-sorted too: whoever is nearer the viewer overlaps)
       this.layers[name] = c;
       this.world.addChild(c);
     }
@@ -111,12 +117,23 @@ export class PotluckScene {
     table.ellipse(0, 0, TABLE_RX - 26, TABLE_RY - 15).stroke({ width: 2.5, color: INK, alpha: 0.22 });
     this.layers.table.addChild(table);
 
+    // Flowers, slightly off-centre, with a sway that is barely movement. The
+    // spec asks for life, not for a table that fidgets.
+    const flowers = new Sprite(this.tex.flowers);
+    flowers.anchor.set(0.5, 1);
+    flowers.position.set(-52, 10);
+    flowers.scale.set(1.4);
+    this.layers.decorations.addChild(flowers);
+    if (!this.reduced) {
+      this.track(gsap.to(flowers, { rotation: 0.045, duration: 2.6 + Math.random(), repeat: -1, yoyo: true, ease: "sine.inOut" }));
+    }
+
     const candle = new Sprite(this.tex.candle);
     candle.anchor.set(0.5, 1);
-    candle.position.set(0, 6);
+    candle.position.set(26, 6);
     const flame = new Sprite(this.tex.flame);
     flame.anchor.set(0.5, 1);
-    flame.position.set(0, -20);
+    flame.position.set(26, -20);
     flame.label = "flame";
     this.layers.decorations.addChild(candle, flame);
     if (!this.reduced) {
@@ -132,16 +149,23 @@ export class PotluckScene {
     if (this.destroyed) return;
     const n = model.seats.length;
 
+    // The ring is re-laid whenever the seat count changes, so the scenery on
+    // it is redrawn rather than nudged — it is the one thing here cheap enough
+    // to throw away.
+    if (this.lastSeatCount !== n) { this.clearPlaceSettings(); this.lastSeatCount = n; this.relaySettings = true; }
+
     const seenSeats = new Set<string>();
     model.seats.forEach((seat, i) => {
       seenSeats.add(seat.id);
       const a = seatAngle(i, n);
       const at = onEllipse(a, SEAT_RX, SEAT_RY);
-      const view = this.seats.get(seat.id) ?? this.addSeat(seat, at);
+      const existing = this.seats.get(seat.id);
+      const view = existing ?? this.addSeat(seat, at);
+      if (existing && this.relaySettings) this.addPlaceSetting(seat.id, at);
       this.updateSeat(view, seat, at);
     });
     for (const [id, view] of this.seats) {
-      if (!seenSeats.has(id)) { view.root.destroy({ children: true }); this.seats.delete(id); }
+      if (!seenSeats.has(id)) { view.root.destroy({ children: true }); view.guest.root.destroy({ children: true }); this.seats.delete(id); }
     }
 
     const seenDishes = new Set<string>();
@@ -161,6 +185,7 @@ export class PotluckScene {
       if (!seenDishes.has(id)) { view.root.destroy({ children: true }); this.dishes.delete(id); }
     }
 
+    this.relaySettings = false;
     this.setStage(model.stage);
     this.primed = true;
   }
@@ -177,6 +202,7 @@ export class PotluckScene {
     chairBack.anchor.set(0.5, 1);
     const chair = new Sprite(this.tex.chair);
     chair.anchor.set(0.5, 0.5);
+    const guest = this.makeGuest(seat);
 
     const card = new Container();
     const cardArt = new Sprite(this.tex.nameCard);
@@ -195,6 +221,15 @@ export class PotluckScene {
     card.position.set(0, -38);
 
     root.addChild(chairBack, chair, card);
+    // The guest does NOT live inside the chair. Layers are painted in order
+    // and the TABLE comes after the chairs, so a head sitting above its chair
+    // was drawn and then covered by the tabletop. That is what the characters
+    // layer is for: it is painted after the table, which is why the spec puts
+    // it there. The cost is that the guest has to be moved in step with its
+    // chair by hand, below.
+    guest.root.position.set(at.x, at.y);
+    guest.root.zIndex = at.y;
+    this.layers.characters.addChild(guest.root);
 
     root.eventMode = "static";
     root.cursor = "pointer";
@@ -210,12 +245,80 @@ export class PotluckScene {
     });
 
     this.layers.chairs.addChild(root);
+    this.addPlaceSetting(seat.id, at);
     if (this.primed && !this.reduced) this.arrive(root, card, at);
     else { card.scale.set(1.35); }
 
-    const view: SeatView = { root, chairBack, chair, card, label, seat };
+    const view: SeatView = { root, chairBack, chair, guest, card, label, seat };
     this.seats.set(seat.id, view);
     return view;
+  }
+
+  /* One body texture, tinted per seat. Faces are two dots and a curve: at the
+     size a chair actually renders, anything more is mud, and the spec rules
+     out emoji as final artwork. The blink is a texture swap rather than a
+     squashed sprite — squashing two 2.6px dots produces two grey smears. */
+  private makeGuest(seat: SceneSeat): Guest {
+    const root = new Container();
+    const inner = new Container();
+    root.addChild(inner);
+    const body = new Sprite(this.tex.body);
+    body.anchor.set(0.5, 1);
+    body.position.set(0, 2);
+    body.tint = GUEST_TINTS[hash(seat.id) % GUEST_TINTS.length];
+
+    const head = new Sprite(this.tex.head);
+    head.anchor.set(0.5, 0.5);
+    head.position.set(0, -34);
+
+    const eyes = new Sprite(this.tex.eyes);
+    eyes.anchor.set(0.5, 0.5);
+    eyes.position.set(0, -37);
+    const blink = new Sprite(this.tex.blink);
+    blink.anchor.set(0.5, 0.5);
+    blink.position.set(0, -37);
+    blink.visible = false;
+
+    const smile = new Sprite(this.tex.smile);
+    smile.anchor.set(0.5, 0.5);
+    smile.position.set(0, -27);
+
+    inner.addChild(body, head, eyes, blink, smile);
+    root.visible = seat.state !== "empty";
+
+    const guest: Guest = { root, eyes, blink };
+    if (!this.reduced) {
+      // Randomised phase AND period, so nobody at the table breathes in time
+      // with anybody else.
+      // Breathing is on an inner container, because the outer one is what the
+      // chair drags around — tweening y on both would fight, which is the bug
+      // the steam already taught this file once.
+      this.track(gsap.to(inner, {
+        y: -3, duration: 1.6 + Math.random() * 0.9, repeat: -1, yoyo: true,
+        ease: "sine.inOut", delay: Math.random() * 2,
+      }));
+      this.scheduleBlink(guest);
+    }
+    return guest;
+  }
+
+  private scheduleBlink(guest: Guest) {
+    if (this.destroyed || this.reduced) return;
+    const t = setTimeout(() => {
+      this.blinkTimers.delete(t);
+      if (this.destroyed) return;
+      guest.eyes.visible = false;
+      guest.blink.visible = true;
+      const back = setTimeout(() => {
+        this.blinkTimers.delete(back);
+        if (this.destroyed) return;
+        guest.eyes.visible = true;
+        guest.blink.visible = false;
+        this.scheduleBlink(guest);
+      }, 120);
+      this.blinkTimers.add(back);
+    }, 2200 + Math.random() * 4200);
+    this.blinkTimers.add(t);
   }
 
   /* A chair arriving: it slides IN toward the table from further out, then the
@@ -239,13 +342,35 @@ export class PotluckScene {
     this.onArrival?.();
   }
 
+  /* A glass and some cutlery on the table in front of each chair. They are
+     scenery — no hit area, no reconciliation — so they live in their own
+     layer and are cleared wholesale when the seat count changes. */
+  private addPlaceSetting(seatId: string, at: { x: number; y: number }) {
+    const inward = 0.74;
+    const g = new Sprite(this.tex.glass);
+    g.anchor.set(0.5, 1);
+    g.position.set(at.x * inward + 26, at.y * inward);
+    g.label = `setting:${seatId}`;
+    const c = new Sprite(this.tex.cutlery);
+    c.anchor.set(0.5, 0.5);
+    c.position.set(at.x * inward - 26, at.y * inward);
+    c.label = `setting:${seatId}`;
+    this.layers.settings.addChild(g, c);
+  }
+
+  private clearPlaceSettings() { this.layers.settings.removeChildren().forEach((c) => c.destroy()); }
+
   private updateSeat(view: SeatView, seat: SceneSeat, at: { x: number; y: number }) {
     view.seat = seat;
     view.root.zIndex = at.y;
+    view.guest.root.zIndex = at.y;
     if (view.root.x !== at.x || view.root.y !== at.y) {
-      this.track(gsap.to(view.root, { x: at.x, y: at.y, duration: this.reduced ? 0 : 0.5, ease: "power3.out" }));
+      const d = this.reduced ? 0 : 0.5;
+      this.track(gsap.to(view.root, { x: at.x, y: at.y, duration: d, ease: "power3.out" }));
+      this.track(gsap.to(view.guest.root, { x: at.x, y: at.y, duration: d, ease: "power3.out" }));
     }
     const empty = seat.state === "empty";
+    view.guest.root.visible = !empty;
     if (view.label.text !== seat.name) { view.label.text = seat.name; fitLabel(view.label); }
     view.card.visible = !empty;
     view.chair.alpha = empty ? 0.45 : 1;
@@ -448,6 +573,8 @@ export class PotluckScene {
   destroy() {
     this.destroyed = true;
     this.idle?.kill();
+    for (const t of this.blinkTimers) clearTimeout(t);
+    this.blinkTimers.clear();
     for (const t of this.tweens) t.kill();
     this.tweens.clear();
     gsap.killTweensOf(this.world);
