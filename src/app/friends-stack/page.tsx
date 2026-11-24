@@ -12,6 +12,7 @@ import { saveCook, unsaveCook, joinCrewByCode, type Cook, type TableMember, type
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
 import PageHeader from "@/components/layout/PageHeader";
+import { deadlineLabel, isServed, localISO } from "@/lib/potluck";
 import { BUTTER, DISPLAY, HAND, INK, LAV, LIME, PAPER, PINK, SURFACE, TOMATO } from "@/lib/theme";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
@@ -31,7 +32,7 @@ function hashStr(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = 
 export default function FriendsFeed() {
   const router = useRouter();
   const [selectedTable, setSelectedTable] = useState("");
-  const { data, error, mutate, isLoading } = useSWR<{ cooks: Cook[]; tables: { crew: Crew; members: TableMember[] }[]; me: TableMember; savedIds: string[] }>(
+  const { data, error, mutate, isLoading } = useSWR<{ cooks: Cook[]; tables: { crew: Crew; members: TableMember[] }[]; me: TableMember; savedIds: string[]; potlucks: TablePotluck[] }>(
     `/api/table${selectedTable ? `?table=${encodeURIComponent(selectedTable)}` : ""}`,
     async (url: string) => { const r = await fetch(url); const value = await r.json(); if (!r.ok) throw new Error(value.error || "Could not load your table."); return value; },
     { revalidateOnFocus: true, focusThrottleInterval: 30000, dedupingInterval: 10000, keepPreviousData: true },
@@ -83,7 +84,7 @@ export default function FriendsFeed() {
           <Link href="/crew" className="rounded-xl border-2 border-[var(--ink)] px-3 py-3 bg-[var(--lime)] font-semibold">+ Table</Link>
         </div>
         <TableSeats tables={selectedTable ? tables.filter(t => t.crew.id === selectedTable) : tables.slice(0, 1)} you={me} onInvite={() => router.push("/crew")} onMember={(mid) => router.push(`/u/${mid}`)} />
-        <Link href={`/potluck${selectedTable ? `?table=${encodeURIComponent(selectedTable)}` : ""}`} className="mt-4 flex items-center justify-between rounded-xl border-2 border-[var(--ink)] bg-[var(--butter)] p-4 font-semibold"><span>🍲 Potluck</span><span>Cook together →</span></Link>
+        <PotluckBar potlucks={data?.potlucks ?? []} myId={me?.id ?? null} table={selectedTable} />
         {error && <div role="alert" className="mt-4 rounded-xl bg-white p-4"><p>{error.message}</p><button className="underline mt-2" onClick={() => mutate()}>Try again</button></div>}
 
         {/* ===== loading ===== */}
@@ -118,6 +119,53 @@ export default function FriendsFeed() {
       </div>
 
     </div>
+  );
+}
+
+/* Potluck on Table — what is on this week, not a door with no sign on it.
+ *
+ * This was a static butter bar reading "Potluck · Cook together →" whether or
+ * not a potluck existed, when it was due, or whether you had brought anything.
+ * A weekly thing has to say where it is up to from the place you already open.
+ */
+type TablePotluck = { id: string; crew_id: string; theme: string; emoji: string | null; deadline: string | null; status: string; submissions: { id: string; user_id: string }[] };
+
+function PotluckBar({ potlucks, myId, table }: { potlucks: TablePotluck[]; myId: string | null; table: string }) {
+  const today = localISO();
+  const live = potlucks.find((p) => !isServed(p, today));
+  const href = `/potluck${table ? `?table=${encodeURIComponent(table)}` : ""}`;
+  const shared = { display: "block", marginTop: 16, border: `2.5px solid ${INK}`, borderRadius: 16, boxShadow: `4px 5px 0 ${INK}`, textDecoration: "none", color: INK } as const;
+
+  // Nothing on: an invitation, not a status line.
+  if (!live) {
+    const last = potlucks[0];
+    return (
+      <Link href={href} className="active:scale-[0.99] transition-transform" style={{ ...shared, background: BUTTER, padding: "14px 16px" }}>
+        <div className="flex items-center justify-between gap-2">
+          <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16 }}>🍲 Start this week&rsquo;s potluck</span>
+          <span aria-hidden style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16 }}>→</span>
+        </div>
+        <div style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>
+          {last ? `last one: ${last.theme}` : "pick a theme, everyone cooks their own"}
+        </div>
+      </Link>
+    );
+  }
+
+  const dishes = live.submissions.length;
+  const brought = !!myId && live.submissions.some((s) => s.user_id === myId);
+  return (
+    <Link href={href} className="active:scale-[0.99] transition-transform" style={{ ...shared, background: BUTTER, padding: "14px 16px" }}>
+      <div className="flex items-start gap-2">
+        <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16 }}>{live.emoji ?? "🍲"} {live.theme}</span>
+        <span style={{ flexShrink: 0, background: brought ? LIME : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "3px 9px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(3deg)" }}>{deadlineLabel(live, today)}</span>
+      </div>
+      <div style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>
+        {brought
+          ? `your dish is in · ${dishes} on the table`
+          : dishes === 0 ? "nobody has cooked yet — go first →" : `${dishes} ${dishes === 1 ? "dish" : "dishes"} in, yours isn't →`}
+      </div>
+    </Link>
   );
 }
 

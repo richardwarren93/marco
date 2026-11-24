@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isServed, localISO } from "@/lib/potluck";
 
 const input = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), crew_id: z.uuid(), theme: z.string().trim().min(1).max(100), deadline: z.iso.date() }).strict(),
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
   const table = new URL(request.url).searchParams.get("table");
   let query = sb.from("potlucks").select("*, submissions:potluck_submissions(id,user_id,cook:cooks(id,title,photo_url,author_name,source_recipe_id))").order("created_at", { ascending: false }).limit(30);
   if (table) query = query.eq("crew_id", table);
-  const [potlucks, cooks] = await Promise.all([query, sb.from("cooks").select("id,title,crew_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)]);
+  const [potlucks, cooks] = await Promise.all([query, sb.from("cooks").select("id,title,photo_url,crew_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)]);
   if (potlucks.error || cooks.error) return NextResponse.json({ error: "Potlucks could not be loaded." }, { status: 503 });
   return NextResponse.json({ potlucks: potlucks.data ?? [], cooks: cooks.data ?? [], userId: user.id }, { headers: { "Cache-Control": "private, no-store" } });
 }
@@ -30,8 +31,18 @@ export async function POST(request: Request) {
     const { error } = await sb.from("potlucks").insert({ crew_id: body.crew_id, theme: body.theme, deadline: body.deadline, created_by: user.id });
     return error ? NextResponse.json({ error: "Potluck could not be created." }, { status: 503 }) : NextResponse.json({ success: true });
   }
-  const { data: potluck } = await sb.from("potlucks").select("crew_id,status").eq("id", body.potluck_id).maybeSingle();
-  if (!potluck || potluck.status !== "active") return NextResponse.json({ error: "This potluck is unavailable." }, { status: 404 });
+  const { data: potluck } = await sb.from("potlucks").select("crew_id,status,deadline").eq("id", body.potluck_id).maybeSingle();
+  if (!potluck) return NextResponse.json({ error: "This potluck is unavailable." }, { status: 404 });
+  // The cook-by date is the close, not just a label: once it has passed the
+  // table has been served and the spread is finished. Enforced here because
+  // nothing flips `status` on a schedule — see lib/potluck.
+  //
+  // A full day of grace, because "today" here is the SERVER's date. Without it
+  // a cook west of the server could be refused a dish their own screen still
+  // shows as open. The screen is the honest one; this only has to stop posts
+  // to a potluck that is plainly over.
+  const closedSince = localISO(new Date(Date.now() - 86_400_000));
+  if (isServed(potluck, closedSince)) return NextResponse.json({ error: "This potluck has been served." }, { status: 409 });
   const [{ data: member }, { data: cook }] = await Promise.all([
     sb.from("crew_members").select("crew_id").eq("crew_id", potluck.crew_id).eq("user_id", user.id).maybeSingle(),
     sb.from("cooks").select("id,crew_id").eq("id", body.cook_id).eq("user_id", user.id).maybeSingle(),

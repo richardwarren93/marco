@@ -1,55 +1,278 @@
 "use client";
+
+/* Potluck — a table cooks one theme together, then sees the spread.
+ *
+ * This was a form and a bulleted list of dish names. Two things were missing
+ * for it to read as an event rather than a record:
+ *
+ *   1. It never ended. `potlucks.status` has always had a 'served' value and
+ *      nothing ever wrote it, so every potluck ever made was still open. The
+ *      cook-by date is now the close (see lib/potluck), which means a potluck
+ *      becomes last week's by itself.
+ *   2. The dishes were text. The API has always SELECTED `cook.photo_url` and
+ *      this page threw it away, so a potluck between people in different
+ *      kitchens — the whole point — was a list of underlined titles. The
+ *      spread is now the photos, which is the part worth coming back for.
+ */
+
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import type { Crew } from "@/lib/social";
-import { DISPLAY } from "@/lib/theme";
+import PageHeader from "@/components/layout/PageHeader";
+import { deadlineLabel, isServed, localISO } from "@/lib/potluck";
+import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
-interface Potluck { id: string; crew_id: string; theme: string; deadline: string | null; status: string; submissions: { id: string; user_id: string; cook: { title: string; source_recipe_id: string | null } | null }[] }
+const DISP = DISPLAY;
+
+type Dish = { id: string; user_id: string; cook: { id: string; title: string | null; photo_url: string | null; author_name: string | null; source_recipe_id: string | null } | null };
+interface Potluck { id: string; crew_id: string; theme: string; emoji: string | null; deadline: string | null; status: string; submissions: Dish[] }
+type MyCook = { id: string; title: string | null; photo_url: string | null; crew_id: string | null };
+
 const fetcher = async (url: string) => { const r = await fetch(url); const data = await r.json(); if (!r.ok) throw new Error(data.error || "Could not load potlucks."); return data; };
-export default function PotluckPage() { return <Suspense fallback={<p role="status">Loading potlucks…</p>}><Potlucks /></Suspense>; }
+
+export default function PotluckPage() {
+  return (
+    <Suspense fallback={<Shell><p role="status" style={{ fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.6 }}>setting the table…</p></Shell>}>
+      <Potlucks />
+    </Suspense>
+  );
+}
+
+function Shell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-[100dvh]" style={{ background: SURFACE, backgroundImage: "radial-gradient(rgba(23,20,16,0.05) 1px, transparent 1px)", backgroundSize: "13px 13px", color: INK }}>
+      <PageHeader title="Potluck" subtitle="bring a dish, cook together" back={{ href: "/friends-stack", label: "Table" }} />
+      <div className="mx-auto w-full max-w-lg px-4" style={{ paddingBottom: 130 }}>{children}</div>
+    </div>
+  );
+}
+
 function Potlucks() {
   const search = useSearchParams();
-  const [table, setTable] = useState(search.get("table") || "");
-  const [theme, setTheme] = useState("");
-  const [deadline, setDeadline] = useState("");
+  const [table, setTable] = useState(search?.get("table") || "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [choices, setChoices] = useState<Record<string, string>>({});
   const { data: tables } = useSWR<{ tables: { crew: Crew }[] }>("/api/table", fetcher);
-  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: { id: string; title: string; crew_id: string | null }[] }>(`/api/potlucks${table ? `?table=${encodeURIComponent(table)}` : ""}`, fetcher);
-  async function act(body: object) {
+  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[] }>(
+    `/api/potlucks${table ? `?table=${encodeURIComponent(table)}` : ""}`, fetcher,
+  );
+
+  async function act(body: object, done: string) {
     setBusy(true); setMessage("");
-    try { const r = await fetch("/api/potlucks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); const v = await r.json(); if (!r.ok) throw new Error(v.error); await mutate(); setMessage("Saved to your table."); }
-    catch (e) { setMessage(e instanceof Error ? e.message : "Could not save. Try again."); }
+    try {
+      const r = await fetch("/api/potlucks", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const v = await r.json();
+      if (!r.ok) throw new Error(v.error);
+      await mutate();
+      setMessage(done);
+    } catch (e) { setMessage(e instanceof Error ? e.message : "Could not save. Try again."); }
     finally { setBusy(false); }
   }
-  return <div className="min-h-full bg-[var(--surface)] px-4 py-6 pb-28 text-[var(--ink)]"><div className="max-w-lg mx-auto space-y-5">
-    <Link href="/friends-stack" className="text-sm underline">‹ Back to Table</Link>
-    <header><h1 className="text-3xl font-bold" style={{ fontFamily: DISPLAY }}>Potluck</h1><p className="mt-2 text-[#675B4E]">Pick a theme. Bring a dish. Cook with your people.</p></header>
-    <label className="block text-sm font-semibold">Your table<select value={table} onChange={e => setTable(e.target.value)} className="block w-full mt-2 rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] p-3"><option value="">All tables</option>{tables?.tables.map(({ crew }) => <option key={crew.id} value={crew.id}>{crew.name}</option>)}</select></label>
-    {tables?.tables.length === 0 && <Link href="/crew" className="block underline">Create or join a table to start a potluck.</Link>}
-    <details className="rounded-2xl border-2 border-[var(--ink)] bg-[var(--butter)] p-4"><summary className="cursor-pointer font-bold">+ Start a potluck</summary>
-      <form className="mt-4 space-y-3" onSubmit={e => { e.preventDefault(); void act({ action: "create", crew_id: table, theme, deadline }); }}>
-        {!table && <p className="text-sm">Choose a table above first.</p>}
-        <label className="block text-sm">Theme<input required maxLength={100} value={theme} onChange={e => setTheme(e.target.value)} placeholder="Pasta night, childhood favourites…" className="block w-full mt-1 rounded-lg bg-white p-3" /></label>
-        <label className="block text-sm">Cook by<input required type="date" value={deadline} onChange={e => setDeadline(e.target.value)} className="block w-full mt-1 rounded-lg bg-white p-3" /></label>
-        <button disabled={busy || !table} className="rounded-xl bg-[var(--ink)] text-white px-5 py-3 disabled:opacity-50">Create potluck</button>
-      </form>
-    </details>
-    {message && <p role="status">{message}</p>}
-    {error && <p role="alert">{error.message} <button className="underline" onClick={() => mutate()}>Retry</button></p>}
-    {!data && !error && <p role="status">Loading potlucks…</p>}
-    {data?.potlucks.length === 0 && <p className="rounded-xl bg-[var(--paper)] p-5">No potlucks yet. Start one for your table.</p>}
-    {data?.potlucks.map(p => <section key={p.id} className="rounded-2xl border-2 border-[var(--ink)] bg-[var(--paper)] p-5 space-y-3">
-      <h2 className="text-xl font-bold">{p.theme}</h2><p className="text-sm text-[#675B4E]">{tables?.tables.find(t => t.crew.id === p.crew_id)?.crew.name}{p.deadline ? ` · Cook by ${new Date(p.deadline + "T12:00:00").toLocaleDateString()}` : ""} · {p.submissions.length} dishes</p>
-      <ul className="space-y-2">{p.submissions.map(s => <li key={s.id}>{s.cook?.source_recipe_id ? <Link className="underline" href={`/recipes/${s.cook.source_recipe_id}`}>{s.cook.title}</Link> : s.cook?.title || "A dish"}{s.user_id === data.userId ? " · yours" : ""}</li>)}</ul>
-      {p.submissions.some(s => s.user_id === data.userId) ? <p className="text-sm font-semibold">✓ Your dish is on the table</p> : p.status === "active" && <div className="space-y-2">
-        <label className="block text-sm">Add one of your dishes<select aria-label={`Dish for ${p.theme}`} value={choices[p.id] || ""} onChange={e => setChoices(v => ({ ...v, [p.id]: e.target.value }))} className="block w-full mt-1 border rounded-lg p-2"><option value="">Choose a cook from this table</option>{data.cooks.filter(c => c.crew_id === p.crew_id).map(c => <option key={c.id} value={c.id}>{c.title}</option>)}</select></label>
-        <button disabled={busy || !choices[p.id]} onClick={() => act({ action: "submit", potluck_id: p.id, cook_id: choices[p.id] })} className="rounded-lg bg-[var(--ink)] text-white px-4 py-2 disabled:opacity-40">Bring this dish</button>
-        <Link className="block text-sm underline" href={`/i-cooked?table=${p.crew_id}`}>Post a new cook</Link>
-      </div>}
-    </section>)}
-  </div></div>;
+
+  const today = localISO();
+  const all = data?.potlucks ?? [];
+  // This week's first, then the finished spreads underneath.
+  const open = all.filter((p) => !isServed(p, today));
+  const served = all.filter((p) => isServed(p, today));
+  const tableName = (id: string) => tables?.tables.find((t) => t.crew.id === id)?.crew.name ?? "your table";
+
+  return (
+    <Shell>
+      <div className="flex items-center gap-2" style={{ marginTop: 6 }}>
+        <label className="sr-only" htmlFor="potluck-table">Your table</label>
+        <select
+          id="potluck-table" value={table} onChange={(e) => setTable(e.target.value)}
+          className="min-w-0 flex-1"
+          style={{ background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 15, border: `2.5px solid ${INK}`, borderRadius: 12, padding: "11px 12px", boxShadow: `2px 2px 0 ${INK}` }}
+        >
+          <option value="">All your tables</option>
+          {tables?.tables.map(({ crew }) => <option key={crew.id} value={crew.id}>{crew.emoji} {crew.name}</option>)}
+        </select>
+      </div>
+
+      {tables?.tables.length === 0 && (
+        <Link href="/crew" className="block active:scale-[0.99] transition-transform" style={{ marginTop: 14, background: BUTTER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: "14px 16px", boxShadow: `3px 3px 0 ${INK}`, fontFamily: DISP, fontWeight: 700, fontSize: 15, color: INK, textDecoration: "none" }}>
+          Start a table first — a potluck needs people →
+        </Link>
+      )}
+
+      <StartPotluck table={table} busy={busy} onCreate={(theme, deadline) => act({ action: "create", crew_id: table, theme, deadline }, "Potluck set. Go cook.")} />
+
+      {message && <p role="status" style={{ marginTop: 12, fontFamily: HAND, fontSize: 15, color: TOMATO }}>{message}</p>}
+      {error && (
+        <div role="alert" style={{ marginTop: 14, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 14, padding: 16, boxShadow: `3px 3px 0 ${INK}` }}>
+          <p style={{ fontFamily: DISP, fontWeight: 700, fontSize: 15 }}>{error.message}</p>
+          <button onClick={() => mutate()} style={{ marginTop: 8, fontFamily: HAND, fontSize: 15, color: TOMATO, background: "none", border: "none", padding: 0 }}>try again</button>
+        </div>
+      )}
+      {!data && !error && <p role="status" style={{ marginTop: 20, fontFamily: HAND, fontSize: 16, color: INK, opacity: 0.6 }}>setting the table…</p>}
+
+      {data && all.length === 0 && (
+        <div style={{ marginTop: 20, textAlign: "center" }}>
+          <div style={{ fontFamily: HAND, fontSize: 17, color: TOMATO, transform: "rotate(-1.5deg)" }}>nothing on the table yet</div>
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 19, color: INK, marginTop: 10 }}>pick a theme, pick a night</div>
+          <div style={{ fontFamily: HAND, fontSize: 15, color: INK, opacity: 0.7, marginTop: 6 }}>everyone cooks their own, then you see the spread</div>
+        </div>
+      )}
+
+      {data && open.map((p) => (
+        <PotluckCard key={p.id} p={p} today={today} tableName={tableName(p.crew_id)} myId={data.userId} myCooks={data.cooks} busy={busy}
+          onBring={(cookId) => act({ action: "submit", potluck_id: p.id, cook_id: cookId }, "Your dish is on the table.")} />
+      ))}
+
+      {data && served.length > 0 && (
+        <div style={{ marginTop: 26 }}>
+          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, paddingLeft: 2 }}>already served</div>
+          {served.map((p) => (
+            <PotluckCard key={p.id} p={p} today={today} tableName={tableName(p.crew_id)} myId={data.userId} myCooks={data.cooks} busy={busy} onBring={() => {}} />
+          ))}
+        </div>
+      )}
+    </Shell>
+  );
+}
+
+/* ── Start one ──────────────────────────────────────────────────────────── */
+
+function StartPotluck({ table, busy, onCreate }: { table: string; busy: boolean; onCreate: (theme: string, deadline: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [theme, setTheme] = useState("");
+  // Default the cook-by to the coming Sunday. The shape this is for is weekly,
+  // and a date field opened on today's date suggests tonight.
+  const [deadline, setDeadline] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + ((7 - d.getDay()) % 7 || 7));
+    return localISO(d);
+  });
+
+  const field = { background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10, padding: "11px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 15, width: "100%" } as const;
+
+  return (
+    <div style={{ marginTop: 14, background: BUTTER, border: `2.5px solid ${INK}`, borderRadius: 16, boxShadow: `4px 5px 0 ${INK}`, overflow: "hidden" }}>
+      <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="w-full flex items-center justify-between active:scale-[0.99] transition-transform" style={{ background: "none", border: "none", padding: "14px 16px", textAlign: "left", fontFamily: DISP, fontWeight: 700, fontSize: 16, color: INK }}>
+        <span>🍲 Start a potluck</span>
+        <span aria-hidden style={{ fontSize: 20, lineHeight: 1 }}>{open ? "–" : "+"}</span>
+      </button>
+      {open && (
+        <form onSubmit={(e) => { e.preventDefault(); onCreate(theme, deadline); }} style={{ padding: "0 16px 16px", display: "grid", gap: 10 }}>
+          {!table && <p style={{ fontFamily: HAND, fontSize: 15, color: INK }}>choose a table above first</p>}
+          <label style={{ display: "block" }}>
+            <span style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>the theme</span>
+            <input required maxLength={100} value={theme} onChange={(e) => setTheme(e.target.value)} placeholder="pasta night, childhood favourites…" style={{ ...field, marginTop: 4 }} className="placeholder:text-[var(--ink-muted)]" />
+          </label>
+          <label style={{ display: "block" }}>
+            <span style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>cook by</span>
+            <input required type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} style={{ ...field, marginTop: 4 }} />
+          </label>
+          <button disabled={busy || !table} className="active:scale-[0.98] transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, opacity: busy || !table ? 0.45 : 1 }}>
+            Set the table
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/* ── One potluck ────────────────────────────────────────────────────────── */
+
+function PotluckCard({ p, today, tableName, myId, myCooks, busy, onBring }: {
+  p: Potluck; today: string; tableName: string; myId: string; myCooks: MyCook[]; busy: boolean; onBring: (cookId: string) => void;
+}) {
+  const served = isServed(p, today);
+  const mine = p.submissions.some((s) => s.user_id === myId);
+  const dishes = p.submissions.length;
+  const spare = myCooks.filter((c) => c.crew_id === p.crew_id);
+
+  return (
+    <section style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: "16px 14px", boxShadow: `4px 5px 0 ${INK}` }}>
+      <div className="flex items-start gap-2">
+        <h2 className="min-w-0 flex-1" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 22, lineHeight: 1.1, color: INK, margin: 0 }}>
+          {p.emoji ? `${p.emoji} ` : ""}{p.theme}
+        </h2>
+        <span style={{ flexShrink: 0, background: served ? CREAM_WARM : LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.04em", padding: "4px 10px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(3deg)" }}>
+          {deadlineLabel(p, today)}
+        </span>
+      </div>
+      <div style={{ fontFamily: HAND, fontSize: 15, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 6 }}>
+        {tableName} · {dishes === 0 ? "nobody has cooked yet" : `${dishes} ${dishes === 1 ? "dish" : "dishes"} on the table`}
+      </div>
+
+      {dishes > 0 && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
+          {p.submissions.map((s, i) => <DishTile key={s.id} dish={s} mine={s.user_id === myId} tilt={i % 2 ? 1.6 : -1.8} />)}
+        </div>
+      )}
+
+      {served ? null : mine ? (
+        <div style={{ marginTop: 14, background: LIME, border: `2px solid ${INK}`, borderRadius: 12, padding: "10px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>
+          ✓ your dish is on the table
+        </div>
+      ) : (
+        <BringADish crewId={p.crew_id} cooks={spare} busy={busy} onBring={onBring} />
+      )}
+    </section>
+  );
+}
+
+function DishTile({ dish, mine, tilt }: { dish: Dish; mine: boolean; tilt: number }) {
+  const c = dish.cook;
+  const body = (
+    // minWidth 0 because a grid item defaults to min-width:auto, and `truncate`
+    // sets white-space:nowrap — so a long dish name stretched its column and ran
+    // out past the card's own border instead of ellipsing.
+    <div style={{ minWidth: 0, background: PAPER, border: `2.5px solid ${INK}`, padding: 6, paddingBottom: 9, boxShadow: `3px 4px 0 ${INK}`, transform: `rotate(${tilt}deg)` }}>
+      {c?.photo_url
+        // eslint-disable-next-line @next/next/no-img-element
+        ? <img src={c.photo_url} alt="" style={{ width: "100%", height: 104, objectFit: "cover", display: "block" }} />
+        : <div className="flex items-center justify-center" style={{ width: "100%", height: 104, background: CREAM_WARM, fontSize: 30 }} aria-hidden>🍳</div>}
+      <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK, marginTop: 7 }}>{c?.title || "a dish"}</div>
+      <div className="truncate" style={{ fontFamily: HAND, fontSize: 13, color: mine ? TOMATO : INK_SOFT, marginTop: 1 }}>{mine ? "yours" : c?.author_name || "a friend"}</div>
+    </div>
+  );
+  return c?.source_recipe_id
+    ? <Link href={`/recipes/${c.source_recipe_id}`} className="block active:scale-[0.98] transition-transform" style={{ minWidth: 0, textDecoration: "none" }}>{body}</Link>
+    : body;
+}
+
+/* Choosing is a tap, bringing is a second one. There is no un-bring — the
+   submission is unique per person and nothing deletes it — so the dish you
+   picked presses in and waits for you to commit it. */
+function BringADish({ crewId, cooks, busy, onBring }: { crewId: string; cooks: MyCook[]; busy: boolean; onBring: (cookId: string) => void }) {
+  const [picked, setPicked] = useState("");
+
+  if (cooks.length === 0) {
+    return (
+      <Link href={`/i-cooked?table=${crewId}`} className="block active:scale-[0.99] transition-transform" style={{ marginTop: 14, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, textAlign: "center", textDecoration: "none" }}>
+        Cook something and bring it →
+      </Link>
+    );
+  }
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>bring one of yours</div>
+      <div className="flex gap-2 overflow-x-auto" style={{ marginTop: 8, paddingBottom: 4, scrollbarWidth: "none" }}>
+        {cooks.map((c) => {
+          const on = picked === c.id;
+          return (
+            <button key={c.id} onClick={() => setPicked(on ? "" : c.id)} aria-pressed={on} className="flex-shrink-0 transition-transform" style={{ width: 86, background: on ? LIME : PAPER, border: `2px solid ${INK}`, borderRadius: 10, padding: 5, textAlign: "left", transform: on ? "translate(1px,1px)" : "none", boxShadow: on ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}` }}>
+              {c.photo_url
+                // eslint-disable-next-line @next/next/no-img-element
+                ? <img src={c.photo_url} alt="" style={{ width: "100%", height: 54, objectFit: "cover", display: "block", borderRadius: 6 }} />
+                : <div className="flex items-center justify-center" style={{ width: "100%", height: 54, background: CREAM_WARM, borderRadius: 6, fontSize: 22 }} aria-hidden>🍳</div>}
+              <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 11.5, color: INK, marginTop: 5 }}>{c.title || "a dish"}</div>
+            </button>
+          );
+        })}
+      </div>
+      <button disabled={busy || !picked} onClick={() => onBring(picked)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, opacity: busy || !picked ? 0.45 : 1 }}>
+        Bring this dish
+      </button>
+      <Link href={`/i-cooked?table=${crewId}`} className="block" style={{ marginTop: 9, textAlign: "center", fontFamily: HAND, fontSize: 14.5, color: INK_MUTED, textDecoration: "none" }}>
+        or cook something new →
+      </Link>
+    </div>
+  );
 }
