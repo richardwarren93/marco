@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
-import { saveCook, unsaveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
+import { saveCook, unsaveCook, deleteCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
 import PageHeader from "@/components/layout/PageHeader";
@@ -106,7 +106,7 @@ export default function FriendsFeed() {
                     let t = c.card_treatment || "polaroid";
                     if (t === prev) { const opts = TREATMENTS.filter((x) => x !== prev); t = opts[hashStr(c.id) % opts.length]; }
                     prev = t;
-                    return <RealCook key={c.id} c={c} treatment={t} myId={me?.id ?? null} initialSaved={savedIds.has(c.id)} cookedCount={c.source_recipe_id ? counts[c.source_recipe_id] : undefined} />;
+                    return <RealCook key={c.id} c={c} treatment={t} myId={me?.id ?? null} initialSaved={savedIds.has(c.id)} cookedCount={c.source_recipe_id ? counts[c.source_recipe_id] : undefined} onRemoved={() => mutate()} />;
                   });
                 })()}
               </div>
@@ -144,12 +144,21 @@ function timeAgo(iso: string) {
   return `${Math.floor(h / 24)}d`;
 }
 
-function RealCook({ c, featured = false, treatment, myId = null, initialSaved = false, cookedCount }: { c: Cook; featured?: boolean; treatment?: string; myId?: string | null; initialSaved?: boolean; cookedCount?: number }) {
+function RealCook({ c, featured = false, treatment, myId = null, initialSaved = false, cookedCount, onRemoved }: { c: Cook; featured?: boolean; treatment?: string; myId?: string | null; initialSaved?: boolean; cookedCount?: number; onRemoved?: (id: string) => void }) {
   const [saved, setSaved] = useState(initialSaved);
+  const [removing, setRemoving] = useState(false);
   const router = useRouter();
   const isMine = !!myId && c.user_id === myId;
   const rid = c.source_recipe_id;
   const openRecipe = () => rid && router.push(`/recipes/${rid}`);
+  async function removeCook() {
+    if (!confirm("Delete this post? The recipe stays in your kitchen.")) return;
+    setRemoving(true);
+    const ok = await deleteCook(c.id);
+    if (!ok) { setRemoving(false); return; }
+    onRemoved?.(c.id);
+  }
+
   async function toggleSave() {
     if (saved) { setSaved(false); const ok = await unsaveCook(c.id); if (!ok) setSaved(true); }
     else { setSaved(true); const ok = await saveCook(c); if (!ok) setSaved(false); }
@@ -159,7 +168,20 @@ function RealCook({ c, featured = false, treatment, myId = null, initialSaved = 
       {featured ? (
         <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>🍅 from Marco</div>
       ) : isMine ? (
-        <div style={{ position: "absolute", top: -11, right: 16, zIndex: 5, background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>✦ your cook</div>
+        <div className="flex items-center gap-1.5" style={{ position: "absolute", top: -11, right: 16, zIndex: 5 }}>
+          <span style={{ background: LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "4px 11px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", boxShadow: "0 4px 10px rgba(23,20,16,0.2)" }}>✦ your cook</span>
+          {/* Until now there was NO way to take a post down, anywhere in the
+              app. That is how a cook whose recipe had been deleted could sit
+              on the feed unclickable with nothing to be done about it. */}
+          <button
+            onClick={removeCook}
+            disabled={removing}
+            aria-label={`Delete your post ${c.title ?? ""}`}
+            style={{ background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 12, width: 26, height: 26, borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(5deg)", lineHeight: 1, opacity: removing ? 0.5 : 1 }}
+          >
+            ✕
+          </button>
+        </div>
       ) : null}
       {/* actions live INSIDE the card (see CookCard) so it's clear they belong
           to this cook — the whole card also opens the recipe on tap */}
