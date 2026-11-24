@@ -1,0 +1,43 @@
+{
+  "pixels": 512,
+  "pitch_deg": 55.0,
+  "yaw_deg": 45.0,
+  "sprites": {
+    "floor": {
+      "metres": 7.467
+    },
+    "rug": {
+      "metres": 4.8225
+    },
+    "table": {
+      "metres": 1.7112
+    },
+    "cloth": {
+      "metres": 1.929
+    },
+    "chair": {
+      "metres": 1.0232
+    },
+    "plate": {
+      "metres": 0.3422
+    },
+    "cloche": {
+      "metres": 0.3422
+    },
+    "food": {
+      "metres": 0.3422
+    },
+    "candle": {
+      "metres": 0.3048
+    },
+    "plant": {
+      "metres": 0.5055
+    },
+    "flowers": {
+      "metres": 0.3496
+    },
+    "guest": {
+      "metres": 0.9852
+    }
+  }
+}
