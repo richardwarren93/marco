@@ -17,6 +17,11 @@
 -- place. The feature would then look fine until the second dish, and fail as a
 -- 23505 nobody was expecting. So: find any unique constraint over exactly
 -- (potluck_id, user_id) and drop it, whatever it is called.
+--
+-- pg_attribute.attname is of type `name`, so array_agg over it yields name[]
+-- while an array literal is text[], and Postgres has no name[] = text[]
+-- operator. Both sides are cast to text — the first version of this threw
+-- 42883 on the very line written to be careful.
 do $$
 declare c record;
 begin
@@ -29,10 +34,10 @@ begin
       and rel.relname = 'potluck_submissions'
       and con.contype = 'u'
       and (
-        select array_agg(att.attname order by att.attname)
+        select array_agg(att.attname::text order by att.attname::text)
         from unnest(con.conkey) k
         join pg_attribute att on att.attrelid = con.conrelid and att.attnum = k
-      ) = array['potluck_id', 'user_id']
+      ) = array['potluck_id', 'user_id']::text[]
   loop
     execute format('alter table public.potluck_submissions drop constraint %I', c.conname);
   end loop;
