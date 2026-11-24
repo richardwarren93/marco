@@ -26,13 +26,16 @@ type SceneLike = {
   fit: (w: number, h: number, animate?: boolean) => void;
   focus: (id: string, w: number, h: number) => void;
   setArrivalSignal: (fn: () => void) => void;
+  fly: (fromSeatId: string, toDishId: string) => void;
   destroy: () => void;
 };
 
-export default function PotluckStage({ model, focused, onSeatTap, onDishTap, onEmptyTap, onUnavailable }: {
+export default function PotluckStage({ model, focused, flight, onSeatTap, onDishTap, onEmptyTap, onUnavailable }: {
   model: SceneModel;
   /** The seat or dish the sheet is open for. null re-frames the whole table. */
   focused: string | null;
+  /** A reaction to send across the table. The id makes a repeat re-fire. */
+  flight: { id: string; from: string; to: string } | null;
   onSeatTap: (id: string) => void;
   onDishTap: (id: string) => void;
   onEmptyTap: () => void;
@@ -149,6 +152,8 @@ export default function PotluckStage({ model, focused, onSeatTap, onDishTap, onE
     if (focused) scene.current.focus(focused, w, h);
     else scene.current.fit(w, h, true);
   }, [focused]);
+
+  useEffect(() => { if (flight) scene.current?.fly(flight.from, flight.to); }, [flight]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>

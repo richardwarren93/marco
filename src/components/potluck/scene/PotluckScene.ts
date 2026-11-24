@@ -564,6 +564,44 @@ export class PotluckScene {
 
   private track(t: gsap.core.Tween) { this.tweens.add(t); t.eventCallback("onComplete", () => this.tweens.delete(t)); }
 
+  /* A reaction crossing the table, from the person who sent it to the dish it
+     landed on. The spec asks for exactly this, and it is the one thing that
+     makes a heart feel like it came from somebody rather than appearing.
+
+     The arc is two tweens on y against one on x rather than a motion path —
+     MotionPathPlugin is a paid GSAP plugin, and an up-then-down y with a
+     linear x is indistinguishable from one at this distance. */
+  fly(fromSeatId: string, toDishId: string) {
+    if (this.reduced) return;
+    const from = this.seats.get(fromSeatId)?.root;
+    const to = this.dishes.get(toDishId)?.root;
+    if (!from || !to) return;
+
+    const s = new Sprite(this.tex.heart);
+    s.anchor.set(0.5);
+    s.position.set(from.x, from.y - 40);
+    s.scale.set(0.4);
+    this.layers.effects.addChild(s);
+
+    const peak = Math.min(from.y, to.y) - 90;
+    const tl = gsap.timeline({ onComplete: () => { s.destroy(); } });
+    tl.to(s.scale, { x: 1.5, y: 1.5, duration: 0.2, ease: "back.out(3)" }, 0)
+      .to(s, { x: to.x, duration: 0.74, ease: "none" }, 0)
+      .to(s, { y: peak, duration: 0.37, ease: "sine.out" }, 0)
+      .to(s, { y: to.y - 12, duration: 0.37, ease: "sine.in" }, 0.37)
+      .to(s, { rotation: 0.5, duration: 0.74, ease: "none" }, 0)
+      .to(s.scale, { x: 0.9, y: 0.9, duration: 0.18 }, 0.56)
+      .to(s, { alpha: 0, duration: 0.2 }, 0.72);
+    this.track(tl as unknown as gsap.core.Tween);
+
+    // and the dish notices it arrived
+    this.track(gsap.delayedCall(0.74, () => {
+      if (this.destroyed) return;
+      const dish = this.dishes.get(toDishId)?.root;
+      if (dish) gsap.fromTo(dish.scale, { x: 1.16, y: 1.16 }, { x: 1, y: 1, duration: 0.45, ease: "elastic.out(1,0.5)" });
+    }) as unknown as gsap.core.Tween);
+  }
+
   /** An accessible description of what the canvas is showing. */
   describe(model: SceneModel): string {
     const seated = model.seats.filter((s) => s.state !== "empty");

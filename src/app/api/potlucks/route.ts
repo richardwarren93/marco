@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isServed, localISO } from "@/lib/potluck";
-import { readSubmissionExtras } from "@/lib/potluck-server";
+import { readReactions, readSubmissionExtras } from "@/lib/potluck-server";
 
 const input = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), crew_id: z.uuid(), theme: z.string().trim().min(1).max(100), deadline: z.iso.date() }).strict(),
@@ -18,6 +18,11 @@ const input = z.discriminatedUnion("action", [
   z.object({ action: z.literal("submit"), potluck_id: z.uuid(), cook_id: z.uuid(), co_user_id: z.uuid().nullish() }).strict(),
   // A claim becoming the dish: attach the cook you actually made to THAT one.
   z.object({ action: z.literal("cooked"), potluck_id: z.uuid(), submission_id: z.uuid(), cook_id: z.uuid() }).strict(),
+  // A heart or a note on somebody's dish; a nudge to somebody who has not
+  // cooked theirs yet.
+  z.object({ action: z.literal("react"), potluck_id: z.uuid(), kind: z.enum(["heart", "note", "nudge"]), submission_id: z.uuid().nullish(), target_user_id: z.uuid().nullish(), body: z.string().trim().min(1).max(280).nullish() }).strict(),
+  // Taking a heart back. Only hearts — a note is a thing you said.
+  z.object({ action: z.literal("unheart"), potluck_id: z.uuid(), submission_id: z.uuid() }).strict(),
 ]);
 
 export async function GET(request: Request) {
@@ -38,13 +43,16 @@ export async function GET(request: Request) {
   ]);
   if (potlucks.error || cooks.error) return NextResponse.json({ error: "Potlucks could not be loaded." }, { status: 503 });
   const rows = (potlucks.data ?? []) as { id: string }[];
-  const extras = await readSubmissionExtras(sb, rows.map((p) => p.id));
+  const ids = rows.map((p) => p.id);
+  const [extras, reactions] = await Promise.all([readSubmissionExtras(sb, ids), readReactions(sb, ids)]);
   return NextResponse.json({
     potlucks: potlucks.data ?? [],
     cooks: cooks.data ?? [],
     userId: user.id,
     extras: extras.bySubmission,
     extrasReady: extras.ready,
+    reactions: reactions.rows,
+    reactionsReady: reactions.ready,
   }, { headers: { "Cache-Control": "private, no-store" } });
 }
 
@@ -181,6 +189,49 @@ export async function POST(request: Request) {
     if (!own) return NextResponse.json({ error: "That is not one of your dishes." }, { status: 403 });
     const { error } = await sb.from("potluck_submissions").update({ cook_id: cook.id }).eq("id", own.id);
     return error ? writeFailed(error, "Your dish could not be updated.") : NextResponse.json({ success: true });
+  }
+
+  // ── Hearts, notes and nudges ──────────────────────────────────────────────
+  if (body.action === "react") {
+    // The shape rules live in the migration as CHECK constraints; these are
+    // the same rules stated early, so a bad request reads as a sentence rather
+    // than as a 23514 from Postgres.
+    if (body.kind === "nudge") {
+      if (!body.target_user_id) return NextResponse.json({ error: "Who is the nudge for?" }, { status: 400 });
+      if (body.target_user_id === user.id) return NextResponse.json({ error: "You cannot nudge yourself." }, { status: 400 });
+      const { data: atTable } = await sb.from("crew_members").select("user_id").eq("crew_id", potluck.crew_id).eq("user_id", body.target_user_id).maybeSingle();
+      if (!atTable) return NextResponse.json({ error: "They are not at this table." }, { status: 403 });
+    } else {
+      if (!body.submission_id) return NextResponse.json({ error: "Which dish?" }, { status: 400 });
+      const { data: dish } = await sb.from("potluck_submissions").select("id").eq("id", body.submission_id).eq("potluck_id", body.potluck_id).maybeSingle();
+      if (!dish) return NextResponse.json({ error: "That dish is not on this table." }, { status: 404 });
+      if (body.kind === "note" && !body.body) return NextResponse.json({ error: "Write something first." }, { status: 400 });
+    }
+
+    const { error } = await sb.from("potluck_reactions").insert({
+      potluck_id: body.potluck_id, from_user_id: user.id, kind: body.kind,
+      submission_id: body.kind === "nudge" ? null : body.submission_id,
+      target_user_id: body.kind === "nudge" ? body.target_user_id : null,
+      body: body.kind === "note" ? body.body : null,
+    });
+    if (!error) return NextResponse.json({ success: true });
+    // 23505 here is one of the two partial unique indexes doing its job.
+    if (error.code === "23505") {
+      return NextResponse.json({ error: body.kind === "nudge" ? "You already nudged them." : "You already liked this." }, { status: 409 });
+    }
+    // 42P01 = the table is not there yet, i.e. the migration has not been run.
+    if (error.code === "42P01") return NextResponse.json({ error: "Reactions are not switched on yet." }, { status: 409 });
+    return NextResponse.json({ error: "That could not be sent." }, { status: 409 });
+  }
+
+  if (body.action === "unheart") {
+    // The row filter IS the authorisation; RLS allows deleting only your own
+    // hearts, and from_user_id here keeps a stray id from reaching anyone
+    // else's even if that policy ever changed.
+    const { error } = await sb.from("potluck_reactions").delete()
+      .eq("potluck_id", body.potluck_id).eq("submission_id", body.submission_id)
+      .eq("from_user_id", user.id).eq("kind", "heart");
+    return error ? NextResponse.json({ error: "That could not be undone." }, { status: 409 }) : NextResponse.json({ success: true });
   }
 
   // ── I already made it ─────────────────────────────────────────────────────

@@ -25,7 +25,7 @@ import { buildModel, type SceneModel } from "@/components/potluck/scene/model";
 import { sharePotluckCard } from "@/components/potluck/shareCard";
 import { tap } from "@/lib/haptics";
 import { deadlineLabel, isServed, localISO } from "@/lib/potluck";
-import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
+import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, PINK, SURFACE, TOMATO } from "@/lib/theme";
 
 const DISP = DISPLAY;
 
@@ -35,6 +35,7 @@ type MyCook = { id: string; title: string | null; photo_url: string | null; crew
 type Member = { id: string; name: string; isYou: boolean };
 type Extra = { co_user_id: string | null; recipe_id: string | null; claimed_title: string | null; claimed_image: string | null };
 const NO_EXTRA: Extra = { co_user_id: null, recipe_id: null, claimed_title: null, claimed_image: null };
+type Reaction = { id: string; kind: "heart" | "note" | "nudge"; from_user_id: string; submission_id: string | null; target_user_id: string | null; body: string | null };
 
 const fetcher = async (url: string) => { const r = await fetch(url); const d = await r.json(); if (!r.ok) throw new Error(d.error || "Could not load this potluck."); return d; };
 
@@ -43,7 +44,7 @@ export default function PotluckRoom() {
   const router = useRouter();
   const id = params?.id ?? "";
 
-  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; extras: Record<string, Extra>; extrasReady: boolean }>(
+  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; extras: Record<string, Extra>; extrasReady: boolean; reactions: Reaction[]; reactionsReady: boolean }>(
     id ? `/api/potlucks?id=${encodeURIComponent(id)}` : null, fetcher,
   );
   const { data: tables } = useSWR<{ tables: { crew: Crew; members: Member[] }[] }>("/api/table", fetcher);
@@ -54,12 +55,15 @@ export default function PotluckRoom() {
   const [sheet, setSheet] = useState<SheetMode | null>(null);
   const [picked, setPicked] = useState<{ kind: "seat" | "dish"; id: string } | null>(null);
   const [fallback, setFallback] = useState(false);
+  const [flight, setFlight] = useState<{ id: string; from: string; to: string } | null>(null);
 
   const p = data?.potlucks?.[0];
   const myId = data?.userId ?? "";
   const extras = data?.extras ?? {};
   const extraOf = (sid: string) => extras[sid] ?? NO_EXTRA;
   const canClaim = data?.extrasReady !== false;
+  const canReact = data?.reactionsReady !== false;
+  const reactions = data?.reactions ?? [];
   const today = localISO();
   const served = p ? isServed(p, today) : false;
   const crew = tables?.tables.find((t) => t.crew.id === p?.crew_id);
@@ -77,6 +81,19 @@ export default function PotluckRoom() {
     myId, open: !served,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [members, p?.submissions, extras, myId, served]);
+
+  /* The heart leaves your seat the moment you tap, and the write follows. If
+     the write fails the message says so — but a reaction that waits for a
+     round trip before it moves does not feel like it came from you. */
+  async function react(kind: "heart" | "note" | "nudge", opts: { submissionId?: string; targetUserId?: string; body?: string }) {
+    if (kind === "heart" && opts.submissionId) {
+      setFlight({ id: `${opts.submissionId}:${Date.now()}`, from: myId, to: opts.submissionId });
+    }
+    await act({
+      action: "react", potluck_id: p?.id, kind,
+      submission_id: opts.submissionId ?? null, target_user_id: opts.targetUserId ?? null, body: opts.body ?? null,
+    }, kind === "heart" ? "Sent." : kind === "note" ? "Note left." : "Nudged.");
+  }
 
   async function act(body: object, done: string) {
     setBusy(true); setMessage("");
@@ -150,6 +167,7 @@ export default function PotluckRoom() {
           : <PotluckStage
               model={model}
               focused={picked?.id ?? null}
+              flight={flight}
               onSeatTap={(sid) => { tap(); setPicked({ kind: "seat", id: sid }); }}
               onDishTap={(did) => { tap(); setPicked({ kind: "dish", id: did }); }}
               onEmptyTap={() => { tap("medium"); router.push("/crew"); }}
@@ -184,6 +202,12 @@ export default function PotluckRoom() {
             <DishDetail
               dish={pickedDish} extra={extraOf(pickedDish.id)} isMine={pickedDish.user_id === myId} served={served} busy={busy}
               cooks={data!.cooks.filter((c) => c.crew_id === p.crew_id)} canClaim={canClaim}
+              canReact={canReact}
+              hearts={reactions.filter((r) => r.kind === "heart" && r.submission_id === pickedDish.id)}
+              notes={reactions.filter((r) => r.kind === "note" && r.submission_id === pickedDish.id)}
+              myId={myId} nameOf={(uid) => uid === myId ? "you" : members.find((m) => m.id === uid)?.name ?? "a friend"}
+              onHeart={(on) => on ? react("heart", { submissionId: pickedDish.id }) : act({ action: "unheart", potluck_id: p.id, submission_id: pickedDish.id }, "Taken back.")}
+              onNote={(text) => react("note", { submissionId: pickedDish.id, body: text })}
               onSwap={() => { setPicked(null); setSheet({ kind: "swap", submissionId: pickedDish.id, current: extraOf(pickedDish.id).recipe_id }); }}
               onRemove={() => { setPicked(null); void act({ action: "remove", potluck_id: p.id, submission_id: pickedDish.id }, "Taken off the table."); }}
               onCooked={(cookId) => { setPicked(null); void act({ action: "cooked", potluck_id: p.id, submission_id: pickedDish.id, cook_id: cookId }, "On the table."); }}
@@ -192,6 +216,9 @@ export default function PotluckRoom() {
           {pickedSeat && (
             <SeatDetail
               seat={pickedSeat} model={model}
+              nudged={reactions.some((r) => r.kind === "nudge" && r.target_user_id === pickedSeat.id && r.from_user_id === myId)}
+              onNudge={canReact && !pickedSeat.isYou && !served ? () => react("nudge", { targetUserId: pickedSeat.id }) : undefined}
+              busy={busy}
               onDish={(did) => setPicked({ kind: "dish", id: did })}
               onBring={pickedSeat.isYou && !served && canClaim ? () => { setPicked(null); setSheet({ kind: "add" }); } : undefined}
             />
@@ -266,11 +293,15 @@ function ContextSheet({ title, onClose, children }: { title: string; onClose: ()
   );
 }
 
-function DishDetail({ dish, extra, isMine, served, busy, cooks, canClaim, onSwap, onRemove, onCooked }: {
+function DishDetail({ dish, extra, isMine, served, busy, cooks, canClaim, canReact, hearts, notes, myId, nameOf, onHeart, onNote, onSwap, onRemove, onCooked }: {
   dish: Dish; extra: Extra; isMine: boolean; served: boolean; busy: boolean; cooks: MyCook[]; canClaim: boolean;
+  canReact: boolean; hearts: Reaction[]; notes: Reaction[]; myId: string; nameOf: (id: string) => string;
+  onHeart: (on: boolean) => void; onNote: (text: string) => void;
   onSwap: () => void; onRemove: () => void; onCooked: (cookId: string) => void;
 }) {
   const [choose, setChoose] = useState(false);
+  const [note, setNote] = useState("");
+  const hearted = hearts.some((h) => h.from_user_id === myId);
   const photo = dish.cook?.photo_url || extra.claimed_image || "";
   return (
     <div style={{ marginTop: 10 }}>
@@ -287,6 +318,46 @@ function DishDetail({ dish, extra, isMine, served, busy, cooks, canClaim, onSwap
           Open the recipe →
         </Link>
       )}
+      {canReact && (
+        <div style={{ marginTop: 12 }}>
+          <div className="flex items-center gap-2">
+            {/* You cannot heart your own dish. It would be the only reaction in
+                the app that means nothing. */}
+            {!isMine && (
+              <button onClick={() => onHeart(!hearted)} disabled={busy} aria-pressed={hearted} className="active:scale-[0.96] transition-transform"
+                style={{ background: hearted ? PINK : PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 13.5, minHeight: 42, padding: "0 14px", borderRadius: 99, border: `2px solid ${INK}`, boxShadow: hearted ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}`, transform: hearted ? "translate(1px,1px)" : "none" }}>
+                ♥ {hearts.length || ""}
+              </button>
+            )}
+            {isMine && hearts.length > 0 && (
+              <span style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO }}>
+                ♥ {hearts.length} from {hearts.slice(0, 2).map((h) => nameOf(h.from_user_id)).join(" & ")}{hearts.length > 2 ? ` +${hearts.length - 2}` : ""}
+              </span>
+            )}
+          </div>
+
+          {notes.length > 0 && (
+            <ul style={{ marginTop: 10, display: "grid", gap: 6 }}>
+              {notes.map((n) => (
+                <li key={n.id} style={{ background: BUTTER, border: `2px solid ${INK}`, borderRadius: 10, padding: "8px 10px", transform: "rotate(-0.6deg)" }}>
+                  <span style={{ fontFamily: HAND, fontSize: 15, color: INK }}>{n.body}</span>
+                  <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 11.5, color: INK_SOFT, marginLeft: 6 }}>— {nameOf(n.from_user_id)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form onSubmit={(e) => { e.preventDefault(); const t = note.trim(); if (!t) return; setNote(""); onNote(t); }} className="flex gap-2" style={{ marginTop: 10 }}>
+            <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={280} placeholder="leave a note…"
+              className="min-w-0 flex-1 placeholder:text-[var(--ink-muted)]"
+              style={{ background: PAPER, color: INK, border: `2px solid ${INK}`, borderRadius: 10, padding: "10px 12px", fontFamily: HAND, fontSize: 15 }} />
+            <button disabled={busy || !note.trim()} style={{ background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 13, minHeight: 42, padding: "0 14px", borderRadius: 10, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}`, opacity: busy || !note.trim() ? 0.45 : 1 }}>
+              Pin it
+            </button>
+          </form>
+        </div>
+      )}
+
       {isMine && !served && !dish.cook && (
         <div style={{ marginTop: 10, display: "grid", gap: 8 }}>
           {!choose && (
@@ -315,8 +386,13 @@ function DishDetail({ dish, extra, isMine, served, busy, cooks, canClaim, onSwap
   );
 }
 
-function SeatDetail({ seat, model, onDish, onBring }: { seat: Member; model: SceneModel; onDish: (id: string) => void; onBring?: () => void }) {
+function SeatDetail({ seat, model, nudged, busy, onNudge, onDish, onBring }: {
+  seat: Member; model: SceneModel; nudged: boolean; busy: boolean;
+  onNudge?: () => void; onDish: (id: string) => void; onBring?: () => void;
+}) {
   const theirs = model.dishes.filter((d) => model.seats.find((s) => s.id === seat.id)?.dishIds.includes(d.id));
+  // Only worth offering when there is something to be reminded about.
+  const waiting = theirs.length > 0 && theirs.some((d) => !d.cooked);
   return (
     <div style={{ marginTop: 10 }}>
       {theirs.length === 0
@@ -327,6 +403,12 @@ function SeatDetail({ seat, model, onDish, onBring }: { seat: Member; model: Sce
               <span style={{ fontFamily: HAND, fontWeight: 400, fontSize: 13.5, color: INK_SOFT }}>  {d.cooked ? "cooked" : "still coming"}</span>
             </button>
           ))}
+      {onNudge && waiting && (
+        <button onClick={onNudge} disabled={busy || nudged} className="w-full active:scale-[0.98] transition-transform"
+          style={{ marginTop: 12, background: nudged ? CREAM_WARM : BUTTER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 14, minHeight: 44, borderRadius: 11, border: `2px solid ${INK}`, boxShadow: nudged ? "none" : `2px 2px 0 ${INK}`, opacity: nudged ? 0.7 : 1 }}>
+          {nudged ? "✓ nudged" : "👋 how's it coming along?"}
+        </button>
+      )}
       {onBring && (
         <button onClick={onBring} className="w-full" style={{ marginTop: 12, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, minHeight: 46, borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}` }}>
           Say what you&rsquo;re bringing →
