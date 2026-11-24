@@ -23,7 +23,7 @@ export type TextureName =
   | "nameCard" | "glass" | "candle" | "flame"
   | "spark" | "steam"
   | "body" | "head" | "eyes" | "blink" | "smile"
-  | "flowers" | "cutlery";
+  | "flowers" | "cutlery" | "heart";
 
 const INK = 0x171410;
 const PAPER = 0xfbf7ee;
@@ -142,6 +142,14 @@ function draw(name: TextureName): Graphics {
       }
       return g;
     }
+    case "heart": {
+      g.moveTo(0, 7)
+        .bezierCurveTo(-11, -1, -7, -11, 0, -5)
+        .bezierCurveTo(7, -11, 11, -1, 0, 7)
+        .closePath();
+      inked(g, 0xff4d9d, 2.4);
+      return g;
+    }
     case "cutlery": {
       g.moveTo(-2, -9).lineTo(-2, 9).stroke({ width: 2.4, color: INK, alpha: 0.5, cap: "round" });
       g.moveTo(3, -9).lineTo(3, 9).stroke({ width: 2.4, color: INK, alpha: 0.5, cap: "round" });
@@ -159,7 +167,7 @@ function draw(name: TextureName): Graphics {
 
 export type TextureBank = Record<TextureName, Texture>;
 
-const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam", "body", "head", "eyes", "blink", "smile", "flowers", "cutlery"];
+const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam", "body", "head", "eyes", "blink", "smile", "flowers", "cutlery", "heart"];
 
 export function makeTextures(renderer: Renderer): TextureBank {
   const bank = {} as TextureBank;

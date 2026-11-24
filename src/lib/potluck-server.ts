@@ -51,3 +51,31 @@ export function coCooksOf(extras: Extras): Record<string, string> {
   for (const [id, e] of Object.entries(extras.bySubmission)) if (e.co_user_id) out[id] = e.co_user_id;
   return out;
 }
+
+/* ── Reactions ────────────────────────────────────────────────────────────── */
+
+export type Reaction = {
+  id: string;
+  kind: "heart" | "note" | "nudge";
+  from_user_id: string;
+  submission_id: string | null;
+  target_user_id: string | null;
+  body: string | null;
+};
+
+/* Read the same way as the hand-run columns above, and for the same reason:
+   migration-potluck-reactions.sql is run by hand, and selecting from a table
+   PostgREST does not know about is an error rather than an empty list. If it
+   is missing, `ready` is false and the screens hide the heart, the note field
+   and the nudge rather than offering what cannot be saved. */
+export async function readReactions(sb: Sb, potluckIds: string[]): Promise<{ ready: boolean; rows: Reaction[] }> {
+  if (potluckIds.length === 0) return { ready: true, rows: [] };
+  const { data, error } = await sb
+    .from("potluck_reactions")
+    .select("id,kind,from_user_id,submission_id,target_user_id,body")
+    .in("potluck_id", potluckIds)
+    .order("created_at", { ascending: true })
+    .limit(400);
+  if (error) return { ready: false, rows: [] };
+  return { ready: true, rows: (data ?? []) as Reaction[] };
+}
