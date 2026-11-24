@@ -398,7 +398,7 @@ function YourSpot({ mine, iAmTheCook, extra, crewId, cooks, recipes, canClaim, o
           <PickAndConfirm kind="cook" items={cooks.map(asTile)} confirm="Bring this dish" busy={busy} others={others} onConfirm={(id, co) => onBring(id, co)} />
         </>
       ))}
-      {!canClaim && cooks.length === 0 && <NewCookLink crewId={crewId} label="Cook something and bring it →" />}
+      {!canClaim && cooks.length === 0 && <NewCookLink crewId={crewId} label="Post what you cooked →" findRecipe />}
     </div>
   );
 }
@@ -415,11 +415,25 @@ function SmallButton({ label, onClick, primary = false }: { label: string; onCli
   );
 }
 
-function NewCookLink({ crewId, label }: { crewId: string; label: string }) {
+/* /i-cooked opens straight into a full-screen viewfinder that says "tap to
+   snap what you made" — it is the post-a-cook flow and the photo is required.
+   So this link must only ever be offered to somebody who HAS cooked. It used
+   to be labelled "Cook something and bring it", which sent a person who had
+   not cooked anything to a camera with nothing to photograph.
+   `findRecipe` adds the way out for them, since on an unmigrated deployment
+   claiming is not available and this would otherwise be a dead end. */
+function NewCookLink({ crewId, label, findRecipe = false }: { crewId: string; label: string; findRecipe?: boolean }) {
   return (
-    <Link href={`/i-cooked?table=${crewId}`} className="block active:scale-[0.99] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, textAlign: "center", textDecoration: "none" }}>
-      {label}
-    </Link>
+    <>
+      <Link href={`/i-cooked?table=${crewId}`} className="block active:scale-[0.99] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, textAlign: "center", textDecoration: "none" }}>
+        {label}
+      </Link>
+      {findRecipe && (
+        <Link href="/recipes" className="block" style={{ marginTop: 9, textAlign: "center", fontFamily: HAND, fontSize: 14.5, color: INK_MUTED, textDecoration: "none" }}>
+          haven&rsquo;t cooked yet? find something →
+        </Link>
+      )}
+    </>
   );
 }
 
