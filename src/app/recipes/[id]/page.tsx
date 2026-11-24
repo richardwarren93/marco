@@ -442,6 +442,14 @@ export default function RecipeDetailPage() {
     );
     router.push("/recipes");
 
+    // Your save of this recipe goes with it. Until
+    // migration-recipe-delete-cleanup.sql has run there is no foreign key to
+    // do this, so a deleted recipe stayed in your kitchen — which is what was
+    // reported. Done first: if the recipe delete fails we have removed a save
+    // of something still there, which the next save restores; the other order
+    // leaves a save of something gone, which nothing cleans up.
+    await supabase.from("saves").delete().eq("recipe_id", id);
+
     const { error: deleteError } = await supabase.from("recipes").delete().eq("id", id);
     if (deleteError) {
       swrMutate("supabase:recipes");

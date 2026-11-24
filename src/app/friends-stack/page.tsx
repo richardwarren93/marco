@@ -6,25 +6,18 @@
 
 import { useEffect, useState } from "react";
 import useSWR from "swr";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { saveCook, unsaveCook, joinCrewByCode, type Cook, type TableMember, type Crew } from "@/lib/social";
 import CardPeek from "@/components/social/CardPeek";
 import CookCard from "@/components/social/CookCard";
 import PageHeader from "@/components/layout/PageHeader";
-import { deadlineLabel, isServed, localISO } from "@/lib/potluck";
-import { BUTTER, DISPLAY, HAND, INK, LAV, LIME, PAPER, PINK, SURFACE, TOMATO } from "@/lib/theme";
+import TableLobby, { type LobbyPotluck } from "@/components/social/TableLobby";
+import { DISPLAY, HAND, INK, INK_SOFT, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
 const PENDING_CREW_KEY = "marco_pending_crew";
 
 
 const DISP = DISPLAY;
-const SANS = "system-ui, -apple-system, sans-serif";
-const MONO = "ui-monospace, monospace";
-
-function Tape({ style }: { style?: React.CSSProperties }) {
-  return <div style={{ position: "absolute", width: 80, height: 24, background: "rgba(255,216,77,0.82)", ...style }} />;
-}
 
 const TREATMENTS = ["polaroid", "receipt", "poster"];
 function hashStr(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
@@ -32,7 +25,7 @@ function hashStr(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = 
 export default function FriendsFeed() {
   const router = useRouter();
   const [selectedTable, setSelectedTable] = useState("");
-  const { data, error, mutate, isLoading } = useSWR<{ cooks: Cook[]; tables: { crew: Crew; members: TableMember[] }[]; me: TableMember; savedIds: string[]; potlucks: TablePotluck[]; coCooks: Record<string, string> }>(
+  const { data, error, mutate, isLoading } = useSWR<{ cooks: Cook[]; tables: { crew: Crew; members: TableMember[] }[]; me: TableMember; savedIds: string[]; potlucks: LobbyPotluck[]; coCooks: Record<string, string> }>(
     `/api/table${selectedTable ? `?table=${encodeURIComponent(selectedTable)}` : ""}`,
     async (url: string) => { const r = await fetch(url); const value = await r.json(); if (!r.ok) throw new Error(value.error || "Could not load your table."); return value; },
     { revalidateOnFocus: true, focusThrottleInterval: 30000, dedupingInterval: 10000, keepPreviousData: true },
@@ -74,17 +67,18 @@ export default function FriendsFeed() {
       <div className="relative mx-auto w-full max-w-md px-4" style={{ paddingTop: "calc(env(safe-area-inset-top,0px) + 14px)", paddingBottom: 120 }}>
         <PageHeader title="Marco" subtitle="what are your people cooking?" avatar />
 
-        {/* your table — who's seated, and empty chairs to pull people in */}
-        <div className="flex items-center gap-2 mt-5">
-          <label className="sr-only" htmlFor="table-choice">Choose a table</label>
-          <select id="table-choice" value={selectedTable} onChange={e => setSelectedTable(e.target.value)} className="min-w-0 flex-1 rounded-xl border-2 border-[var(--ink)] bg-[var(--paper)] p-3 font-semibold">
-            <option value="">All your tables</option>
-            {tables.map(({ crew }) => <option key={crew.id} value={crew.id}>{crew.emoji} {crew.name}</option>)}
-          </select>
-          <Link href="/crew" className="rounded-xl border-2 border-[var(--ink)] px-3 py-3 bg-[var(--lime)] font-semibold">+ Table</Link>
-        </div>
-        <TableSeats tables={selectedTable ? tables.filter(t => t.crew.id === selectedTable) : tables.slice(0, 1)} you={me} onInvite={() => router.push("/crew")} onMember={(mid) => router.push(`/u/${mid}`)} />
-        <PotluckBar potlucks={data?.potlucks ?? []} coCooks={data?.coCooks ?? {}} myId={me?.id ?? null} table={selectedTable} />
+        {/* Every table as a room you can look into: who is in it, and what is
+            on. The potluck line used to be a separate bar below, which said
+            the same thing about only one table. */}
+        <TableLobby
+          tables={tables}
+          potlucks={data?.potlucks ?? []}
+          coCooks={data?.coCooks ?? {}}
+          myId={me?.id ?? null}
+          selected={selectedTable}
+          onSelect={setSelectedTable}
+          onNew={() => router.push("/crew")}
+        />
         {error && <div role="alert" className="mt-4 rounded-xl bg-white p-4"><p>{error.message}</p><button className="underline mt-2" onClick={() => mutate()}>Try again</button></div>}
 
         {/* ===== loading ===== */}
@@ -98,6 +92,11 @@ export default function FriendsFeed() {
             <div style={{ marginTop: 20 }}>
               <div className="flex items-baseline gap-2 px-1" style={{ marginBottom: 10 }}>
                 <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK }}>hot off the stove 🔥</span>
+                {selectedTable && (
+                  <span style={{ fontFamily: HAND, fontSize: 14, color: INK_SOFT }}>
+                    {tables.find((t) => t.crew.id === selectedTable)?.crew.name}
+                  </span>
+                )}
               </div>
               <div className="space-y-5">
                 {(() => {
@@ -122,116 +121,10 @@ export default function FriendsFeed() {
   );
 }
 
-/* Potluck on Table — what is on this week, not a door with no sign on it.
- *
- * This was a static butter bar reading "Potluck · Cook together →" whether or
- * not a potluck existed, when it was due, or whether you had brought anything.
- * A weekly thing has to say where it is up to from the place you already open.
- */
-type TablePotluck = { id: string; crew_id: string; theme: string; emoji: string | null; deadline: string | null; status: string; submissions: { id: string; user_id: string }[] };
-
-function PotluckBar({ potlucks, coCooks, myId, table }: { potlucks: TablePotluck[]; coCooks: Record<string, string>; myId: string | null; table: string }) {
-  const today = localISO();
-  const live = potlucks.find((p) => !isServed(p, today));
-  const href = `/potluck${table ? `?table=${encodeURIComponent(table)}` : ""}`;
-  const shared = { display: "block", marginTop: 16, border: `2.5px solid ${INK}`, borderRadius: 16, boxShadow: `4px 5px 0 ${INK}`, textDecoration: "none", color: INK } as const;
-
-  // Nothing on: an invitation, not a status line.
-  if (!live) {
-    const last = potlucks[0];
-    return (
-      <Link href={href} className="active:scale-[0.99] transition-transform" style={{ ...shared, background: BUTTER, padding: "14px 16px" }}>
-        <div className="flex items-center justify-between gap-2">
-          <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16 }}>🍲 Start this week&rsquo;s potluck</span>
-          <span aria-hidden style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16 }}>→</span>
-        </div>
-        <div style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>
-          {last ? `last one: ${last.theme}` : "pick a theme, everyone cooks their own"}
-        </div>
-      </Link>
-    );
-  }
-
-  const dishes = live.submissions.length;
-  // Being the second name on someone else's dish is still your dish that week.
-  const brought = !!myId && live.submissions.some((s) => s.user_id === myId || coCooks[s.id] === myId);
-  return (
-    <Link href={href} className="active:scale-[0.99] transition-transform" style={{ ...shared, background: BUTTER, padding: "14px 16px" }}>
-      <div className="flex items-start gap-2">
-        <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 16 }}>{live.emoji ?? "🍲"} {live.theme}</span>
-        <span style={{ flexShrink: 0, background: brought ? LIME : PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 11, letterSpacing: "0.04em", padding: "3px 9px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(3deg)" }}>{deadlineLabel(live, today)}</span>
-      </div>
-      <div style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 4 }}>
-        {brought
-          ? `your dish is in · ${dishes} on the table`
-          : dishes === 0 ? "nobody has cooked yet — go first →" : `${dishes} ${dishes === 1 ? "dish" : "dishes"} in, yours isn't →`}
-      </div>
-    </Link>
-  );
-}
-
-// "Your table" — a tabletop with your table seated around it and open chairs
-// that pull the rest in. With multiple tables it rotates through them (the feed
-// stays aggregate). The cold-start hero: even solo it reads as a table waiting.
-const SEAT_COLORS = [LIME, BUTTER, PINK, LAV, "#FFB86B"];
-function TableSeats({ tables, you, onInvite, onMember }: { tables: { crew: Crew; members: TableMember[] }[]; you: TableMember | null; onInvite: () => void; onMember: (id: string) => void }) {
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    if (tables.length <= 1) return;
-    const t = setInterval(() => setIdx((v) => (v + 1) % tables.length), 4200); // rotate through your tables
-    return () => clearInterval(t);
-  }, [tables.length]);
-
-  const active = tables.length > 0 ? tables[Math.min(idx, tables.length - 1)] : null;
-  const members = active ? active.members : (you ? [you] : []);
-  const title = active ? `${active.crew.emoji ?? "🍽️"} ${active.crew.name}` : "your table";
-  const filled = members.length;
-  // Solo → several open chairs (invite-forward). Once your people are here, just
-  // one open chair, so the table reads full instead of half-empty.
-  const empties = filled >= 2 ? 1 : 3;
-  const multi = tables.length > 1;
-
-  return (
-    <div style={{ marginTop: 12 }}>
-      <div className="flex items-baseline justify-between px-1">
-        <span style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "62%" }}>{title}</span>
-        {multi ? (
-          <div className="flex items-center gap-1.5">
-            {tables.map((t, k) => (
-              <button key={t.crew.id} onClick={() => setIdx(k)} aria-label={`Table ${k + 1}`} style={{ width: k === idx ? 20 : 8, height: 8, borderRadius: 99, background: k === idx ? INK : "rgba(23,20,16,0.2)", border: "none", transition: "width .2s" }} />
-            ))}
-          </div>
-        ) : (
-          <button onClick={onInvite} style={{ fontFamily: HAND, fontSize: 14.5, color: TOMATO, transform: "rotate(-2deg)", background: "none", border: "none" }}>
-            {filled <= 1 ? "pull up some chairs →" : `${filled} seated · invite more →`}
-          </button>
-        )}
-      </div>
-      <div style={{ position: "relative", marginTop: 8, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 16, padding: "16px 10px 12px", boxShadow: "0 10px 22px rgba(23,20,16,0.14)", transform: "rotate(-0.5deg)" }}>
-        <Tape style={{ top: -9, left: 22, transform: "rotate(-6deg)" }} />
-        <div key={active?.crew.id ?? "solo"} className="flex gap-1 overflow-x-auto" style={{ scrollbarWidth: "none", animation: "seatFade .35s ease" }}>
-          {members.map((m, i) => (
-            <button key={m.id} onClick={() => onMember(m.id)} className="active:scale-95 transition-transform" style={{ flexShrink: 0, width: 64, textAlign: "center", background: "none", border: "none", padding: 0 }}>
-              <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", background: SEAT_COLORS[i % SEAT_COLORS.length], color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 19, border: `2.5px solid ${INK}`, transform: `rotate(${i % 2 ? 3 : -3}deg)` }}>{m.avatar}</div>
-              <div style={{ fontFamily: SANS, fontSize: 11.5, color: INK, marginTop: 5, fontWeight: m.isYou ? 700 : 400, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.isYou ? "you" : m.name}</div>
-            </button>
-          ))}
-          {Array.from({ length: empties }, (_, i) => (
-            <button key={`e${i}`} onClick={onInvite} className="active:scale-95 transition-transform" style={{ flexShrink: 0, width: 64, textAlign: "center", background: "none", border: "none", padding: 0 }}>
-              <div className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 99, margin: "0 auto", color: INK, fontSize: 22, border: `2.5px dashed ${INK}`, opacity: 0.5 }}>+</div>
-              <div style={{ fontFamily: HAND, fontSize: 12.5, color: TOMATO, marginTop: 5 }}>invite</div>
-            </button>
-          ))}
-        </div>
-      </div>
-      <style>{`@keyframes seatFade{from{opacity:0}to{opacity:1}}`}</style>
-    </div>
-  );
-}
 
 // The empty state's ONE job: post your first cook. Show a rotating PREVIEW of
 // what a cook becomes so it feels worth doing (clearly a preview, never a fake
-// post). Inviting lives in the seats visual above, so this never repeats it.
+// post). Inviting lives in the lobby above, so this never repeats it.
 function FirstCookCard({ onPost }: { onPost: () => void }) {
   return (
     <div style={{ marginTop: 8, textAlign: "center" }}>
