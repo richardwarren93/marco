@@ -351,3 +351,22 @@ export async function unsaveCook(cookId: string): Promise<boolean> {
   const { error } = await sb.from("saves").delete().eq("user_id", user.id).eq("cook_id", cookId);
   return !error;
 }
+
+/* Take down one of your own posts.
+ *
+ * There was no way to do this from anywhere in the app, which is how a cook
+ * whose recipe had been deleted could sit on the feed for good. RLS does the
+ * real check — cooks_delete is `auth.uid() = user_id` — so this cannot reach
+ * anybody else's post however it is called.
+ */
+export async function deleteCook(cookId: string): Promise<boolean> {
+  if (cookId.startsWith("feat-")) return false;
+  const sb = createClient();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return false;
+  // A potluck dish that is ONLY this cook would be left with neither a cook
+  // nor a claim, which its check constraint forbids. Clear those first.
+  await sb.from("potluck_submissions").delete().eq("cook_id", cookId).is("claimed_title", null);
+  const { error } = await sb.from("cooks").delete().eq("id", cookId).eq("user_id", user.id);
+  return !error;
+}

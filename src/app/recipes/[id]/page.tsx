@@ -467,6 +467,34 @@ export default function RecipeDetailPage() {
     if (deleteError) {
       swrMutate("supabase:recipes");
       showToast("Failed to delete recipe");
+      return;
+    }
+
+    /* And YOUR OWN posts of it go too.
+     *
+     * The first version of this only unlinked them: the migration sets
+     * cooks.source_recipe_id to null so a post outlives the recipe. That is
+     * right for somebody ELSE who cooked your recipe — their post is theirs.
+     * It is wrong for your own, which is what was reported: the card stayed on
+     * "hot off the stove", unclickable, reading "no recipe on this one yet".
+     *
+     * Recipe first, posts second, on purpose. If the post cleanup fails the
+     * recipe is still gone and a stranded card can be removed by hand; the
+     * other order risks destroying posts for a recipe that then survives.
+     */
+    // Explicitly scoped to you. RLS would refuse to delete anybody else's post
+    // anyway, but asking for only your own says so rather than relying on it.
+    const { data: { user: me } } = await supabase.auth.getUser();
+    const { data: own } = me
+      ? await supabase.from("cooks").select("id").eq("source_recipe_id", id).eq("user_id", me.id)
+      : { data: [] };
+    const ids = ((own ?? []) as { id: string }[]).map((c) => c.id);
+    if (ids.length > 0) {
+      // A potluck dish that is ONLY this cook would be left with neither a
+      // cook nor a claim, which its check constraint forbids — so the delete
+      // would fail. Clear those first; errors here are not worth blocking on.
+      await supabase.from("potluck_submissions").delete().in("cook_id", ids).is("claimed_title", null);
+      await supabase.from("cooks").delete().in("id", ids);
     }
   }
 
