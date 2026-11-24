@@ -2,20 +2,16 @@
 
 /* Potluck — a table says what it is bringing, cooks it, then sees the spread.
  *
- * Three things were wrong with this screen, fixed in order:
+ * Four things were wrong with this screen, fixed in order:
  *
- *   1. It never ended. `potlucks.status` has always had a 'served' value and
- *      nothing ever wrote it. The cook-by date is now the close (lib/potluck).
- *   2. The dishes were text. The API has always SELECTED `cook.photo_url` and
- *      this page threw it away, so a potluck between people in different
- *      kitchens — the whole point — was a list of underlined titles.
- *   3. You could only bring something you had ALREADY cooked and posted to the
- *      table, which is backwards: the potluck is meant to be what prompts the
- *      cooking. So a submission now starts as a claim — "I'm bringing this",
- *      from your saved recipes — and gains its photo when you make it.
- *
- * One row the whole way through, because `unique (potluck_id, user_id)` means
- * a claim and a cooked dish from one person cannot be two rows.
+ *   1. It never ended. The cook-by date is now the close (lib/potluck).
+ *   2. The dishes were text. The spread is now the photos.
+ *   3. You could only bring something you had ALREADY cooked, which is
+ *      backwards: a submission now starts as a claim and gains its photo.
+ *   4. One dish each, picked from a sideways strip of tiles. People bring two
+ *      things, and nobody can scan a library sideways — so your spot at the
+ *      table holds a list, and recipes are picked in a sheet with a search
+ *      field (components/potluck/RecipeSheet).
  */
 
 import { Suspense, useState } from "react";
@@ -23,7 +19,11 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import useSWR from "swr";
 import type { Crew } from "@/lib/social";
+import { useRecipes } from "@/lib/hooks/use-data";
 import PageHeader from "@/components/layout/PageHeader";
+import RecipeSheet, { type SheetMode, type TakenBy } from "@/components/potluck/RecipeSheet";
+import PotluckTable, { type TablePlate } from "@/components/potluck/PotluckTable";
+import { sharePotluckCard } from "@/components/potluck/shareCard";
 import { deadlineLabel, isServed, localISO } from "@/lib/potluck";
 import { BUTTER, CREAM_WARM, DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, LIME, PAPER, SURFACE, TOMATO } from "@/lib/theme";
 
@@ -32,7 +32,6 @@ const DISP = DISPLAY;
 type Dish = { id: string; user_id: string; cook: { id: string; title: string | null; photo_url: string | null; author_name: string | null; source_recipe_id: string | null } | null };
 interface Potluck { id: string; crew_id: string; theme: string; emoji: string | null; deadline: string | null; status: string; submissions: Dish[] }
 type MyCook = { id: string; title: string | null; photo_url: string | null; crew_id: string | null };
-type MyRecipe = { id: string; title: string; image_url: string | null };
 type Member = { id: string; name: string; isYou: boolean };
 /** The columns that live in hand-run migrations, keyed by submission id. */
 type Extra = { co_user_id: string | null; recipe_id: string | null; claimed_title: string | null; claimed_image: string | null };
@@ -64,10 +63,15 @@ function Potlucks() {
   const [table, setTable] = useState(search?.get("table") || "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  /** Which potluck the sheet is open for, and whether it is adding or swapping. */
+  const [sheet, setSheet] = useState<{ potluckId: string; crewId: string; mode: SheetMode } | null>(null);
+
   const { data: tables } = useSWR<{ tables: { crew: Crew; members: Member[] }[] }>("/api/table", fetcher);
-  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; recipes: MyRecipe[]; extras: Extras; extrasReady: boolean }>(
+  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; extras: Extras; extrasReady: boolean }>(
     `/api/potlucks${table ? `?table=${encodeURIComponent(table)}` : ""}`, fetcher,
   );
+  // The whole library, SWR-shared with /recipes — the sheet searches it.
+  const { data: library, isLoading: libraryLoading } = useRecipes();
 
   async function act(body: object, done: string) {
     setBusy(true); setMessage("");
@@ -83,7 +87,6 @@ function Potlucks() {
 
   const today = localISO();
   const all = data?.potlucks ?? [];
-  // This week's first, then the finished spreads underneath.
   const open = all.filter((p) => !isServed(p, today));
   const served = all.filter((p) => isServed(p, today));
   const tableName = (id: string) => tables?.tables.find((t) => t.crew.id === id)?.crew.name ?? "your table";
@@ -92,10 +95,30 @@ function Potlucks() {
   // reads "you & Ama", not "Richard & Ama".
   const nameOf = (id: string) => (id === data?.userId ? "you" : tables?.tables.flatMap((t) => t.members).find((m) => m.id === id)?.name ?? "a friend");
 
+  // Which of your recipes are already spoken for in the open sheet's potluck,
+  // so the list can say "Ama is bringing this" without forbidding it — two
+  // people turning up with garlic bread is a thing that happens.
+  // Not memoised on purpose: it walks one potluck's submissions, and every
+  // input to it already changes identity each render, so a useMemo here would
+  // cost two more hooks to cache nothing.
+  const takenBy: TakenBy = (() => {
+    if (!sheet || !data) return {};
+    const p = all.find((x) => x.id === sheet.potluckId);
+    if (!p) return {};
+    const out: TakenBy = {};
+    for (const s of p.submissions) {
+      const e = data.extras?.[s.id];
+      if (e?.recipe_id) out[e.recipe_id] = s.user_id === data.userId ? "you" : nameOf(s.user_id);
+    }
+    return out;
+  })();
+
   const cardProps = (p: Potluck) => ({
-    p, today, tableName: tableName(p.crew_id), myId: data!.userId, myCooks: data!.cooks, myRecipes: data!.recipes ?? [],
+    p, today, tableName: tableName(p.crew_id), myId: data!.userId, myCooks: data!.cooks,
     extras: data!.extras ?? {}, extrasReady: data!.extrasReady !== false, members: membersOf(p.crew_id), nameOf, busy,
   });
+
+  const sheetMembers = sheet ? membersOf(sheet.crewId).filter((m) => !m.isYou && m.id !== data?.userId).map((m) => ({ id: m.id, name: m.name })) : [];
 
   return (
     <Shell>
@@ -138,19 +161,41 @@ function Potlucks() {
 
       {data && open.map((p) => (
         <PotluckCard key={p.id} {...cardProps(p)}
-          onClaim={(recipeId, coUserId) => act({ action: "claim", potluck_id: p.id, recipe_id: recipeId, co_user_id: coUserId }, "You're on the list.")}
+          onPick={(mode) => setSheet({ potluckId: p.id, crewId: p.crew_id, mode })}
+          onRemove={(submissionId) => act({ action: "remove", potluck_id: p.id, submission_id: submissionId }, "Taken off the table.")}
           onBring={(cookId, coUserId) => act({ action: "submit", potluck_id: p.id, cook_id: cookId, co_user_id: coUserId }, "Your dish is on the table.")}
-          onCooked={(cookId) => act({ action: "cooked", potluck_id: p.id, cook_id: cookId }, "Your dish is on the table.")} />
+          onCooked={(submissionId, cookId) => act({ action: "cooked", potluck_id: p.id, submission_id: submissionId, cook_id: cookId }, "Your dish is on the table.")} />
       ))}
 
       {data && served.length > 0 && (
         <div style={{ marginTop: 26 }}>
           <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, paddingLeft: 2 }}>already served</div>
           {served.map((p) => (
-            <PotluckCard key={p.id} {...cardProps(p)} onClaim={() => {}} onBring={() => {}} onCooked={() => {}} />
+            <PotluckCard key={p.id} {...cardProps(p)} onPick={() => {}} onRemove={() => {}} onBring={() => {}} onCooked={() => {}} />
           ))}
         </div>
       )}
+
+      {sheet && <RecipeSheet
+        mode={sheet.mode}
+        recipes={library ?? []}
+        loading={libraryLoading}
+        takenBy={takenBy}
+        members={sheet?.mode.kind === "add" ? sheetMembers : []}
+        busy={busy}
+        onClose={() => setSheet(null)}
+        onConfirm={(ids, coUserId) => {
+          const s = sheet;
+          setSheet(null);
+          if (!s || ids.length === 0) return;
+          if (s.mode.kind === "swap") {
+            void act({ action: "swap", potluck_id: s.potluckId, submission_id: s.mode.submissionId, recipe_id: ids[0] }, "Swapped.");
+          } else {
+            void act({ action: "claim", potluck_id: s.potluckId, recipe_ids: ids, co_user_id: coUserId },
+              ids.length > 1 ? `${ids.length} dishes added.` : "You're on the list.");
+          }
+        }}
+      />}
     </Shell>
   );
 }
@@ -199,28 +244,31 @@ function StartPotluck({ table, busy, onCreate }: { table: string; busy: boolean;
 /* ── One potluck ────────────────────────────────────────────────────────── */
 
 type CardProps = {
-  p: Potluck; today: string; tableName: string; myId: string; myCooks: MyCook[]; myRecipes: MyRecipe[];
+  p: Potluck; today: string; tableName: string; myId: string; myCooks: MyCook[];
   extras: Extras; extrasReady: boolean; members: Member[]; nameOf: (id: string) => string; busy: boolean;
-  onClaim: (recipeId: string, coUserId: string | null) => void;
+  onPick: (mode: SheetMode) => void;
+  onRemove: (submissionId: string) => void;
   onBring: (cookId: string, coUserId: string | null) => void;
-  onCooked: (cookId: string) => void;
+  onCooked: (submissionId: string, cookId: string) => void;
 };
 
-function PotluckCard({ p, today, tableName, myId, myCooks, myRecipes, extras, extrasReady, members, nameOf, busy, onClaim, onBring, onCooked }: CardProps) {
+function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, members, nameOf, busy, onPick, onRemove, onBring, onCooked }: CardProps) {
   const served = isServed(p, today);
   const extraOf = (id: string) => extras[id] ?? NO_EXTRA;
-  // Being the second name on someone else's dish counts as having brought one.
-  const mine = p.submissions.find((s) => s.user_id === myId || extraOf(s.id).co_user_id === myId);
-  const iAmTheCook = mine?.user_id === myId;
   const dishes = p.submissions.length;
-  // How many are promises rather than plates — the line that makes a potluck
-  // mid-week legible ("4 coming, 1 cooked").
   const cooked = p.submissions.filter((s) => s.cook).length;
+  const mine = p.submissions.filter((s) => s.user_id === myId);
+  const alsoOn = p.submissions.filter((s) => s.user_id !== myId && extraOf(s.id).co_user_id === myId);
   const spare = myCooks.filter((c) => c.crew_id === p.crew_id);
-  // Everyone already on the table, on either side of a dish.
-  const spoken = new Set<string>();
-  for (const s of p.submissions) { spoken.add(s.user_id); const co = extraOf(s.id).co_user_id; if (co) spoken.add(co); }
-  const others = extrasReady ? members.filter((m) => !m.isYou && m.id !== myId && !spoken.has(m.id)) : [];
+  const status = summary(dishes, cooked, served, extrasReady);
+  // One plate per dish, in the order they were brought. The table and the
+  // shareable card read the same list, so they can never disagree.
+  const plates: TablePlate[] = p.submissions.map((s) => ({
+    id: s.id,
+    label: s.cook?.title || extraOf(s.id).claimed_title || "a dish",
+    who: s.user_id === myId ? "you" : s.cook?.author_name || nameOf(s.user_id),
+    cooked: !!s.cook,
+  }));
 
   return (
     <section style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: "16px 14px", boxShadow: `4px 5px 0 ${INK}` }}>
@@ -233,8 +281,14 @@ function PotluckCard({ p, today, tableName, myId, myCooks, myRecipes, extras, ex
         </span>
       </div>
       <div style={{ fontFamily: HAND, fontSize: 15, color: TOMATO, transform: "rotate(-1.5deg)", marginTop: 6 }}>
-        {tableName} · {summary(dishes, cooked, served, extrasReady)}
+        {tableName} · {status}
       </div>
+
+      <div style={{ margin: "10px auto 0", maxWidth: 260 }}>
+        <PotluckTable plates={plates} open={!served} centre={cooked === dishes && dishes > 0 ? "ON THE TABLE" : "COMING"} />
+      </div>
+
+      <ShareTable theme={p.theme} tableName={tableName} plates={plates} status={status} open={!served} />
 
       {dishes > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
@@ -246,10 +300,10 @@ function PotluckCard({ p, today, tableName, myId, myCooks, myRecipes, extras, ex
       )}
 
       {!served && (
-        <YourSpot
-          mine={mine} iAmTheCook={iAmTheCook} extra={mine ? extraOf(mine.id) : NO_EXTRA}
-          crewId={p.crew_id} cooks={spare} recipes={myRecipes} canClaim={extrasReady} others={others} busy={busy}
-          onClaim={onClaim} onBring={onBring} onCooked={onCooked}
+        <YourDishes
+          mine={mine} alsoOn={alsoOn} extraOf={extraOf} crewId={p.crew_id} cooks={spare}
+          canClaim={extrasReady} members={members} busy={busy}
+          onPick={onPick} onRemove={onRemove} onBring={onBring} onCooked={onCooked}
         />
       )}
     </section>
@@ -315,101 +369,126 @@ function DishTile({ dish, extra, mine, tilt, credit }: { dish: Dish; extra: Extr
     : body;
 }
 
-/* ── Your spot at the table ─────────────────────────────────────────────── */
+/* ── Your dishes ────────────────────────────────────────────────────────── */
 
-function YourSpot({ mine, iAmTheCook, extra, crewId, cooks, recipes, canClaim, others, busy, onClaim, onBring, onCooked }: {
-  mine: Dish | undefined; iAmTheCook: boolean; extra: Extra; crewId: string; cooks: MyCook[]; recipes: MyRecipe[];
-  canClaim: boolean; others: Member[]; busy: boolean;
-  onClaim: (recipeId: string, coUserId: string | null) => void;
+function YourDishes({ mine, alsoOn, extraOf, crewId, cooks, canClaim, members, busy, onPick, onRemove, onBring, onCooked }: {
+  mine: Dish[]; alsoOn: Dish[]; extraOf: (id: string) => Extra; crewId: string; cooks: MyCook[];
+  canClaim: boolean; members: Member[]; busy: boolean;
+  onPick: (mode: SheetMode) => void;
+  onRemove: (submissionId: string) => void;
   onBring: (cookId: string, coUserId: string | null) => void;
-  onCooked: (cookId: string) => void;
+  onCooked: (submissionId: string, cookId: string) => void;
 }) {
-  // "change what I'm bringing" / "say what I cooked", opened from the bar below
-  const [panel, setPanel] = useState<"" | "change" | "cooked">("");
+  /** Which of your dishes has its "I cooked it" picker open. */
+  const [cooking, setCooking] = useState("");
 
-  // Already cooked and on the table — nothing left to do this week.
-  if (mine?.cook) {
-    return (
-      <div style={{ marginTop: 14, background: LIME, border: `2px solid ${INK}`, borderRadius: 12, padding: "10px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>
-        ✓ your dish is on the table
-      </div>
-    );
-  }
+  const others = canClaim ? members.filter((m) => !m.isYou) : [];
 
-  // You are named on someone else's claim — theirs to cook, not yours.
-  if (mine && !iAmTheCook) {
-    return (
-      <div style={{ marginTop: 14, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "10px 12px", fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>
-        ✓ you&rsquo;re on {extra.claimed_title ? `“${extra.claimed_title}”` : "a dish"} with them
-      </div>
-    );
-  }
-
-  // You said what you're bringing. Now cook it.
-  if (mine) {
+  if (mine.length === 0 && alsoOn.length === 0) {
     return (
       <div style={{ marginTop: 14 }}>
-        <div style={{ background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "10px 12px" }}>
-          <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>you&rsquo;re bringing {extra.claimed_title || "a dish"}</div>
-          <div className="flex gap-2" style={{ marginTop: 9 }}>
-            <SmallButton label={panel === "cooked" ? "never mind" : "I cooked it"} onClick={() => setPanel(panel === "cooked" ? "" : "cooked")} primary />
-            {canClaim && <SmallButton label={panel === "change" ? "never mind" : "change"} onClick={() => setPanel(panel === "change" ? "" : "change")} />}
-          </div>
-        </div>
-        {panel === "cooked" && (
-          cooks.length === 0
-            ? <NewCookLink crewId={crewId} label="Post what you cooked →" />
-            : <PickAndConfirm kind="cook" items={cooks.map(asTile)} confirm="That's the one" busy={busy} onConfirm={(id) => { setPanel(""); onCooked(id); }} />
+        {canClaim && (
+          <button onClick={() => onPick({ kind: "add" })} className="w-full active:scale-[0.98] transition-transform"
+            style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 16, padding: "14px 0", borderRadius: 13, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}` }}>
+            Say what you&rsquo;re bringing →
+          </button>
         )}
-        {panel === "change" && (
-          <PickAndConfirm kind="recipe" items={recipes.map(asRecipeTile)} confirm="Bring this instead" busy={busy} onConfirm={(id) => { setPanel(""); onClaim(id, null); }} />
-        )}
+        {cooks.length > 0 && (canClaim ? (
+          <details style={{ marginTop: 12 }}>
+            <summary style={{ fontFamily: HAND, fontSize: 14.5, color: INK_MUTED, cursor: "pointer" }}>already made it?</summary>
+            <CookPicker cooks={cooks} confirm="Bring this dish" busy={busy} others={[]} onConfirm={(id, co) => onBring(id, co)} />
+          </details>
+        ) : (
+          // Without the claim columns there is nothing else to offer, so the cook
+          // picker is the primary action rather than a disclosure. An unmigrated
+          // deployment keeps exactly the screen it had before claims existed.
+          <>
+            <div style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>bring one of yours</div>
+            <CookPicker cooks={cooks} confirm="Bring this dish" busy={busy} others={others} onConfirm={(id, co) => onBring(id, co)} />
+          </>
+        ))}
+        {!canClaim && cooks.length === 0 && <NewCookLink crewId={crewId} label="Post what you cooked →" findRecipe />}
       </div>
     );
   }
 
-  // Nothing from you yet. Saying what you'll bring is the primary move — you
-  // should not have to have cooked already to join a potluck.
   return (
-    <div style={{ marginTop: 14 }}>
-      {canClaim && recipes.length > 0 && (
-        <>
-          <div style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>what are you bringing?</div>
-          <PickAndConfirm kind="recipe" items={recipes.map(asRecipeTile)} confirm="I'm bringing this" busy={busy} others={others} onConfirm={(id, co) => onClaim(id, co)} />
-        </>
-      )}
-      {canClaim && recipes.length === 0 && (
-        <Link href="/recipes?import=1" className="block active:scale-[0.99] transition-transform" style={{ background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, textAlign: "center", textDecoration: "none" }}>
-          Save a recipe to bring →
-        </Link>
-      )}
-      {cooks.length > 0 && (canClaim ? (
-        <details style={{ marginTop: 12 }}>
-          <summary style={{ fontFamily: HAND, fontSize: 14.5, color: INK_MUTED, cursor: "pointer" }}>already made it?</summary>
-          <PickAndConfirm kind="cook" items={cooks.map(asTile)} confirm="Bring this dish" busy={busy} onConfirm={(id, co) => onBring(id, co)} />
-        </details>
-      ) : (
-        // Without the claim columns there is nothing else to offer, so the cook
-        // picker is the primary action rather than a disclosure. An unmigrated
-        // deployment keeps exactly the screen it had before claims existed,
-        // instead of hiding its only affordance behind a summary.
-        <>
-          <div style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>bring one of yours</div>
-          <PickAndConfirm kind="cook" items={cooks.map(asTile)} confirm="Bring this dish" busy={busy} others={others} onConfirm={(id, co) => onBring(id, co)} />
-        </>
+    <div style={{ marginTop: 14, background: BUTTER, border: `2px solid ${INK}`, borderRadius: 12, padding: "10px 12px" }}>
+      <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>
+        {mine.length > 0 ? `you're bringing ${mine.length === 1 ? "1 dish" : `${mine.length} dishes`}` : "you're on someone else's dish"}
+      </div>
+
+      {mine.map((s) => {
+        const e = extraOf(s.id);
+        const label = s.cook?.title || e.claimed_title || "a dish";
+        const done = !!s.cook;
+        return (
+          <div key={s.id} style={{ marginTop: 9, borderTop: `1.5px solid rgba(23,20,16,0.12)`, paddingTop: 9 }}>
+            <div className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 14, color: INK }}>
+                {done ? "✓ " : ""}{label}
+              </span>
+              {!done && (
+                <span className="flex gap-1.5 flex-shrink-0">
+                  <TinyButton label={cooking === s.id ? "never mind" : "cooked it"} onClick={() => setCooking(cooking === s.id ? "" : s.id)} primary />
+                  {canClaim && <TinyButton label="swap" onClick={() => onPick({ kind: "swap", submissionId: s.id, current: e.recipe_id })} />}
+                  {canClaim && <TinyButton label="✕" ariaLabel={`Take ${label} off the table`} onClick={() => onRemove(s.id)} />}
+                </span>
+              )}
+            </div>
+            {cooking === s.id && (
+              cooks.length === 0
+                ? <NewCookLink crewId={crewId} label="Post what you cooked →" />
+                : <CookPicker cooks={cooks} confirm="That's the one" busy={busy} others={[]} onConfirm={(cookId) => { setCooking(""); onCooked(s.id, cookId); }} />
+            )}
+          </div>
+        );
+      })}
+
+      {alsoOn.map((s) => (
+        <div key={s.id} style={{ marginTop: 9, borderTop: `1.5px solid rgba(23,20,16,0.12)`, paddingTop: 9, fontFamily: HAND, fontSize: 14, color: INK_SOFT }}>
+          you&rsquo;re named on {extraOf(s.id).claimed_title ? `“${extraOf(s.id).claimed_title}”` : "a dish"} with them
+        </div>
       ))}
-      {!canClaim && cooks.length === 0 && <NewCookLink crewId={crewId} label="Post what you cooked →" findRecipe />}
+
+      {canClaim && (
+        <button onClick={() => onPick({ kind: "add" })} className="w-full active:scale-[0.98] transition-transform"
+          style={{ marginTop: 11, background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 13.5, padding: "10px 0", borderRadius: 10, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}>
+          + bring something else
+        </button>
+      )}
     </div>
   );
 }
 
-type Tile = { id: string; title: string; photo: string | null };
-const asTile = (c: MyCook): Tile => ({ id: c.id, title: c.title || "a dish", photo: c.photo_url });
-const asRecipeTile = (r: MyRecipe): Tile => ({ id: r.id, title: r.title, photo: r.image_url });
-
-function SmallButton({ label, onClick, primary = false }: { label: string; onClick: () => void; primary?: boolean }) {
+/* Sharing a table is sending a picture of it, not a link — a potluck lives
+   inside a crew, and there is no public page for one to point at. */
+function ShareTable({ theme, tableName, plates, status, open }: { theme: string; tableName: string; plates: TablePlate[]; status: string; open: boolean }) {
+  const [state, setState] = useState<"" | "working" | "saved" | "failed">("");
+  if (plates.length === 0) return null;
   return (
-    <button onClick={onClick} className="active:scale-[0.97] transition-transform" style={{ background: primary ? TOMATO : PAPER, color: primary ? PAPER : INK, fontFamily: DISP, fontWeight: 700, fontSize: 13, padding: "0 14px", minHeight: 40, borderRadius: 99, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}>
+    <div style={{ textAlign: "center", marginTop: 2 }}>
+      <button
+        onClick={async () => {
+          setState("working");
+          const r = await sharePotluckCard({ theme, tableName, plates, status, open });
+          setState(r === "downloaded" ? "saved" : r === "failed" ? "failed" : "");
+        }}
+        className="active:scale-[0.97] transition-transform"
+        style={{ background: PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 13, padding: "0 16px", minHeight: 40, borderRadius: 99, border: `2px solid ${INK}`, boxShadow: `2px 2px 0 ${INK}` }}
+      >
+        {state === "working" ? "drawing…" : "📸 Share the table"}
+      </button>
+      {state === "saved" && <div style={{ fontFamily: HAND, fontSize: 13.5, color: INK_SOFT, marginTop: 5 }}>saved to your downloads</div>}
+      {state === "failed" && <div role="alert" style={{ fontFamily: HAND, fontSize: 13.5, color: TOMATO, marginTop: 5 }}>couldn&rsquo;t make the card</div>}
+    </div>
+  );
+}
+
+function TinyButton({ label, ariaLabel, onClick, primary = false }: { label: string; ariaLabel?: string; onClick: () => void; primary?: boolean }) {
+  return (
+    <button onClick={onClick} aria-label={ariaLabel} className="active:scale-[0.96] transition-transform"
+      style={{ background: primary ? TOMATO : PAPER, color: primary ? PAPER : INK, fontFamily: DISP, fontWeight: 700, fontSize: 12, padding: "0 10px", minHeight: 32, borderRadius: 99, border: `2px solid ${INK}` }}>
       {label}
     </button>
   );
@@ -437,12 +516,11 @@ function NewCookLink({ crewId, label, findRecipe = false }: { crewId: string; la
   );
 }
 
-/* Choosing is a tap, committing is a second one. There is no un-bring — the
-   submission is unique per person and nothing deletes it — so the thing you
-   picked presses in and waits for you to confirm it. */
-function PickAndConfirm({ kind, items, confirm, busy, others = [], onConfirm }: {
-  kind: "cook" | "recipe"; items: Tile[]; confirm: string; busy: boolean; others?: Member[];
-  onConfirm: (id: string, coUserId: string | null) => void;
+/* Cooks are a short list — the ones you have posted to THIS table — so they
+   stay a strip. It is the recipe library that needed a search field. */
+function CookPicker({ cooks, confirm, busy, others, onConfirm }: {
+  cooks: MyCook[]; confirm: string; busy: boolean; others: Member[];
+  onConfirm: (cookId: string, coUserId: string | null) => void;
 }) {
   const [picked, setPicked] = useState("");
   const [withWhom, setWithWhom] = useState("");
@@ -450,15 +528,15 @@ function PickAndConfirm({ kind, items, confirm, busy, others = [], onConfirm }: 
   return (
     <div style={{ marginTop: 8 }}>
       <div className="flex gap-2 overflow-x-auto" style={{ paddingBottom: 4, scrollbarWidth: "none" }}>
-        {items.map((t) => {
-          const on = picked === t.id;
+        {cooks.map((c) => {
+          const on = picked === c.id;
           return (
-            <button key={t.id} onClick={() => setPicked(on ? "" : t.id)} aria-pressed={on} className="flex-shrink-0 transition-transform" style={{ width: 86, background: on ? LIME : PAPER, border: `2px solid ${INK}`, borderRadius: 10, padding: 5, textAlign: "left", transform: on ? "translate(1px,1px)" : "none", boxShadow: on ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}` }}>
-              {t.photo
+            <button key={c.id} onClick={() => setPicked(on ? "" : c.id)} aria-pressed={on} className="flex-shrink-0 transition-transform" style={{ width: 86, background: on ? LIME : PAPER, border: `2px solid ${INK}`, borderRadius: 10, padding: 5, textAlign: "left", transform: on ? "translate(1px,1px)" : "none", boxShadow: on ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}` }}>
+              {c.photo_url
                 // eslint-disable-next-line @next/next/no-img-element
-                ? <img src={t.photo} alt="" style={{ width: "100%", height: 54, objectFit: "cover", display: "block", borderRadius: 6 }} />
-                : <div className="flex items-center justify-center" style={{ width: "100%", height: 54, background: CREAM_WARM, borderRadius: 6, fontSize: 22 }} aria-hidden>{kind === "recipe" ? "📖" : "🍳"}</div>}
-              <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 11.5, color: INK, marginTop: 5 }}>{t.title}</div>
+                ? <img src={c.photo_url} alt="" style={{ width: "100%", height: 54, objectFit: "cover", display: "block", borderRadius: 6 }} />
+                : <div className="flex items-center justify-center" style={{ width: "100%", height: 54, background: CREAM_WARM, borderRadius: 6, fontSize: 22 }} aria-hidden>🍳</div>}
+              <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 11.5, color: INK, marginTop: 5 }}>{c.title || "a dish"}</div>
             </button>
           );
         })}
@@ -466,7 +544,7 @@ function PickAndConfirm({ kind, items, confirm, busy, others = [], onConfirm }: 
 
       {picked && others.length > 0 && (
         <div style={{ marginTop: 12 }}>
-          <div style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>cooking it with someone?</div>
+          <div style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>cooked it with someone?</div>
           <div className="flex gap-2 overflow-x-auto" style={{ marginTop: 7, paddingBottom: 4, scrollbarWidth: "none" }}>
             {others.map((m) => {
               const on = withWhom === m.id;
