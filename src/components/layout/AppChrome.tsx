@@ -21,7 +21,7 @@ import { usePathname } from "next/navigation";
 const AppChromeInner = dynamic(() => import("@/components/layout/AppChromeInner"), { ssr: false });
 
 // Full-screen / modal flows where the dock does not belong.
-const DOCK_HIDDEN_ON = ["/i-cooked", "/create", "/auth", "/connect", "/onboarding", "/login", "/recipes/new", "/join"];
+const DOCK_HIDDEN_ON = ["/i-cooked", "/create", "/auth", "/connect", "/onboarding", "/login", "/recipes/new", "/join", "/potluck/"];
 
 // The guide only ever appears on the two homes.
 const GUIDE_ON = ["/kitchen", "/friends-stack"];

@@ -273,8 +273,10 @@ function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, 
   return (
     <section style={{ marginTop: 16, background: PAPER, border: `2.5px solid ${INK}`, borderRadius: 18, padding: "16px 14px", boxShadow: `4px 5px 0 ${INK}` }}>
       <div className="flex items-start gap-2">
-        <h2 className="min-w-0 flex-1" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 22, lineHeight: 1.1, color: INK, margin: 0 }}>
-          {p.emoji ? `${p.emoji} ` : ""}{p.theme}
+        <h2 className="min-w-0 flex-1" style={{ margin: 0 }}>
+          <Link href={`/potluck/${p.id}`} className="block truncate active:scale-[0.99] transition-transform" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 22, lineHeight: 1.1, color: INK, textDecoration: "none" }}>
+            {p.emoji ? `${p.emoji} ` : ""}{p.theme} <span aria-hidden style={{ color: TOMATO }}>→</span>
+          </Link>
         </h2>
         <span style={{ flexShrink: 0, background: served ? CREAM_WARM : LIME, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 11.5, letterSpacing: "0.04em", padding: "4px 10px", borderRadius: 99, border: `2px solid ${INK}`, transform: "rotate(3deg)" }}>
           {deadlineLabel(p, today)}
@@ -284,9 +286,12 @@ function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, 
         {tableName} · {status}
       </div>
 
-      <div style={{ margin: "10px auto 0", maxWidth: 260 }}>
+      {/* A summary of the table. The LIVE one is the Pixi scene at
+          /potluck/<id> — this stays drawn because it is also what the
+          shareable postcard is rendered from. */}
+      <Link href={`/potluck/${p.id}`} className="block active:scale-[0.99] transition-transform" style={{ margin: "10px auto 0", maxWidth: 260 }} aria-label={`Open ${p.theme}`}>
         <PotluckTable plates={plates} open={!served} centre={cooked === dishes && dishes > 0 ? "ON THE TABLE" : "COMING"} />
-      </div>
+      </Link>
 
       <ShareTable theme={p.theme} tableName={tableName} plates={plates} status={status} open={!served} />
 

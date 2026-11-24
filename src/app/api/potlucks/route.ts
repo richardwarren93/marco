@@ -24,9 +24,14 @@ export async function GET(request: Request) {
   const sb = await createClient();
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ error: "Sign in required." }, { status: 401 });
-  const table = new URL(request.url).searchParams.get("table");
+  const params = new URL(request.url).searchParams;
+  const table = params.get("table");
+  // ?id= serves the full-screen table at /potluck/<id>, which knows the
+  // potluck but not the crew it belongs to.
+  const only = params.get("id");
   let query = sb.from("potlucks").select("*, submissions:potluck_submissions(id,user_id,cook:cooks(id,title,photo_url,author_name,source_recipe_id))").order("created_at", { ascending: false }).limit(30);
-  if (table) query = query.eq("crew_id", table);
+  if (only) query = query.eq("id", only);
+  else if (table) query = query.eq("crew_id", table);
   const [potlucks, cooks] = await Promise.all([
     query,
     sb.from("cooks").select("id,title,photo_url,crew_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100),
