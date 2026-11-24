@@ -2,10 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { isServed, localISO } from "@/lib/potluck";
+import { readCoCooks } from "@/lib/potluck-server";
 
 const input = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create"), crew_id: z.uuid(), theme: z.string().trim().min(1).max(100), deadline: z.iso.date() }).strict(),
-  z.object({ action: z.literal("submit"), potluck_id: z.uuid(), cook_id: z.uuid() }).strict(),
+  z.object({ action: z.literal("submit"), potluck_id: z.uuid(), cook_id: z.uuid(), co_user_id: z.uuid().nullish() }).strict(),
 ]);
 export async function GET(request: Request) {
   const sb = await createClient();
@@ -16,7 +17,9 @@ export async function GET(request: Request) {
   if (table) query = query.eq("crew_id", table);
   const [potlucks, cooks] = await Promise.all([query, sb.from("cooks").select("id,title,photo_url,crew_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(100)]);
   if (potlucks.error || cooks.error) return NextResponse.json({ error: "Potlucks could not be loaded." }, { status: 503 });
-  return NextResponse.json({ potlucks: potlucks.data ?? [], cooks: cooks.data ?? [], userId: user.id }, { headers: { "Cache-Control": "private, no-store" } });
+  const rows = (potlucks.data ?? []) as { id: string }[];
+  const co = await readCoCooks(sb, rows.map((p) => p.id));
+  return NextResponse.json({ potlucks: potlucks.data ?? [], cooks: cooks.data ?? [], userId: user.id, coCooks: co.bySubmission, coCooksReady: co.ready }, { headers: { "Cache-Control": "private, no-store" } });
 }
 export async function POST(request: Request) {
   const sb = await createClient();
@@ -48,6 +51,31 @@ export async function POST(request: Request) {
     sb.from("cooks").select("id,crew_id").eq("id", body.cook_id).eq("user_id", user.id).maybeSingle(),
   ]);
   if (!member || !cook || cook.crew_id !== potluck.crew_id) return NextResponse.json({ error: "Choose one of your cooks posted to this table." }, { status: 403 });
-  const { error } = await sb.from("potluck_submissions").insert({ potluck_id: body.potluck_id, cook_id: body.cook_id, user_id: user.id });
-  return error ? NextResponse.json({ error: error.code === "23505" ? "You have already added a dish." : "Your dish could not be added." }, { status: 409 }) : NextResponse.json({ success: true });
+
+  // Cooked together: one dish, two names. The co-cook is credit, not
+  // authorship — the row still belongs to whoever submitted it.
+  const coUserId = body.co_user_id ?? null;
+  if (coUserId) {
+    if (coUserId === user.id) return NextResponse.json({ error: "Pick someone else at the table." }, { status: 400 });
+    const [{ data: coMember }, { data: taken }] = await Promise.all([
+      sb.from("crew_members").select("user_id").eq("crew_id", potluck.crew_id).eq("user_id", coUserId).maybeSingle(),
+      sb.from("potluck_submissions").select("id,user_id,co_user_id").eq("potluck_id", body.potluck_id),
+    ]);
+    if (!coMember) return NextResponse.json({ error: "They are not at this table." }, { status: 403 });
+    // A person is in a potluck once, whichever side of a dish they are on.
+    // The partial unique index catches a repeat co-cook; this catches the
+    // cross case it cannot see — someone who already brought a dish of their
+    // own — because those are two different columns on two different rows.
+    const already = (taken ?? []) as { user_id: string; co_user_id: string | null }[];
+    if (already.some((r) => r.user_id === coUserId || r.co_user_id === coUserId)) {
+      return NextResponse.json({ error: "They are already on the table with a dish." }, { status: 409 });
+    }
+  }
+
+  const { error } = await sb.from("potluck_submissions").insert({ potluck_id: body.potluck_id, cook_id: body.cook_id, user_id: user.id, ...(coUserId ? { co_user_id: coUserId } : {}) });
+  if (!error) return NextResponse.json({ success: true });
+  if (error.code === "23505") return NextResponse.json({ error: "You have already added a dish." }, { status: 409 });
+  // 42703 = the column is not there yet, i.e. the migration has not been run.
+  if (error.code === "42703") return NextResponse.json({ error: "Cooking together is not switched on yet." }, { status: 409 });
+  return NextResponse.json({ error: "Your dish could not be added." }, { status: 409 });
 }

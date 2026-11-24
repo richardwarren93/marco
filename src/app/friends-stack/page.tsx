@@ -32,7 +32,7 @@ function hashStr(s: string) { let h = 0; for (let i = 0; i < s.length; i++) h = 
 export default function FriendsFeed() {
   const router = useRouter();
   const [selectedTable, setSelectedTable] = useState("");
-  const { data, error, mutate, isLoading } = useSWR<{ cooks: Cook[]; tables: { crew: Crew; members: TableMember[] }[]; me: TableMember; savedIds: string[]; potlucks: TablePotluck[] }>(
+  const { data, error, mutate, isLoading } = useSWR<{ cooks: Cook[]; tables: { crew: Crew; members: TableMember[] }[]; me: TableMember; savedIds: string[]; potlucks: TablePotluck[]; coCooks: Record<string, string> }>(
     `/api/table${selectedTable ? `?table=${encodeURIComponent(selectedTable)}` : ""}`,
     async (url: string) => { const r = await fetch(url); const value = await r.json(); if (!r.ok) throw new Error(value.error || "Could not load your table."); return value; },
     { revalidateOnFocus: true, focusThrottleInterval: 30000, dedupingInterval: 10000, keepPreviousData: true },
@@ -84,7 +84,7 @@ export default function FriendsFeed() {
           <Link href="/crew" className="rounded-xl border-2 border-[var(--ink)] px-3 py-3 bg-[var(--lime)] font-semibold">+ Table</Link>
         </div>
         <TableSeats tables={selectedTable ? tables.filter(t => t.crew.id === selectedTable) : tables.slice(0, 1)} you={me} onInvite={() => router.push("/crew")} onMember={(mid) => router.push(`/u/${mid}`)} />
-        <PotluckBar potlucks={data?.potlucks ?? []} myId={me?.id ?? null} table={selectedTable} />
+        <PotluckBar potlucks={data?.potlucks ?? []} coCooks={data?.coCooks ?? {}} myId={me?.id ?? null} table={selectedTable} />
         {error && <div role="alert" className="mt-4 rounded-xl bg-white p-4"><p>{error.message}</p><button className="underline mt-2" onClick={() => mutate()}>Try again</button></div>}
 
         {/* ===== loading ===== */}
@@ -130,7 +130,7 @@ export default function FriendsFeed() {
  */
 type TablePotluck = { id: string; crew_id: string; theme: string; emoji: string | null; deadline: string | null; status: string; submissions: { id: string; user_id: string }[] };
 
-function PotluckBar({ potlucks, myId, table }: { potlucks: TablePotluck[]; myId: string | null; table: string }) {
+function PotluckBar({ potlucks, coCooks, myId, table }: { potlucks: TablePotluck[]; coCooks: Record<string, string>; myId: string | null; table: string }) {
   const today = localISO();
   const live = potlucks.find((p) => !isServed(p, today));
   const href = `/potluck${table ? `?table=${encodeURIComponent(table)}` : ""}`;
@@ -153,7 +153,8 @@ function PotluckBar({ potlucks, myId, table }: { potlucks: TablePotluck[]; myId:
   }
 
   const dishes = live.submissions.length;
-  const brought = !!myId && live.submissions.some((s) => s.user_id === myId);
+  // Being the second name on someone else's dish is still your dish that week.
+  const brought = !!myId && live.submissions.some((s) => s.user_id === myId || coCooks[s.id] === myId);
   return (
     <Link href={href} className="active:scale-[0.99] transition-transform" style={{ ...shared, background: BUTTER, padding: "14px 16px" }}>
       <div className="flex items-start gap-2">

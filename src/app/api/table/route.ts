@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
+import { readCoCooks } from "@/lib/potluck-server";
 
 export async function GET(request: Request) {
   const sb = await createClient();
@@ -24,10 +25,13 @@ export async function GET(request: Request) {
   ]);
   if ([profile, crews, members, cooks, saves, potlucks].some(r => r.error)) return NextResponse.json({ error: "Your table could not be loaded. Please retry." }, { status: 503 });
   const name = profile.data?.display_name || user.email?.split("@")[0] || "You";
+  // So the Table bar can say "your dish is in" when you are the SECOND name on
+  // somebody else's dish, not only when you brought your own.
+  const co = await readCoCooks(sb, ((potlucks.data ?? []) as { id: string }[]).map((p) => p.id));
   return NextResponse.json({
     me: { id: user.id, name, avatar: name.slice(0, 1).toUpperCase(), isYou: true },
     tables: (crews.data ?? []).map(crew => ({ crew, members: (members.data ?? []).filter(m => m.crew_id === crew.id).map(m => ({ id: m.user_id, name: m.user_id === user.id ? name : m.display_name || "Friend", avatar: m.avatar || (m.display_name || name).slice(0, 1).toUpperCase(), isYou: m.user_id === user.id })).sort((a, b) => Number(b.isYou) - Number(a.isYou)) })),
     cooks: cooks.data ?? [], savedIds: (saves.data ?? []).map(s => s.cook_id),
-    potlucks: potlucks.data ?? [],
+    potlucks: potlucks.data ?? [], coCooks: co.bySubmission,
   }, { headers: { "Cache-Control": "private, no-store" } });
 }
