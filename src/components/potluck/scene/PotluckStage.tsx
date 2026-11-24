@@ -18,17 +18,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { SceneModel } from "./model";
+import { celebrate } from "@/lib/haptics";
 import { DISPLAY, HAND, INK, INK_MUTED, INK_SOFT, PAPER, TOMATO } from "@/lib/theme";
 
 type SceneLike = {
   reconcile: (m: SceneModel) => void;
   fit: (w: number, h: number, animate?: boolean) => void;
   focus: (id: string, w: number, h: number) => void;
+  setArrivalSignal: (fn: () => void) => void;
   destroy: () => void;
 };
 
-export default function PotluckStage({ model, onSeatTap, onDishTap, onEmptyTap, onUnavailable }: {
+export default function PotluckStage({ model, focused, onSeatTap, onDishTap, onEmptyTap, onUnavailable }: {
   model: SceneModel;
+  /** The seat or dish the sheet is open for. null re-frames the whole table. */
+  focused: string | null;
   onSeatTap: (id: string) => void;
   onDishTap: (id: string) => void;
   onEmptyTap: () => void;
@@ -83,6 +87,8 @@ export default function PotluckStage({ model, onSeatTap, onDishTap, onEmptyTap, 
           onEmptyTap: () => onEmptyTap(),
         }, reduced);
 
+        // Something landing on the table is worth feeling on a phone.
+        s.setArrivalSignal(() => celebrate());
         appRef.current = app as unknown as typeof appRef.current;
         scene.current = s;
         size.current = { w: rect.width, h: rect.height };
@@ -134,6 +140,15 @@ export default function PotluckStage({ model, onSeatTap, onDishTap, onEmptyTap, 
   }, []);
 
   useEffect(() => { scene.current?.reconcile(model); }, [model]);
+
+  // The camera leans toward whatever the sheet is about, and lets go when it
+  // closes. Never a jump: both are tweens.
+  useEffect(() => {
+    const { w, h } = size.current;
+    if (!scene.current || w < 2) return;
+    if (focused) scene.current.focus(focused, w, h);
+    else scene.current.fit(w, h, true);
+  }, [focused]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
