@@ -69,6 +69,7 @@ export class PotluckScene {
   private idle: gsap.core.Timeline | null = null;
   private blinkTimers = new Set<ReturnType<typeof setTimeout>>();
   private lastSeatCount = -1;
+  private stage = 0;
   private relaySettings = false;
   private destroyed = false;
   /* Opening a potluck is not four people arriving. Everything present on the
@@ -112,9 +113,15 @@ export class PotluckScene {
     shadow.ellipse(0, 26, TABLE_RX + 16, TABLE_RY + 12).fill({ color: INK, alpha: 0.12 });
     this.layers.shadows.addChild(shadow);
 
+    /* A seasonal cloth, and nothing more than that. "Seasonal environments"
+       could mean a different room four times a year; it could also mean one
+       honest touch that makes December feel like December. This is the second,
+       because the first is a pile of art nobody has drawn yet and a gimmick is
+       worse than a plain table. */
+    const cloth = SEASON_CLOTH[season()];
     const table = new Graphics();
     table.ellipse(0, 0, TABLE_RX, TABLE_RY).fill({ color: CREAM_WARM }).stroke({ width: 5, color: INK });
-    table.ellipse(0, 0, TABLE_RX - 26, TABLE_RY - 15).stroke({ width: 2.5, color: INK, alpha: 0.22 });
+    table.ellipse(0, 0, TABLE_RX - 26, TABLE_RY - 15).fill({ color: cloth, alpha: 0.3 }).stroke({ width: 2.5, color: INK, alpha: 0.22 });
     this.layers.table.addChild(table);
 
     // Flowers, slightly off-centre, with a sway that is barely movement. The
@@ -127,6 +134,14 @@ export class PotluckScene {
     if (!this.reduced) {
       this.track(gsap.to(flowers, { rotation: 0.045, duration: 2.6 + Math.random(), repeat: -1, yoyo: true, ease: "sine.inOut" }));
     }
+
+    const bunting = new Sprite(this.tex.bunting);
+    bunting.anchor.set(0.5, 0);
+    bunting.position.set(0, -330);
+    bunting.scale.set(2.1);
+    bunting.label = "bunting";
+    bunting.visible = false;
+    this.layers.decorations.addChild(bunting);
 
     const candle = new Sprite(this.tex.candle);
     candle.anchor.set(0.5, 1);
@@ -513,9 +528,71 @@ export class PotluckScene {
     }
   }
 
+  /* Stage four is a STATE, not an event. Opening a potluck that was finished
+     last Sunday should show a laid, decorated, candle-lit table — not throw
+     confetti at you again. So the decorations are set from the stage every
+     time, and the celebration only fires on the TRANSITION into it, and only
+     if the scene was already on screen when it happened. */
   private setStage(stage: number) {
     const flame = this.layers.decorations.getChildByLabel("flame");
     if (flame) flame.visible = stage >= 3;
+
+    const bunting = this.layers.decorations.getChildByLabel("bunting");
+    if (bunting) bunting.visible = stage >= 4;
+
+    const was = this.stage;
+    this.stage = stage;
+    if (stage >= 4 && was > 0 && was < 4 && this.primed && !this.reduced) this.feast();
+  }
+
+  /* Candles already lit, bunting already up — this is the moment they go up
+     IN FRONT OF YOU, plus confetti, plus everybody at the table bouncing.
+     Brief: the spec allows 1.5-2.5s and the confetti is gone inside that. */
+  private feast() {
+    const bunting = this.layers.decorations.getChildByLabel("bunting");
+    if (bunting) {
+      bunting.alpha = 0;
+      this.track(gsap.to(bunting, { alpha: 1, duration: 0.5, ease: "power2.out" }));
+      this.track(gsap.fromTo(bunting.scale, { y: 0.4 }, { y: 1, duration: 0.7, ease: "back.out(2)" }));
+    }
+    for (const view of this.seats.values()) {
+      if (view.seat.state === "empty") continue;
+      this.track(gsap.fromTo(view.guest.root, { y: view.guest.root.y },
+        { y: view.guest.root.y - 16, duration: 0.26, yoyo: true, repeat: 3, ease: "sine.inOut", delay: Math.random() * 0.3 }));
+    }
+    this.confetti();
+  }
+
+  private confetti() {
+    const COLS = [0xc4ee45, 0xffd84d, 0xff4d9d, 0xc9b8ff, 0xf2c77a, 0xe5462e];
+    for (let i = 0; i < 46; i++) {
+      const c = new Sprite(this.tex.confetti);
+      c.anchor.set(0.5);
+      c.tint = COLS[i % COLS.length];
+      c.position.set((Math.random() - 0.5) * 760, -420 - Math.random() * 200);
+      c.rotation = Math.random() * 3;
+      c.scale.set(0.7 + Math.random() * 0.6);
+      this.layers.effects.addChild(c);
+      const tl = gsap.timeline({ delay: Math.random() * 0.5, onComplete: () => c.destroy() });
+      tl.to(c, { y: 380 + Math.random() * 90, duration: 1.5 + Math.random() * 0.8, ease: "none" }, 0)
+        .to(c, { x: c.x + (Math.random() - 0.5) * 150, duration: 1.5 + Math.random() * 0.8, ease: "sine.inOut" }, 0)
+        .to(c, { rotation: c.rotation + (Math.random() - 0.5) * 9, duration: 2, ease: "none" }, 0)
+        .to(c, { alpha: 0, duration: 0.4 }, 1.5);
+      this.track(tl as unknown as gsap.core.Tween);
+    }
+  }
+
+  /* A picture of the table as it actually is, for the postcard. Everything in
+     the scene is drawn by us, so there is nothing cross-origin in here and the
+     extract always succeeds — which is the reason the table was never made of
+     photographs. */
+  snapshot(): HTMLCanvasElement | null {
+    if (this.destroyed) return null;
+    try {
+      return this.app.renderer.extract.canvas(this.world) as HTMLCanvasElement;
+    } catch {
+      return null;
+    }
   }
 
   /** 100–150ms tap feedback, per the spec's timings. */
@@ -562,7 +639,22 @@ export class PotluckScene {
     }));
   }
 
-  private track(t: gsap.core.Tween) { this.tweens.add(t); t.eventCallback("onComplete", () => this.tweens.delete(t)); }
+  /* Keep a handle on every animation so destroy() can kill them, WITHOUT
+     stealing the one callback the animation already had.
+     The first version called eventCallback("onComplete", ...) and overwrote
+     it. Every timeline built as gsap.timeline({ onComplete: () => sprite
+     .destroy() }) therefore never destroyed its sprite: steam, sparks,
+     confetti and hearts all accumulated on the effects layer for the life of
+     the page. It was invisible because a finished particle sits at alpha 0 —
+     the only way to see it was to count the layer's children and watch the
+     number never go down. */
+  private track<T extends gsap.core.Animation>(t: T): T {
+    const handle = t as unknown as gsap.core.Tween;
+    this.tweens.add(handle);
+    const prev = t.eventCallback("onComplete") as (() => void) | null;
+    t.eventCallback("onComplete", () => { this.tweens.delete(handle); prev?.(); });
+    return t;
+  }
 
   /* A reaction crossing the table, from the person who sent it to the dish it
      landed on. The spec asks for exactly this, and it is the one thing that
@@ -628,6 +720,22 @@ function fitLabel(label: Text) {
   label.scale.set(1);
   if (label.width > MAX) label.scale.set(MAX / label.width);
 }
+
+/** Northern-hemisphere seasons by month, which is as clever as this gets. */
+function season(): "winter" | "spring" | "summer" | "autumn" {
+  const m = new Date().getMonth();
+  if (m <= 1 || m === 11) return "winter";
+  if (m <= 4) return "spring";
+  if (m <= 7) return "summer";
+  return "autumn";
+}
+
+const SEASON_CLOTH: Record<ReturnType<typeof season>, number> = {
+  winter: 0x9ad7e8,
+  spring: 0xc4ee45,
+  summer: 0xffd84d,
+  autumn: 0xf2a65a,
+};
 
 function hash(s: string): number {
   let h = 0;

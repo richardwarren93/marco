@@ -27,15 +27,18 @@ type SceneLike = {
   focus: (id: string, w: number, h: number) => void;
   setArrivalSignal: (fn: () => void) => void;
   fly: (fromSeatId: string, toDishId: string) => void;
+  snapshot: () => HTMLCanvasElement | null;
   destroy: () => void;
 };
 
-export default function PotluckStage({ model, focused, flight, onSeatTap, onDishTap, onEmptyTap, onUnavailable }: {
+export default function PotluckStage({ model, focused, flight, onApi, onSeatTap, onDishTap, onEmptyTap, onUnavailable }: {
   model: SceneModel;
   /** The seat or dish the sheet is open for. null re-frames the whole table. */
   focused: string | null;
   /** A reaction to send across the table. The id makes a repeat re-fire. */
   flight: { id: string; from: string; to: string } | null;
+  /** Hands the page a way to photograph the table for the postcard. */
+  onApi?: (api: { snapshot: () => HTMLCanvasElement | null }) => void;
   onSeatTap: (id: string) => void;
   onDishTap: (id: string) => void;
   onEmptyTap: () => void;
@@ -92,6 +95,7 @@ export default function PotluckStage({ model, focused, flight, onSeatTap, onDish
 
         // Something landing on the table is worth feeling on a phone.
         s.setArrivalSignal(() => celebrate());
+        onApi?.({ snapshot: () => s.snapshot() });
         appRef.current = app as unknown as typeof appRef.current;
         scene.current = s;
         size.current = { w: rect.width, h: rect.height };
