@@ -67,7 +67,7 @@ function Potlucks() {
   const [sheet, setSheet] = useState<{ potluckId: string; crewId: string; mode: SheetMode } | null>(null);
 
   const { data: tables } = useSWR<{ tables: { crew: Crew; members: Member[] }[] }>("/api/table", fetcher);
-  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; extras: Extras; extrasReady: boolean }>(
+  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; extras: Extras; extrasReady: boolean; coCooksReady: boolean }>(
     `/api/potlucks${table ? `?table=${encodeURIComponent(table)}` : ""}`, fetcher,
   );
   // The whole library, SWR-shared with /recipes — the sheet searches it.
@@ -115,7 +115,7 @@ function Potlucks() {
 
   const cardProps = (p: Potluck) => ({
     p, today, tableName: tableName(p.crew_id), myId: data!.userId, myCooks: data!.cooks,
-    extras: data!.extras ?? {}, extrasReady: data!.extrasReady !== false, members: membersOf(p.crew_id), nameOf, busy,
+    extras: data!.extras ?? {}, extrasReady: data!.extrasReady !== false, coCooksReady: data!.coCooksReady !== false, members: membersOf(p.crew_id), nameOf, busy,
   });
 
   const sheetMembers = sheet ? membersOf(sheet.crewId).filter((m) => !m.isYou && m.id !== data?.userId).map((m) => ({ id: m.id, name: m.name })) : [];
@@ -245,14 +245,14 @@ function StartPotluck({ table, busy, onCreate }: { table: string; busy: boolean;
 
 type CardProps = {
   p: Potluck; today: string; tableName: string; myId: string; myCooks: MyCook[];
-  extras: Extras; extrasReady: boolean; members: Member[]; nameOf: (id: string) => string; busy: boolean;
+  extras: Extras; extrasReady: boolean; coCooksReady: boolean; members: Member[]; nameOf: (id: string) => string; busy: boolean;
   onPick: (mode: SheetMode) => void;
   onRemove: (submissionId: string) => void;
   onBring: (cookId: string, coUserId: string | null) => void;
   onCooked: (submissionId: string, cookId: string) => void;
 };
 
-function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, members, nameOf, busy, onPick, onRemove, onBring, onCooked }: CardProps) {
+function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, coCooksReady, members, nameOf, busy, onPick, onRemove, onBring, onCooked }: CardProps) {
   const served = isServed(p, today);
   const extraOf = (id: string) => extras[id] ?? NO_EXTRA;
   const dishes = p.submissions.length;
@@ -307,7 +307,7 @@ function PotluckCard({ p, today, tableName, myId, myCooks, extras, extrasReady, 
       {!served && (
         <YourDishes
           mine={mine} alsoOn={alsoOn} extraOf={extraOf} crewId={p.crew_id} cooks={spare}
-          canClaim={extrasReady} members={members} busy={busy}
+          canClaim={extrasReady} canCoCook={coCooksReady} members={members} busy={busy}
           onPick={onPick} onRemove={onRemove} onBring={onBring} onCooked={onCooked}
         />
       )}
@@ -376,9 +376,9 @@ function DishTile({ dish, extra, mine, tilt, credit }: { dish: Dish; extra: Extr
 
 /* ── Your dishes ────────────────────────────────────────────────────────── */
 
-function YourDishes({ mine, alsoOn, extraOf, crewId, cooks, canClaim, members, busy, onPick, onRemove, onBring, onCooked }: {
+function YourDishes({ mine, alsoOn, extraOf, crewId, cooks, canClaim, canCoCook, members, busy, onPick, onRemove, onBring, onCooked }: {
   mine: Dish[]; alsoOn: Dish[]; extraOf: (id: string) => Extra; crewId: string; cooks: MyCook[];
-  canClaim: boolean; members: Member[]; busy: boolean;
+  canClaim: boolean; canCoCook: boolean; members: Member[]; busy: boolean;
   onPick: (mode: SheetMode) => void;
   onRemove: (submissionId: string) => void;
   onBring: (cookId: string, coUserId: string | null) => void;
@@ -387,7 +387,9 @@ function YourDishes({ mine, alsoOn, extraOf, crewId, cooks, canClaim, members, b
   /** Which of your dishes has its "I cooked it" picker open. */
   const [cooking, setCooking] = useState("");
 
-  const others = canClaim ? members.filter((m) => !m.isYou) : [];
+  // Naming a second cook comes from a different migration than claiming,
+  // so it gets its own switch rather than riding on that one.
+  const others = canCoCook ? members.filter((m) => !m.isYou) : [];
 
   if (mine.length === 0 && alsoOn.length === 0) {
     return (

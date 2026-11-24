@@ -10,7 +10,13 @@ export type SubmissionExtra = {
   claimed_image: string | null;
 };
 
-export type Extras = { ready: boolean; bySubmission: Record<string, SubmissionExtra> };
+export type Extras = {
+  /** Claiming is available: migration-potluck-claims.sql has run. */
+  ready: boolean;
+  /** Naming a second cook is available: migration-potluck-cooked-together.sql. */
+  coReady: boolean;
+  bySubmission: Record<string, SubmissionExtra>;
+};
 
 /* The columns added by hand-run migrations, read separately and allowed to fail.
  *
@@ -27,22 +33,41 @@ export type Extras = { ready: boolean; bySubmission: Record<string, SubmissionEx
  * offering it.
  */
 export async function readSubmissionExtras(sb: Sb, potluckIds: string[]): Promise<Extras> {
-  if (potluckIds.length === 0) return { ready: true, bySubmission: {} };
-  const { data, error } = await sb
-    .from("potluck_submissions")
-    .select("id,co_user_id,recipe_id,claimed_title,claimed_image")
-    .in("potluck_id", potluckIds);
-  if (error) return { ready: false, bySubmission: {} };
+  if (potluckIds.length === 0) return { ready: true, coReady: true, bySubmission: {} };
+
+  /* ONE query per migration, not one query for both.
+   *
+   * This used to select co_user_id, recipe_id, claimed_title and
+   * claimed_image together. Those columns come from TWO different hand-run
+   * migrations, and PostgREST fails the whole select if any one column is
+   * unknown — so running the claims migration and not the cooked-together one
+   * (or the other way round) left the screen looking exactly as it did before
+   * either. "I ran the migration and nothing changed" was the symptom, and it
+   * was this.
+   *
+   * Split, each migration switches on its own feature the moment it is run.
+   */
+  const [co, claims] = await Promise.all([
+    sb.from("potluck_submissions").select("id,co_user_id").in("potluck_id", potluckIds),
+    sb.from("potluck_submissions").select("id,recipe_id,claimed_title,claimed_image").in("potluck_id", potluckIds),
+  ]);
+
   const bySubmission: Record<string, SubmissionExtra> = {};
-  for (const row of (data ?? []) as ({ id: string } & SubmissionExtra)[]) {
-    bySubmission[row.id] = {
-      co_user_id: row.co_user_id ?? null,
-      recipe_id: row.recipe_id ?? null,
-      claimed_title: row.claimed_title ?? null,
-      claimed_image: row.claimed_image ?? null,
-    };
+  const row = (id: string) => (bySubmission[id] ??= { co_user_id: null, recipe_id: null, claimed_title: null, claimed_image: null });
+
+  if (!co.error) {
+    for (const r of (co.data ?? []) as { id: string; co_user_id: string | null }[]) row(r.id).co_user_id = r.co_user_id ?? null;
   }
-  return { ready: true, bySubmission };
+  if (!claims.error) {
+    for (const r of (claims.data ?? []) as { id: string; recipe_id: string | null; claimed_title: string | null; claimed_image: string | null }[]) {
+      const x = row(r.id);
+      x.recipe_id = r.recipe_id ?? null;
+      x.claimed_title = r.claimed_title ?? null;
+      x.claimed_image = r.claimed_image ?? null;
+    }
+  }
+
+  return { ready: !claims.error, coReady: !co.error, bySubmission };
 }
 
 /** Just the co-cooks, for callers that only need "is this person in". */

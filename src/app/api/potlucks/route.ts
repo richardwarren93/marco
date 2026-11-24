@@ -51,6 +51,7 @@ export async function GET(request: Request) {
     userId: user.id,
     extras: extras.bySubmission,
     extrasReady: extras.ready,
+    coCooksReady: extras.coReady,
     reactions: reactions.rows,
     reactionsReady: reactions.ready,
   }, { headers: { "Cache-Control": "private, no-store" } });
