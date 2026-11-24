@@ -44,7 +44,7 @@ export default function PotluckRoom() {
   const router = useRouter();
   const id = params?.id ?? "";
 
-  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; extras: Record<string, Extra>; extrasReady: boolean; reactions: Reaction[]; reactionsReady: boolean }>(
+  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; extras: Record<string, Extra>; extrasReady: boolean; coCooksReady: boolean; reactions: Reaction[]; reactionsReady: boolean }>(
     id ? `/api/potlucks?id=${encodeURIComponent(id)}` : null, fetcher,
   );
   const { data: tables } = useSWR<{ tables: { crew: Crew; members: Member[] }[] }>("/api/table", fetcher);
@@ -63,6 +63,9 @@ export default function PotluckRoom() {
   const extras = data?.extras ?? {};
   const extraOf = (sid: string) => extras[sid] ?? NO_EXTRA;
   const canClaim = data?.extrasReady !== false;
+  // Naming a second cook is a separate migration from claiming, so it is a
+  // separate switch — running one should not wait on the other.
+  const canCoCook = data?.coCooksReady !== false;
   const canReact = data?.reactionsReady !== false;
   const reactions = data?.reactions ?? [];
   const today = localISO();
@@ -236,7 +239,7 @@ export default function PotluckRoom() {
           recipes={library ?? []}
           loading={libraryLoading}
           takenBy={takenBy}
-          members={sheet.kind === "add" ? members.filter((m) => !m.isYou).map((m) => ({ id: m.id, name: m.name })) : []}
+          members={sheet.kind === "add" && canCoCook ? members.filter((m) => !m.isYou).map((m) => ({ id: m.id, name: m.name })) : []}
           busy={busy}
           onClose={() => setSheet(null)}
           onConfirm={(ids, coUserId) => {
