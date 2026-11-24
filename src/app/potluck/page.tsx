@@ -29,6 +29,9 @@ const DISP = DISPLAY;
 type Dish = { id: string; user_id: string; cook: { id: string; title: string | null; photo_url: string | null; author_name: string | null; source_recipe_id: string | null } | null };
 interface Potluck { id: string; crew_id: string; theme: string; emoji: string | null; deadline: string | null; status: string; submissions: Dish[] }
 type MyCook = { id: string; title: string | null; photo_url: string | null; crew_id: string | null };
+type Member = { id: string; name: string; isYou: boolean };
+/** submission id → the second person named on that dish. */
+type CoCooks = Record<string, string>;
 
 const fetcher = async (url: string) => { const r = await fetch(url); const data = await r.json(); if (!r.ok) throw new Error(data.error || "Could not load potlucks."); return data; };
 
@@ -54,8 +57,8 @@ function Potlucks() {
   const [table, setTable] = useState(search?.get("table") || "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const { data: tables } = useSWR<{ tables: { crew: Crew }[] }>("/api/table", fetcher);
-  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[] }>(
+  const { data: tables } = useSWR<{ tables: { crew: Crew; members: Member[] }[] }>("/api/table", fetcher);
+  const { data, error, mutate } = useSWR<{ userId: string; potlucks: Potluck[]; cooks: MyCook[]; coCooks: CoCooks; coCooksReady: boolean }>(
     `/api/potlucks${table ? `?table=${encodeURIComponent(table)}` : ""}`, fetcher,
   );
 
@@ -77,6 +80,10 @@ function Potlucks() {
   const open = all.filter((p) => !isServed(p, today));
   const served = all.filter((p) => isServed(p, today));
   const tableName = (id: string) => tables?.tables.find((t) => t.crew.id === id)?.crew.name ?? "your table";
+  const membersOf = (crewId: string) => tables?.tables.find((t) => t.crew.id === crewId)?.members ?? [];
+  // Your own name is never shown back to you — a dish you cooked with someone
+  // reads "you & Ama", not "Richard & Ama".
+  const nameOf = (id: string) => (id === data?.userId ? "you" : tables?.tables.flatMap((t) => t.members).find((m) => m.id === id)?.name ?? "a friend");
 
   return (
     <Shell>
@@ -119,14 +126,16 @@ function Potlucks() {
 
       {data && open.map((p) => (
         <PotluckCard key={p.id} p={p} today={today} tableName={tableName(p.crew_id)} myId={data.userId} myCooks={data.cooks} busy={busy}
-          onBring={(cookId) => act({ action: "submit", potluck_id: p.id, cook_id: cookId }, "Your dish is on the table.")} />
+          coCooks={data.coCooks ?? {}} coCooksReady={data.coCooksReady !== false} members={membersOf(p.crew_id)} nameOf={nameOf}
+          onBring={(cookId, coUserId) => act({ action: "submit", potluck_id: p.id, cook_id: cookId, co_user_id: coUserId }, "Your dish is on the table.")} />
       ))}
 
       {data && served.length > 0 && (
         <div style={{ marginTop: 26 }}>
           <div style={{ fontFamily: DISP, fontWeight: 700, fontSize: 18, color: INK, paddingLeft: 2 }}>already served</div>
           {served.map((p) => (
-            <PotluckCard key={p.id} p={p} today={today} tableName={tableName(p.crew_id)} myId={data.userId} myCooks={data.cooks} busy={busy} onBring={() => {}} />
+            <PotluckCard key={p.id} p={p} today={today} tableName={tableName(p.crew_id)} myId={data.userId} myCooks={data.cooks} busy={busy}
+              coCooks={data.coCooks ?? {}} coCooksReady={data.coCooksReady !== false} members={membersOf(p.crew_id)} nameOf={nameOf} onBring={() => {}} />
           ))}
         </div>
       )}
@@ -177,11 +186,20 @@ function StartPotluck({ table, busy, onCreate }: { table: string; busy: boolean;
 
 /* ── One potluck ────────────────────────────────────────────────────────── */
 
-function PotluckCard({ p, today, tableName, myId, myCooks, busy, onBring }: {
-  p: Potluck; today: string; tableName: string; myId: string; myCooks: MyCook[]; busy: boolean; onBring: (cookId: string) => void;
+function PotluckCard({ p, today, tableName, myId, myCooks, busy, coCooks, coCooksReady, members, nameOf, onBring }: {
+  p: Potluck; today: string; tableName: string; myId: string; myCooks: MyCook[]; busy: boolean;
+  coCooks: CoCooks; coCooksReady: boolean; members: Member[]; nameOf: (id: string) => string;
+  onBring: (cookId: string, coUserId: string | null) => void;
 }) {
   const served = isServed(p, today);
-  const mine = p.submissions.some((s) => s.user_id === myId);
+  // Being the second name on someone else's dish counts as having brought one.
+  // Without this you would be offered the picker again for a week you are
+  // already in, and the unique index would refuse what it offered you.
+  const mine = p.submissions.some((s) => s.user_id === myId || coCooks[s.id] === myId);
+  // Everyone already on the table, on either side of a dish — they cannot be
+  // named as a co-cook again.
+  const spoken = new Set<string>();
+  for (const s of p.submissions) { spoken.add(s.user_id); const co = coCooks[s.id]; if (co) spoken.add(co); }
   const dishes = p.submissions.length;
   const spare = myCooks.filter((c) => c.crew_id === p.crew_id);
 
@@ -201,7 +219,10 @@ function PotluckCard({ p, today, tableName, myId, myCooks, busy, onBring }: {
 
       {dishes > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 14 }}>
-          {p.submissions.map((s, i) => <DishTile key={s.id} dish={s} mine={s.user_id === myId} tilt={i % 2 ? 1.6 : -1.8} />)}
+          {p.submissions.map((s, i) => (
+            <DishTile key={s.id} dish={s} mine={s.user_id === myId || coCooks[s.id] === myId} tilt={i % 2 ? 1.6 : -1.8}
+              credit={credit(s, myId, coCooks[s.id], nameOf)} />
+          ))}
         </div>
       )}
 
@@ -210,13 +231,21 @@ function PotluckCard({ p, today, tableName, myId, myCooks, busy, onBring }: {
           ✓ your dish is on the table
         </div>
       ) : (
-        <BringADish crewId={p.crew_id} cooks={spare} busy={busy} onBring={onBring} />
+        <BringADish crewId={p.crew_id} cooks={spare} busy={busy} onBring={onBring}
+          others={coCooksReady ? members.filter((m) => !m.isYou && m.id !== myId && !spoken.has(m.id)) : []} />
       )}
     </section>
   );
 }
 
-function DishTile({ dish, mine, tilt }: { dish: Dish; mine: boolean; tilt: number }) {
+/* Who gets the credit line under a dish. One dish can carry two names. */
+function credit(dish: Dish, myId: string, coId: string | undefined, nameOf: (id: string) => string): string {
+  const first = dish.user_id === myId ? "you" : dish.cook?.author_name || "a friend";
+  if (!coId) return first === "you" ? "yours" : first;
+  return `${first} & ${nameOf(coId)}`;
+}
+
+function DishTile({ dish, mine, tilt, credit }: { dish: Dish; mine: boolean; tilt: number; credit: string }) {
   const c = dish.cook;
   const body = (
     // minWidth 0 because a grid item defaults to min-width:auto, and `truncate`
@@ -228,7 +257,7 @@ function DishTile({ dish, mine, tilt }: { dish: Dish; mine: boolean; tilt: numbe
         ? <img src={c.photo_url} alt="" style={{ width: "100%", height: 104, objectFit: "cover", display: "block" }} />
         : <div className="flex items-center justify-center" style={{ width: "100%", height: 104, background: CREAM_WARM, fontSize: 30 }} aria-hidden>🍳</div>}
       <div className="truncate" style={{ fontFamily: DISP, fontWeight: 700, fontSize: 13, color: INK, marginTop: 7 }}>{c?.title || "a dish"}</div>
-      <div className="truncate" style={{ fontFamily: HAND, fontSize: 13, color: mine ? TOMATO : INK_SOFT, marginTop: 1 }}>{mine ? "yours" : c?.author_name || "a friend"}</div>
+      <div className="truncate" style={{ fontFamily: HAND, fontSize: 13, color: mine ? TOMATO : INK_SOFT, marginTop: 1 }}>{credit}</div>
     </div>
   );
   return c?.source_recipe_id
@@ -239,8 +268,9 @@ function DishTile({ dish, mine, tilt }: { dish: Dish; mine: boolean; tilt: numbe
 /* Choosing is a tap, bringing is a second one. There is no un-bring — the
    submission is unique per person and nothing deletes it — so the dish you
    picked presses in and waits for you to commit it. */
-function BringADish({ crewId, cooks, busy, onBring }: { crewId: string; cooks: MyCook[]; busy: boolean; onBring: (cookId: string) => void }) {
+function BringADish({ crewId, cooks, busy, others, onBring }: { crewId: string; cooks: MyCook[]; busy: boolean; others: Member[]; onBring: (cookId: string, coUserId: string | null) => void }) {
   const [picked, setPicked] = useState("");
+  const [withWhom, setWithWhom] = useState("");
 
   if (cooks.length === 0) {
     return (
@@ -267,7 +297,23 @@ function BringADish({ crewId, cooks, busy, onBring }: { crewId: string; cooks: M
           );
         })}
       </div>
-      <button disabled={busy || !picked} onClick={() => onBring(picked)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, opacity: busy || !picked ? 0.45 : 1 }}>
+      {picked && others.length > 0 && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ fontFamily: HAND, fontSize: 14.5, color: INK, opacity: 0.8 }}>cooked it with someone?</div>
+          <div className="flex gap-2 overflow-x-auto" style={{ marginTop: 7, paddingBottom: 4, scrollbarWidth: "none" }}>
+            {others.map((m) => {
+              const on = withWhom === m.id;
+              return (
+                <button key={m.id} onClick={() => setWithWhom(on ? "" : m.id)} aria-pressed={on} className="flex-shrink-0 transition-transform"
+                  style={{ background: on ? LIME : PAPER, color: INK, fontFamily: DISP, fontWeight: 700, fontSize: 13, padding: "0 14px", minHeight: 44, borderRadius: 99, border: `2px solid ${INK}`, transform: on ? "translate(1px,1px)" : "none", boxShadow: on ? `1px 1px 0 ${INK}` : `2px 2px 0 ${INK}` }}>
+                  {m.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+      <button disabled={busy || !picked} onClick={() => onBring(picked, withWhom || null)} className="w-full active:scale-[0.98] transition-transform" style={{ marginTop: 10, background: TOMATO, color: PAPER, fontFamily: DISP, fontWeight: 700, fontSize: 15, padding: "13px 0", borderRadius: 12, border: `2.5px solid ${INK}`, boxShadow: `3px 3px 0 ${INK}`, opacity: busy || !picked ? 0.45 : 1 }}>
         Bring this dish
       </button>
       <Link href={`/i-cooked?table=${crewId}`} className="block" style={{ marginTop: 9, textAlign: "center", fontFamily: HAND, fontSize: 14.5, color: INK_MUTED, textDecoration: "none" }}>
