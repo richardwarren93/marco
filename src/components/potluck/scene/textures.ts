@@ -21,7 +21,9 @@ export type TextureName =
   | "chair" | "chairBack"
   | "plateEmpty" | "cloche" | "plateFood"
   | "nameCard" | "glass" | "candle" | "flame"
-  | "spark" | "steam";
+  | "spark" | "steam"
+  | "body" | "head" | "eyes" | "blink" | "smile"
+  | "flowers" | "cutlery";
 
 const INK = 0x171410;
 const PAPER = 0xfbf7ee;
@@ -101,6 +103,50 @@ function draw(name: TextureName): Graphics {
     // An ink curl, not a white puff. White steam over a cream tabletop is
     // invisible — it was drawn, it rose, and nobody could see it. Everything
     // else in Marco is an ink line on paper; so is this.
+    // ── the people ────────────────────────────────────────────────────────
+    // Tinted per seat, so one body texture dresses the whole table.
+    case "body": {
+      g.moveTo(-20, 26).bezierCurveTo(-22, -2, 22, -2, 20, 26).closePath();
+      inked(g, 0xffffff, 3);
+      return g;
+    }
+    case "head": {
+      g.circle(0, 0, 17);
+      inked(g, 0xf6d9bd, 3);
+      return g;
+    }
+    case "eyes": {
+      g.circle(-6, 0, 2.6).fill({ color: INK });
+      g.circle(6, 0, 2.6).fill({ color: INK });
+      return g;
+    }
+    // The same two eyes, shut. Swapping textures reads better at this size
+    // than squashing a sprite, which just makes two grey smears.
+    case "blink": {
+      g.moveTo(-9, 0).lineTo(-3, 0).stroke({ width: 2.6, color: INK, cap: "round" });
+      g.moveTo(3, 0).lineTo(9, 0).stroke({ width: 2.6, color: INK, cap: "round" });
+      return g;
+    }
+    case "smile": {
+      g.moveTo(-5, 0).quadraticCurveTo(0, 5, 5, 0).stroke({ width: 2.2, color: INK, cap: "round" });
+      return g;
+    }
+    // ── the table's furniture ─────────────────────────────────────────────
+    case "flowers": {
+      g.moveTo(0, 22).lineTo(0, 2).stroke({ width: 2.5, color: 0x5b7a3a });
+      g.moveTo(0, 14).lineTo(-7, 8).stroke({ width: 2, color: 0x5b7a3a });
+      g.moveTo(0, 10).lineTo(7, 4).stroke({ width: 2, color: 0x5b7a3a });
+      for (const [cx, cy, c] of [[0, -4, 0xff4d9d], [-8, 6, BUTTER], [8, 2, 0xc9b8ff]] as [number, number, number][]) {
+        g.circle(cx, cy, 5.5);
+        inked(g, c, 2.2);
+      }
+      return g;
+    }
+    case "cutlery": {
+      g.moveTo(-2, -9).lineTo(-2, 9).stroke({ width: 2.4, color: INK, alpha: 0.5, cap: "round" });
+      g.moveTo(3, -9).lineTo(3, 9).stroke({ width: 2.4, color: INK, alpha: 0.5, cap: "round" });
+      return g;
+    }
     case "steam": {
       g.moveTo(0, 14)
         .bezierCurveTo(-9, 6, 9, 0, 0, -8)
@@ -113,7 +159,7 @@ function draw(name: TextureName): Graphics {
 
 export type TextureBank = Record<TextureName, Texture>;
 
-const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam"];
+const NAMES: TextureName[] = ["chair", "chairBack", "plateEmpty", "cloche", "plateFood", "nameCard", "glass", "candle", "flame", "spark", "steam", "body", "head", "eyes", "blink", "smile", "flowers", "cutlery"];
 
 export function makeTextures(renderer: Renderer): TextureBank {
   const bank = {} as TextureBank;
